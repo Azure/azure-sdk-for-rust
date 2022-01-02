@@ -3,6 +3,61 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorResponse>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestUsagesResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GuestUsagesResourceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestUsagesResourceList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GuestUsagesResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestUsagesResourcePatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestUsagesResourceProperties {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -27,59 +82,4 @@ pub mod operation {
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestUsagesResourceProperties {
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestUsagesResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GuestUsagesResourceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestUsagesResourcePatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestUsagesResourceList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<GuestUsagesResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
 }

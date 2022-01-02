@@ -3,10 +3,53 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecurityConnectorsList {
-    pub value: Vec<SecurityConnector>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct AzureTrackedResourceLocation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudErrorBody>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ETag {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Kind {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityConnector {
@@ -16,38 +59,6 @@ pub struct SecurityConnector {
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityConnectorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityConnectorProperties {
@@ -89,6 +100,30 @@ pub mod security_connector_properties {
             Organization,
         }
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityConnectorsList {
+    pub value: Vec<SecurityConnector>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tags {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub azure_tracked_resource_location: AzureTrackedResourceLocation,
+    #[serde(flatten)]
+    pub kind: Kind,
+    #[serde(flatten)]
+    pub e_tag: ETag,
+    #[serde(flatten)]
+    pub tags: Tags,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudOffering {
@@ -194,69 +229,34 @@ pub mod defender_for_servers_aws_offering {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<CloudErrorBody>,
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<CloudErrorBody>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub azure_tracked_resource_location: AzureTrackedResourceLocation,
-    #[serde(flatten)]
-    pub kind: Kind,
-    #[serde(flatten)]
-    pub e_tag: ETag,
-    #[serde(flatten)]
-    pub tags: Tags,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureTrackedResourceLocation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Kind {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ETag {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tags {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

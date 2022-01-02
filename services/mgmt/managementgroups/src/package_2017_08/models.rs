@@ -3,11 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -15,6 +10,144 @@ pub struct ErrorDetails {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroup {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagementGroupProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupChildInfo {
+    #[serde(rename = "childType", default, skip_serializing_if = "Option::is_none")]
+    pub child_type: Option<ManagementGroupType>,
+    #[serde(rename = "childId", default, skip_serializing_if = "Option::is_none")]
+    pub child_id: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupDetailsProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<f64>,
+    #[serde(rename = "updatedTime", default, skip_serializing_if = "Option::is_none")]
+    pub updated_time: Option<String>,
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent: Option<ParentGroupInfo>,
+    #[serde(rename = "managementGroupType", default, skip_serializing_if = "Option::is_none")]
+    pub management_group_type: Option<ManagementGroupType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagementGroupInfoProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupInfoProperties {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ManagementGroupInfo>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupProperties {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<ManagementGroupDetailsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupPropertiesWithChildren {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<ManagementGroupDetailsProperties>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub children: Vec<ManagementGroupChildInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupPropertiesWithHierarchy {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<ManagementGroupDetailsProperties>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub children: Vec<ManagementGroupRecursiveChildInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupRecursiveChildInfo {
+    #[serde(rename = "childType", default, skip_serializing_if = "Option::is_none")]
+    pub child_type: Option<ManagementGroupType>,
+    #[serde(rename = "childId", default, skip_serializing_if = "Option::is_none")]
+    pub child_id: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub children: Vec<ManagementGroupRecursiveChildInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ManagementGroupType {
+    Enrollment,
+    Department,
+    Account,
+    Subscription,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupWithChildren {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagementGroupPropertiesWithChildren>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementGroupWithHierarchy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagementGroupPropertiesWithHierarchy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -43,142 +176,9 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ManagementGroupInfo>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ManagementGroupInfoProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupInfoProperties {
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroup {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ManagementGroupProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupProperties {
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<ManagementGroupDetailsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupDetailsProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<f64>,
-    #[serde(rename = "updatedTime", default, skip_serializing_if = "Option::is_none")]
-    pub updated_time: Option<String>,
-    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
-    pub updated_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parent: Option<ParentGroupInfo>,
-    #[serde(rename = "managementGroupType", default, skip_serializing_if = "Option::is_none")]
-    pub management_group_type: Option<ManagementGroupType>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParentGroupInfo {
     #[serde(rename = "parentId", default, skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ManagementGroupType {
-    Enrollment,
-    Department,
-    Account,
-    Subscription,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupWithChildren {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ManagementGroupPropertiesWithChildren>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupPropertiesWithChildren {
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<ManagementGroupDetailsProperties>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub children: Vec<ManagementGroupChildInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupChildInfo {
-    #[serde(rename = "childType", default, skip_serializing_if = "Option::is_none")]
-    pub child_type: Option<ManagementGroupType>,
-    #[serde(rename = "childId", default, skip_serializing_if = "Option::is_none")]
-    pub child_id: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupWithHierarchy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ManagementGroupPropertiesWithHierarchy>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupPropertiesWithHierarchy {
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<ManagementGroupDetailsProperties>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub children: Vec<ManagementGroupRecursiveChildInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagementGroupRecursiveChildInfo {
-    #[serde(rename = "childType", default, skip_serializing_if = "Option::is_none")]
-    pub child_type: Option<ManagementGroupType>,
-    #[serde(rename = "childId", default, skip_serializing_if = "Option::is_none")]
-    pub child_id: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub children: Vec<ManagementGroupRecursiveChildInfo>,
 }

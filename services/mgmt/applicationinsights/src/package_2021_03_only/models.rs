@@ -3,50 +3,36 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MyWorkbookResource {
+pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<MyWorkbookManagedIdentity>,
+    pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<serde_json::Value>,
+    pub innererror: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MyWorkbookManagedIdentity {
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<MyWorkbookUserAssignedIdentities>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<my_workbook_managed_identity::Type>,
-}
-pub mod my_workbook_managed_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        UserAssigned,
-        None,
-    }
+pub struct ErrorFieldContract {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MyWorkbookUserAssignedIdentities {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MyWorkbooksListResult {
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MyWorkbook>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub details: Vec<ErrorFieldContract>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InnerErrorTrace {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub trace: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MyWorkbook {
@@ -70,6 +56,26 @@ pub mod my_workbook {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MyWorkbookError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MyWorkbookManagedIdentity {
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<MyWorkbookUserAssignedIdentities>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<my_workbook_managed_identity::Type>,
+}
+pub mod my_workbook_managed_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        UserAssigned,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MyWorkbookProperties {
     #[serde(rename = "displayName")]
     pub display_name: String,
@@ -88,6 +94,195 @@ pub struct MyWorkbookProperties {
     pub source_id: Option<String>,
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MyWorkbookResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<MyWorkbookManagedIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MyWorkbookUserAssignedIdentities {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MyWorkbooksListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MyWorkbook>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<WorkbookManagedIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Workbook {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<workbook::Kind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WorkbookProperties>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+pub mod workbook {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        #[serde(rename = "user")]
+        User,
+        #[serde(rename = "shared")]
+        Shared,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbookError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbookManagedIdentity {
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<WorkbookUserAssignedIdentities>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<workbook_managed_identity::Type>,
+}
+pub mod workbook_managed_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        UserAssigned,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbookProperties {
+    #[serde(rename = "displayName")]
+    pub display_name: String,
+    #[serde(rename = "serializedData")]
+    pub serialized_data: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
+    pub time_modified: Option<String>,
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
+    #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
+    pub user_id: Option<String>,
+    #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_id: Option<String>,
+    #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
+    pub storage_uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revision: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbookPropertiesUpdateParameters {
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "serializedData", default, skip_serializing_if = "Option::is_none")]
+    pub serialized_data: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub revision: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbookUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<workbook_update_parameters::Kind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<WorkbookPropertiesUpdateParameters>,
+}
+pub mod workbook_update_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        #[serde(rename = "user")]
+        User,
+        #[serde(rename = "shared")]
+        Shared,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbookUserAssignedIdentities {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbooksListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Workbook>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
@@ -120,199 +315,4 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MyWorkbookError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDefinition>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDefinition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InnerErrorTrace {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub trace: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<WorkbookManagedIdentity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookManagedIdentity {
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<WorkbookUserAssignedIdentities>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<workbook_managed_identity::Type>,
-}
-pub mod workbook_managed_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        UserAssigned,
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookUserAssignedIdentities {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbooksListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Workbook>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Workbook {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<workbook::Kind>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WorkbookProperties>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
-}
-pub mod workbook {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "user")]
-        User,
-        #[serde(rename = "shared")]
-        Shared,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookProperties {
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    #[serde(rename = "serializedData")]
-    pub serialized_data: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
-    pub time_modified: Option<String>,
-    pub category: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
-    #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
-    pub user_id: Option<String>,
-    #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
-    pub source_id: Option<String>,
-    #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
-    pub storage_uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub revision: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<workbook_update_parameters::Kind>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WorkbookPropertiesUpdateParameters>,
-}
-pub mod workbook_update_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "user")]
-        User,
-        #[serde(rename = "shared")]
-        Shared,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookPropertiesUpdateParameters {
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "serializedData", default, skip_serializing_if = "Option::is_none")]
-    pub serialized_data: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub category: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub revision: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDefinition>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorFieldContract>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorFieldContract {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-}
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }

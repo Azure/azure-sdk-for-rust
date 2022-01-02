@@ -15,11 +15,6 @@ pub struct AccountResourceListResult {
     pub value: Vec<AccountResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccountTagRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountResourceRequest {
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
@@ -47,6 +42,11 @@ pub mod account_resource_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccountTagRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameter {
     #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
@@ -70,6 +70,11 @@ pub struct ExtensionResource {
     pub properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtensionResourceListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ExtensionResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtensionResourcePlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -81,11 +86,6 @@ pub struct ExtensionResourcePlan {
     pub publisher: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtensionResourceListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ExtensionResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtensionResourceRequest {
@@ -106,6 +106,11 @@ pub struct Operation {
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -117,9 +122,16 @@ pub struct OperationProperties {
     pub resource: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
+pub struct ProjectResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProjectResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
+    pub value: Vec<ProjectResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -133,16 +145,4 @@ pub struct Resource {
     pub tags: Option<serde_json::Value>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProjectResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProjectResourceListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ProjectResource>,
 }

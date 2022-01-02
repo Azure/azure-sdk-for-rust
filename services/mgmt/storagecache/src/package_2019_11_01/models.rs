@@ -29,22 +29,6 @@ pub struct ApiOperationListResult {
     pub value: Vec<ApiOperation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<CloudErrorBody>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Cache {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -96,8 +80,6 @@ pub mod cache {
         pub name: Option<String>,
     }
 }
-pub type UrlString = String;
-pub type ResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheHealth {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -151,7 +133,35 @@ pub struct CachesListResult {
     pub value: Vec<Cache>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UnknownProperties {}
+pub struct ClfsTarget {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<UrlString>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudErrorBody>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NamespaceJunction {
+    #[serde(rename = "namespacePath", default, skip_serializing_if = "Option::is_none")]
+    pub namespace_path: Option<String>,
+    #[serde(rename = "targetPath", default, skip_serializing_if = "Option::is_none")]
+    pub target_path: Option<String>,
+    #[serde(rename = "nfsExport", default, skip_serializing_if = "Option::is_none")]
+    pub nfs_export: Option<String>,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Nfs3Target {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -159,16 +169,7 @@ pub struct Nfs3Target {
     #[serde(rename = "usageModel", default, skip_serializing_if = "Option::is_none")]
     pub usage_model: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClfsTarget {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<UrlString>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UnknownTarget {
-    #[serde(rename = "unknownMap", default, skip_serializing_if = "Option::is_none")]
-    pub unknown_map: Option<UnknownProperties>,
-}
+pub type ResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
@@ -183,23 +184,6 @@ pub struct ResourceSku {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<Restriction>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Restriction {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub values: Vec<String>,
-    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
-    pub reason_code: Option<restriction::ReasonCode>,
-}
-pub mod restriction {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ReasonCode {
-        QuotaId,
-        NotAvailableForSubscription,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkuCapabilities {
@@ -221,6 +205,23 @@ pub struct ResourceSkusResult {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceSku>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Restriction {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<String>,
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
+    pub reason_code: Option<restriction::ReasonCode>,
+}
+pub mod restriction {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ReasonCode {
+        QuotaId,
+        NotAvailableForSubscription,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTarget {
@@ -273,20 +274,19 @@ pub mod storage_target {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NamespaceJunction {
-    #[serde(rename = "namespacePath", default, skip_serializing_if = "Option::is_none")]
-    pub namespace_path: Option<String>,
-    #[serde(rename = "targetPath", default, skip_serializing_if = "Option::is_none")]
-    pub target_path: Option<String>,
-    #[serde(rename = "nfsExport", default, skip_serializing_if = "Option::is_none")]
-    pub nfs_export: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTargetsResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageTarget>,
+}
+pub type UrlString = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UnknownProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UnknownTarget {
+    #[serde(rename = "unknownMap", default, skip_serializing_if = "Option::is_none")]
+    pub unknown_map: Option<UnknownProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageModel {

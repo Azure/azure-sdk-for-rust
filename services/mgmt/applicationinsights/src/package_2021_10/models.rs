@@ -3,16 +3,35 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponseLinkedStorage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<error_response_linked_storage::Error>,
+}
+pub mod error_response_linked_storage {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Error {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub code: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub message: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveTokenResponse {
     #[serde(rename = "liveToken", default, skip_serializing_if = "Option::is_none")]
     pub live_token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<OperationLive>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct OperationInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationLive {
@@ -28,28 +47,9 @@ pub struct OperationLive {
     pub properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponseLinkedStorage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<error_response_linked_storage::Error>,
-}
-pub mod error_response_linked_storage {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Error {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub code: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub message: Option<String>,
-    }
+pub struct OperationsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<OperationLive>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }

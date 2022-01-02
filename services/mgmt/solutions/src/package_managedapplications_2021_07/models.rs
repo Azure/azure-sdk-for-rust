@@ -14,91 +14,36 @@ pub struct Application {
     pub identity: Option<ManagedServiceIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationProperties {
-    #[serde(rename = "managedResourceGroupId", default, skip_serializing_if = "Option::is_none")]
-    pub managed_resource_group_id: Option<String>,
-    #[serde(rename = "applicationDefinitionId", default, skip_serializing_if = "Option::is_none")]
-    pub application_definition_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub outputs: Option<serde_json::Value>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "billingDetails", default, skip_serializing_if = "Option::is_none")]
-    pub billing_details: Option<ApplicationBillingDetailsDefinition>,
-    #[serde(rename = "jitAccessPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub jit_access_policy: Option<ApplicationJitAccessPolicy>,
-    #[serde(rename = "publisherTenantId", default, skip_serializing_if = "Option::is_none")]
-    pub publisher_tenant_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub authorizations: Vec<ApplicationAuthorization>,
-    #[serde(rename = "managementMode", default, skip_serializing_if = "Option::is_none")]
-    pub management_mode: Option<ApplicationManagementMode>,
-    #[serde(rename = "customerSupport", default, skip_serializing_if = "Option::is_none")]
-    pub customer_support: Option<ApplicationPackageContact>,
-    #[serde(rename = "supportUrls", default, skip_serializing_if = "Option::is_none")]
-    pub support_urls: Option<ApplicationPackageSupportUrls>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub artifacts: Vec<ApplicationArtifact>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<ApplicationClientDetails>,
-    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
-    pub updated_by: Option<ApplicationClientDetails>,
+pub struct ApplicationArtifact {
+    pub name: ApplicationArtifactName,
+    pub uri: String,
+    #[serde(rename = "type")]
+    pub type_: ApplicationArtifactType,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProvisioningState {
+pub enum ApplicationArtifactName {
     NotSpecified,
-    Accepted,
-    Running,
-    Deleting,
-    Deleted,
-    Canceled,
-    Failed,
-    Succeeded,
-    Updating,
+    ViewDefinition,
+    Authorizations,
+    CustomRoleDefinition,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ApplicationArtifactType {
+    NotSpecified,
+    Template,
+    Custom,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationAuthorization {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "roleDefinitionId")]
+    pub role_definition_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationBillingDetailsDefinition {
     #[serde(rename = "resourceUsageId", default, skip_serializing_if = "Option::is_none")]
     pub resource_usage_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationJitAccessPolicy {
-    #[serde(rename = "jitAccessEnabled")]
-    pub jit_access_enabled: bool,
-    #[serde(rename = "jitApprovalMode", default, skip_serializing_if = "Option::is_none")]
-    pub jit_approval_mode: Option<JitApprovalMode>,
-    #[serde(rename = "jitApprovers", default, skip_serializing_if = "Vec::is_empty")]
-    pub jit_approvers: Vec<JitApproverDefinition>,
-    #[serde(rename = "maximumJitAccessDuration", default, skip_serializing_if = "Option::is_none")]
-    pub maximum_jit_access_duration: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum JitApprovalMode {
-    NotSpecified,
-    AutoApprove,
-    ManualApprove,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ApplicationManagementMode {
-    NotSpecified,
-    Unmanaged,
-    Managed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationPackageContact {
-    #[serde(rename = "contactName", default, skip_serializing_if = "Option::is_none")]
-    pub contact_name: Option<String>,
-    pub email: String,
-    pub phone: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationPackageSupportUrls {
-    #[serde(rename = "publicAzure", default, skip_serializing_if = "Option::is_none")]
-    pub public_azure: Option<String>,
-    #[serde(rename = "governmentCloud", default, skip_serializing_if = "Option::is_none")]
-    pub government_cloud: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationClientDetails {
@@ -110,66 +55,36 @@ pub struct ApplicationClientDetails {
     pub application_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Plan {
-    pub name: String,
-    pub publisher: String,
-    pub product: String,
-    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
-    pub promotion_code: Option<String>,
-    pub version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedServiceIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type")]
-    pub type_: ManagedServiceIdentityType,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<UserAssignedIdentities>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ManagedServiceIdentityType {
-    None,
-    SystemAssigned,
-    UserAssigned,
-    #[serde(rename = "SystemAssigned,UserAssigned")]
-    SystemAssignedUserAssigned,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserAssignedIdentities {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationPatchable {
-    #[serde(flatten)]
-    pub generic_resource: GenericResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ApplicationProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<PlanPatchable>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ManagedServiceIdentity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PlanPatchable {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publisher: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub product: Option<String>,
-    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
-    pub promotion_code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationDefinition {
     #[serde(flatten)]
     pub generic_resource: GenericResource,
     pub properties: ApplicationDefinitionProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationDefinitionArtifact {
+    pub name: ApplicationDefinitionArtifactName,
+    pub uri: String,
+    #[serde(rename = "type")]
+    pub type_: ApplicationArtifactType,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ApplicationDefinitionArtifactName {
+    NotSpecified,
+    ApplicationResourceTemplate,
+    CreateUiDefinition,
+    MainTemplateParameters,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationDefinitionListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ApplicationDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationDefinitionPatchable {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationDefinitionProperties {
@@ -207,10 +122,48 @@ pub struct ApplicationDefinitionProperties {
     pub policies: Vec<ApplicationPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationDeploymentPolicy {
+    #[serde(rename = "deploymentMode")]
+    pub deployment_mode: DeploymentMode,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationJitAccessPolicy {
+    #[serde(rename = "jitAccessEnabled")]
+    pub jit_access_enabled: bool,
+    #[serde(rename = "jitApprovalMode", default, skip_serializing_if = "Option::is_none")]
+    pub jit_approval_mode: Option<JitApprovalMode>,
+    #[serde(rename = "jitApprovers", default, skip_serializing_if = "Vec::is_empty")]
+    pub jit_approvers: Vec<JitApproverDefinition>,
+    #[serde(rename = "maximumJitAccessDuration", default, skip_serializing_if = "Option::is_none")]
+    pub maximum_jit_access_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Application>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplicationLockLevel {
     CanNotDelete,
     ReadOnly,
     None,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ApplicationManagementMode {
+    NotSpecified,
+    Unmanaged,
+    Managed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationManagementPolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<ApplicationManagementMode>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationNotificationEndpoint {
+    pub uri: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationNotificationPolicy {
@@ -218,25 +171,78 @@ pub struct ApplicationNotificationPolicy {
     pub notification_endpoints: Vec<ApplicationNotificationEndpoint>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationPackageContact {
+    #[serde(rename = "contactName", default, skip_serializing_if = "Option::is_none")]
+    pub contact_name: Option<String>,
+    pub email: String,
+    pub phone: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationPackageLockingPolicyDefinition {
     #[serde(rename = "allowedActions", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_actions: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationDeploymentPolicy {
-    #[serde(rename = "deploymentMode")]
-    pub deployment_mode: DeploymentMode,
+pub struct ApplicationPackageSupportUrls {
+    #[serde(rename = "publicAzure", default, skip_serializing_if = "Option::is_none")]
+    pub public_azure: Option<String>,
+    #[serde(rename = "governmentCloud", default, skip_serializing_if = "Option::is_none")]
+    pub government_cloud: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum DeploymentMode {
-    NotSpecified,
-    Incremental,
-    Complete,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationManagementPolicy {
+pub struct ApplicationPatchable {
+    #[serde(flatten)]
+    pub generic_resource: GenericResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mode: Option<ApplicationManagementMode>,
+    pub properties: Option<ApplicationProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<PlanPatchable>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ManagedServiceIdentity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationPolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "policyDefinitionId", default, skip_serializing_if = "Option::is_none")]
+    pub policy_definition_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationProperties {
+    #[serde(rename = "managedResourceGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub managed_resource_group_id: Option<String>,
+    #[serde(rename = "applicationDefinitionId", default, skip_serializing_if = "Option::is_none")]
+    pub application_definition_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outputs: Option<serde_json::Value>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "billingDetails", default, skip_serializing_if = "Option::is_none")]
+    pub billing_details: Option<ApplicationBillingDetailsDefinition>,
+    #[serde(rename = "jitAccessPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub jit_access_policy: Option<ApplicationJitAccessPolicy>,
+    #[serde(rename = "publisherTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub publisher_tenant_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub authorizations: Vec<ApplicationAuthorization>,
+    #[serde(rename = "managementMode", default, skip_serializing_if = "Option::is_none")]
+    pub management_mode: Option<ApplicationManagementMode>,
+    #[serde(rename = "customerSupport", default, skip_serializing_if = "Option::is_none")]
+    pub customer_support: Option<ApplicationPackageContact>,
+    #[serde(rename = "supportUrls", default, skip_serializing_if = "Option::is_none")]
+    pub support_urls: Option<ApplicationPackageSupportUrls>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub artifacts: Vec<ApplicationArtifact>,
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<ApplicationClientDetails>,
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<ApplicationClientDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationPropertiesPatchable {
@@ -252,9 +258,35 @@ pub struct ApplicationPropertiesPatchable {
     pub provisioning_state: Option<ProvisioningState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationDefinitionPatchable {
+pub enum DeploymentMode {
+    NotSpecified,
+    Incremental,
+    Complete,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenericResource {
@@ -266,129 +298,31 @@ pub struct GenericResource {
     pub sku: Option<Sku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i32>,
+pub enum JitApprovalMode {
+    NotSpecified,
+    AutoApprove,
+    ManualApprove,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+pub struct JitApproverDefinition {
+    pub id: String,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
+    pub type_: Option<jit_approver_definition::Type>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
+pub mod jit_approver_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
+    pub enum Type {
+        #[serde(rename = "user")]
         User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
+        #[serde(rename = "group")]
+        Group,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Application>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationDefinitionListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ApplicationDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ApplicationArtifactType {
-    NotSpecified,
-    Template,
-    Custom,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ApplicationDefinitionArtifactName {
-    NotSpecified,
-    ApplicationResourceTemplate,
-    CreateUiDefinition,
-    MainTemplateParameters,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ApplicationArtifactName {
-    NotSpecified,
-    ViewDefinition,
-    Authorizations,
-    CustomRoleDefinition,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationArtifact {
-    pub name: ApplicationArtifactName,
-    pub uri: String,
-    #[serde(rename = "type")]
-    pub type_: ApplicationArtifactType,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationDefinitionArtifact {
-    pub name: ApplicationDefinitionArtifactName,
-    pub uri: String,
-    #[serde(rename = "type")]
-    pub type_: ApplicationArtifactType,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationNotificationEndpoint {
-    pub uri: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationPolicy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "policyDefinitionId", default, skip_serializing_if = "Option::is_none")]
-    pub policy_definition_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationAuthorization {
+pub struct JitAuthorizationPolicies {
     #[serde(rename = "principalId")]
     pub principal_id: String,
     #[serde(rename = "roleDefinitionId")]
@@ -400,6 +334,18 @@ pub struct JitRequestDefinition {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JitRequestProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JitRequestDefinitionListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JitRequestDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JitRequestPatchable {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitRequestProperties {
@@ -421,6 +367,17 @@ pub struct JitRequestProperties {
     pub updated_by: Option<ApplicationClientDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum JitRequestState {
+    NotSpecified,
+    Pending,
+    Approved,
+    Denied,
+    Failed,
+    Canceled,
+    Expired,
+    Timeout,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitSchedulingPolicy {
     #[serde(rename = "type")]
     pub type_: JitSchedulingType,
@@ -435,59 +392,23 @@ pub enum JitSchedulingType {
     Recurring,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum JitRequestState {
-    NotSpecified,
-    Pending,
-    Approved,
-    Denied,
-    Failed,
-    Canceled,
-    Expired,
-    Timeout,
+pub struct ManagedServiceIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type")]
+    pub type_: ManagedServiceIdentityType,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<UserAssignedIdentities>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JitRequestPatchable {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JitRequestDefinitionListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JitRequestDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JitAuthorizationPolicies {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "roleDefinitionId")]
-    pub role_definition_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JitApproverDefinition {
-    pub id: String,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<jit_approver_definition::Type>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-}
-pub mod jit_approver_definition {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        #[serde(rename = "user")]
-        User,
-        #[serde(rename = "group")]
-        Group,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub enum ManagedServiceIdentityType {
+    None,
+    SystemAssigned,
+    UserAssigned,
+    #[serde(rename = "SystemAssigned,UserAssigned")]
+    SystemAssignedUserAssigned,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -530,34 +451,113 @@ pub mod operation {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
+pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetail>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
+pub struct Plan {
+    pub name: String,
+    pub publisher: String,
+    pub product: String,
+    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
+    pub promotion_code: Option<String>,
+    pub version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PlanPatchable {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product: Option<String>,
+    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
+    pub promotion_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProvisioningState {
+    NotSpecified,
+    Accepted,
+    Running,
+    Deleting,
+    Deleted,
+    Canceled,
+    Failed,
+    Succeeded,
+    Updating,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedIdentities {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

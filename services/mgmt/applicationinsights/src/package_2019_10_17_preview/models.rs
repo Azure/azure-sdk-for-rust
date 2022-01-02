@@ -3,21 +3,22 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookTemplateResource {
+pub struct ErrorFieldContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
+    pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub target: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookTemplatesListResult {
+pub struct WorkbookError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<WorkbookTemplate>,
+    pub details: Vec<ErrorFieldContract>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookTemplate {
@@ -25,18 +26,6 @@ pub struct WorkbookTemplate {
     pub workbook_template_resource: WorkbookTemplateResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkbookTemplateProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookTemplateProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub priority: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub author: Option<String>,
-    #[serde(rename = "templateData")]
-    pub template_data: serde_json::Value,
-    pub galleries: Vec<WorkbookTemplateGallery>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub localized: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookTemplateGallery {
@@ -59,6 +48,30 @@ pub struct WorkbookTemplateLocalizedGallery {
     pub galleries: Vec<WorkbookTemplateGallery>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbookTemplateProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub author: Option<String>,
+    #[serde(rename = "templateData")]
+    pub template_data: serde_json::Value,
+    pub galleries: Vec<WorkbookTemplateGallery>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub localized: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkbookTemplateResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookTemplateUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -66,20 +79,7 @@ pub struct WorkbookTemplateUpdateParameters {
     pub properties: Option<WorkbookTemplateProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorFieldContract {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkbookError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+pub struct WorkbookTemplatesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorFieldContract>,
+    pub value: Vec<WorkbookTemplate>,
 }

@@ -3,6 +3,40 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AuthorizationProfile {
+    #[serde(rename = "requestedTime", default, skip_serializing_if = "Option::is_none")]
+    pub requested_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requester: Option<String>,
+    #[serde(rename = "requesterObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub requester_object_id: Option<String>,
+    #[serde(rename = "approvedTime", default, skip_serializing_if = "Option::is_none")]
+    pub approved_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approver: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDefinition {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FeatureOperationsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<FeatureResult>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeatureProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
@@ -17,13 +51,6 @@ pub struct FeatureResult {
     pub id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FeatureOperationsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<FeatureResult>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -50,20 +77,6 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDefinition>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDefinition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
@@ -133,19 +146,6 @@ pub mod subscription_feature_registration {
             AutoApproval,
         }
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthorizationProfile {
-    #[serde(rename = "requestedTime", default, skip_serializing_if = "Option::is_none")]
-    pub requested_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub requester: Option<String>,
-    #[serde(rename = "requesterObjectId", default, skip_serializing_if = "Option::is_none")]
-    pub requester_object_id: Option<String>,
-    #[serde(rename = "approvedTime", default, skip_serializing_if = "Option::is_none")]
-    pub approved_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub approver: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionFeatureRegistrationList {

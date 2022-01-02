@@ -3,11 +3,25 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Build>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct BaseImageDependency {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<base_image_dependency::Type>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repository: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
+}
+pub mod base_image_dependency {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        BuildTime,
+        RunTime,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Build {
@@ -15,6 +29,79 @@ pub struct Build {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildArgument {
+    #[serde(rename = "type")]
+    pub type_: build_argument::Type,
+    pub name: String,
+    pub value: String,
+    #[serde(rename = "isSecret", default, skip_serializing_if = "Option::is_none")]
+    pub is_secret: Option<bool>,
+}
+pub mod build_argument {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        DockerBuildArgument,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildArgumentList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BuildArgument>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildFilter {
+    #[serde(rename = "buildId", default, skip_serializing_if = "Option::is_none")]
+    pub build_id: Option<String>,
+    #[serde(rename = "buildType", default, skip_serializing_if = "Option::is_none")]
+    pub build_type: Option<build_filter::BuildType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<build_filter::Status>,
+    #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
+    pub create_time: Option<String>,
+    #[serde(rename = "finishTime", default, skip_serializing_if = "Option::is_none")]
+    pub finish_time: Option<String>,
+    #[serde(rename = "outputImageManifests", default, skip_serializing_if = "Option::is_none")]
+    pub output_image_manifests: Option<String>,
+    #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_archive_enabled: Option<bool>,
+    #[serde(rename = "buildTaskName", default, skip_serializing_if = "Option::is_none")]
+    pub build_task_name: Option<String>,
+}
+pub mod build_filter {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BuildType {
+        AutoBuild,
+        QuickBuild,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Queued,
+        Started,
+        Running,
+        Succeeded,
+        Failed,
+        Canceled,
+        Error,
+        Timeout,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildGetLogResult {
+    #[serde(rename = "logLink", default, skip_serializing_if = "Option::is_none")]
+    pub log_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Build>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildProperties {
@@ -76,100 +163,11 @@ pub mod build_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageUpdateTrigger {
+pub struct BuildStep {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub images: Vec<ImageDescriptor>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GitCommitTrigger {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "commitId", default, skip_serializing_if = "Option::is_none")]
-    pub commit_id: Option<String>,
-    #[serde(rename = "repositoryUrl", default, skip_serializing_if = "Option::is_none")]
-    pub repository_url: Option<String>,
-    #[serde(rename = "branchName", default, skip_serializing_if = "Option::is_none")]
-    pub branch_name: Option<String>,
-    #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
-    pub provider_type: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PlatformProperties {
-    #[serde(rename = "osType")]
-    pub os_type: platform_properties::OsType,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cpu: Option<i32>,
-}
-pub mod platform_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Windows,
-        Linux,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageDescriptor {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub registry: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub repository: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub digest: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildFilter {
-    #[serde(rename = "buildId", default, skip_serializing_if = "Option::is_none")]
-    pub build_id: Option<String>,
-    #[serde(rename = "buildType", default, skip_serializing_if = "Option::is_none")]
-    pub build_type: Option<build_filter::BuildType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<build_filter::Status>,
-    #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
-    pub create_time: Option<String>,
-    #[serde(rename = "finishTime", default, skip_serializing_if = "Option::is_none")]
-    pub finish_time: Option<String>,
-    #[serde(rename = "outputImageManifests", default, skip_serializing_if = "Option::is_none")]
-    pub output_image_manifests: Option<String>,
-    #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_archive_enabled: Option<bool>,
-    #[serde(rename = "buildTaskName", default, skip_serializing_if = "Option::is_none")]
-    pub build_task_name: Option<String>,
-}
-pub mod build_filter {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BuildType {
-        AutoBuild,
-        QuickBuild,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Queued,
-        Started,
-        Running,
-        Succeeded,
-        Failed,
-        Canceled,
-        Error,
-        Timeout,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildUpdateParameters {
-    #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_archive_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildGetLogResult {
-    #[serde(rename = "logLink", default, skip_serializing_if = "Option::is_none")]
-    pub log_link: Option<String>,
+    pub properties: Option<BuildStepProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildStepList {
@@ -177,13 +175,6 @@ pub struct BuildStepList {
     pub value: Vec<BuildStep>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildStep {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BuildStepProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildStepProperties {
@@ -209,13 +200,6 @@ pub mod build_step_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildStepUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BuildStepPropertiesUpdateParameters>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildStepPropertiesUpdateParameters {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<build_step_properties_update_parameters::Type>,
@@ -228,34 +212,11 @@ pub mod build_step_properties_update_parameters {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildArgumentList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<BuildArgument>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildArgument {
-    #[serde(rename = "type")]
-    pub type_: build_argument::Type,
-    pub name: String,
-    pub value: String,
-    #[serde(rename = "isSecret", default, skip_serializing_if = "Option::is_none")]
-    pub is_secret: Option<bool>,
-}
-pub mod build_argument {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        DockerBuildArgument,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildTaskListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<BuildTask>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct BuildStepUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BuildStepPropertiesUpdateParameters>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildTask {
@@ -263,6 +224,25 @@ pub struct BuildTask {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildTaskProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildTaskBuildRequest {
+    #[serde(flatten)]
+    pub queue_build_request: QueueBuildRequest,
+    #[serde(rename = "buildTaskName")]
+    pub build_task_name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildTaskFilter {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub alias: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildTaskListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BuildTask>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildTaskProperties {
@@ -297,58 +277,6 @@ pub mod build_task_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceRepositoryProperties {
-    #[serde(rename = "sourceControlType")]
-    pub source_control_type: source_repository_properties::SourceControlType,
-    #[serde(rename = "repositoryUrl")]
-    pub repository_url: String,
-    #[serde(rename = "isCommitTriggerEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_commit_trigger_enabled: Option<bool>,
-    #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
-    pub source_control_auth_properties: Option<SourceControlAuthInfo>,
-}
-pub mod source_repository_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SourceControlType {
-        Github,
-        VisualStudioTeamService,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceControlAuthInfo {
-    #[serde(rename = "tokenType", default, skip_serializing_if = "Option::is_none")]
-    pub token_type: Option<source_control_auth_info::TokenType>,
-    pub token: String,
-    #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
-    pub refresh_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<String>,
-    #[serde(rename = "expiresIn", default, skip_serializing_if = "Option::is_none")]
-    pub expires_in: Option<i32>,
-}
-pub mod source_control_auth_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TokenType {
-        #[serde(rename = "PAT")]
-        Pat,
-        OAuth,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildTaskFilter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub alias: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildTaskUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BuildTaskPropertiesUpdateParameters>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildTaskPropertiesUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
@@ -370,44 +298,16 @@ pub mod build_task_properties_update_parameters {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceRepositoryUpdateParameters {
-    #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
-    pub source_control_auth_properties: Option<SourceControlAuthInfo>,
-    #[serde(rename = "isCommitTriggerEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_commit_trigger_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueueBuildRequest {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceUploadDefinition {
-    #[serde(rename = "uploadUrl", default, skip_serializing_if = "Option::is_none")]
-    pub upload_url: Option<String>,
-    #[serde(rename = "relativePath", default, skip_serializing_if = "Option::is_none")]
-    pub relative_path: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
+pub struct BuildTaskUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
+    pub properties: Option<BuildTaskPropertiesUpdateParameters>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+pub struct BuildUpdateParameters {
+    #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_archive_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildStep {
@@ -442,27 +342,6 @@ pub mod docker_build_step {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BaseImageDependency {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<base_image_dependency::Type>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub registry: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub repository: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub digest: Option<String>,
-}
-pub mod base_image_dependency {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        BuildTime,
-        RunTime,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildStepUpdateParameters {
     #[serde(flatten)]
     pub build_step_properties_update_parameters: BuildStepPropertiesUpdateParameters,
@@ -493,11 +372,66 @@ pub mod docker_build_step_update_parameters {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildTaskBuildRequest {
-    #[serde(flatten)]
-    pub queue_build_request: QueueBuildRequest,
-    #[serde(rename = "buildTaskName")]
-    pub build_task_name: String,
+pub struct GitCommitTrigger {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "commitId", default, skip_serializing_if = "Option::is_none")]
+    pub commit_id: Option<String>,
+    #[serde(rename = "repositoryUrl", default, skip_serializing_if = "Option::is_none")]
+    pub repository_url: Option<String>,
+    #[serde(rename = "branchName", default, skip_serializing_if = "Option::is_none")]
+    pub branch_name: Option<String>,
+    #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
+    pub provider_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageDescriptor {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repository: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageUpdateTrigger {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub images: Vec<ImageDescriptor>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PlatformProperties {
+    #[serde(rename = "osType")]
+    pub os_type: platform_properties::OsType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cpu: Option<i32>,
+}
+pub mod platform_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueueBuildRequest {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuickBuildRequest {
@@ -518,4 +452,70 @@ pub struct QuickBuildRequest {
     pub platform: PlatformProperties,
     #[serde(rename = "dockerFilePath")]
     pub docker_file_path: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceControlAuthInfo {
+    #[serde(rename = "tokenType", default, skip_serializing_if = "Option::is_none")]
+    pub token_type: Option<source_control_auth_info::TokenType>,
+    pub token: String,
+    #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    #[serde(rename = "expiresIn", default, skip_serializing_if = "Option::is_none")]
+    pub expires_in: Option<i32>,
+}
+pub mod source_control_auth_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum TokenType {
+        #[serde(rename = "PAT")]
+        Pat,
+        OAuth,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceRepositoryProperties {
+    #[serde(rename = "sourceControlType")]
+    pub source_control_type: source_repository_properties::SourceControlType,
+    #[serde(rename = "repositoryUrl")]
+    pub repository_url: String,
+    #[serde(rename = "isCommitTriggerEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_commit_trigger_enabled: Option<bool>,
+    #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
+    pub source_control_auth_properties: Option<SourceControlAuthInfo>,
+}
+pub mod source_repository_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SourceControlType {
+        Github,
+        VisualStudioTeamService,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceRepositoryUpdateParameters {
+    #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
+    pub source_control_auth_properties: Option<SourceControlAuthInfo>,
+    #[serde(rename = "isCommitTriggerEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_commit_trigger_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceUploadDefinition {
+    #[serde(rename = "uploadUrl", default, skip_serializing_if = "Option::is_none")]
+    pub upload_url: Option<String>,
+    #[serde(rename = "relativePath", default, skip_serializing_if = "Option::is_none")]
+    pub relative_path: Option<String>,
 }

@@ -3,35 +3,78 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceProviderOperationDisplay {
+pub struct Change {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    pub properties: Option<ChangeProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceProviderOperationDefinition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<ResourceProviderOperationDisplay>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceProviderOperationList {
+pub struct ChangeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ResourceProviderOperationDefinition>,
+    pub value: Vec<Change>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChangeProperties {
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
+    pub time_stamp: Option<String>,
+    #[serde(rename = "initiatedByList", default, skip_serializing_if = "Vec::is_empty")]
+    pub initiated_by_list: Vec<String>,
+    #[serde(rename = "changeType", default, skip_serializing_if = "Option::is_none")]
+    pub change_type: Option<ChangeType>,
+    #[serde(rename = "propertyChanges", default, skip_serializing_if = "Vec::is_empty")]
+    pub property_changes: Vec<PropertyChange>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChangeSnapshots {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ChangeSnapshotsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChangeSnapshotsProperties {
+    #[serde(rename = "beforeSnapshot", default, skip_serializing_if = "Option::is_none")]
+    pub before_snapshot: Option<serde_json::Value>,
+    #[serde(rename = "afterSnapshot", default, skip_serializing_if = "Option::is_none")]
+    pub after_snapshot: Option<serde_json::Value>,
+    #[serde(rename = "isHidden", default, skip_serializing_if = "Option::is_none")]
+    pub is_hidden: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ChangeType {
     Add,
     Remove,
     Update,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Level {
@@ -69,55 +112,18 @@ pub mod property_change {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChangeProperties {
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-    #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
-    pub time_stamp: Option<String>,
-    #[serde(rename = "initiatedByList", default, skip_serializing_if = "Vec::is_empty")]
-    pub initiated_by_list: Vec<String>,
-    #[serde(rename = "changeType", default, skip_serializing_if = "Option::is_none")]
-    pub change_type: Option<ChangeType>,
-    #[serde(rename = "propertyChanges", default, skip_serializing_if = "Vec::is_empty")]
-    pub property_changes: Vec<PropertyChange>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Change {
+pub struct ProxyResource {
     #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub resource: Resource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ChangeProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChangeList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Change>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChangeSnapshotsProperties {
-    #[serde(rename = "beforeSnapshot", default, skip_serializing_if = "Option::is_none")]
-    pub before_snapshot: Option<serde_json::Value>,
-    #[serde(rename = "afterSnapshot", default, skip_serializing_if = "Option::is_none")]
-    pub after_snapshot: Option<serde_json::Value>,
-    #[serde(rename = "isHidden", default, skip_serializing_if = "Option::is_none")]
-    pub is_hidden: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChangeSnapshots {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ChangeSnapshotsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceGraphSnapshotData {
-    #[serde(rename = "snapshotId", default, skip_serializing_if = "Option::is_none")]
-    pub snapshot_id: Option<String>,
-    pub timestamp: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub content: Option<serde_json::Value>,
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceGraphChangeData {
@@ -142,41 +148,35 @@ pub mod resource_graph_change_data {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct ResourceGraphSnapshotData {
+    #[serde(rename = "snapshotId", default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_id: Option<String>,
+    pub timestamp: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
+    pub content: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetail>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+pub struct ResourceProviderOperationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<ResourceProviderOperationDisplay>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceProviderOperationDisplay {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceProviderOperationList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ResourceProviderOperationDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }

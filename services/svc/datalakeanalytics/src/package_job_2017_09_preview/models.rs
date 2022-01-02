@@ -3,6 +3,183 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BaseJobParameters {
+    #[serde(rename = "type")]
+    pub type_: base_job_parameters::Type,
+    pub properties: CreateJobProperties,
+}
+pub mod base_job_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        USql,
+        Hive,
+        Scope,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BuildJobParameters {
+    #[serde(flatten)]
+    pub base_job_parameters: BaseJobParameters,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateJobParameters {
+    #[serde(flatten)]
+    pub base_job_parameters: BaseJobParameters,
+    pub name: String,
+    #[serde(rename = "degreeOfParallelism", default, skip_serializing_if = "Option::is_none")]
+    pub degree_of_parallelism: Option<i32>,
+    #[serde(rename = "degreeOfParallelismPercent", default, skip_serializing_if = "Option::is_none")]
+    pub degree_of_parallelism_percent: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i32>,
+    #[serde(rename = "logFilePatterns", default, skip_serializing_if = "Vec::is_empty")]
+    pub log_file_patterns: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub related: Option<JobRelationshipProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateJobProperties {
+    #[serde(rename = "runtimeVersion", default, skip_serializing_if = "Option::is_none")]
+    pub runtime_version: Option<String>,
+    pub script: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateScopeJobParameters {
+    #[serde(flatten)]
+    pub create_job_parameters: CreateJobParameters,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateScopeJobProperties {
+    #[serde(flatten)]
+    pub create_job_properties: CreateJobProperties,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resources: Vec<ScopeJobResource>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notifier: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateUSqlJobProperties {
+    #[serde(flatten)]
+    pub create_job_properties: CreateJobProperties,
+    #[serde(rename = "compileMode", default, skip_serializing_if = "Option::is_none")]
+    pub compile_mode: Option<create_u_sql_job_properties::CompileMode>,
+}
+pub mod create_u_sql_job_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CompileMode {
+        Semantic,
+        Full,
+        SingleBox,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Diagnostics {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<diagnostics::Severity>,
+    #[serde(rename = "lineNumber", default, skip_serializing_if = "Option::is_none")]
+    pub line_number: Option<i32>,
+    #[serde(rename = "columnNumber", default, skip_serializing_if = "Option::is_none")]
+    pub column_number: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub start: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end: Option<i32>,
+}
+pub mod diagnostics {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Severity {
+        Warning,
+        Error,
+        Info,
+        SevereWarning,
+        Deprecated,
+        UserWarning,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HiveJobProperties {
+    #[serde(flatten)]
+    pub job_properties: JobProperties,
+    #[serde(rename = "logsLocation", default, skip_serializing_if = "Option::is_none")]
+    pub logs_location: Option<String>,
+    #[serde(rename = "outputLocation", default, skip_serializing_if = "Option::is_none")]
+    pub output_location: Option<String>,
+    #[serde(rename = "statementCount", default, skip_serializing_if = "Option::is_none")]
+    pub statement_count: Option<i32>,
+    #[serde(rename = "executedStatementCount", default, skip_serializing_if = "Option::is_none")]
+    pub executed_statement_count: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobDataPath {
+    #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
+    pub job_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub command: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub paths: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobErrorDetails {
+    #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
+    pub error_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<job_error_details::Severity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+    #[serde(rename = "lineNumber", default, skip_serializing_if = "Option::is_none")]
+    pub line_number: Option<i32>,
+    #[serde(rename = "startOffset", default, skip_serializing_if = "Option::is_none")]
+    pub start_offset: Option<i32>,
+    #[serde(rename = "endOffset", default, skip_serializing_if = "Option::is_none")]
+    pub end_offset: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<String>,
+    #[serde(rename = "filePath", default, skip_serializing_if = "Option::is_none")]
+    pub file_path: Option<String>,
+    #[serde(rename = "helpLink", default, skip_serializing_if = "Option::is_none")]
+    pub help_link: Option<String>,
+    #[serde(rename = "internalDiagnostics", default, skip_serializing_if = "Option::is_none")]
+    pub internal_diagnostics: Option<String>,
+    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
+    pub inner_error: Option<JobInnerError>,
+}
+pub mod job_error_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Severity {
+        Warning,
+        Error,
+        Info,
+        SevereWarning,
+        Deprecated,
+        UserWarning,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobInfoListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JobInformationBasic>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInformation {
     #[serde(flatten)]
     pub job_information_basic: JobInformationBasic,
@@ -11,14 +188,6 @@ pub struct JobInformation {
     #[serde(rename = "stateAuditRecords", default, skip_serializing_if = "Vec::is_empty")]
     pub state_audit_records: Vec<JobStateAuditRecord>,
     pub properties: JobProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobProperties {
-    #[serde(rename = "runtimeVersion", default, skip_serializing_if = "Option::is_none")]
-    pub runtime_version: Option<String>,
-    pub script: String,
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInformationBasic {
@@ -88,6 +257,122 @@ pub mod job_information_basic {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobInnerError {
+    #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
+    pub error_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<job_inner_error::Severity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+    #[serde(rename = "diagnosticCode", default, skip_serializing_if = "Option::is_none")]
+    pub diagnostic_code: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub component: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<String>,
+    #[serde(rename = "helpLink", default, skip_serializing_if = "Option::is_none")]
+    pub help_link: Option<String>,
+    #[serde(rename = "internalDiagnostics", default, skip_serializing_if = "Option::is_none")]
+    pub internal_diagnostics: Option<String>,
+    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
+    pub inner_error: Box<Option<JobInnerError>>,
+}
+pub mod job_inner_error {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Severity {
+        Warning,
+        Error,
+        Info,
+        SevereWarning,
+        Deprecated,
+        UserWarning,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobPipelineInformation {
+    #[serde(rename = "pipelineId", default, skip_serializing_if = "Option::is_none")]
+    pub pipeline_id: Option<String>,
+    #[serde(rename = "pipelineName", default, skip_serializing_if = "Option::is_none")]
+    pub pipeline_name: Option<String>,
+    #[serde(rename = "pipelineUri", default, skip_serializing_if = "Option::is_none")]
+    pub pipeline_uri: Option<String>,
+    #[serde(rename = "numJobsFailed", default, skip_serializing_if = "Option::is_none")]
+    pub num_jobs_failed: Option<i32>,
+    #[serde(rename = "numJobsCanceled", default, skip_serializing_if = "Option::is_none")]
+    pub num_jobs_canceled: Option<i32>,
+    #[serde(rename = "numJobsSucceeded", default, skip_serializing_if = "Option::is_none")]
+    pub num_jobs_succeeded: Option<i32>,
+    #[serde(rename = "auHoursFailed", default, skip_serializing_if = "Option::is_none")]
+    pub au_hours_failed: Option<f64>,
+    #[serde(rename = "auHoursCanceled", default, skip_serializing_if = "Option::is_none")]
+    pub au_hours_canceled: Option<f64>,
+    #[serde(rename = "auHoursSucceeded", default, skip_serializing_if = "Option::is_none")]
+    pub au_hours_succeeded: Option<f64>,
+    #[serde(rename = "lastSubmitTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_submit_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub runs: Vec<JobPipelineRunInformation>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub recurrences: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobPipelineInformationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JobPipelineInformation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobPipelineRunInformation {
+    #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+    #[serde(rename = "lastSubmitTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_submit_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobProperties {
+    #[serde(rename = "runtimeVersion", default, skip_serializing_if = "Option::is_none")]
+    pub runtime_version: Option<String>,
+    pub script: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobRecurrenceInformation {
+    #[serde(rename = "recurrenceId", default, skip_serializing_if = "Option::is_none")]
+    pub recurrence_id: Option<String>,
+    #[serde(rename = "recurrenceName", default, skip_serializing_if = "Option::is_none")]
+    pub recurrence_name: Option<String>,
+    #[serde(rename = "numJobsFailed", default, skip_serializing_if = "Option::is_none")]
+    pub num_jobs_failed: Option<i32>,
+    #[serde(rename = "numJobsCanceled", default, skip_serializing_if = "Option::is_none")]
+    pub num_jobs_canceled: Option<i32>,
+    #[serde(rename = "numJobsSucceeded", default, skip_serializing_if = "Option::is_none")]
+    pub num_jobs_succeeded: Option<i32>,
+    #[serde(rename = "auHoursFailed", default, skip_serializing_if = "Option::is_none")]
+    pub au_hours_failed: Option<f64>,
+    #[serde(rename = "auHoursCanceled", default, skip_serializing_if = "Option::is_none")]
+    pub au_hours_canceled: Option<f64>,
+    #[serde(rename = "auHoursSucceeded", default, skip_serializing_if = "Option::is_none")]
+    pub au_hours_succeeded: Option<f64>,
+    #[serde(rename = "lastSubmitTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_submit_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobRecurrenceInformationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JobRecurrenceInformation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobRelationshipProperties {
     #[serde(rename = "pipelineId", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_id: Option<String>,
@@ -101,64 +386,6 @@ pub struct JobRelationshipProperties {
     pub recurrence_id: String,
     #[serde(rename = "recurrenceName", default, skip_serializing_if = "Option::is_none")]
     pub recurrence_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlJobProperties {
-    #[serde(flatten)]
-    pub job_properties: JobProperties,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resources: Vec<JobResource>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub statistics: Option<JobStatistics>,
-    #[serde(rename = "debugData", default, skip_serializing_if = "Option::is_none")]
-    pub debug_data: Option<JobDataPath>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub diagnostics: Vec<Diagnostics>,
-    #[serde(rename = "algebraFilePath", default, skip_serializing_if = "Option::is_none")]
-    pub algebra_file_path: Option<String>,
-    #[serde(rename = "totalCompilationTime", default, skip_serializing_if = "Option::is_none")]
-    pub total_compilation_time: Option<String>,
-    #[serde(rename = "totalQueuedTime", default, skip_serializing_if = "Option::is_none")]
-    pub total_queued_time: Option<String>,
-    #[serde(rename = "totalRunningTime", default, skip_serializing_if = "Option::is_none")]
-    pub total_running_time: Option<String>,
-    #[serde(rename = "totalPausedTime", default, skip_serializing_if = "Option::is_none")]
-    pub total_paused_time: Option<String>,
-    #[serde(rename = "rootProcessNodeId", default, skip_serializing_if = "Option::is_none")]
-    pub root_process_node_id: Option<String>,
-    #[serde(rename = "yarnApplicationId", default, skip_serializing_if = "Option::is_none")]
-    pub yarn_application_id: Option<String>,
-    #[serde(rename = "yarnApplicationTimeStamp", default, skip_serializing_if = "Option::is_none")]
-    pub yarn_application_time_stamp: Option<i64>,
-    #[serde(rename = "compileMode", default, skip_serializing_if = "Option::is_none")]
-    pub compile_mode: Option<u_sql_job_properties::CompileMode>,
-}
-pub mod u_sql_job_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CompileMode {
-        Semantic,
-        Full,
-        SingleBox,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobStatistics {
-    #[serde(rename = "lastUpdateTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub last_update_time_utc: Option<String>,
-    #[serde(rename = "finalizingTimeUtc", default, skip_serializing_if = "Option::is_none")]
-    pub finalizing_time_utc: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub stages: Vec<JobStatisticsVertexStage>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobDataPath {
-    #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
-    pub job_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub command: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub paths: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobResource {
@@ -180,6 +407,39 @@ pub mod job_resource {
         JobManagerResourceInUserFolder,
         StatisticsResourceInUserFolder,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobStateAuditRecord {
+    #[serde(rename = "newState", default, skip_serializing_if = "Option::is_none")]
+    pub new_state: Option<String>,
+    #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
+    pub time_stamp: Option<String>,
+    #[serde(rename = "requestedByUser", default, skip_serializing_if = "Option::is_none")]
+    pub requested_by_user: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobStatistics {
+    #[serde(rename = "lastUpdateTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub last_update_time_utc: Option<String>,
+    #[serde(rename = "finalizingTimeUtc", default, skip_serializing_if = "Option::is_none")]
+    pub finalizing_time_utc: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stages: Vec<JobStatisticsVertexStage>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobStatisticsVertex {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "vertexId", default, skip_serializing_if = "Option::is_none")]
+    pub vertex_id: Option<String>,
+    #[serde(rename = "executionTime", default, skip_serializing_if = "Option::is_none")]
+    pub execution_time: Option<String>,
+    #[serde(rename = "dataRead", default, skip_serializing_if = "Option::is_none")]
+    pub data_read: Option<i64>,
+    #[serde(rename = "peakMemUsage", default, skip_serializing_if = "Option::is_none")]
+    pub peak_mem_usage: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStatisticsVertexStage {
@@ -249,19 +509,6 @@ pub struct JobStatisticsVertexStage {
     pub used_vertex_peak_mem_size: Option<ResourceUsageStatistics>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobStatisticsVertex {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "vertexId", default, skip_serializing_if = "Option::is_none")]
-    pub vertex_id: Option<String>,
-    #[serde(rename = "executionTime", default, skip_serializing_if = "Option::is_none")]
-    pub execution_time: Option<String>,
-    #[serde(rename = "dataRead", default, skip_serializing_if = "Option::is_none")]
-    pub data_read: Option<i64>,
-    #[serde(rename = "peakMemUsage", default, skip_serializing_if = "Option::is_none")]
-    pub peak_mem_usage: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceUsageStatistics {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub average: Option<f64>,
@@ -269,46 +516,6 @@ pub struct ResourceUsageStatistics {
     pub minimum: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Diagnostics {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<diagnostics::Severity>,
-    #[serde(rename = "lineNumber", default, skip_serializing_if = "Option::is_none")]
-    pub line_number: Option<i32>,
-    #[serde(rename = "columnNumber", default, skip_serializing_if = "Option::is_none")]
-    pub column_number: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub start: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub end: Option<i32>,
-}
-pub mod diagnostics {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Severity {
-        Warning,
-        Error,
-        Info,
-        SevereWarning,
-        Deprecated,
-        UserWarning,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HiveJobProperties {
-    #[serde(flatten)]
-    pub job_properties: JobProperties,
-    #[serde(rename = "logsLocation", default, skip_serializing_if = "Option::is_none")]
-    pub logs_location: Option<String>,
-    #[serde(rename = "outputLocation", default, skip_serializing_if = "Option::is_none")]
-    pub output_location: Option<String>,
-    #[serde(rename = "statementCount", default, skip_serializing_if = "Option::is_none")]
-    pub statement_count: Option<i32>,
-    #[serde(rename = "executedStatementCount", default, skip_serializing_if = "Option::is_none")]
-    pub executed_statement_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScopeJobProperties {
@@ -341,228 +548,37 @@ pub struct ScopeJobResource {
     pub path: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobErrorDetails {
-    #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
-    pub error_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<job_error_details::Severity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
-    #[serde(rename = "lineNumber", default, skip_serializing_if = "Option::is_none")]
-    pub line_number: Option<i32>,
-    #[serde(rename = "startOffset", default, skip_serializing_if = "Option::is_none")]
-    pub start_offset: Option<i32>,
-    #[serde(rename = "endOffset", default, skip_serializing_if = "Option::is_none")]
-    pub end_offset: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resolution: Option<String>,
-    #[serde(rename = "filePath", default, skip_serializing_if = "Option::is_none")]
-    pub file_path: Option<String>,
-    #[serde(rename = "helpLink", default, skip_serializing_if = "Option::is_none")]
-    pub help_link: Option<String>,
-    #[serde(rename = "internalDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub internal_diagnostics: Option<String>,
-    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Option<JobInnerError>,
-}
-pub mod job_error_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Severity {
-        Warning,
-        Error,
-        Info,
-        SevereWarning,
-        Deprecated,
-        UserWarning,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobInnerError {
-    #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
-    pub error_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<job_inner_error::Severity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
-    #[serde(rename = "diagnosticCode", default, skip_serializing_if = "Option::is_none")]
-    pub diagnostic_code: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub component: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resolution: Option<String>,
-    #[serde(rename = "helpLink", default, skip_serializing_if = "Option::is_none")]
-    pub help_link: Option<String>,
-    #[serde(rename = "internalDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub internal_diagnostics: Option<String>,
-    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<JobInnerError>>,
-}
-pub mod job_inner_error {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Severity {
-        Warning,
-        Error,
-        Info,
-        SevereWarning,
-        Deprecated,
-        UserWarning,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobStateAuditRecord {
-    #[serde(rename = "newState", default, skip_serializing_if = "Option::is_none")]
-    pub new_state: Option<String>,
-    #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
-    pub time_stamp: Option<String>,
-    #[serde(rename = "requestedByUser", default, skip_serializing_if = "Option::is_none")]
-    pub requested_by_user: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobInfoListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobInformationBasic>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobPipelineInformation {
-    #[serde(rename = "pipelineId", default, skip_serializing_if = "Option::is_none")]
-    pub pipeline_id: Option<String>,
-    #[serde(rename = "pipelineName", default, skip_serializing_if = "Option::is_none")]
-    pub pipeline_name: Option<String>,
-    #[serde(rename = "pipelineUri", default, skip_serializing_if = "Option::is_none")]
-    pub pipeline_uri: Option<String>,
-    #[serde(rename = "numJobsFailed", default, skip_serializing_if = "Option::is_none")]
-    pub num_jobs_failed: Option<i32>,
-    #[serde(rename = "numJobsCanceled", default, skip_serializing_if = "Option::is_none")]
-    pub num_jobs_canceled: Option<i32>,
-    #[serde(rename = "numJobsSucceeded", default, skip_serializing_if = "Option::is_none")]
-    pub num_jobs_succeeded: Option<i32>,
-    #[serde(rename = "auHoursFailed", default, skip_serializing_if = "Option::is_none")]
-    pub au_hours_failed: Option<f64>,
-    #[serde(rename = "auHoursCanceled", default, skip_serializing_if = "Option::is_none")]
-    pub au_hours_canceled: Option<f64>,
-    #[serde(rename = "auHoursSucceeded", default, skip_serializing_if = "Option::is_none")]
-    pub au_hours_succeeded: Option<f64>,
-    #[serde(rename = "lastSubmitTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_submit_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub runs: Vec<JobPipelineRunInformation>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub recurrences: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobPipelineRunInformation {
-    #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
-    pub run_id: Option<String>,
-    #[serde(rename = "lastSubmitTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_submit_time: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobPipelineInformationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobPipelineInformation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobRecurrenceInformation {
-    #[serde(rename = "recurrenceId", default, skip_serializing_if = "Option::is_none")]
-    pub recurrence_id: Option<String>,
-    #[serde(rename = "recurrenceName", default, skip_serializing_if = "Option::is_none")]
-    pub recurrence_name: Option<String>,
-    #[serde(rename = "numJobsFailed", default, skip_serializing_if = "Option::is_none")]
-    pub num_jobs_failed: Option<i32>,
-    #[serde(rename = "numJobsCanceled", default, skip_serializing_if = "Option::is_none")]
-    pub num_jobs_canceled: Option<i32>,
-    #[serde(rename = "numJobsSucceeded", default, skip_serializing_if = "Option::is_none")]
-    pub num_jobs_succeeded: Option<i32>,
-    #[serde(rename = "auHoursFailed", default, skip_serializing_if = "Option::is_none")]
-    pub au_hours_failed: Option<f64>,
-    #[serde(rename = "auHoursCanceled", default, skip_serializing_if = "Option::is_none")]
-    pub au_hours_canceled: Option<f64>,
-    #[serde(rename = "auHoursSucceeded", default, skip_serializing_if = "Option::is_none")]
-    pub au_hours_succeeded: Option<f64>,
-    #[serde(rename = "lastSubmitTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_submit_time: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobRecurrenceInformationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobRecurrenceInformation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BaseJobParameters {
-    #[serde(rename = "type")]
-    pub type_: base_job_parameters::Type,
-    pub properties: CreateJobProperties,
-}
-pub mod base_job_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        USql,
-        Hive,
-        Scope,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateJobProperties {
-    #[serde(rename = "runtimeVersion", default, skip_serializing_if = "Option::is_none")]
-    pub runtime_version: Option<String>,
-    pub script: String,
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateJobParameters {
+pub struct USqlJobProperties {
     #[serde(flatten)]
-    pub base_job_parameters: BaseJobParameters,
-    pub name: String,
-    #[serde(rename = "degreeOfParallelism", default, skip_serializing_if = "Option::is_none")]
-    pub degree_of_parallelism: Option<i32>,
-    #[serde(rename = "degreeOfParallelismPercent", default, skip_serializing_if = "Option::is_none")]
-    pub degree_of_parallelism_percent: Option<f64>,
+    pub job_properties: JobProperties,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resources: Vec<JobResource>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub priority: Option<i32>,
-    #[serde(rename = "logFilePatterns", default, skip_serializing_if = "Vec::is_empty")]
-    pub log_file_patterns: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub related: Option<JobRelationshipProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateScopeJobParameters {
-    #[serde(flatten)]
-    pub create_job_parameters: CreateJobParameters,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateUSqlJobProperties {
-    #[serde(flatten)]
-    pub create_job_properties: CreateJobProperties,
+    pub statistics: Option<JobStatistics>,
+    #[serde(rename = "debugData", default, skip_serializing_if = "Option::is_none")]
+    pub debug_data: Option<JobDataPath>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub diagnostics: Vec<Diagnostics>,
+    #[serde(rename = "algebraFilePath", default, skip_serializing_if = "Option::is_none")]
+    pub algebra_file_path: Option<String>,
+    #[serde(rename = "totalCompilationTime", default, skip_serializing_if = "Option::is_none")]
+    pub total_compilation_time: Option<String>,
+    #[serde(rename = "totalQueuedTime", default, skip_serializing_if = "Option::is_none")]
+    pub total_queued_time: Option<String>,
+    #[serde(rename = "totalRunningTime", default, skip_serializing_if = "Option::is_none")]
+    pub total_running_time: Option<String>,
+    #[serde(rename = "totalPausedTime", default, skip_serializing_if = "Option::is_none")]
+    pub total_paused_time: Option<String>,
+    #[serde(rename = "rootProcessNodeId", default, skip_serializing_if = "Option::is_none")]
+    pub root_process_node_id: Option<String>,
+    #[serde(rename = "yarnApplicationId", default, skip_serializing_if = "Option::is_none")]
+    pub yarn_application_id: Option<String>,
+    #[serde(rename = "yarnApplicationTimeStamp", default, skip_serializing_if = "Option::is_none")]
+    pub yarn_application_time_stamp: Option<i64>,
     #[serde(rename = "compileMode", default, skip_serializing_if = "Option::is_none")]
-    pub compile_mode: Option<create_u_sql_job_properties::CompileMode>,
+    pub compile_mode: Option<u_sql_job_properties::CompileMode>,
 }
-pub mod create_u_sql_job_properties {
+pub mod u_sql_job_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CompileMode {
@@ -570,22 +586,6 @@ pub mod create_u_sql_job_properties {
         Full,
         SingleBox,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateScopeJobProperties {
-    #[serde(flatten)]
-    pub create_job_properties: CreateJobProperties,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resources: Vec<ScopeJobResource>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub notifier: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BuildJobParameters {
-    #[serde(flatten)]
-    pub base_job_parameters: BaseJobParameters,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateJobParameters {

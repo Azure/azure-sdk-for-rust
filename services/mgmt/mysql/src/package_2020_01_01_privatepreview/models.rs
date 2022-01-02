@@ -3,38 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerKeyListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ServerKey>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerKeyProperties {
-    #[serde(rename = "serverKeyType")]
-    pub server_key_type: server_key_properties::ServerKeyType,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
-    pub creation_date: Option<String>,
-}
-pub mod server_key_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ServerKeyType {
-        AzureKeyVault,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerKey {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServerKeyProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
@@ -63,4 +31,36 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerKey {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerKeyProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerKeyListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ServerKey>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerKeyProperties {
+    #[serde(rename = "serverKeyType")]
+    pub server_key_type: server_key_properties::ServerKeyType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+    #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
+    pub creation_date: Option<String>,
+}
+pub mod server_key_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ServerKeyType {
+        AzureKeyVault,
+    }
 }

@@ -3,13 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LedgerIdentityInformation {
-    #[serde(rename = "ledgerId", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_id: Option<String>,
-    #[serde(rename = "ledgerTlsCertificate")]
-    pub ledger_tls_certificate: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfidentialLedgerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ConfidentialLedgerErrorBody>,
@@ -22,4 +15,11 @@ pub struct ConfidentialLedgerErrorBody {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<ConfidentialLedgerErrorBody>>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LedgerIdentityInformation {
+    #[serde(rename = "ledgerId", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_id: Option<String>,
+    #[serde(rename = "ledgerTlsCertificate")]
+    pub ledger_tls_certificate: String,
 }

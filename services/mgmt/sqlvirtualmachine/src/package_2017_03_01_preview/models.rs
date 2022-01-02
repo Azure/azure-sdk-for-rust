@@ -3,6 +3,89 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdditionalFeaturesServerConfigurations {
+    #[serde(rename = "isRServicesEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_r_services_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutoBackupSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enable: Option<bool>,
+    #[serde(rename = "enableEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub enable_encryption: Option<bool>,
+    #[serde(rename = "retentionPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub retention_period: Option<i32>,
+    #[serde(rename = "storageAccountUrl", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_url: Option<String>,
+    #[serde(rename = "storageAccessKey", default, skip_serializing_if = "Option::is_none")]
+    pub storage_access_key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[serde(rename = "backupSystemDbs", default, skip_serializing_if = "Option::is_none")]
+    pub backup_system_dbs: Option<bool>,
+    #[serde(rename = "backupScheduleType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_schedule_type: Option<auto_backup_settings::BackupScheduleType>,
+    #[serde(rename = "fullBackupFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub full_backup_frequency: Option<auto_backup_settings::FullBackupFrequency>,
+    #[serde(rename = "fullBackupStartTime", default, skip_serializing_if = "Option::is_none")]
+    pub full_backup_start_time: Option<i32>,
+    #[serde(rename = "fullBackupWindowHours", default, skip_serializing_if = "Option::is_none")]
+    pub full_backup_window_hours: Option<i32>,
+    #[serde(rename = "logBackupFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub log_backup_frequency: Option<i32>,
+}
+pub mod auto_backup_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupScheduleType {
+        Manual,
+        Automated,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum FullBackupFrequency {
+        Daily,
+        Weekly,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutoPatchingSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enable: Option<bool>,
+    #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
+    pub day_of_week: Option<auto_patching_settings::DayOfWeek>,
+    #[serde(rename = "maintenanceWindowStartingHour", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_window_starting_hour: Option<i32>,
+    #[serde(rename = "maintenanceWindowDuration", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_window_duration: Option<i32>,
+}
+pub mod auto_patching_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DayOfWeek {
+        Monday,
+        Tuesday,
+        Wednesday,
+        Thursday,
+        Friday,
+        Saturday,
+        Sunday,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailabilityGroupListener {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AvailabilityGroupListenerProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailabilityGroupListenerListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<AvailabilityGroupListener>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailabilityGroupListenerProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -20,6 +103,19 @@ pub struct AvailabilityGroupListenerProperties {
     pub port: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultCredentialSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enable: Option<bool>,
+    #[serde(rename = "credentialName", default, skip_serializing_if = "Option::is_none")]
+    pub credential_name: Option<String>,
+    #[serde(rename = "azureKeyVaultUrl", default, skip_serializing_if = "Option::is_none")]
+    pub azure_key_vault_url: Option<String>,
+    #[serde(rename = "servicePrincipalName", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_name: Option<String>,
+    #[serde(rename = "servicePrincipalSecret", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_secret: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoadBalancerConfiguration {
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<PrivateIpAddress>,
@@ -31,48 +127,6 @@ pub struct LoadBalancerConfiguration {
     pub probe_port: Option<i32>,
     #[serde(rename = "sqlVirtualMachineInstances", default, skip_serializing_if = "Vec::is_empty")]
     pub sql_virtual_machine_instances: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateIpAddress {
-    #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
-    pub ip_address: Option<String>,
-    #[serde(rename = "subnetResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub subnet_resource_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilityGroupListener {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AvailabilityGroupListenerProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilityGroupListenerListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<AvailabilityGroupListener>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -105,6 +159,139 @@ pub struct OperationDisplay {
     pub operation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateIpAddress {
+    #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
+    pub ip_address: Option<String>,
+    #[serde(rename = "subnetResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub subnet_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<resource_identity::Type>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+pub mod resource_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlStorageSettings {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub luns: Vec<i32>,
+    #[serde(rename = "defaultFilePath", default, skip_serializing_if = "Option::is_none")]
+    pub default_file_path: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerConfigurationsManagementSettings {
+    #[serde(rename = "sqlConnectivityUpdateSettings", default, skip_serializing_if = "Option::is_none")]
+    pub sql_connectivity_update_settings: Option<SqlConnectivityUpdateSettings>,
+    #[serde(rename = "sqlWorkloadTypeUpdateSettings", default, skip_serializing_if = "Option::is_none")]
+    pub sql_workload_type_update_settings: Option<SqlWorkloadTypeUpdateSettings>,
+    #[serde(rename = "sqlStorageUpdateSettings", default, skip_serializing_if = "Option::is_none")]
+    pub sql_storage_update_settings: Option<SqlStorageUpdateSettings>,
+    #[serde(
+        rename = "additionalFeaturesServerConfigurations",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub additional_features_server_configurations: Option<AdditionalFeaturesServerConfigurations>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlConnectivityUpdateSettings {
+    #[serde(rename = "connectivityType", default, skip_serializing_if = "Option::is_none")]
+    pub connectivity_type: Option<sql_connectivity_update_settings::ConnectivityType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<i32>,
+    #[serde(rename = "sqlAuthUpdateUserName", default, skip_serializing_if = "Option::is_none")]
+    pub sql_auth_update_user_name: Option<String>,
+    #[serde(rename = "sqlAuthUpdatePassword", default, skip_serializing_if = "Option::is_none")]
+    pub sql_auth_update_password: Option<String>,
+}
+pub mod sql_connectivity_update_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConnectivityType {
+        #[serde(rename = "LOCAL")]
+        Local,
+        #[serde(rename = "PRIVATE")]
+        Private,
+        #[serde(rename = "PUBLIC")]
+        Public,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlStorageUpdateSettings {
+    #[serde(rename = "diskCount", default, skip_serializing_if = "Option::is_none")]
+    pub disk_count: Option<i32>,
+    #[serde(rename = "startingDeviceId", default, skip_serializing_if = "Option::is_none")]
+    pub starting_device_id: Option<i32>,
+    #[serde(rename = "diskConfigurationType", default, skip_serializing_if = "Option::is_none")]
+    pub disk_configuration_type: Option<sql_storage_update_settings::DiskConfigurationType>,
+}
+pub mod sql_storage_update_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DiskConfigurationType {
+        #[serde(rename = "NEW")]
+        New,
+        #[serde(rename = "EXTEND")]
+        Extend,
+        #[serde(rename = "ADD")]
+        Add,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlVirtualMachine {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ResourceIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SqlVirtualMachineProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlVirtualMachineGroup {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SqlVirtualMachineGroupProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlVirtualMachineGroupListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SqlVirtualMachineGroup>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlVirtualMachineGroupProperties {
@@ -146,50 +333,9 @@ pub mod sql_virtual_machine_group_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WsfcDomainProfile {
-    #[serde(rename = "domainFqdn", default, skip_serializing_if = "Option::is_none")]
-    pub domain_fqdn: Option<String>,
-    #[serde(rename = "ouPath", default, skip_serializing_if = "Option::is_none")]
-    pub ou_path: Option<String>,
-    #[serde(rename = "clusterBootstrapAccount", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_bootstrap_account: Option<String>,
-    #[serde(rename = "clusterOperatorAccount", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_operator_account: Option<String>,
-    #[serde(rename = "sqlServiceAccount", default, skip_serializing_if = "Option::is_none")]
-    pub sql_service_account: Option<String>,
-    #[serde(rename = "fileShareWitnessPath", default, skip_serializing_if = "Option::is_none")]
-    pub file_share_witness_path: Option<String>,
-    #[serde(rename = "storageAccountUrl", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_url: Option<String>,
-    #[serde(rename = "storageAccountPrimaryKey", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_primary_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlVirtualMachineGroup {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SqlVirtualMachineGroupProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlVirtualMachineGroupUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlVirtualMachineGroupListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SqlVirtualMachineGroup>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlVirtualMachineListResult {
@@ -197,22 +343,6 @@ pub struct SqlVirtualMachineListResult {
     pub value: Vec<SqlVirtualMachine>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<resource_identity::Type>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-pub mod resource_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlVirtualMachineProperties {
@@ -274,128 +404,9 @@ pub mod sql_virtual_machine_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WsfcDomainCredentials {
-    #[serde(rename = "clusterBootstrapAccountPassword", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_bootstrap_account_password: Option<String>,
-    #[serde(rename = "clusterOperatorAccountPassword", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_operator_account_password: Option<String>,
-    #[serde(rename = "sqlServiceAccountPassword", default, skip_serializing_if = "Option::is_none")]
-    pub sql_service_account_password: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoPatchingSettings {
+pub struct SqlVirtualMachineUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enable: Option<bool>,
-    #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
-    pub day_of_week: Option<auto_patching_settings::DayOfWeek>,
-    #[serde(rename = "maintenanceWindowStartingHour", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_window_starting_hour: Option<i32>,
-    #[serde(rename = "maintenanceWindowDuration", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_window_duration: Option<i32>,
-}
-pub mod auto_patching_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DayOfWeek {
-        Monday,
-        Tuesday,
-        Wednesday,
-        Thursday,
-        Friday,
-        Saturday,
-        Sunday,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoBackupSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enable: Option<bool>,
-    #[serde(rename = "enableEncryption", default, skip_serializing_if = "Option::is_none")]
-    pub enable_encryption: Option<bool>,
-    #[serde(rename = "retentionPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub retention_period: Option<i32>,
-    #[serde(rename = "storageAccountUrl", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_url: Option<String>,
-    #[serde(rename = "storageAccessKey", default, skip_serializing_if = "Option::is_none")]
-    pub storage_access_key: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-    #[serde(rename = "backupSystemDbs", default, skip_serializing_if = "Option::is_none")]
-    pub backup_system_dbs: Option<bool>,
-    #[serde(rename = "backupScheduleType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_schedule_type: Option<auto_backup_settings::BackupScheduleType>,
-    #[serde(rename = "fullBackupFrequency", default, skip_serializing_if = "Option::is_none")]
-    pub full_backup_frequency: Option<auto_backup_settings::FullBackupFrequency>,
-    #[serde(rename = "fullBackupStartTime", default, skip_serializing_if = "Option::is_none")]
-    pub full_backup_start_time: Option<i32>,
-    #[serde(rename = "fullBackupWindowHours", default, skip_serializing_if = "Option::is_none")]
-    pub full_backup_window_hours: Option<i32>,
-    #[serde(rename = "logBackupFrequency", default, skip_serializing_if = "Option::is_none")]
-    pub log_backup_frequency: Option<i32>,
-}
-pub mod auto_backup_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupScheduleType {
-        Manual,
-        Automated,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum FullBackupFrequency {
-        Daily,
-        Weekly,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultCredentialSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enable: Option<bool>,
-    #[serde(rename = "credentialName", default, skip_serializing_if = "Option::is_none")]
-    pub credential_name: Option<String>,
-    #[serde(rename = "azureKeyVaultUrl", default, skip_serializing_if = "Option::is_none")]
-    pub azure_key_vault_url: Option<String>,
-    #[serde(rename = "servicePrincipalName", default, skip_serializing_if = "Option::is_none")]
-    pub service_principal_name: Option<String>,
-    #[serde(rename = "servicePrincipalSecret", default, skip_serializing_if = "Option::is_none")]
-    pub service_principal_secret: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerConfigurationsManagementSettings {
-    #[serde(rename = "sqlConnectivityUpdateSettings", default, skip_serializing_if = "Option::is_none")]
-    pub sql_connectivity_update_settings: Option<SqlConnectivityUpdateSettings>,
-    #[serde(rename = "sqlWorkloadTypeUpdateSettings", default, skip_serializing_if = "Option::is_none")]
-    pub sql_workload_type_update_settings: Option<SqlWorkloadTypeUpdateSettings>,
-    #[serde(rename = "sqlStorageUpdateSettings", default, skip_serializing_if = "Option::is_none")]
-    pub sql_storage_update_settings: Option<SqlStorageUpdateSettings>,
-    #[serde(
-        rename = "additionalFeaturesServerConfigurations",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub additional_features_server_configurations: Option<AdditionalFeaturesServerConfigurations>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlConnectivityUpdateSettings {
-    #[serde(rename = "connectivityType", default, skip_serializing_if = "Option::is_none")]
-    pub connectivity_type: Option<sql_connectivity_update_settings::ConnectivityType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub port: Option<i32>,
-    #[serde(rename = "sqlAuthUpdateUserName", default, skip_serializing_if = "Option::is_none")]
-    pub sql_auth_update_user_name: Option<String>,
-    #[serde(rename = "sqlAuthUpdatePassword", default, skip_serializing_if = "Option::is_none")]
-    pub sql_auth_update_password: Option<String>,
-}
-pub mod sql_connectivity_update_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ConnectivityType {
-        #[serde(rename = "LOCAL")]
-        Local,
-        #[serde(rename = "PRIVATE")]
-        Private,
-        #[serde(rename = "PUBLIC")]
-        Public,
-    }
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlWorkloadTypeUpdateSettings {
@@ -413,32 +424,6 @@ pub mod sql_workload_type_update_settings {
         #[serde(rename = "DW")]
         Dw,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlStorageUpdateSettings {
-    #[serde(rename = "diskCount", default, skip_serializing_if = "Option::is_none")]
-    pub disk_count: Option<i32>,
-    #[serde(rename = "startingDeviceId", default, skip_serializing_if = "Option::is_none")]
-    pub starting_device_id: Option<i32>,
-    #[serde(rename = "diskConfigurationType", default, skip_serializing_if = "Option::is_none")]
-    pub disk_configuration_type: Option<sql_storage_update_settings::DiskConfigurationType>,
-}
-pub mod sql_storage_update_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DiskConfigurationType {
-        #[serde(rename = "NEW")]
-        New,
-        #[serde(rename = "EXTEND")]
-        Extend,
-        #[serde(rename = "ADD")]
-        Add,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdditionalFeaturesServerConfigurations {
-    #[serde(rename = "isRServicesEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_r_services_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageConfigurationSettings {
@@ -475,23 +460,38 @@ pub mod storage_configuration_settings {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlStorageSettings {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub luns: Vec<i32>,
-    #[serde(rename = "defaultFilePath", default, skip_serializing_if = "Option::is_none")]
-    pub default_file_path: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlVirtualMachine {
+pub struct TrackedResource {
     #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<ResourceIdentity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SqlVirtualMachineProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlVirtualMachineUpdate {
+    pub resource: Resource,
+    pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WsfcDomainCredentials {
+    #[serde(rename = "clusterBootstrapAccountPassword", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_bootstrap_account_password: Option<String>,
+    #[serde(rename = "clusterOperatorAccountPassword", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_operator_account_password: Option<String>,
+    #[serde(rename = "sqlServiceAccountPassword", default, skip_serializing_if = "Option::is_none")]
+    pub sql_service_account_password: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WsfcDomainProfile {
+    #[serde(rename = "domainFqdn", default, skip_serializing_if = "Option::is_none")]
+    pub domain_fqdn: Option<String>,
+    #[serde(rename = "ouPath", default, skip_serializing_if = "Option::is_none")]
+    pub ou_path: Option<String>,
+    #[serde(rename = "clusterBootstrapAccount", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_bootstrap_account: Option<String>,
+    #[serde(rename = "clusterOperatorAccount", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_operator_account: Option<String>,
+    #[serde(rename = "sqlServiceAccount", default, skip_serializing_if = "Option::is_none")]
+    pub sql_service_account: Option<String>,
+    #[serde(rename = "fileShareWitnessPath", default, skip_serializing_if = "Option::is_none")]
+    pub file_share_witness_path: Option<String>,
+    #[serde(rename = "storageAccountUrl", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_url: Option<String>,
+    #[serde(rename = "storageAccountPrimaryKey", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_primary_key: Option<String>,
 }

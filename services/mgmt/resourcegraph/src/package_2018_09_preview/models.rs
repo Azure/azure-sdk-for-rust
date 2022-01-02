@@ -3,22 +3,65 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryRequest {
-    pub subscriptions: Vec<String>,
-    pub query: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub options: Option<QueryRequestOptions>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub facets: Vec<FacetRequest>,
+pub struct Column {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: ColumnDataType,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryRequestOptions {
-    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
-    pub skip_token: Option<String>,
-    #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
-    pub top: Option<i32>,
-    #[serde(rename = "$skip", default, skip_serializing_if = "Option::is_none")]
-    pub skip: Option<i32>,
+pub enum ColumnDataType {
+    #[serde(rename = "string")]
+    String,
+    #[serde(rename = "integer")]
+    Integer,
+    #[serde(rename = "number")]
+    Number,
+    #[serde(rename = "boolean")]
+    Boolean,
+    #[serde(rename = "object")]
+    Object,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DateTimeInterval {
+    pub start: String,
+    pub end: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Error {
+    pub code: String,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetails {
+    pub code: String,
+    pub message: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorFieldContract {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error: Error,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Facet {
+    pub expression: String,
+    #[serde(rename = "resultType")]
+    pub result_type: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FacetError {
+    #[serde(flatten)]
+    pub facet: Facet,
+    pub errors: Vec<ErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetRequest {
@@ -48,60 +91,6 @@ pub mod facet_request_options {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryResponse {
-    #[serde(rename = "totalRecords")]
-    pub total_records: i64,
-    pub count: i64,
-    #[serde(rename = "resultTruncated")]
-    pub result_truncated: query_response::ResultTruncated,
-    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
-    pub skip_token: Option<String>,
-    pub data: Table,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub facets: Vec<Facet>,
-}
-pub mod query_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResultTruncated {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Table {
-    pub columns: Vec<Column>,
-    pub rows: Vec<Row>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Column {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: ColumnDataType,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ColumnDataType {
-    #[serde(rename = "string")]
-    String,
-    #[serde(rename = "integer")]
-    Integer,
-    #[serde(rename = "number")]
-    Number,
-    #[serde(rename = "boolean")]
-    Boolean,
-    #[serde(rename = "object")]
-    Object,
-}
-pub type Row = Vec<serde_json::Value>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Facet {
-    pub expression: String,
-    #[serde(rename = "resultType")]
-    pub result_type: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetResult {
     #[serde(flatten)]
     pub facet: Facet,
@@ -111,77 +100,61 @@ pub struct FacetResult {
     pub data: Table,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FacetError {
-    #[serde(flatten)]
-    pub facet: Facet,
-    pub errors: Vec<ErrorDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceChangesRequestParameters {
-    #[serde(rename = "resourceId")]
-    pub resource_id: String,
-    pub interval: serde_json::Value,
-    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
-    pub skip_token: Option<String>,
-    #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
-    pub top: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceChangeList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub changes: Vec<ResourceChangeData>,
-    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
-    pub skip_token: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceChangeData {
-    #[serde(rename = "changeId")]
-    pub change_id: String,
-    #[serde(rename = "beforeSnapshot")]
-    pub before_snapshot: serde_json::Value,
-    #[serde(rename = "afterSnapshot")]
-    pub after_snapshot: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSnapshotData {
-    pub timestamp: String,
+pub struct GraphQueryError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub content: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceChangeDetailsRequestParameters {
-    #[serde(rename = "resourceId")]
-    pub resource_id: String,
-    #[serde(rename = "changeId")]
-    pub change_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DateTimeInterval {
-    pub start: String,
-    pub end: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: Error,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    pub code: String,
-    pub message: String,
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetails>,
+    pub details: Vec<ErrorFieldContract>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetails {
-    pub code: String,
-    pub message: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
+pub struct GraphQueryListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GraphQueryResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GraphQueryProperties {
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
+    pub time_modified: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    pub query: String,
+    #[serde(rename = "resultKind", default, skip_serializing_if = "Option::is_none")]
+    pub result_kind: Option<graph_query_properties::ResultKind>,
+}
+pub mod graph_query_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ResultKind {
+        #[serde(rename = "basic")]
+        Basic,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GraphQueryPropertiesUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GraphQueryResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GraphQueryProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GraphQueryUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GraphQueryPropertiesUpdateParameters>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -207,6 +180,54 @@ pub mod operation {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryRequest {
+    pub subscriptions: Vec<String>,
+    pub query: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub options: Option<QueryRequestOptions>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub facets: Vec<FacetRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryRequestOptions {
+    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
+    pub skip_token: Option<String>,
+    #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
+    pub top: Option<i32>,
+    #[serde(rename = "$skip", default, skip_serializing_if = "Option::is_none")]
+    pub skip: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryResponse {
+    #[serde(rename = "totalRecords")]
+    pub total_records: i64,
+    pub count: i64,
+    #[serde(rename = "resultTruncated")]
+    pub result_truncated: query_response::ResultTruncated,
+    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
+    pub skip_token: Option<String>,
+    pub data: Table,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub facets: Vec<Facet>,
+}
+pub mod query_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ResultTruncated {
+        #[serde(rename = "true")]
+        True,
+        #[serde(rename = "false")]
+        False,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -222,68 +243,47 @@ pub struct Resource {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GraphQueryListResult {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct ResourceChangeData {
+    #[serde(rename = "changeId")]
+    pub change_id: String,
+    #[serde(rename = "beforeSnapshot")]
+    pub before_snapshot: serde_json::Value,
+    #[serde(rename = "afterSnapshot")]
+    pub after_snapshot: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceChangeDetailsRequestParameters {
+    #[serde(rename = "resourceId")]
+    pub resource_id: String,
+    #[serde(rename = "changeId")]
+    pub change_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceChangeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<GraphQueryResource>,
+    pub changes: Vec<ResourceChangeData>,
+    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
+    pub skip_token: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GraphQueryResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GraphQueryProperties>,
+pub struct ResourceChangesRequestParameters {
+    #[serde(rename = "resourceId")]
+    pub resource_id: String,
+    pub interval: serde_json::Value,
+    #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
+    pub skip_token: Option<String>,
+    #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
+    pub top: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GraphQueryProperties {
-    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
-    pub time_modified: Option<String>,
+pub struct ResourceSnapshotData {
+    pub timestamp: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    pub query: String,
-    #[serde(rename = "resultKind", default, skip_serializing_if = "Option::is_none")]
-    pub result_kind: Option<graph_query_properties::ResultKind>,
+    pub content: Option<serde_json::Value>,
 }
-pub mod graph_query_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResultKind {
-        #[serde(rename = "basic")]
-        Basic,
-    }
-}
+pub type Row = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GraphQueryUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GraphQueryPropertiesUpdateParameters>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GraphQueryPropertiesUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub query: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorFieldContract {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GraphQueryError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorFieldContract>,
+pub struct Table {
+    pub columns: Vec<Column>,
+    pub rows: Vec<Row>,
 }

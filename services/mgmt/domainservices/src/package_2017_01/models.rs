@@ -3,19 +3,31 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+pub struct DomainSecuritySettings {
+    #[serde(rename = "ntlmV1", default, skip_serializing_if = "Option::is_none")]
+    pub ntlm_v1: Option<domain_security_settings::NtlmV1>,
+    #[serde(rename = "tlsV1", default, skip_serializing_if = "Option::is_none")]
+    pub tls_v1: Option<domain_security_settings::TlsV1>,
+    #[serde(rename = "syncNtlmPasswords", default, skip_serializing_if = "Option::is_none")]
+    pub sync_ntlm_passwords: Option<domain_security_settings::SyncNtlmPasswords>,
+}
+pub mod domain_security_settings {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum NtlmV1 {
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum TlsV1 {
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SyncNtlmPasswords {
+        Enabled,
+        Disabled,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainService {
@@ -23,6 +35,13 @@ pub struct DomainService {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DomainServiceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DomainServiceListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DomainService>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DomainServiceProperties {
@@ -64,6 +83,32 @@ pub mod domain_service_properties {
         Enabled,
         Disabled,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HealthAlert {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub issue: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub raised: Option<String>,
+    #[serde(rename = "lastDetected", default, skip_serializing_if = "Option::is_none")]
+    pub last_detected: Option<String>,
+    #[serde(rename = "resolutionUri", default, skip_serializing_if = "Option::is_none")]
+    pub resolution_uri: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HealthMonitor {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LdapsSettings {
@@ -120,71 +165,15 @@ pub mod notification_settings {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DomainSecuritySettings {
-    #[serde(rename = "ntlmV1", default, skip_serializing_if = "Option::is_none")]
-    pub ntlm_v1: Option<domain_security_settings::NtlmV1>,
-    #[serde(rename = "tlsV1", default, skip_serializing_if = "Option::is_none")]
-    pub tls_v1: Option<domain_security_settings::TlsV1>,
-    #[serde(rename = "syncNtlmPasswords", default, skip_serializing_if = "Option::is_none")]
-    pub sync_ntlm_passwords: Option<domain_security_settings::SyncNtlmPasswords>,
-}
-pub mod domain_security_settings {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum NtlmV1 {
-        Enabled,
-        Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TlsV1 {
-        Enabled,
-        Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SyncNtlmPasswords {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DomainServiceListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DomainService>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HealthMonitor {
+pub struct OperationDisplayInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    pub operation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HealthAlert {
+    pub provider: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub issue: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub raised: Option<String>,
-    #[serde(rename = "lastDetected", default, skip_serializing_if = "Option::is_none")]
-    pub last_detected: Option<String>,
-    #[serde(rename = "resolutionUri", default, skip_serializing_if = "Option::is_none")]
-    pub resolution_uri: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationEntityListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<OperationEntity>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub resource: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationEntity {
@@ -196,13 +185,24 @@ pub struct OperationEntity {
     pub origin: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationDisplayInfo {
+pub struct OperationEntityListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<OperationEntity>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
+    pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
 }

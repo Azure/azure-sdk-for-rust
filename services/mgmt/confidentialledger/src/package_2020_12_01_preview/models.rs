@@ -3,14 +3,111 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AadBasedSecurityPrincipal {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_role_name: Option<LedgerRoleName>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CertBasedSecurityPrincipal {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cert: Option<String>,
+    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_role_name: Option<LedgerRoleName>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfidentialLedger {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub location: Location,
+    #[serde(flatten)]
+    pub tags: Tags,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LedgerProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfidentialLedgerList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ConfidentialLedger>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ConfidentialLedgerType {
+    Unknown,
+    Public,
+    Private,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LedgerProperties {
+    #[serde(rename = "ledgerName", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_name: Option<String>,
+    #[serde(rename = "ledgerUri", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_uri: Option<String>,
+    #[serde(rename = "identityServiceUri", default, skip_serializing_if = "Option::is_none")]
+    pub identity_service_uri: Option<String>,
+    #[serde(rename = "ledgerInternalNamespace", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_internal_namespace: Option<String>,
+    #[serde(rename = "ledgerStorageAccount", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_storage_account: Option<String>,
+    #[serde(rename = "ledgerType", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_type: Option<ConfidentialLedgerType>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "aadBasedSecurityPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    pub aad_based_security_principals: Vec<AadBasedSecurityPrincipal>,
+    #[serde(rename = "certBasedSecurityPrincipals", default, skip_serializing_if = "Vec::is_empty")]
+    pub cert_based_security_principals: Vec<CertBasedSecurityPrincipal>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum LedgerRoleName {
+    Reader,
+    Contributor,
+    Administrator,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tags {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+pub enum ProvisioningState {
+    Unknown,
+    Succeeded,
+    Failed,
+    Canceled,
+    Creating,
+    Deleting,
+    Updating,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -22,6 +119,38 @@ pub struct Resource {
     pub type_: Option<String>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceProviderOperationDefinition {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<ResourceProviderOperationDisplay>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceProviderOperationDisplay {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceProviderOperationList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ResourceProviderOperationDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tags {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
@@ -54,133 +183,4 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceProviderOperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ResourceProviderOperationDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceProviderOperationDefinition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
-    pub is_data_action: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<ResourceProviderOperationDisplay>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceProviderOperationDisplay {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ConfidentialLedgerType {
-    Unknown,
-    Public,
-    Private,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProvisioningState {
-    Unknown,
-    Succeeded,
-    Failed,
-    Canceled,
-    Creating,
-    Deleting,
-    Updating,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum LedgerRoleName {
-    Reader,
-    Contributor,
-    Administrator,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CertBasedSecurityPrincipal {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cert: Option<String>,
-    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_role_name: Option<LedgerRoleName>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AadBasedSecurityPrincipal {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_role_name: Option<LedgerRoleName>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LedgerProperties {
-    #[serde(rename = "ledgerName", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_name: Option<String>,
-    #[serde(rename = "ledgerUri", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_uri: Option<String>,
-    #[serde(rename = "identityServiceUri", default, skip_serializing_if = "Option::is_none")]
-    pub identity_service_uri: Option<String>,
-    #[serde(rename = "ledgerInternalNamespace", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_internal_namespace: Option<String>,
-    #[serde(rename = "ledgerStorageAccount", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_storage_account: Option<String>,
-    #[serde(rename = "ledgerType", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_type: Option<ConfidentialLedgerType>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "aadBasedSecurityPrincipals", default, skip_serializing_if = "Vec::is_empty")]
-    pub aad_based_security_principals: Vec<AadBasedSecurityPrincipal>,
-    #[serde(rename = "certBasedSecurityPrincipals", default, skip_serializing_if = "Vec::is_empty")]
-    pub cert_based_security_principals: Vec<CertBasedSecurityPrincipal>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfidentialLedger {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub location: Location,
-    #[serde(flatten)]
-    pub tags: Tags,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LedgerProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfidentialLedgerList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ConfidentialLedger>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetail>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
 }

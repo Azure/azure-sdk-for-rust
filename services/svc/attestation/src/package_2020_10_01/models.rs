@@ -3,122 +3,36 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
+pub struct AttestOpenEnclaveRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<CloudErrorBody>,
+    pub report: Option<String>,
+    #[serde(rename = "runtimeData", default, skip_serializing_if = "Option::is_none")]
+    pub runtime_data: Option<RuntimeData>,
+    #[serde(rename = "initTimeData", default, skip_serializing_if = "Option::is_none")]
+    pub init_time_data: Option<InitTimeData>,
+    #[serde(rename = "draftPolicyForAttestation", default, skip_serializing_if = "Option::is_none")]
+    pub draft_policy_for_attestation: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
+pub struct AttestSgxEnclaveRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub quote: Option<String>,
+    #[serde(rename = "runtimeData", default, skip_serializing_if = "Option::is_none")]
+    pub runtime_data: Option<RuntimeData>,
+    #[serde(rename = "initTimeData", default, skip_serializing_if = "Option::is_none")]
+    pub init_time_data: Option<InitTimeData>,
+    #[serde(rename = "draftPolicyForAttestation", default, skip_serializing_if = "Option::is_none")]
+    pub draft_policy_for_attestation: Option<String>,
 }
-pub type JsonWebToken = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttestationCertificateManagementBody {
     #[serde(rename = "policyCertificate", default, skip_serializing_if = "Option::is_none")]
     pub policy_certificate: Option<JsonWebKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JsonWebKey {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub alg: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub crv: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub d: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dp: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dq: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub e: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub k: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kid: Option<String>,
-    pub kty: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub n: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub p: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub q: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub qi: Option<String>,
-    #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
-    pub use_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub x: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub x5c: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub y: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyCertificatesResponse {
+pub struct AttestationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<JsonWebToken>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyCertificatesResult {
-    #[serde(rename = "x-ms-policy-certificates", default, skip_serializing_if = "Option::is_none")]
-    pub x_ms_policy_certificates: Option<JsonWebKeySet>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JsonWebKeySet {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub keys: Vec<JsonWebKey>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyCertificatesModifyResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token: Option<JsonWebToken>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyCertificatesModificationResult {
-    #[serde(rename = "x-ms-certificate-thumbprint", default, skip_serializing_if = "Option::is_none")]
-    pub x_ms_certificate_thumbprint: Option<String>,
-    #[serde(rename = "x-ms-policycertificates-result", default, skip_serializing_if = "Option::is_none")]
-    pub x_ms_policycertificates_result: Option<policy_certificates_modification_result::XMsPolicycertificatesResult>,
-}
-pub mod policy_certificates_modification_result {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum XMsPolicycertificatesResult {
-        IsPresent,
-        IsAbsent,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StoredAttestationPolicy {
-    #[serde(rename = "AttestationPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub attestation_policy: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token: Option<JsonWebToken>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyResult {
-    #[serde(rename = "x-ms-policy-result", default, skip_serializing_if = "Option::is_none")]
-    pub x_ms_policy_result: Option<policy_result::XMsPolicyResult>,
-    #[serde(rename = "x-ms-policy-token-hash", default, skip_serializing_if = "Option::is_none")]
-    pub x_ms_policy_token_hash: Option<String>,
-    #[serde(rename = "x-ms-policy-signer", default, skip_serializing_if = "Option::is_none")]
-    pub x_ms_policy_signer: Option<JsonWebKey>,
-    #[serde(rename = "x-ms-policy", default, skip_serializing_if = "Option::is_none")]
-    pub x_ms_policy: Option<JsonWebToken>,
-}
-pub mod policy_result {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum XMsPolicyResult {
-        Updated,
-        Removed,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttestationResult {
@@ -192,22 +106,22 @@ pub struct AttestationResult {
     pub rp_data: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AttestationResponse {
+pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token: Option<JsonWebToken>,
+    pub error: Option<CloudErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DataType {
     Binary,
     #[serde(rename = "JSON")]
     Json,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RuntimeData {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub data: Option<String>,
-    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
-    pub data_type: Option<DataType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InitTimeData {
@@ -217,26 +131,112 @@ pub struct InitTimeData {
     pub data_type: Option<DataType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AttestSgxEnclaveRequest {
+pub struct JsonWebKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub quote: Option<String>,
-    #[serde(rename = "runtimeData", default, skip_serializing_if = "Option::is_none")]
-    pub runtime_data: Option<RuntimeData>,
-    #[serde(rename = "initTimeData", default, skip_serializing_if = "Option::is_none")]
-    pub init_time_data: Option<InitTimeData>,
-    #[serde(rename = "draftPolicyForAttestation", default, skip_serializing_if = "Option::is_none")]
-    pub draft_policy_for_attestation: Option<String>,
+    pub alg: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub crv: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub d: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dq: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub e: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub k: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kid: Option<String>,
+    pub kty: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub n: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub p: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub q: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub qi: Option<String>,
+    #[serde(rename = "use", default, skip_serializing_if = "Option::is_none")]
+    pub use_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub x5c: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AttestOpenEnclaveRequest {
+pub struct JsonWebKeySet {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub keys: Vec<JsonWebKey>,
+}
+pub type JsonWebToken = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyCertificatesModificationResult {
+    #[serde(rename = "x-ms-certificate-thumbprint", default, skip_serializing_if = "Option::is_none")]
+    pub x_ms_certificate_thumbprint: Option<String>,
+    #[serde(rename = "x-ms-policycertificates-result", default, skip_serializing_if = "Option::is_none")]
+    pub x_ms_policycertificates_result: Option<policy_certificates_modification_result::XMsPolicycertificatesResult>,
+}
+pub mod policy_certificates_modification_result {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum XMsPolicycertificatesResult {
+        IsPresent,
+        IsAbsent,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyCertificatesModifyResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub report: Option<String>,
-    #[serde(rename = "runtimeData", default, skip_serializing_if = "Option::is_none")]
-    pub runtime_data: Option<RuntimeData>,
-    #[serde(rename = "initTimeData", default, skip_serializing_if = "Option::is_none")]
-    pub init_time_data: Option<InitTimeData>,
-    #[serde(rename = "draftPolicyForAttestation", default, skip_serializing_if = "Option::is_none")]
-    pub draft_policy_for_attestation: Option<String>,
+    pub token: Option<JsonWebToken>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyCertificatesResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<JsonWebToken>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyCertificatesResult {
+    #[serde(rename = "x-ms-policy-certificates", default, skip_serializing_if = "Option::is_none")]
+    pub x_ms_policy_certificates: Option<JsonWebKeySet>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<JsonWebToken>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PolicyResult {
+    #[serde(rename = "x-ms-policy-result", default, skip_serializing_if = "Option::is_none")]
+    pub x_ms_policy_result: Option<policy_result::XMsPolicyResult>,
+    #[serde(rename = "x-ms-policy-token-hash", default, skip_serializing_if = "Option::is_none")]
+    pub x_ms_policy_token_hash: Option<String>,
+    #[serde(rename = "x-ms-policy-signer", default, skip_serializing_if = "Option::is_none")]
+    pub x_ms_policy_signer: Option<JsonWebKey>,
+    #[serde(rename = "x-ms-policy", default, skip_serializing_if = "Option::is_none")]
+    pub x_ms_policy: Option<JsonWebToken>,
+}
+pub mod policy_result {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum XMsPolicyResult {
+        Updated,
+        Removed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RuntimeData {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
+    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
+    pub data_type: Option<DataType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StoredAttestationPolicy {
+    #[serde(rename = "AttestationPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub attestation_policy: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestationRequest {

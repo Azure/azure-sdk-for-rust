@@ -3,20 +3,15 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct AzureResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorInfo {
-    pub code: String,
-    pub message: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetail>,
+    pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<ErrorInfo>>,
-    #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
-    pub additional_properties: Option<serde_json::Value>,
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
@@ -32,99 +27,20 @@ pub struct ErrorDetail {
     pub additional_properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryPacksResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TagsResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsQueryPack {
-    #[serde(flatten)]
-    pub query_packs_resource: QueryPacksResource,
-    pub properties: LogAnalyticsQueryPackProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsQueryPackProperties {
-    #[serde(rename = "queryPackId", default, skip_serializing_if = "Option::is_none")]
-    pub query_pack_id: Option<String>,
-    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
-    pub time_created: Option<String>,
-    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
-    pub time_modified: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsQueryPackListResult {
-    pub value: Vec<LogAnalyticsQueryPack>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
-    pub is_data_action: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<OperationDisplay>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationDisplay {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
+pub struct ErrorInfo {
+    pub code: String,
+    pub message: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub details: Vec<ErrorDetail>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Box<Option<ErrorInfo>>,
+    #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
+    pub additional_properties: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourceProperties {
+pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<IdentityType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<IdentityType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
+    pub error: Option<ErrorInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IdentityType {
@@ -138,11 +54,40 @@ pub enum IdentityType {
     Key,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogAnalyticsQueryPack {
+    #[serde(flatten)]
+    pub query_packs_resource: QueryPacksResource,
+    pub properties: LogAnalyticsQueryPackProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogAnalyticsQueryPackListResult {
+    pub value: Vec<LogAnalyticsQueryPack>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogAnalyticsQueryPackProperties {
+    #[serde(rename = "queryPackId", default, skip_serializing_if = "Option::is_none")]
+    pub query_pack_id: Option<String>,
+    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
+    pub time_created: Option<String>,
+    #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
+    pub time_modified: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackQuery {
     #[serde(flatten)]
     pub azure_resource_properties: AzureResourceProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogAnalyticsQueryPackQueryProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogAnalyticsQueryPackQueryListResult {
+    pub value: Vec<LogAnalyticsQueryPackQuery>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackQueryProperties {
@@ -198,8 +143,63 @@ pub mod log_analytics_query_pack_query_search_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsQueryPackQueryListResult {
-    pub value: Vec<LogAnalyticsQueryPackQuery>,
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<OperationDisplay>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDisplay {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryPacksResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<IdentityType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<IdentityType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TagsResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }

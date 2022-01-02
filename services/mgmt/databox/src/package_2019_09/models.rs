@@ -88,6 +88,17 @@ pub struct CancellationReason {
     pub reason: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContactDetails {
     #[serde(rename = "contactName")]
     pub contact_name: String,
@@ -147,6 +158,11 @@ pub mod copy_progress {
         StorageAccount,
         ManagedDisk,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateJobValidations {
+    #[serde(flatten)]
+    pub validation_request: ValidationRequest,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateOrderLimitForSubscriptionValidationRequest {
@@ -300,13 +316,6 @@ pub struct DataBoxJobDetails {
     pub device_password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataboxJobSecrets {
-    #[serde(flatten)]
-    pub job_secrets: JobSecrets,
-    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
-    pub pod_secrets: Vec<DataBoxSecret>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxScheduleAvailabilityRequest {
     #[serde(flatten)]
     pub schedule_availability_request: ScheduleAvailabilityRequest,
@@ -347,6 +356,13 @@ pub mod data_destination_details_validation_response_properties {
         Invalid,
         Skipped,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataboxJobSecrets {
+    #[serde(flatten)]
+    pub job_secrets: JobSecrets,
+    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    pub pod_secrets: Vec<DataBoxSecret>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DcAccessSecurityCode {
@@ -465,66 +481,6 @@ pub mod job_details {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ShippingAddress {
-    #[serde(rename = "streetAddress1")]
-    pub street_address1: String,
-    #[serde(rename = "streetAddress2", default, skip_serializing_if = "Option::is_none")]
-    pub street_address2: Option<String>,
-    #[serde(rename = "streetAddress3", default, skip_serializing_if = "Option::is_none")]
-    pub street_address3: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub city: Option<String>,
-    #[serde(rename = "stateOrProvince", default, skip_serializing_if = "Option::is_none")]
-    pub state_or_province: Option<String>,
-    pub country: String,
-    #[serde(rename = "postalCode")]
-    pub postal_code: String,
-    #[serde(rename = "zipExtendedCode", default, skip_serializing_if = "Option::is_none")]
-    pub zip_extended_code: Option<String>,
-    #[serde(rename = "companyName", default, skip_serializing_if = "Option::is_none")]
-    pub company_name: Option<String>,
-    #[serde(rename = "addressType", default, skip_serializing_if = "Option::is_none")]
-    pub address_type: Option<shipping_address::AddressType>,
-}
-pub mod shipping_address {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AddressType {
-        None,
-        Residential,
-        Commercial,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PackageShippingDetails {
-    #[serde(rename = "carrierName", default, skip_serializing_if = "Option::is_none")]
-    pub carrier_name: Option<String>,
-    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
-    pub tracking_id: Option<String>,
-    #[serde(rename = "trackingUrl", default, skip_serializing_if = "Option::is_none")]
-    pub tracking_url: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Preferences {
-    #[serde(rename = "preferredDataCenterRegion", default, skip_serializing_if = "Vec::is_empty")]
-    pub preferred_data_center_region: Vec<String>,
-    #[serde(rename = "transportPreferences", default, skip_serializing_if = "Option::is_none")]
-    pub transport_preferences: Option<TransportPreferences>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransportPreferences {
-    #[serde(rename = "preferredShipmentType")]
-    pub preferred_shipment_type: transport_preferences::PreferredShipmentType,
-}
-pub mod transport_preferences {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PreferredShipmentType {
-        CustomerManaged,
-        MicrosoftManaged,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobErrorDetails {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
@@ -617,20 +573,6 @@ pub struct JobResourceUpdateParameter {
     pub properties: Option<UpdateJobProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateJobProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<UpdateJobDetails>,
-    #[serde(rename = "destinationAccountDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub destination_account_details: Vec<DestinationAccountDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateJobDetails {
-    #[serde(rename = "contactDetails", default, skip_serializing_if = "Option::is_none")]
-    pub contact_details: Option<ContactDetails>,
-    #[serde(rename = "shippingAddress", default, skip_serializing_if = "Option::is_none")]
-    pub shipping_address: Option<ShippingAddress>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSecrets {
@@ -743,13 +685,29 @@ pub struct OperationDisplay {
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PackageShippingDetails {
+    #[serde(rename = "carrierName", default, skip_serializing_if = "Option::is_none")]
+    pub carrier_name: Option<String>,
+    #[serde(rename = "trackingId", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_id: Option<String>,
+    #[serde(rename = "trackingUrl", default, skip_serializing_if = "Option::is_none")]
+    pub tracking_url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Preferences {
+    #[serde(rename = "preferredDataCenterRegion", default, skip_serializing_if = "Vec::is_empty")]
+    pub preferred_data_center_region: Vec<String>,
+    #[serde(rename = "transportPreferences", default, skip_serializing_if = "Option::is_none")]
+    pub transport_preferences: Option<TransportPreferences>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PreferencesValidationRequest {
@@ -793,6 +751,20 @@ pub struct RegionConfigurationRequest {
     pub transport_availability_request: Option<TransportAvailabilityRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegionConfigurationResponse {
+    #[serde(rename = "scheduleAvailabilityResponse", default, skip_serializing_if = "Option::is_none")]
+    pub schedule_availability_response: Option<ScheduleAvailabilityResponse>,
+    #[serde(rename = "transportAvailabilityResponse", default, skip_serializing_if = "Option::is_none")]
+    pub transport_availability_response: Option<TransportAvailabilityResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    pub sku: Sku,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleAvailabilityRequest {
     #[serde(rename = "storageLocation")]
     pub storage_location: String,
@@ -809,59 +781,9 @@ pub mod schedule_availability_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransportAvailabilityRequest {
-    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
-    pub sku_name: Option<transport_availability_request::SkuName>,
-}
-pub mod transport_availability_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SkuName {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegionConfigurationResponse {
-    #[serde(rename = "scheduleAvailabilityResponse", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_availability_response: Option<ScheduleAvailabilityResponse>,
-    #[serde(rename = "transportAvailabilityResponse", default, skip_serializing_if = "Option::is_none")]
-    pub transport_availability_response: Option<TransportAvailabilityResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleAvailabilityResponse {
     #[serde(rename = "availableDates", default, skip_serializing_if = "Vec::is_empty")]
     pub available_dates: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransportAvailabilityResponse {
-    #[serde(rename = "transportAvailabilityDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub transport_availability_details: Vec<TransportAvailabilityDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    pub sku: Sku,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: sku::Name,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-}
-pub mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareCredentialDetails {
@@ -904,6 +826,54 @@ pub struct ShipmentPickUpResponse {
     pub confirmation_number: Option<String>,
     #[serde(rename = "readyByTime", default, skip_serializing_if = "Option::is_none")]
     pub ready_by_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ShippingAddress {
+    #[serde(rename = "streetAddress1")]
+    pub street_address1: String,
+    #[serde(rename = "streetAddress2", default, skip_serializing_if = "Option::is_none")]
+    pub street_address2: Option<String>,
+    #[serde(rename = "streetAddress3", default, skip_serializing_if = "Option::is_none")]
+    pub street_address3: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    #[serde(rename = "stateOrProvince", default, skip_serializing_if = "Option::is_none")]
+    pub state_or_province: Option<String>,
+    pub country: String,
+    #[serde(rename = "postalCode")]
+    pub postal_code: String,
+    #[serde(rename = "zipExtendedCode", default, skip_serializing_if = "Option::is_none")]
+    pub zip_extended_code: Option<String>,
+    #[serde(rename = "companyName", default, skip_serializing_if = "Option::is_none")]
+    pub company_name: Option<String>,
+    #[serde(rename = "addressType", default, skip_serializing_if = "Option::is_none")]
+    pub address_type: Option<shipping_address::AddressType>,
+}
+pub mod shipping_address {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AddressType {
+        None,
+        Residential,
+        Commercial,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: sku::Name,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+}
+pub mod sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        DataBox,
+        DataBoxDisk,
+        DataBoxHeavy,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuAvailabilityValidationRequest {
@@ -1032,6 +1002,38 @@ pub mod transport_availability_details {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransportAvailabilityRequest {
+    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
+    pub sku_name: Option<transport_availability_request::SkuName>,
+}
+pub mod transport_availability_request {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SkuName {
+        DataBox,
+        DataBoxDisk,
+        DataBoxHeavy,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransportAvailabilityResponse {
+    #[serde(rename = "transportAvailabilityDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub transport_availability_details: Vec<TransportAvailabilityDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransportPreferences {
+    #[serde(rename = "preferredShipmentType")]
+    pub preferred_shipment_type: transport_preferences::PreferredShipmentType,
+}
+pub mod transport_preferences {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PreferredShipmentType {
+        CustomerManaged,
+        MicrosoftManaged,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UnencryptedCredentials {
     #[serde(rename = "jobName", default, skip_serializing_if = "Option::is_none")]
     pub job_name: Option<String>,
@@ -1044,6 +1046,20 @@ pub struct UnencryptedCredentialsList {
     pub value: Vec<UnencryptedCredentials>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateJobDetails {
+    #[serde(rename = "contactDetails", default, skip_serializing_if = "Option::is_none")]
+    pub contact_details: Option<ContactDetails>,
+    #[serde(rename = "shippingAddress", default, skip_serializing_if = "Option::is_none")]
+    pub shipping_address: Option<ShippingAddress>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateJobProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<UpdateJobDetails>,
+    #[serde(rename = "destinationAccountDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub destination_account_details: Vec<DestinationAccountDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateAddress {
@@ -1116,11 +1132,6 @@ pub mod validation_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateJobValidations {
-    #[serde(flatten)]
-    pub validation_request: ValidationRequest,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ValidationResponseProperties>,
@@ -1140,15 +1151,4 @@ pub mod validation_response_properties {
         InputsRevisitRequired,
         CertainInputValidationsSkipped,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<CloudError>,
 }

@@ -32,11 +32,16 @@ pub struct CanonicalSupportPlanResponseEnvelope {
 }
 pub type CanonicalSupportPlanStatus = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDefinition {
+    pub message: String,
+    pub code: String,
+}
+pub type OperationList = Vec<OperationsDefinition>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<OperationList>,
 }
-pub type OperationList = Vec<OperationsDefinition>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -54,9 +59,4 @@ pub struct OperationsDisplayDefinition {
     pub operation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDefinition {
-    pub message: String,
-    pub code: String,
 }

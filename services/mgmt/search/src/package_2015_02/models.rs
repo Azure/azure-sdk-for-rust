@@ -10,6 +10,11 @@ pub struct AdminKeyResult {
     pub secondary_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListQueryKeysResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<QueryKey>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -17,35 +22,16 @@ pub struct QueryKey {
     pub key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListQueryKeysResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<QueryKey>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
+pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<sku::Name>,
-}
-pub mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        #[serde(rename = "free")]
-        Free,
-        #[serde(rename = "standard")]
-        Standard,
-        #[serde(rename = "standard2")]
-        Standard2,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SearchServiceProperties {
+    pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
-    pub replica_count: Option<i32>,
-    #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
-    pub partition_count: Option<i32>,
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SearchServiceCreateOrUpdateParameters {
@@ -55,6 +41,20 @@ pub struct SearchServiceCreateOrUpdateParameters {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SearchServiceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SearchServiceListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SearchServiceResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SearchServiceProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
+    pub replica_count: Option<i32>,
+    #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
+    pub partition_count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SearchServiceReadableProperties {
@@ -112,21 +112,21 @@ pub struct SearchServiceResource {
     pub properties: Option<SearchServiceReadableProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SearchServiceListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SearchServiceResource>,
+pub struct Sku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<sku::Name>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+pub mod sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        #[serde(rename = "free")]
+        Free,
+        #[serde(rename = "standard")]
+        Standard,
+        #[serde(rename = "standard2")]
+        Standard2,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubResource {

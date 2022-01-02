@@ -3,16 +3,53 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReservationStatusCode {
-    None,
-    Pending,
-    Active,
-    PurchaseError,
-    PaymentInstrumentError,
-    Split,
-    Merged,
-    Expired,
-    Succeeded,
+pub struct AppliedReservationList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<String>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppliedReservations {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AppliedReservationsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppliedReservationsProperties {
+    #[serde(rename = "reservationOrderIds", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_order_ids: Option<AppliedReservationList>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AppliedScopeType {
+    Single,
+    Shared,
+}
+pub type AppliedScopes = Vec<String>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Catalog {
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub terms: Vec<ReservationTerm>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+    #[serde(rename = "skuProperties", default, skip_serializing_if = "Vec::is_empty")]
+    pub sku_properties: Vec<SkuProperty>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub restrictions: Vec<SkuRestriction>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Error {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ExtendedErrorInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorResponseCode {
@@ -74,53 +111,98 @@ pub enum ErrorResponseCode {
     CalculatePriceFailed,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuName {
+pub struct ExtendedErrorInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<ErrorResponseCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtendedStatusInfo {
+    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
+    pub status_code: Option<ReservationStatusCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum InstanceFlexibility {
+    On,
+    Off,
+    NotSupported,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MergeProperties {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sources: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MergeRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MergeProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDisplay {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<OperationResponse>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<OperationDisplay>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Patch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PatchProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PatchProperties {
+    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scope_type: Option<AppliedScopeType>,
+    #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scopes: Option<AppliedScopes>,
+    #[serde(rename = "instanceFlexibility", default, skip_serializing_if = "Option::is_none")]
+    pub instance_flexibility: Option<InstanceFlexibility>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Catalog {
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+pub struct ReservationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub terms: Vec<ReservationTerm>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub locations: Vec<String>,
-    #[serde(rename = "skuProperties", default, skip_serializing_if = "Vec::is_empty")]
-    pub sku_properties: Vec<SkuProperty>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub restrictions: Vec<SkuRestriction>,
+    pub value: Vec<ReservationResponse>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuProperty {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
+pub struct ReservationMergeProperties {
+    #[serde(rename = "mergeDestination", default, skip_serializing_if = "Option::is_none")]
+    pub merge_destination: Option<String>,
+    #[serde(rename = "mergeSources", default, skip_serializing_if = "Vec::is_empty")]
+    pub merge_sources: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuRestriction {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+pub struct ReservationOrderList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub values: Vec<String>,
-    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
-    pub reason_code: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationOrderResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ReservationOrderProperties>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+    pub value: Vec<ReservationOrderResponse>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationOrderProperties {
@@ -142,16 +224,7 @@ pub struct ReservationOrderProperties {
     pub reservations: Vec<ReservationResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReservationTerm {
-    #[serde(rename = "P1Y")]
-    P1y,
-    #[serde(rename = "P3Y")]
-    P3y,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
+pub struct ReservationOrderResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -159,9 +232,7 @@ pub struct ReservationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<SkuName>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ReservationProperties>,
+    pub properties: Option<ReservationOrderProperties>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -197,31 +268,21 @@ pub struct ReservationProperties {
     pub merge_properties: Option<ReservationMergeProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReservedResourceType {
-    VirtualMachines,
-    SqlDatabases,
-    SuseLinux,
-    CosmosDb,
-    RedHat,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum InstanceFlexibility {
-    On,
-    Off,
-    NotSupported,
-}
-pub type AppliedScopes = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AppliedScopeType {
-    Single,
-    Shared,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtendedStatusInfo {
-    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
-    pub status_code: Option<ReservationStatusCode>,
+pub struct ReservationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<SkuName>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ReservationProperties>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReservationSplitProperties {
@@ -231,22 +292,52 @@ pub struct ReservationSplitProperties {
     pub split_source: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationMergeProperties {
-    #[serde(rename = "mergeDestination", default, skip_serializing_if = "Option::is_none")]
-    pub merge_destination: Option<String>,
-    #[serde(rename = "mergeSources", default, skip_serializing_if = "Vec::is_empty")]
-    pub merge_sources: Vec<String>,
+pub enum ReservationStatusCode {
+    None,
+    Pending,
+    Active,
+    PurchaseError,
+    PaymentInstrumentError,
+    Split,
+    Merged,
+    Expired,
+    Succeeded,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PatchProperties {
-    #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
-    pub applied_scope_type: Option<AppliedScopeType>,
-    #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
-    pub applied_scopes: Option<AppliedScopes>,
-    #[serde(rename = "instanceFlexibility", default, skip_serializing_if = "Option::is_none")]
-    pub instance_flexibility: Option<InstanceFlexibility>,
+pub enum ReservationTerm {
+    #[serde(rename = "P1Y")]
+    P1y,
+    #[serde(rename = "P3Y")]
+    P3y,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReservedResourceType {
+    VirtualMachines,
+    SqlDatabases,
+    SuseLinux,
+    CosmosDb,
+    RedHat,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkuName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkuProperty {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkuRestriction {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<String>,
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
+    pub reason_code: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SplitProperties {
@@ -256,98 +347,7 @@ pub struct SplitProperties {
     pub reservation_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MergeProperties {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sources: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MergeRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MergeProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Patch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PatchProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SplitRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SplitProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ExtendedErrorInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtendedErrorInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<ErrorResponseCode>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationOrderList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ReservationOrderResponse>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ReservationResponse>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AppliedReservations {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AppliedReservationsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AppliedReservationsProperties {
-    #[serde(rename = "reservationOrderIds", default, skip_serializing_if = "Option::is_none")]
-    pub reservation_order_ids: Option<AppliedReservationList>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AppliedReservationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<String>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<OperationResponse>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<OperationDisplay>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationDisplay {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
 }

@@ -3,26 +3,47 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
     pub value: String,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Unit {
-    Count,
-    Bytes,
-    Seconds,
-    CountPerSecond,
-    BytesPerSecond,
-    Percent,
-    MilliSeconds,
-    ByteSeconds,
-    Unspecified,
-    Cores,
-    MilliCores,
-    NanoCores,
-    BitsPerSecond,
+pub struct LogSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    pub enabled: bool,
+    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub retention_policy: Option<RetentionPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Metric {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub name: LocalizableString,
+    pub unit: Unit,
+    pub data: Vec<MetricValue>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricCollection {
+    pub value: Vec<Metric>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricSettings {
+    #[serde(rename = "timeGrain")]
+    pub time_grain: String,
+    pub enabled: bool,
+    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub retention_policy: Option<RetentionPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricValue {
@@ -40,27 +61,6 @@ pub struct MetricValue {
     pub count: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Metric {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub name: LocalizableString,
-    pub unit: Unit,
-    pub data: Vec<MetricValue>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricCollection {
-    pub value: Vec<Metric>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -76,22 +76,6 @@ pub struct Resource {
 pub struct RetentionPolicy {
     pub enabled: bool,
     pub days: i32,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricSettings {
-    #[serde(rename = "timeGrain")]
-    pub time_grain: String,
-    pub enabled: bool,
-    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub category: Option<String>,
-    pub enabled: bool,
-    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceDiagnosticSettings {
@@ -121,4 +105,20 @@ pub struct ServiceDiagnosticSettingsResourcePatch {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceDiagnosticSettings>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Unit {
+    Count,
+    Bytes,
+    Seconds,
+    CountPerSecond,
+    BytesPerSecond,
+    Percent,
+    MilliSeconds,
+    ByteSeconds,
+    Unspecified,
+    Cores,
+    MilliCores,
+    NanoCores,
+    BitsPerSecond,
 }

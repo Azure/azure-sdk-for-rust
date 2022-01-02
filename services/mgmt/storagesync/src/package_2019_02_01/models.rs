@@ -3,81 +3,40 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<StorageSyncApiError>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<StorageSyncApiError>,
+pub struct BackupRequest {
+    #[serde(rename = "azureFileShare", default, skip_serializing_if = "Option::is_none")]
+    pub azure_file_share: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncApiError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<StorageSyncErrorDetails>,
+pub struct CheckNameAvailabilityParameters {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: check_name_availability_parameters::Type,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncErrorDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionState {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<subscription_state::State>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub istransitioning: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SubscriptionStateProperties>,
-}
-pub mod subscription_state {
+pub mod check_name_availability_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Registered,
-        Unregistered,
-        Warned,
-        Suspended,
-        Deleted,
+    pub enum Type {
+        #[serde(rename = "Microsoft.StorageSync/storageSyncServices")]
+        MicrosoftStorageSyncStorageSyncServices,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionStateProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncService {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
+pub struct CheckNameAvailabilityResult {
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<StorageSyncServiceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncServiceProperties {
-    #[serde(rename = "storageSyncServiceStatus", default, skip_serializing_if = "Option::is_none")]
-    pub storage_sync_service_status: Option<i64>,
-    #[serde(rename = "storageSyncServiceUid", default, skip_serializing_if = "Option::is_none")]
-    pub storage_sync_service_uid: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SyncGroup {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub reason: Option<check_name_availability_result::Reason>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SyncGroupProperties>,
+    pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SyncGroupProperties {
-    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
-    pub unique_id: Option<String>,
-    #[serde(rename = "syncGroupStatus", default, skip_serializing_if = "Option::is_none")]
-    pub sync_group_status: Option<String>,
+pub mod check_name_availability_result {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Reason {
+        Invalid,
+        AlreadyExists,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudEndpoint {
@@ -85,6 +44,27 @@ pub struct CloudEndpoint {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudEndpointProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudEndpointArray {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<CloudEndpoint>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudEndpointCreateParameters {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CloudEndpointCreateParametersProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudEndpointCreateParametersProperties {
+    #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_resource_id: Option<String>,
+    #[serde(rename = "azureFileShareName", default, skip_serializing_if = "Option::is_none")]
+    pub azure_file_share_name: Option<String>,
+    #[serde(rename = "storageAccountTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_tenant_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudEndpointProperties {
@@ -108,6 +88,157 @@ pub struct CloudEndpointProperties {
     pub last_operation_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum FeatureStatus {
+    #[serde(rename = "on")]
+    On,
+    #[serde(rename = "off")]
+    Off,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FilesNotSyncingError {
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<i32>,
+    #[serde(rename = "persistentCount", default, skip_serializing_if = "Option::is_none")]
+    pub persistent_count: Option<i64>,
+    #[serde(rename = "transientCount", default, skip_serializing_if = "Option::is_none")]
+    pub transient_count: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum HealthState {
+    Healthy,
+    Error,
+    SyncBlockedForRestore,
+    SyncBlockedForChangeDetectionPostRestore,
+    NoActivity,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OfflineDataTransferState {
+    InProgress,
+    Stopping,
+    NotRunning,
+    Complete,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum OperationDirection {
+    #[serde(rename = "do")]
+    Do,
+    #[serde(rename = "undo")]
+    Undo,
+    #[serde(rename = "cancel")]
+    Cancel,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDisplayInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDisplayResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationEntity {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<OperationDisplayInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationEntityListResult {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<OperationEntity>,
+}
+pub type PhysicalPath = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PostBackupResponse {
+    #[serde(rename = "backupMetadata", default, skip_serializing_if = "Option::is_none")]
+    pub backup_metadata: Option<PostBackupResponseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PostBackupResponseProperties {
+    #[serde(rename = "cloudEndpointName", default, skip_serializing_if = "Option::is_none")]
+    pub cloud_endpoint_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PostRestoreRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partition: Option<String>,
+    #[serde(rename = "replicaGroup", default, skip_serializing_if = "Option::is_none")]
+    pub replica_group: Option<String>,
+    #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
+    pub request_id: Option<String>,
+    #[serde(rename = "azureFileShareUri", default, skip_serializing_if = "Option::is_none")]
+    pub azure_file_share_uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "sourceAzureFileShareUri", default, skip_serializing_if = "Option::is_none")]
+    pub source_azure_file_share_uri: Option<String>,
+    #[serde(rename = "failedFileList", default, skip_serializing_if = "Option::is_none")]
+    pub failed_file_list: Option<String>,
+    #[serde(rename = "restoreFileSpec", default, skip_serializing_if = "Vec::is_empty")]
+    pub restore_file_spec: Vec<RestoreFileSpec>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PreRestoreRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub partition: Option<String>,
+    #[serde(rename = "replicaGroup", default, skip_serializing_if = "Option::is_none")]
+    pub replica_group: Option<String>,
+    #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
+    pub request_id: Option<String>,
+    #[serde(rename = "azureFileShareUri", default, skip_serializing_if = "Option::is_none")]
+    pub azure_file_share_uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "sourceAzureFileShareUri", default, skip_serializing_if = "Option::is_none")]
+    pub source_azure_file_share_uri: Option<String>,
+    #[serde(rename = "backupMetadataPropertyBag", default, skip_serializing_if = "Option::is_none")]
+    pub backup_metadata_property_bag: Option<String>,
+    #[serde(rename = "restoreFileSpec", default, skip_serializing_if = "Vec::is_empty")]
+    pub restore_file_spec: Vec<RestoreFileSpec>,
+    #[serde(
+        rename = "pauseWaitForSyncDrainTimePeriodInSeconds",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub pause_wait_for_sync_drain_time_period_in_seconds: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProgressType {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "initialize")]
+    Initialize,
+    #[serde(rename = "download")]
+    Download,
+    #[serde(rename = "upload")]
+    Upload,
+    #[serde(rename = "recall")]
+    Recall,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecallActionParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
@@ -115,77 +246,16 @@ pub struct RecallActionParameters {
     pub recall_path: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncServiceCreateParameters {
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SyncGroupCreateParameters {
+pub struct RegisteredServer {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SyncGroupCreateParametersProperties>,
+    pub properties: Option<RegisteredServerProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SyncGroupCreateParametersProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudEndpointCreateParameters {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CloudEndpointCreateParametersProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudEndpointCreateParametersProperties {
-    #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_resource_id: Option<String>,
-    #[serde(rename = "azureFileShareName", default, skip_serializing_if = "Option::is_none")]
-    pub azure_file_share_name: Option<String>,
-    #[serde(rename = "storageAccountTenantId", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_tenant_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerEndpointCreateParameters {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServerEndpointCreateParametersProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerEndpointCreateParametersProperties {
-    #[serde(rename = "serverLocalPath", default, skip_serializing_if = "Option::is_none")]
-    pub server_local_path: Option<PhysicalPath>,
-    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
-    pub cloud_tiering: Option<FeatureStatus>,
-    #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
-    pub volume_free_space_percent: Option<i64>,
-    #[serde(rename = "tierFilesOlderThanDays", default, skip_serializing_if = "Option::is_none")]
-    pub tier_files_older_than_days: Option<i64>,
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-    #[serde(rename = "serverResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub server_resource_id: Option<ResourceId>,
-    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
-    pub offline_data_transfer: Option<FeatureStatus>,
-    #[serde(rename = "offlineDataTransferShareName", default, skip_serializing_if = "Option::is_none")]
-    pub offline_data_transfer_share_name: Option<String>,
-}
-pub type PhysicalPath = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum FeatureStatus {
-    #[serde(rename = "on")]
-    On,
-    #[serde(rename = "off")]
-    Off,
-}
-pub type ResourceId = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TriggerRolloverRequest {
-    #[serde(rename = "serverCertificate", default, skip_serializing_if = "Option::is_none")]
-    pub server_certificate: Option<String>,
+pub struct RegisteredServerArray {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<RegisteredServer>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegisteredServerCreateParameters {
@@ -216,22 +286,69 @@ pub struct RegisteredServerCreateParametersProperties {
     pub friendly_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerEndpointUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServerEndpointUpdateProperties>,
+pub struct RegisteredServerProperties {
+    #[serde(rename = "serverCertificate", default, skip_serializing_if = "Option::is_none")]
+    pub server_certificate: Option<String>,
+    #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub agent_version: Option<String>,
+    #[serde(rename = "serverOSVersion", default, skip_serializing_if = "Option::is_none")]
+    pub server_os_version: Option<String>,
+    #[serde(rename = "serverManagementErrorCode", default, skip_serializing_if = "Option::is_none")]
+    pub server_management_error_code: Option<i64>,
+    #[serde(rename = "lastHeartBeat", default, skip_serializing_if = "Option::is_none")]
+    pub last_heart_beat: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "serverRole", default, skip_serializing_if = "Option::is_none")]
+    pub server_role: Option<String>,
+    #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_id: Option<String>,
+    #[serde(rename = "clusterName", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_name: Option<String>,
+    #[serde(rename = "serverId", default, skip_serializing_if = "Option::is_none")]
+    pub server_id: Option<String>,
+    #[serde(rename = "storageSyncServiceUid", default, skip_serializing_if = "Option::is_none")]
+    pub storage_sync_service_uid: Option<String>,
+    #[serde(rename = "lastWorkflowId", default, skip_serializing_if = "Option::is_none")]
+    pub last_workflow_id: Option<String>,
+    #[serde(rename = "lastOperationName", default, skip_serializing_if = "Option::is_none")]
+    pub last_operation_name: Option<String>,
+    #[serde(rename = "discoveryEndpointUri", default, skip_serializing_if = "Option::is_none")]
+    pub discovery_endpoint_uri: Option<String>,
+    #[serde(rename = "resourceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub resource_location: Option<String>,
+    #[serde(rename = "serviceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub service_location: Option<String>,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+    #[serde(rename = "managementEndpointUri", default, skip_serializing_if = "Option::is_none")]
+    pub management_endpoint_uri: Option<String>,
+    #[serde(rename = "monitoringConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub monitoring_configuration: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerEndpointUpdateProperties {
-    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
-    pub cloud_tiering: Option<FeatureStatus>,
-    #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
-    pub volume_free_space_percent: Option<i64>,
-    #[serde(rename = "tierFilesOlderThanDays", default, skip_serializing_if = "Option::is_none")]
-    pub tier_files_older_than_days: Option<i64>,
-    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
-    pub offline_data_transfer: Option<FeatureStatus>,
-    #[serde(rename = "offlineDataTransferShareName", default, skip_serializing_if = "Option::is_none")]
-    pub offline_data_transfer_share_name: Option<String>,
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+pub type ResourceId = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourcesMoveInfo {
+    #[serde(rename = "targetResourceGroup", default, skip_serializing_if = "Option::is_none")]
+    pub target_resource_group: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resources: Vec<ResourceId>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RestoreFileSpec {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub isdir: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerEndpoint {
@@ -239,6 +356,37 @@ pub struct ServerEndpoint {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerEndpointProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerEndpointArray {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ServerEndpoint>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerEndpointCreateParameters {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerEndpointCreateParametersProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerEndpointCreateParametersProperties {
+    #[serde(rename = "serverLocalPath", default, skip_serializing_if = "Option::is_none")]
+    pub server_local_path: Option<PhysicalPath>,
+    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
+    pub cloud_tiering: Option<FeatureStatus>,
+    #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
+    pub volume_free_space_percent: Option<i64>,
+    #[serde(rename = "tierFilesOlderThanDays", default, skip_serializing_if = "Option::is_none")]
+    pub tier_files_older_than_days: Option<i64>,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+    #[serde(rename = "serverResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub server_resource_id: Option<ResourceId>,
+    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
+    pub offline_data_transfer: Option<FeatureStatus>,
+    #[serde(rename = "offlineDataTransferShareName", default, skip_serializing_if = "Option::is_none")]
+    pub offline_data_transfer_share_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerEndpointProperties {
@@ -305,18 +453,156 @@ pub struct ServerEndpointSyncStatus {
     pub offline_data_transfer_status: Option<OfflineDataTransferState>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum HealthState {
-    Healthy,
-    Error,
-    SyncBlockedForRestore,
-    SyncBlockedForChangeDetectionPostRestore,
-    NoActivity,
+pub struct ServerEndpointUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerEndpointUpdateProperties>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerEndpointUpdateProperties {
+    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
+    pub cloud_tiering: Option<FeatureStatus>,
+    #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
+    pub volume_free_space_percent: Option<i64>,
+    #[serde(rename = "tierFilesOlderThanDays", default, skip_serializing_if = "Option::is_none")]
+    pub tier_files_older_than_days: Option<i64>,
+    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
+    pub offline_data_transfer: Option<FeatureStatus>,
+    #[serde(rename = "offlineDataTransferShareName", default, skip_serializing_if = "Option::is_none")]
+    pub offline_data_transfer_share_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncApiError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<StorageSyncErrorDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<StorageSyncApiError>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<StorageSyncApiError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncErrorDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncService {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<StorageSyncServiceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncServiceArray {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<StorageSyncService>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncServiceCreateParameters {
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncServiceProperties {
+    #[serde(rename = "storageSyncServiceStatus", default, skip_serializing_if = "Option::is_none")]
+    pub storage_sync_service_status: Option<i64>,
+    #[serde(rename = "storageSyncServiceUid", default, skip_serializing_if = "Option::is_none")]
+    pub storage_sync_service_uid: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncServiceUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<StorageSyncServiceUpdateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageSyncServiceUpdateProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionState {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<subscription_state::State>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub istransitioning: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SubscriptionStateProperties>,
+}
+pub mod subscription_state {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Registered,
+        Unregistered,
+        Warned,
+        Suspended,
+        Deleted,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionStateProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SyncActivityState {
     Upload,
     Download,
     UploadAndDownload,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SyncActivityStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    #[serde(rename = "perItemErrorCount", default, skip_serializing_if = "Option::is_none")]
+    pub per_item_error_count: Option<i64>,
+    #[serde(rename = "appliedItemCount", default, skip_serializing_if = "Option::is_none")]
+    pub applied_item_count: Option<i64>,
+    #[serde(rename = "totalItemCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_item_count: Option<i64>,
+    #[serde(rename = "appliedBytes", default, skip_serializing_if = "Option::is_none")]
+    pub applied_bytes: Option<i64>,
+    #[serde(rename = "totalBytes", default, skip_serializing_if = "Option::is_none")]
+    pub total_bytes: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SyncGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SyncGroupProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SyncGroupArray {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SyncGroup>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SyncGroupCreateParameters {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SyncGroupCreateParametersProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SyncGroupCreateParametersProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SyncGroupProperties {
+    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
+    pub unique_id: Option<String>,
+    #[serde(rename = "syncGroupStatus", default, skip_serializing_if = "Option::is_none")]
+    pub sync_group_status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SyncSessionStatus {
@@ -336,81 +622,19 @@ pub struct SyncSessionStatus {
     pub files_not_syncing_errors: Vec<FilesNotSyncingError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SyncActivityStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
-    #[serde(rename = "perItemErrorCount", default, skip_serializing_if = "Option::is_none")]
-    pub per_item_error_count: Option<i64>,
-    #[serde(rename = "appliedItemCount", default, skip_serializing_if = "Option::is_none")]
-    pub applied_item_count: Option<i64>,
-    #[serde(rename = "totalItemCount", default, skip_serializing_if = "Option::is_none")]
-    pub total_item_count: Option<i64>,
-    #[serde(rename = "appliedBytes", default, skip_serializing_if = "Option::is_none")]
-    pub applied_bytes: Option<i64>,
-    #[serde(rename = "totalBytes", default, skip_serializing_if = "Option::is_none")]
-    pub total_bytes: Option<i64>,
-}
+pub struct TagsObject {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OfflineDataTransferState {
-    InProgress,
-    Stopping,
-    NotRunning,
-    Complete,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegisteredServer {
+pub struct TrackedResource {
     #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RegisteredServerProperties>,
+    pub tags: Option<serde_json::Value>,
+    pub location: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegisteredServerProperties {
+pub struct TriggerRolloverRequest {
     #[serde(rename = "serverCertificate", default, skip_serializing_if = "Option::is_none")]
     pub server_certificate: Option<String>,
-    #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
-    pub agent_version: Option<String>,
-    #[serde(rename = "serverOSVersion", default, skip_serializing_if = "Option::is_none")]
-    pub server_os_version: Option<String>,
-    #[serde(rename = "serverManagementErrorCode", default, skip_serializing_if = "Option::is_none")]
-    pub server_management_error_code: Option<i64>,
-    #[serde(rename = "lastHeartBeat", default, skip_serializing_if = "Option::is_none")]
-    pub last_heart_beat: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "serverRole", default, skip_serializing_if = "Option::is_none")]
-    pub server_role: Option<String>,
-    #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_id: Option<String>,
-    #[serde(rename = "clusterName", default, skip_serializing_if = "Option::is_none")]
-    pub cluster_name: Option<String>,
-    #[serde(rename = "serverId", default, skip_serializing_if = "Option::is_none")]
-    pub server_id: Option<String>,
-    #[serde(rename = "storageSyncServiceUid", default, skip_serializing_if = "Option::is_none")]
-    pub storage_sync_service_uid: Option<String>,
-    #[serde(rename = "lastWorkflowId", default, skip_serializing_if = "Option::is_none")]
-    pub last_workflow_id: Option<String>,
-    #[serde(rename = "lastOperationName", default, skip_serializing_if = "Option::is_none")]
-    pub last_operation_name: Option<String>,
-    #[serde(rename = "discoveryEndpointUri", default, skip_serializing_if = "Option::is_none")]
-    pub discovery_endpoint_uri: Option<String>,
-    #[serde(rename = "resourceLocation", default, skip_serializing_if = "Option::is_none")]
-    pub resource_location: Option<String>,
-    #[serde(rename = "serviceLocation", default, skip_serializing_if = "Option::is_none")]
-    pub service_location: Option<String>,
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-    #[serde(rename = "managementEndpointUri", default, skip_serializing_if = "Option::is_none")]
-    pub management_endpoint_uri: Option<String>,
-    #[serde(rename = "monitoringConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub monitoring_configuration: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourcesMoveInfo {
-    #[serde(rename = "targetResourceGroup", default, skip_serializing_if = "Option::is_none")]
-    pub target_resource_group: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resources: Vec<ResourceId>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Workflow {
@@ -418,6 +642,11 @@ pub struct Workflow {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkflowProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkflowArray {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Workflow>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowProperties {
@@ -444,233 +673,4 @@ pub enum WorkflowStatus {
     Aborted,
     #[serde(rename = "failed")]
     Failed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum OperationDirection {
-    #[serde(rename = "do")]
-    Do,
-    #[serde(rename = "undo")]
-    Undo,
-    #[serde(rename = "cancel")]
-    Cancel,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationEntityListResult {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<OperationEntity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationEntity {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<OperationDisplayInfo>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationDisplayInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationDisplayResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckNameAvailabilityParameters {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: check_name_availability_parameters::Type,
-}
-pub mod check_name_availability_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        #[serde(rename = "Microsoft.StorageSync/storageSyncServices")]
-        MicrosoftStorageSyncStorageSyncServices,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckNameAvailabilityResult {
-    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub name_available: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<check_name_availability_result::Reason>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-pub mod check_name_availability_result {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Reason {
-        Invalid,
-        AlreadyExists,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PostRestoreRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub partition: Option<String>,
-    #[serde(rename = "replicaGroup", default, skip_serializing_if = "Option::is_none")]
-    pub replica_group: Option<String>,
-    #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
-    pub request_id: Option<String>,
-    #[serde(rename = "azureFileShareUri", default, skip_serializing_if = "Option::is_none")]
-    pub azure_file_share_uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "sourceAzureFileShareUri", default, skip_serializing_if = "Option::is_none")]
-    pub source_azure_file_share_uri: Option<String>,
-    #[serde(rename = "failedFileList", default, skip_serializing_if = "Option::is_none")]
-    pub failed_file_list: Option<String>,
-    #[serde(rename = "restoreFileSpec", default, skip_serializing_if = "Vec::is_empty")]
-    pub restore_file_spec: Vec<RestoreFileSpec>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PreRestoreRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub partition: Option<String>,
-    #[serde(rename = "replicaGroup", default, skip_serializing_if = "Option::is_none")]
-    pub replica_group: Option<String>,
-    #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
-    pub request_id: Option<String>,
-    #[serde(rename = "azureFileShareUri", default, skip_serializing_if = "Option::is_none")]
-    pub azure_file_share_uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "sourceAzureFileShareUri", default, skip_serializing_if = "Option::is_none")]
-    pub source_azure_file_share_uri: Option<String>,
-    #[serde(rename = "backupMetadataPropertyBag", default, skip_serializing_if = "Option::is_none")]
-    pub backup_metadata_property_bag: Option<String>,
-    #[serde(rename = "restoreFileSpec", default, skip_serializing_if = "Vec::is_empty")]
-    pub restore_file_spec: Vec<RestoreFileSpec>,
-    #[serde(
-        rename = "pauseWaitForSyncDrainTimePeriodInSeconds",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub pause_wait_for_sync_drain_time_period_in_seconds: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupRequest {
-    #[serde(rename = "azureFileShare", default, skip_serializing_if = "Option::is_none")]
-    pub azure_file_share: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PostBackupResponse {
-    #[serde(rename = "backupMetadata", default, skip_serializing_if = "Option::is_none")]
-    pub backup_metadata: Option<PostBackupResponseProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PostBackupResponseProperties {
-    #[serde(rename = "cloudEndpointName", default, skip_serializing_if = "Option::is_none")]
-    pub cloud_endpoint_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestoreFileSpec {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub isdir: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncServiceArray {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<StorageSyncService>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SyncGroupArray {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SyncGroup>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudEndpointArray {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<CloudEndpoint>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerEndpointArray {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ServerEndpoint>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegisteredServerArray {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RegisteredServer>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkflowArray {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Workflow>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncServiceUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<StorageSyncServiceUpdateProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageSyncServiceUpdateProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FilesNotSyncingError {
-    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<i32>,
-    #[serde(rename = "persistentCount", default, skip_serializing_if = "Option::is_none")]
-    pub persistent_count: Option<i64>,
-    #[serde(rename = "transientCount", default, skip_serializing_if = "Option::is_none")]
-    pub transient_count: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TagsObject {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProgressType {
-    #[serde(rename = "none")]
-    None,
-    #[serde(rename = "initialize")]
-    Initialize,
-    #[serde(rename = "download")]
-    Download,
-    #[serde(rename = "upload")]
-    Upload,
-    #[serde(rename = "recall")]
-    Recall,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    pub location: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(flatten)]
-    pub resource: Resource,
 }

@@ -3,71 +3,9 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Disk {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
-    pub managed_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<DiskSku>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DiskProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<disk_sku::Name>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-}
-pub mod disk_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        #[serde(rename = "Standard_LRS")]
-        StandardLrs,
-        #[serde(rename = "Premium_LRS")]
-        PremiumLrs,
-        #[serde(rename = "StandardSSD_LRS")]
-        StandardSsdLrs,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskProperties {
-    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
-    pub time_created: Option<String>,
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<disk_properties::OsType>,
-    #[serde(rename = "creationData")]
-    pub creation_data: CreationData,
-    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_gb: Option<i32>,
-    #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_settings: Option<EncryptionSettings>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-}
-pub mod disk_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Windows,
-        Linux,
-    }
+pub struct AccessUri {
+    #[serde(rename = "accessSAS", default, skip_serializing_if = "Option::is_none")]
+    pub access_sas: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreationData {
@@ -95,38 +33,65 @@ pub mod creation_data {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageDiskReference {
-    pub id: String,
+pub struct Disk {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
+    pub managed_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub lun: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionSettings {
+    pub sku: Option<DiskSku>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
-    pub disk_encryption_key: Option<KeyVaultAndSecretReference>,
-    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
-    pub key_encryption_key: Option<KeyVaultAndKeyReference>,
+    pub properties: Option<DiskProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultAndSecretReference {
-    #[serde(rename = "sourceVault")]
-    pub source_vault: SourceVault,
-    #[serde(rename = "secretUrl")]
-    pub secret_url: String,
+pub struct DiskList {
+    pub value: Vec<Disk>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceVault {
+pub struct DiskProperties {
+    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
+    pub time_created: Option<String>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<disk_properties::OsType>,
+    #[serde(rename = "creationData")]
+    pub creation_data: CreationData,
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i32>,
+    #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_settings: Option<EncryptionSettings>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+}
+pub mod disk_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub name: Option<disk_sku::Name>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultAndKeyReference {
-    #[serde(rename = "sourceVault")]
-    pub source_vault: SourceVault,
-    #[serde(rename = "keyUrl")]
-    pub key_url: String,
+pub mod disk_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        #[serde(rename = "Standard_LRS")]
+        StandardLrs,
+        #[serde(rename = "Premium_LRS")]
+        PremiumLrs,
+        #[serde(rename = "StandardSSD_LRS")]
+        StandardSsdLrs,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskUpdate {
@@ -155,8 +120,74 @@ pub mod disk_update_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskList {
-    pub value: Vec<Disk>,
+pub struct EncryptionSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub disk_encryption_key: Option<KeyVaultAndSecretReference>,
+    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub key_encryption_key: Option<KeyVaultAndKeyReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GrantAccessData {
+    pub access: grant_access_data::Access,
+    #[serde(rename = "durationInSeconds")]
+    pub duration_in_seconds: i32,
+}
+pub mod grant_access_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Access {
+        None,
+        Read,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageDiskReference {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lun: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultAndKeyReference {
+    #[serde(rename = "sourceVault")]
+    pub source_vault: SourceVault,
+    #[serde(rename = "keyUrl")]
+    pub key_url: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultAndSecretReference {
+    #[serde(rename = "sourceVault")]
+    pub source_vault: SourceVault,
+    #[serde(rename = "secretUrl")]
+    pub secret_url: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Snapshot {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
+    pub managed_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<SnapshotSku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DiskProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotList {
+    pub value: Vec<Snapshot>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -180,36 +211,6 @@ pub mod snapshot_sku {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GrantAccessData {
-    pub access: grant_access_data::Access,
-    #[serde(rename = "durationInSeconds")]
-    pub duration_in_seconds: i32,
-}
-pub mod grant_access_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Access {
-        None,
-        Read,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccessUri {
-    #[serde(rename = "accessSAS", default, skip_serializing_if = "Option::is_none")]
-    pub access_sas: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Snapshot {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
-    pub managed_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<SnapshotSku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DiskProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskUpdateProperties>,
@@ -219,8 +220,7 @@ pub struct SnapshotUpdate {
     pub sku: Option<SnapshotSku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SnapshotList {
-    pub value: Vec<Snapshot>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct SourceVault {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }

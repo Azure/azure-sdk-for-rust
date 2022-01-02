@@ -14,6 +14,71 @@ pub struct Appliance {
     pub kind: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplianceArtifact {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<ApplianceArtifactType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ApplianceArtifactType {
+    Template,
+    Custom,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplianceDefinition {
+    #[serde(flatten)]
+    pub generic_resource: GenericResource,
+    pub properties: ApplianceDefinitionProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplianceDefinitionListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ApplianceDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplianceDefinitionProperties {
+    #[serde(rename = "lockLevel")]
+    pub lock_level: ApplianceLockLevel,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    pub authorizations: Vec<ApplianceProviderAuthorization>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub artifacts: Vec<ApplianceArtifact>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "packageFileUri")]
+    pub package_file_uri: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplianceListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Appliance>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ApplianceLockLevel {
+    CanNotDelete,
+    ReadOnly,
+    None,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppliancePatchable {
+    #[serde(flatten)]
+    pub generic_resource: GenericResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AppliancePropertiesPatchable>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<PlanPatchable>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplianceProperties {
     #[serde(rename = "managedResourceGroupId")]
     pub managed_resource_group_id: String,
@@ -27,40 +92,6 @@ pub struct ApplianceProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition_uri: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProvisioningState {
-    Accepted,
-    Running,
-    Ready,
-    Creating,
-    Created,
-    Deleting,
-    Deleted,
-    Canceled,
-    Failed,
-    Succeeded,
-    Updating,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Plan {
-    pub name: String,
-    pub publisher: String,
-    pub product: String,
-    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
-    pub promotion_code: Option<String>,
-    pub version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AppliancePatchable {
-    #[serde(flatten)]
-    pub generic_resource: GenericResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AppliancePropertiesPatchable>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<PlanPatchable>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppliancePropertiesPatchable {
@@ -78,43 +109,20 @@ pub struct AppliancePropertiesPatchable {
     pub ui_definition_uri: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PlanPatchable {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publisher: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub product: Option<String>,
-    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
-    pub promotion_code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
+pub struct ApplianceProviderAuthorization {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "roleDefinitionId")]
+    pub role_definition_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplianceDefinition {
-    #[serde(flatten)]
-    pub generic_resource: GenericResource,
-    pub properties: ApplianceDefinitionProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplianceDefinitionProperties {
-    #[serde(rename = "lockLevel")]
-    pub lock_level: ApplianceLockLevel,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    pub authorizations: Vec<ApplianceProviderAuthorization>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub artifacts: Vec<ApplianceArtifact>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "packageFileUri")]
-    pub package_file_uri: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ApplianceLockLevel {
-    CanNotDelete,
-    ReadOnly,
-    None,
+pub struct ErrorResponse {
+    #[serde(rename = "httpStatus", default, skip_serializing_if = "Option::is_none")]
+    pub http_status: Option<String>,
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenericResource {
@@ -126,20 +134,6 @@ pub struct GenericResource {
     pub sku: Option<Sku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
@@ -156,63 +150,6 @@ pub mod identity {
     pub enum Type {
         SystemAssigned,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplianceListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Appliance>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplianceDefinitionListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ApplianceDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ApplianceArtifactType {
-    Template,
-    Custom,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplianceArtifact {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<ApplianceArtifactType>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplianceProviderAuthorization {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "roleDefinitionId")]
-    pub role_definition_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(rename = "httpStatus", default, skip_serializing_if = "Option::is_none")]
-    pub http_status: Option<String>,
-    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -239,4 +176,67 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Plan {
+    pub name: String,
+    pub publisher: String,
+    pub product: String,
+    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
+    pub promotion_code: Option<String>,
+    pub version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PlanPatchable {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product: Option<String>,
+    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
+    pub promotion_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProvisioningState {
+    Accepted,
+    Running,
+    Ready,
+    Creating,
+    Created,
+    Deleting,
+    Deleted,
+    Canceled,
+    Failed,
+    Succeeded,
+    Updating,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
 }

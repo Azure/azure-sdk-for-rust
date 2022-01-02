@@ -23,11 +23,6 @@ pub struct CheckNameAvailabilityInput {
     pub type_: ResourceType,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ResourceType {
-    #[serde(rename = "mediaservices")]
-    Mediaservices,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityOutput {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
@@ -53,6 +48,11 @@ pub struct MediaService {
     pub properties: Option<MediaServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MediaServiceCollection {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MediaService>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaServiceProperties {
     #[serde(rename = "apiEndpoints", default, skip_serializing_if = "Vec::is_empty")]
     pub api_endpoints: Vec<ApiEndpoint>,
@@ -60,9 +60,30 @@ pub struct MediaServiceProperties {
     pub storage_accounts: Vec<StorageAccount>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MediaServiceCollection {
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MediaService>,
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateKeyInput {
@@ -96,6 +117,11 @@ pub struct Resource {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ResourceType {
+    #[serde(rename = "mediaservices")]
+    Mediaservices,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceKeys {
     #[serde(rename = "primaryAuthEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub primary_auth_endpoint: Option<String>,
@@ -117,30 +143,4 @@ pub struct StorageAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SyncStorageKeysInput {
     pub id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-}
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-    }
 }

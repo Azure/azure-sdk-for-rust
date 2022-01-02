@@ -3,77 +3,38 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionScopeMetricsRequestBodyParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timespan: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<String>,
-    #[serde(rename = "metricNames", default, skip_serializing_if = "Option::is_none")]
-    pub metric_names: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub aggregation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub top: Option<i32>,
-    #[serde(rename = "orderBy", default, skip_serializing_if = "Option::is_none")]
-    pub order_by: Option<String>,
-    #[serde(rename = "rollUpBy", default, skip_serializing_if = "Option::is_none")]
-    pub roll_up_by: Option<String>,
-    #[serde(rename = "resultType", default, skip_serializing_if = "Option::is_none")]
-    pub result_type: Option<subscription_scope_metrics_request_body_parameters::ResultType>,
-    #[serde(rename = "metricNamespace", default, skip_serializing_if = "Option::is_none")]
-    pub metric_namespace: Option<String>,
-    #[serde(rename = "autoAdjustTimegrain", default, skip_serializing_if = "Option::is_none")]
-    pub auto_adjust_timegrain: Option<bool>,
-    #[serde(rename = "validateDimensions", default, skip_serializing_if = "Option::is_none")]
-    pub validate_dimensions: Option<bool>,
-}
-pub mod subscription_scope_metrics_request_body_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResultType {
-        Data,
-        Metadata,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Unit {
+pub enum AggregationType {
+    None,
+    Average,
     Count,
-    Bytes,
-    Seconds,
-    CountPerSecond,
-    BytesPerSecond,
-    Percent,
-    MilliSeconds,
-    ByteSeconds,
-    Unspecified,
-    Cores,
-    MilliCores,
-    NanoCores,
-    BitsPerSecond,
+    Minimum,
+    Maximum,
+    Total,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricValue {
-    #[serde(rename = "timeStamp")]
-    pub time_stamp: String,
+pub struct DimensionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub average: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minimum: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub maximum: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub total: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<f64>,
+    pub name: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
+    pub to_be_exported_for_shoebox: Option<bool>,
+    #[serde(rename = "isHidden", default, skip_serializing_if = "Option::is_none")]
+    pub is_hidden: Option<bool>,
+    #[serde(rename = "defaultDimensionValues", default, skip_serializing_if = "Option::is_none")]
+    pub default_dimension_values: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataValue {
+pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<LocalizableString>,
+    pub error: Option<ErrorResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
@@ -82,17 +43,20 @@ pub struct LocalizableString {
     pub localized_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Response {
+pub struct LogSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cost: Option<f64>,
-    pub timespan: String,
+    pub name: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
+    pub blob_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<String>,
+    pub name: Option<LocalizableString>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub namespace: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resourceregion: Option<String>,
-    pub value: Vec<Metric>,
+    pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metric {
@@ -110,73 +74,6 @@ pub struct Metric {
     pub timeseries: Vec<TimeSeriesElement>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionScopeMetricResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cost: Option<f64>,
-    pub timespan: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub namespace: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resourceregion: Option<String>,
-    pub value: Vec<SubscriptionScopeMetric>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionScopeMetric {
-    pub id: String,
-    #[serde(rename = "type")]
-    pub type_: String,
-    pub name: LocalizableString,
-    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
-    pub display_description: Option<String>,
-    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
-    pub unit: MetricUnit,
-    pub timeseries: Vec<TimeSeriesElement>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MetricUnit {
-    Count,
-    Bytes,
-    Seconds,
-    CountPerSecond,
-    BytesPerSecond,
-    Percent,
-    MilliSeconds,
-    ByteSeconds,
-    Unspecified,
-    Cores,
-    MilliCores,
-    NanoCores,
-    BitsPerSecond,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimeSeriesElement {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub metadatavalues: Vec<MetadataValue>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub data: Vec<MetricValue>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAvailability {
-    #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
-    pub time_grain: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub retention: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AggregationType {
-    None,
-    Average,
-    Count,
-    Minimum,
-    Maximum,
-    Total,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MetricAggregationType {
     None,
     Average,
@@ -184,6 +81,13 @@ pub enum MetricAggregationType {
     Minimum,
     Maximum,
     Total,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricAvailability {
+    #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
+    pub time_grain: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retention: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MetricClass {
@@ -227,6 +131,142 @@ pub struct MetricDefinitionCollection {
     pub value: Vec<MetricDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricSpecification {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
+    pub aggregation_type: Option<String>,
+    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_aggregation_types: Vec<String>,
+    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_time_grain_types: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub availabilities: Vec<String>,
+    #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
+    pub lock_aggregation_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dimensions: Vec<DimensionProperties>,
+    #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
+    pub fill_gap_with_zero: Option<bool>,
+    #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
+    pub internal_metric_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MetricUnit {
+    Count,
+    Bytes,
+    Seconds,
+    CountPerSecond,
+    BytesPerSecond,
+    Percent,
+    MilliSeconds,
+    ByteSeconds,
+    Unspecified,
+    Cores,
+    MilliCores,
+    NanoCores,
+    BitsPerSecond,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricValue {
+    #[serde(rename = "timeStamp")]
+    pub time_stamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub average: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minimum: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub maximum: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationProperties>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub publisher: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationProperties {
+    #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
+    pub service_specification: Option<ServiceSpecification>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Response {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost: Option<f64>,
+    pub timespan: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resourceregion: Option<String>,
+    pub value: Vec<Metric>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceSpecification {
+    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    pub log_specifications: Vec<LogSpecification>,
+    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    pub metric_specifications: Vec<MetricSpecification>,
+    #[serde(rename = "legacyMetricSpecifications", default, skip_serializing_if = "Option::is_none")]
+    pub legacy_metric_specifications: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionScopeMetric {
+    pub id: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+    pub name: LocalizableString,
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    pub unit: MetricUnit,
+    pub timeseries: Vec<TimeSeriesElement>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionScopeMetricDefinition {
     #[serde(rename = "isDimensionRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_dimension_required: Option<bool>,
@@ -260,113 +300,73 @@ pub struct SubscriptionScopeMetricDefinitionCollection {
     pub value: Vec<SubscriptionScopeMetricDefinition>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct SubscriptionScopeMetricResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost: Option<f64>,
+    pub timespan: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resourceregion: Option<String>,
+    pub value: Vec<SubscriptionScopeMetric>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
+pub struct SubscriptionScopeMetricsRequestBodyParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
-    pub is_data_action: Option<bool>,
+    pub timespan: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
+    pub interval: Option<String>,
+    #[serde(rename = "metricNames", default, skip_serializing_if = "Option::is_none")]
+    pub metric_names: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OperationProperties>,
+    pub aggregation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub top: Option<i32>,
+    #[serde(rename = "orderBy", default, skip_serializing_if = "Option::is_none")]
+    pub order_by: Option<String>,
+    #[serde(rename = "rollUpBy", default, skip_serializing_if = "Option::is_none")]
+    pub roll_up_by: Option<String>,
+    #[serde(rename = "resultType", default, skip_serializing_if = "Option::is_none")]
+    pub result_type: Option<subscription_scope_metrics_request_body_parameters::ResultType>,
+    #[serde(rename = "metricNamespace", default, skip_serializing_if = "Option::is_none")]
+    pub metric_namespace: Option<String>,
+    #[serde(rename = "autoAdjustTimegrain", default, skip_serializing_if = "Option::is_none")]
+    pub auto_adjust_timegrain: Option<bool>,
+    #[serde(rename = "validateDimensions", default, skip_serializing_if = "Option::is_none")]
+    pub validate_dimensions: Option<bool>,
 }
-pub mod operation {
+pub mod subscription_scope_metrics_request_body_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub publisher: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
+    pub enum ResultType {
+        Data,
+        Metadata,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationProperties {
-    #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
-    pub service_specification: Option<ServiceSpecification>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceSpecification {
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
-    pub log_specifications: Vec<LogSpecification>,
-    #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
-    pub metric_specifications: Vec<MetricSpecification>,
-    #[serde(rename = "legacyMetricSpecifications", default, skip_serializing_if = "Option::is_none")]
-    pub legacy_metric_specifications: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogSpecification {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
-    pub blob_duration: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricSpecification {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
-    pub display_description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<String>,
-    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
-    pub aggregation_type: Option<String>,
-    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_aggregation_types: Vec<String>,
-    #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_time_grain_types: Vec<String>,
+pub struct TimeSeriesElement {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub availabilities: Vec<String>,
-    #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
-    pub lock_aggregation_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub category: Option<String>,
+    pub metadatavalues: Vec<MetadataValue>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub dimensions: Vec<DimensionProperties>,
-    #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
-    pub fill_gap_with_zero: Option<bool>,
-    #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
-    pub internal_metric_name: Option<String>,
+    pub data: Vec<MetricValue>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DimensionProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
-    pub to_be_exported_for_shoebox: Option<bool>,
-    #[serde(rename = "isHidden", default, skip_serializing_if = "Option::is_none")]
-    pub is_hidden: Option<bool>,
-    #[serde(rename = "defaultDimensionValues", default, skip_serializing_if = "Option::is_none")]
-    pub default_dimension_values: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorContract {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+pub enum Unit {
+    Count,
+    Bytes,
+    Seconds,
+    CountPerSecond,
+    BytesPerSecond,
+    Percent,
+    MilliSeconds,
+    ByteSeconds,
+    Unspecified,
+    Cores,
+    MilliCores,
+    NanoCores,
+    BitsPerSecond,
 }

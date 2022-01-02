@@ -3,87 +3,81 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicesProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<services_properties::ProvisioningState>,
-    #[serde(rename = "accessPolicies", default, skip_serializing_if = "Option::is_none")]
-    pub access_policies: Option<ServiceAccessPoliciesInfo>,
-    #[serde(rename = "cosmosDbConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub cosmos_db_configuration: Option<ServiceCosmosDbConfigurationInfo>,
-    #[serde(rename = "authenticationConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub authentication_configuration: Option<ServiceAuthenticationConfigurationInfo>,
-    #[serde(rename = "corsConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub cors_configuration: Option<ServiceCorsConfigurationInfo>,
-    #[serde(rename = "exportConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub export_configuration: Option<ServiceExportConfigurationInfo>,
+pub struct CheckNameAvailabilityParameters {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: String,
 }
-pub mod services_properties {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetailsInternal>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetailsInternal {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<OperationDisplay>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDisplay {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationResultsDescription {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<operation_results_description::Status>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+pub mod operation_results_description {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Deleting,
-        Succeeded,
-        Creating,
-        Accepted,
-        Verifying,
-        Updating,
-        Failed,
+    pub enum Status {
         Canceled,
-        Deprovisioned,
+        Succeeded,
+        Failed,
+        Requested,
+        Running,
     }
-}
-pub type ServiceAccessPoliciesInfo = Vec<ServiceAccessPolicyEntry>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCosmosDbConfigurationInfo {
-    #[serde(rename = "offerThroughput", default, skip_serializing_if = "Option::is_none")]
-    pub offer_throughput: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceAuthenticationConfigurationInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authority: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub audience: Option<String>,
-    #[serde(rename = "smartProxyEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub smart_proxy_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceCorsConfigurationInfo {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub origins: Vec<ServiceCorsConfigurationOriginEntry>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub headers: Vec<ServiceCorsConfigurationHeaderEntry>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub methods: Vec<ServiceCorsConfigurationMethodEntry>,
-    #[serde(rename = "maxAge", default, skip_serializing_if = "Option::is_none")]
-    pub max_age: Option<i64>,
-    #[serde(rename = "allowCredentials", default, skip_serializing_if = "Option::is_none")]
-    pub allow_credentials: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceExportConfigurationInfo {
-    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceAccessPolicyEntry {
-    #[serde(rename = "objectId")]
-    pub object_id: String,
-}
-pub type ServiceCorsConfigurationOriginEntry = String;
-pub type ServiceCorsConfigurationHeaderEntry = String;
-pub type ServiceCorsConfigurationMethodEntry = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicesDescription {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServicesProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicesPatchDescription {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -131,19 +125,53 @@ pub mod resource {
         }
     }
 }
+pub type ServiceAccessPoliciesInfo = Vec<ServiceAccessPolicyEntry>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetailsInternal>,
+pub struct ServiceAccessPolicyEntry {
+    #[serde(rename = "objectId")]
+    pub object_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetailsInternal {
+pub struct ServiceAuthenticationConfigurationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
+    pub authority: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub audience: Option<String>,
+    #[serde(rename = "smartProxyEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub smart_proxy_enabled: Option<bool>,
+}
+pub type ServiceCorsConfigurationHeaderEntry = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceCorsConfigurationInfo {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub origins: Vec<ServiceCorsConfigurationOriginEntry>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub headers: Vec<ServiceCorsConfigurationHeaderEntry>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub methods: Vec<ServiceCorsConfigurationMethodEntry>,
+    #[serde(rename = "maxAge", default, skip_serializing_if = "Option::is_none")]
+    pub max_age: Option<i64>,
+    #[serde(rename = "allowCredentials", default, skip_serializing_if = "Option::is_none")]
+    pub allow_credentials: Option<bool>,
+}
+pub type ServiceCorsConfigurationMethodEntry = String;
+pub type ServiceCorsConfigurationOriginEntry = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceCosmosDbConfigurationInfo {
+    #[serde(rename = "offerThroughput", default, skip_serializing_if = "Option::is_none")]
+    pub offer_throughput: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceExportConfigurationInfo {
+    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServicesDescription {
+    #[serde(flatten)]
+    pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
+    pub properties: Option<ServicesProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicesDescriptionListResult {
@@ -151,45 +179,6 @@ pub struct ServicesDescriptionListResult {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServicesDescription>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
-    pub is_data_action: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<OperationDisplay>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OperationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationDisplay {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckNameAvailabilityParameters {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicesNameAvailabilityInfo {
@@ -209,26 +198,37 @@ pub mod services_name_availability_info {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationResultsDescription {
+pub struct ServicesPatchDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<operation_results_description::Status>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
+    pub tags: Option<serde_json::Value>,
 }
-pub mod operation_results_description {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServicesProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<services_properties::ProvisioningState>,
+    #[serde(rename = "accessPolicies", default, skip_serializing_if = "Option::is_none")]
+    pub access_policies: Option<ServiceAccessPoliciesInfo>,
+    #[serde(rename = "cosmosDbConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub cosmos_db_configuration: Option<ServiceCosmosDbConfigurationInfo>,
+    #[serde(rename = "authenticationConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_configuration: Option<ServiceAuthenticationConfigurationInfo>,
+    #[serde(rename = "corsConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub cors_configuration: Option<ServiceCorsConfigurationInfo>,
+    #[serde(rename = "exportConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub export_configuration: Option<ServiceExportConfigurationInfo>,
+}
+pub mod services_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Canceled,
+    pub enum ProvisioningState {
+        Deleting,
         Succeeded,
+        Creating,
+        Accepted,
+        Verifying,
+        Updating,
         Failed,
-        Requested,
-        Running,
+        Canceled,
+        Deprovisioned,
     }
 }

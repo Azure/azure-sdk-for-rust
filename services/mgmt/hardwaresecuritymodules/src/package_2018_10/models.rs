@@ -3,6 +3,29 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiEntityReference {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHsm {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub properties: DedicatedHsmProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHsmError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<Error>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHsmListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DedicatedHsm>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedHsmOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -31,36 +54,9 @@ pub struct DedicatedHsmOperationListResult {
     pub value: Vec<DedicatedHsmOperation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiEntityReference {
+pub struct DedicatedHsmPatchParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkInterface {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
-    pub private_ip_address: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkProfile {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subnet: Option<ApiEntityReference>,
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
-    pub network_interfaces: Vec<NetworkInterface>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<sku::Name>,
-}
-pub mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        #[serde(rename = "SafeNet Luna Network HSM A790")]
-        SafeNetLunaNetworkHsmA790,
-    }
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedHsmProperties {
@@ -87,36 +83,6 @@ pub mod dedicated_hsm_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHsm {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub properties: DedicatedHsmProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHsmPatchParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHsmListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DedicatedHsm>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Resource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHsmError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<Error>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -124,6 +90,20 @@ pub struct Error {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<Error>>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkInterface {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub private_ip_address: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subnet: Option<ApiEntityReference>,
+    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_interfaces: Vec<NetworkInterface>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -140,4 +120,24 @@ pub struct Resource {
     pub zones: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Resource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<sku::Name>,
+}
+pub mod sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        #[serde(rename = "SafeNet Luna Network HSM A790")]
+        SafeNetLunaNetworkHsmA790,
+    }
 }

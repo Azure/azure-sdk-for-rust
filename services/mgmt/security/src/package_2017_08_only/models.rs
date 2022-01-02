@@ -3,34 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComplianceResultList {
-    pub value: Vec<ComplianceResult>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComplianceResult {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ComplianceResultProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComplianceResultProperties {
-    #[serde(rename = "resourceStatus", default, skip_serializing_if = "Option::is_none")]
-    pub resource_status: Option<compliance_result_properties::ResourceStatus>,
-}
-pub mod compliance_result_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResourceStatus {
-        Healthy,
-        NotApplicable,
-        OffByPolicy,
-        NotHealthy,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
@@ -47,6 +19,34 @@ pub struct CloudErrorBody {
     pub details: Vec<CloudErrorBody>,
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComplianceResult {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ComplianceResultProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComplianceResultList {
+    pub value: Vec<ComplianceResult>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComplianceResultProperties {
+    #[serde(rename = "resourceStatus", default, skip_serializing_if = "Option::is_none")]
+    pub resource_status: Option<compliance_result_properties::ResourceStatus>,
+}
+pub mod compliance_result_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ResourceStatus {
+        Healthy,
+        NotApplicable,
+        OffByPolicy,
+        NotHealthy,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorAdditionalInfo {

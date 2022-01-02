@@ -3,13 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkJobListViewResponse {
-    #[serde(rename = "nJobs", default, skip_serializing_if = "Option::is_none")]
-    pub n_jobs: Option<i32>,
-    #[serde(rename = "sparkJobs", default, skip_serializing_if = "Vec::is_empty")]
-    pub spark_jobs: Vec<SparkJob>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkJob {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
@@ -41,6 +34,13 @@ pub struct SparkJob {
     pub running_duration: Option<String>,
     #[serde(rename = "totalDuration", default, skip_serializing_if = "Option::is_none")]
     pub total_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkJobListViewResponse {
+    #[serde(rename = "nJobs", default, skip_serializing_if = "Option::is_none")]
+    pub n_jobs: Option<i32>,
+    #[serde(rename = "sparkJobs", default, skip_serializing_if = "Vec::is_empty")]
+    pub spark_jobs: Vec<SparkJob>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlQueryStringDataModel {

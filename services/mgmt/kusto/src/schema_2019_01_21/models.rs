@@ -3,45 +3,24 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<cluster_properties::State>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<cluster_properties::ProvisioningState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    #[serde(rename = "dataIngestionUri", default, skip_serializing_if = "Option::is_none")]
-    pub data_ingestion_uri: Option<String>,
-    #[serde(rename = "trustedExternalTenants", default, skip_serializing_if = "Vec::is_empty")]
-    pub trusted_external_tenants: Vec<TrustedExternalTenant>,
+pub struct AzureCapacity {
+    #[serde(rename = "scaleType")]
+    pub scale_type: azure_capacity::ScaleType,
+    pub minimum: i64,
+    pub maximum: i64,
+    pub default: i64,
 }
-pub mod cluster_properties {
+pub mod azure_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Creating,
-        Unavailable,
-        Running,
-        Deleting,
-        Deleted,
-        Stopping,
-        Stopped,
-        Starting,
-        Updating,
+    pub enum ScaleType {
+        #[serde(rename = "automatic")]
+        Automatic,
+        #[serde(rename = "manual")]
+        Manual,
+        #[serde(rename = "none")]
+        None,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Running,
-        Creating,
-        Deleting,
-        Succeeded,
-        Failed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrustedExternalTenant {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResourceSku {
@@ -95,43 +74,94 @@ pub mod azure_sku {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureCapacity {
-    #[serde(rename = "scaleType")]
-    pub scale_type: azure_capacity::ScaleType,
-    pub minimum: i64,
-    pub maximum: i64,
-    pub default: i64,
+pub struct CheckNameResult {
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<check_name_result::Reason>,
 }
-pub mod azure_capacity {
+pub mod check_name_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ScaleType {
-        #[serde(rename = "automatic")]
-        Automatic,
-        #[serde(rename = "manual")]
-        Manual,
-        #[serde(rename = "none")]
-        None,
+    pub enum Reason {
+        Invalid,
+        AlreadyExists,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseStatistics {
+pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<f64>,
+    pub error: Option<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<database_properties::ProvisioningState>,
-    #[serde(rename = "softDeletePeriod", default, skip_serializing_if = "Option::is_none")]
-    pub soft_delete_period: Option<String>,
-    #[serde(rename = "hotCachePeriod", default, skip_serializing_if = "Option::is_none")]
-    pub hot_cache_period: Option<String>,
+pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub statistics: Option<DatabaseStatistics>,
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudErrorBody>,
 }
-pub mod database_properties {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Cluster {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    pub sku: AzureSku,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ClusterProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClusterCheckNameRequest {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: cluster_check_name_request::Type,
+}
+pub mod cluster_check_name_request {
     use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        #[serde(rename = "Microsoft.Kusto/clusters")]
+        MicrosoftKustoClusters,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClusterListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Cluster>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClusterProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<cluster_properties::State>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<cluster_properties::ProvisioningState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+    #[serde(rename = "dataIngestionUri", default, skip_serializing_if = "Option::is_none")]
+    pub data_ingestion_uri: Option<String>,
+    #[serde(rename = "trustedExternalTenants", default, skip_serializing_if = "Vec::is_empty")]
+    pub trusted_external_tenants: Vec<TrustedExternalTenant>,
+}
+pub mod cluster_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Creating,
+        Unavailable,
+        Running,
+        Deleting,
+        Deleted,
+        Stopping,
+        Stopped,
+        Starting,
+        Updating,
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Running,
@@ -142,17 +172,69 @@ pub mod database_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventHubConnectionProperties {
-    #[serde(rename = "eventHubResourceId")]
-    pub event_hub_resource_id: String,
-    #[serde(rename = "consumerGroup")]
-    pub consumer_group: String,
-    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
-    pub table_name: Option<String>,
-    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
-    pub mapping_rule_name: Option<String>,
-    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
-    pub data_format: Option<DataFormat>,
+pub struct ClusterUpdate {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<AzureSku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ClusterProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    pub kind: data_connection::Kind,
+}
+pub mod data_connection {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        EventHub,
+        EventGrid,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectionCheckNameRequest {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: data_connection_check_name_request::Type,
+}
+pub mod data_connection_check_name_request {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        #[serde(rename = "Microsoft.Kusto/clusters/databases/dataConnections")]
+        MicrosoftKustoClustersDatabasesDataConnections,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectionListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DataConnection>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectionValidation {
+    #[serde(rename = "dataConnectionName", default, skip_serializing_if = "Option::is_none")]
+    pub data_connection_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataConnection>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectionValidationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DataConnectionValidationResult>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectionValidationResult {
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DataFormat {
@@ -180,42 +262,6 @@ pub enum DataFormat {
     Avro,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventGridConnectionProperties {
-    #[serde(rename = "storageAccountResourceId")]
-    pub storage_account_resource_id: String,
-    #[serde(rename = "eventHubResourceId")]
-    pub event_hub_resource_id: String,
-    #[serde(rename = "consumerGroup")]
-    pub consumer_group: String,
-    #[serde(rename = "tableName")]
-    pub table_name: String,
-    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
-    pub mapping_rule_name: Option<String>,
-    #[serde(rename = "dataFormat")]
-    pub data_format: DataFormat,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Cluster {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    pub sku: AzureSku,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ClusterProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterUpdate {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<AzureSku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ClusterProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Database {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -225,13 +271,23 @@ pub struct Database {
     pub properties: Option<DatabaseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseUpdate {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseProperties>,
+pub struct DatabaseCheckNameRequest {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: database_check_name_request::Type,
+}
+pub mod database_check_name_request {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        #[serde(rename = "Microsoft.Kusto/clusters/databases")]
+        MicrosoftKustoClustersDatabases,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Database>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabasePrincipal {
@@ -265,14 +321,9 @@ pub mod database_principal {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterListResult {
+pub struct DatabasePrincipalListRequest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Cluster>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Database>,
+    pub value: Vec<DatabasePrincipal>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabasePrincipalListResult {
@@ -280,44 +331,55 @@ pub struct DatabasePrincipalListResult {
     pub value: Vec<DatabasePrincipal>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+pub struct DatabaseProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<database_properties::ProvisioningState>,
+    #[serde(rename = "softDeletePeriod", default, skip_serializing_if = "Option::is_none")]
+    pub soft_delete_period: Option<String>,
+    #[serde(rename = "hotCachePeriod", default, skip_serializing_if = "Option::is_none")]
+    pub hot_cache_period: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    pub kind: data_connection::Kind,
+    pub statistics: Option<DatabaseStatistics>,
 }
-pub mod data_connection {
+pub mod database_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        EventHub,
-        EventGrid,
+    pub enum ProvisioningState {
+        Running,
+        Creating,
+        Deleting,
+        Succeeded,
+        Failed,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectionValidationResult {
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabasePrincipalListRequest {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DatabasePrincipal>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectionValidation {
-    #[serde(rename = "dataConnectionName", default, skip_serializing_if = "Option::is_none")]
-    pub data_connection_name: Option<String>,
+pub struct DatabaseStatistics {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DataConnection>,
+    pub size: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventHubDataConnection {
+pub struct DatabaseUpdate {
     #[serde(flatten)]
-    pub data_connection: DataConnection,
+    pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<EventHubConnectionProperties>,
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventGridConnectionProperties {
+    #[serde(rename = "storageAccountResourceId")]
+    pub storage_account_resource_id: String,
+    #[serde(rename = "eventHubResourceId")]
+    pub event_hub_resource_id: String,
+    #[serde(rename = "consumerGroup")]
+    pub consumer_group: String,
+    #[serde(rename = "tableName")]
+    pub table_name: String,
+    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
+    pub mapping_rule_name: Option<String>,
+    #[serde(rename = "dataFormat")]
+    pub data_format: DataFormat,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventGridDataConnection {
@@ -327,91 +389,24 @@ pub struct EventGridDataConnection {
     pub properties: Option<EventGridConnectionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectionValidationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DataConnectionValidationResult>,
+pub struct EventHubConnectionProperties {
+    #[serde(rename = "eventHubResourceId")]
+    pub event_hub_resource_id: String,
+    #[serde(rename = "consumerGroup")]
+    pub consumer_group: String,
+    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
+    pub table_name: Option<String>,
+    #[serde(rename = "mappingRuleName", default, skip_serializing_if = "Option::is_none")]
+    pub mapping_rule_name: Option<String>,
+    #[serde(rename = "dataFormat", default, skip_serializing_if = "Option::is_none")]
+    pub data_format: Option<DataFormat>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectionListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DataConnection>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
+pub struct EventHubDataConnection {
+    #[serde(flatten)]
+    pub data_connection: DataConnection,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<CloudErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterCheckNameRequest {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: cluster_check_name_request::Type,
-}
-pub mod cluster_check_name_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        #[serde(rename = "Microsoft.Kusto/clusters")]
-        MicrosoftKustoClusters,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseCheckNameRequest {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: database_check_name_request::Type,
-}
-pub mod database_check_name_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        #[serde(rename = "Microsoft.Kusto/clusters/databases")]
-        MicrosoftKustoClustersDatabases,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectionCheckNameRequest {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: data_connection_check_name_request::Type,
-}
-pub mod data_connection_check_name_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        #[serde(rename = "Microsoft.Kusto/clusters/databases/dataConnections")]
-        MicrosoftKustoClustersDatabasesDataConnections,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckNameResult {
-    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub name_available: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<check_name_result::Reason>,
-}
-pub mod check_name_result {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Reason {
-        Invalid,
-        AlreadyExists,
-    }
+    pub properties: Option<EventHubConnectionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListResourceSkusResult {
@@ -422,13 +417,6 @@ pub struct ListResourceSkusResult {
 pub struct ListSkusResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureSku>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -456,12 +444,16 @@ pub mod operation {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    pub location: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -473,7 +465,15 @@ pub struct Resource {
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
+pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    pub location: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrustedExternalTenant {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
 }

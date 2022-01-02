@@ -3,80 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyInfo {
-    #[serde(rename = "Start")]
-    pub start: String,
-    #[serde(rename = "Expiry")]
-    pub expiry: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserDelegationKey {
-    #[serde(rename = "SignedOid")]
-    pub signed_oid: String,
-    #[serde(rename = "SignedTid")]
-    pub signed_tid: String,
-    #[serde(rename = "SignedStart")]
-    pub signed_start: String,
-    #[serde(rename = "SignedExpiry")]
-    pub signed_expiry: String,
-    #[serde(rename = "SignedService")]
-    pub signed_service: String,
-    #[serde(rename = "SignedVersion")]
-    pub signed_version: String,
-    #[serde(rename = "Value")]
-    pub value: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum PublicAccessType {
-    #[serde(rename = "container")]
-    Container,
-    #[serde(rename = "blob")]
-    Blob,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum CopyStatus {
-    #[serde(rename = "pending")]
-    Pending,
-    #[serde(rename = "success")]
-    Success,
-    #[serde(rename = "aborted")]
-    Aborted,
-    #[serde(rename = "failed")]
-    Failed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum LeaseDuration {
-    #[serde(rename = "infinite")]
-    Infinite,
-    #[serde(rename = "fixed")]
-    Fixed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum LeaseState {
-    #[serde(rename = "available")]
-    Available,
-    #[serde(rename = "leased")]
-    Leased,
-    #[serde(rename = "expired")]
-    Expired,
-    #[serde(rename = "breaking")]
-    Breaking,
-    #[serde(rename = "broken")]
-    Broken,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum LeaseStatus {
-    #[serde(rename = "locked")]
-    Locked,
-    #[serde(rename = "unlocked")]
-    Unlocked,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageError {
-    #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicy {
     #[serde(rename = "Start", default, skip_serializing_if = "Option::is_none")]
     pub start: Option<String>,
@@ -110,6 +36,34 @@ pub enum ArchiveStatus {
     RehydratePendingToCool,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArrowConfiguration {
+    #[serde(rename = "Schema")]
+    pub schema: Vec<ArrowField>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArrowField {
+    #[serde(rename = "Type")]
+    pub type_: String,
+    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "Precision", default, skip_serializing_if = "Option::is_none")]
+    pub precision: Option<i64>,
+    #[serde(rename = "Scale", default, skip_serializing_if = "Option::is_none")]
+    pub scale: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobFlatListSegment {
+    #[serde(rename = "BlobItems")]
+    pub blob_items: Vec<BlobItemInternal>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobHierarchyListSegment {
+    #[serde(rename = "BlobPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    pub blob_prefixes: Vec<BlobPrefix>,
+    #[serde(rename = "BlobItems")]
+    pub blob_items: Vec<BlobItemInternal>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobItemInternal {
     #[serde(rename = "Name")]
     pub name: BlobName,
@@ -133,11 +87,21 @@ pub struct BlobItemInternal {
     pub has_versions_only: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobMetadata {
+    #[serde(rename = "Encrypted", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobName {
     #[serde(rename = "Encoded", default, skip_serializing_if = "Option::is_none")]
     pub encoded: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobPrefix {
+    #[serde(rename = "Name")]
+    pub name: BlobName,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
@@ -238,81 +202,16 @@ pub mod blob_properties_internal {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum RehydratePriority {
-    High,
-    Standard,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobMetadata {
-    #[serde(rename = "Encrypted", default, skip_serializing_if = "Option::is_none")]
-    pub encrypted: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobTags {
-    #[serde(rename = "BlobTagSet")]
-    pub blob_tag_set: Vec<BlobTag>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ObjectReplicationMetadata {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListBlobsFlatSegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
-    pub service_endpoint: String,
-    #[serde(rename = "ContainerName")]
-    pub container_name: String,
-    #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
-    pub prefix: Option<String>,
-    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
-    pub marker: Option<String>,
-    #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
-    pub max_results: Option<i64>,
-    #[serde(rename = "Segment")]
-    pub segment: BlobFlatListSegment,
-    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
-    pub next_marker: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobFlatListSegment {
-    #[serde(rename = "BlobItems")]
-    pub blob_items: Vec<BlobItemInternal>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListBlobsHierarchySegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
-    pub service_endpoint: String,
-    #[serde(rename = "ContainerName")]
-    pub container_name: String,
-    #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
-    pub prefix: Option<String>,
-    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
-    pub marker: Option<String>,
-    #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
-    pub max_results: Option<i64>,
-    #[serde(rename = "Delimiter", default, skip_serializing_if = "Option::is_none")]
-    pub delimiter: Option<String>,
-    #[serde(rename = "Segment")]
-    pub segment: BlobHierarchyListSegment,
-    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
-    pub next_marker: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobHierarchyListSegment {
-    #[serde(rename = "BlobPrefixes", default, skip_serializing_if = "Vec::is_empty")]
-    pub blob_prefixes: Vec<BlobPrefix>,
-    #[serde(rename = "BlobItems")]
-    pub blob_items: Vec<BlobItemInternal>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobPrefix {
-    #[serde(rename = "Name")]
-    pub name: BlobName,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobTag {
     #[serde(rename = "Key")]
     pub key: String,
     #[serde(rename = "Value")]
     pub value: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobTags {
+    #[serde(rename = "BlobTagSet")]
+    pub blob_tag_set: Vec<BlobTag>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Block {
@@ -338,6 +237,13 @@ pub struct BlockLookupList {
     pub latest: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClearRange {
+    #[serde(rename = "Start")]
+    pub start: i64,
+    #[serde(rename = "End")]
+    pub end: i64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerItem {
     #[serde(rename = "Name")]
     pub name: String,
@@ -350,6 +256,8 @@ pub struct ContainerItem {
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ContainerMetadata>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerMetadata {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
     #[serde(rename = "Last-Modified")]
@@ -380,57 +288,15 @@ pub struct ContainerProperties {
     pub immutable_storage_with_versioning_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerMetadata {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DelimitedTextConfiguration {
-    #[serde(rename = "ColumnSeparator", default, skip_serializing_if = "Option::is_none")]
-    pub column_separator: Option<String>,
-    #[serde(rename = "FieldQuote", default, skip_serializing_if = "Option::is_none")]
-    pub field_quote: Option<String>,
-    #[serde(rename = "RecordSeparator", default, skip_serializing_if = "Option::is_none")]
-    pub record_separator: Option<String>,
-    #[serde(rename = "EscapeChar", default, skip_serializing_if = "Option::is_none")]
-    pub escape_char: Option<String>,
-    #[serde(rename = "HeadersPresent", default, skip_serializing_if = "Option::is_none")]
-    pub headers_present: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JsonTextConfiguration {
-    #[serde(rename = "RecordSeparator", default, skip_serializing_if = "Option::is_none")]
-    pub record_separator: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ArrowConfiguration {
-    #[serde(rename = "Schema")]
-    pub schema: Vec<ArrowField>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ParquetConfiguration {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ArrowField {
-    #[serde(rename = "Type")]
-    pub type_: String,
-    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "Precision", default, skip_serializing_if = "Option::is_none")]
-    pub precision: Option<i64>,
-    #[serde(rename = "Scale", default, skip_serializing_if = "Option::is_none")]
-    pub scale: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListContainersSegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
-    pub service_endpoint: String,
-    #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
-    pub prefix: Option<String>,
-    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
-    pub marker: Option<String>,
-    #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
-    pub max_results: Option<i64>,
-    #[serde(rename = "ContainerItems")]
-    pub container_items: Vec<ContainerItem>,
-    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
-    pub next_marker: Option<String>,
+pub enum CopyStatus {
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "success")]
+    Success,
+    #[serde(rename = "aborted")]
+    Aborted,
+    #[serde(rename = "failed")]
+    Failed,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
@@ -444,6 +310,19 @@ pub struct CorsRule {
     pub exposed_headers: String,
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DelimitedTextConfiguration {
+    #[serde(rename = "ColumnSeparator", default, skip_serializing_if = "Option::is_none")]
+    pub column_separator: Option<String>,
+    #[serde(rename = "FieldQuote", default, skip_serializing_if = "Option::is_none")]
+    pub field_quote: Option<String>,
+    #[serde(rename = "RecordSeparator", default, skip_serializing_if = "Option::is_none")]
+    pub record_separator: Option<String>,
+    #[serde(rename = "EscapeChar", default, skip_serializing_if = "Option::is_none")]
+    pub escape_char: Option<String>,
+    #[serde(rename = "HeadersPresent", default, skip_serializing_if = "Option::is_none")]
+    pub headers_present: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorCode {
@@ -602,6 +481,96 @@ pub mod geo_replication {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JsonTextConfiguration {
+    #[serde(rename = "RecordSeparator", default, skip_serializing_if = "Option::is_none")]
+    pub record_separator: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyInfo {
+    #[serde(rename = "Start")]
+    pub start: String,
+    #[serde(rename = "Expiry")]
+    pub expiry: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum LeaseDuration {
+    #[serde(rename = "infinite")]
+    Infinite,
+    #[serde(rename = "fixed")]
+    Fixed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum LeaseState {
+    #[serde(rename = "available")]
+    Available,
+    #[serde(rename = "leased")]
+    Leased,
+    #[serde(rename = "expired")]
+    Expired,
+    #[serde(rename = "breaking")]
+    Breaking,
+    #[serde(rename = "broken")]
+    Broken,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum LeaseStatus {
+    #[serde(rename = "locked")]
+    Locked,
+    #[serde(rename = "unlocked")]
+    Unlocked,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListBlobsFlatSegmentResponse {
+    #[serde(rename = "ServiceEndpoint")]
+    pub service_endpoint: String,
+    #[serde(rename = "ContainerName")]
+    pub container_name: String,
+    #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
+    pub marker: Option<String>,
+    #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
+    pub max_results: Option<i64>,
+    #[serde(rename = "Segment")]
+    pub segment: BlobFlatListSegment,
+    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
+    pub next_marker: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListBlobsHierarchySegmentResponse {
+    #[serde(rename = "ServiceEndpoint")]
+    pub service_endpoint: String,
+    #[serde(rename = "ContainerName")]
+    pub container_name: String,
+    #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
+    pub marker: Option<String>,
+    #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
+    pub max_results: Option<i64>,
+    #[serde(rename = "Delimiter", default, skip_serializing_if = "Option::is_none")]
+    pub delimiter: Option<String>,
+    #[serde(rename = "Segment")]
+    pub segment: BlobHierarchyListSegment,
+    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
+    pub next_marker: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListContainersSegmentResponse {
+    #[serde(rename = "ServiceEndpoint")]
+    pub service_endpoint: String,
+    #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
+    pub marker: Option<String>,
+    #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
+    pub max_results: Option<i64>,
+    #[serde(rename = "ContainerItems")]
+    pub container_items: Vec<ContainerItem>,
+    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
+    pub next_marker: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Logging {
     #[serde(rename = "Version")]
     pub version: String,
@@ -615,15 +584,6 @@ pub struct Logging {
     pub retention_policy: RetentionPolicy,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetentionPolicy {
-    #[serde(rename = "Enabled")]
-    pub enabled: bool,
-    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
-    pub days: Option<i64>,
-    #[serde(rename = "AllowPermanentDelete", default, skip_serializing_if = "Option::is_none")]
-    pub allow_permanent_delete: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -634,6 +594,8 @@ pub struct Metrics {
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ObjectReplicationMetadata {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PageList {
     #[serde(rename = "PageRange", default, skip_serializing_if = "Vec::is_empty")]
@@ -649,11 +611,26 @@ pub struct PageRange {
     pub end: i64,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClearRange {
-    #[serde(rename = "Start")]
-    pub start: i64,
-    #[serde(rename = "End")]
-    pub end: i64,
+pub struct ParquetConfiguration {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum PublicAccessType {
+    #[serde(rename = "container")]
+    Container,
+    #[serde(rename = "blob")]
+    Blob,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueryFormat {
+    #[serde(rename = "Type")]
+    pub type_: QueryType,
+    #[serde(rename = "DelimitedTextConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub delimited_text_configuration: Option<DelimitedTextConfiguration>,
+    #[serde(rename = "JsonTextConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub json_text_configuration: Option<JsonTextConfiguration>,
+    #[serde(rename = "ArrowConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub arrow_configuration: Option<ArrowConfiguration>,
+    #[serde(rename = "ParquetTextConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub parquet_text_configuration: Option<ParquetConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -680,19 +657,6 @@ pub struct QuerySerialization {
     pub format: QueryFormat,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryFormat {
-    #[serde(rename = "Type")]
-    pub type_: QueryType,
-    #[serde(rename = "DelimitedTextConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub delimited_text_configuration: Option<DelimitedTextConfiguration>,
-    #[serde(rename = "JsonTextConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub json_text_configuration: Option<JsonTextConfiguration>,
-    #[serde(rename = "ArrowConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub arrow_configuration: Option<ArrowConfiguration>,
-    #[serde(rename = "ParquetTextConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub parquet_text_configuration: Option<ParquetConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryType {
     #[serde(rename = "delimited")]
     Delimited,
@@ -702,6 +666,20 @@ pub enum QueryType {
     Arrow,
     #[serde(rename = "parquet")]
     Parquet,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum RehydratePriority {
+    High,
+    Standard,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RetentionPolicy {
+    #[serde(rename = "Enabled")]
+    pub enabled: bool,
+    #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
+    pub days: Option<i64>,
+    #[serde(rename = "AllowPermanentDelete", default, skip_serializing_if = "Option::is_none")]
+    pub allow_permanent_delete: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {
@@ -721,6 +699,11 @@ pub struct StaticWebsite {
     pub error_document404_path: Option<String>,
     #[serde(rename = "DefaultIndexDocumentPath", default, skip_serializing_if = "Option::is_none")]
     pub default_index_document_path: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageError {
+    #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageServiceProperties {
@@ -743,4 +726,21 @@ pub struct StorageServiceProperties {
 pub struct StorageServiceStats {
     #[serde(rename = "GeoReplication", default, skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserDelegationKey {
+    #[serde(rename = "SignedOid")]
+    pub signed_oid: String,
+    #[serde(rename = "SignedTid")]
+    pub signed_tid: String,
+    #[serde(rename = "SignedStart")]
+    pub signed_start: String,
+    #[serde(rename = "SignedExpiry")]
+    pub signed_expiry: String,
+    #[serde(rename = "SignedService")]
+    pub signed_service: String,
+    #[serde(rename = "SignedVersion")]
+    pub signed_version: String,
+    #[serde(rename = "Value")]
+    pub value: String,
 }

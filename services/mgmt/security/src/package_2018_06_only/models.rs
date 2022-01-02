@@ -3,32 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PricingList {
-    pub value: Vec<Pricing>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Pricing {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PricingProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PricingProperties {
-    #[serde(rename = "pricingTier")]
-    pub pricing_tier: pricing_properties::PricingTier,
-    #[serde(rename = "freeTrialRemainingTime", default, skip_serializing_if = "Option::is_none")]
-    pub free_trial_remaining_time: Option<String>,
-}
-pub mod pricing_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PricingTier {
-        Free,
-        Standard,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
@@ -52,6 +26,32 @@ pub struct ErrorAdditionalInfo {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Pricing {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PricingProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PricingList {
+    pub value: Vec<Pricing>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PricingProperties {
+    #[serde(rename = "pricingTier")]
+    pub pricing_tier: pricing_properties::PricingTier,
+    #[serde(rename = "freeTrialRemainingTime", default, skip_serializing_if = "Option::is_none")]
+    pub free_trial_remaining_time: Option<String>,
+}
+pub mod pricing_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PricingTier {
+        Free,
+        Standard,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {

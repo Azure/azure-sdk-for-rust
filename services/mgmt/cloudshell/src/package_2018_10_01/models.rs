@@ -9,32 +9,15 @@ pub struct CloudShellConsole {
     pub properties: ConsoleProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConsoleProperties {
-    #[serde(rename = "osType")]
-    pub os_type: console_properties::OsType,
-    #[serde(rename = "provisioningState")]
-    pub provisioning_state: console_properties::ProvisioningState,
-    pub uri: String,
+pub struct CloudShellPatchUserSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<UserProperties>,
 }
-pub mod console_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Linux,
-        Windows,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        NotSpecified,
-        Accepted,
-        Pending,
-        Updating,
-        Creating,
-        Repairing,
-        Failed,
-        Canceled,
-        Succeeded,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudShellUserSettings {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub properties: UserProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsoleCreateProperties {
@@ -72,43 +55,44 @@ pub struct ConsoleDefinition {
     pub properties: ConsoleCreateProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserSettingsResponse {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub properties: UserProperties,
+pub struct ConsoleProperties {
+    #[serde(rename = "osType")]
+    pub os_type: console_properties::OsType,
+    #[serde(rename = "provisioningState")]
+    pub provisioning_state: console_properties::ProvisioningState,
+    pub uri: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserProperties {
-    #[serde(rename = "preferredOsType")]
-    pub preferred_os_type: user_properties::PreferredOsType,
-    #[serde(rename = "preferredLocation")]
-    pub preferred_location: String,
-    #[serde(rename = "storageProfile")]
-    pub storage_profile: StorageProfile,
-    #[serde(rename = "terminalSettings")]
-    pub terminal_settings: TerminalSettings,
-    #[serde(rename = "preferredShellType")]
-    pub preferred_shell_type: user_properties::PreferredShellType,
-}
-pub mod user_properties {
+pub mod console_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PreferredOsType {
-        Windows,
+    pub enum OsType {
         Linux,
+        Windows,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PreferredShellType {
-        #[serde(rename = "bash")]
-        Bash,
-        #[serde(rename = "pwsh")]
-        Pwsh,
-        #[serde(rename = "powershell")]
-        Powershell,
+    pub enum ProvisioningState {
+        NotSpecified,
+        Accepted,
+        Pending,
+        Updating,
+        Creating,
+        Repairing,
+        Failed,
+        Canceled,
+        Succeeded,
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    pub code: String,
+    pub message: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error: ErrorDetail,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageProfile {
     #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -142,22 +126,38 @@ pub mod terminal_settings {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudShellUserSettings {
+pub struct UserProperties {
+    #[serde(rename = "preferredOsType")]
+    pub preferred_os_type: user_properties::PreferredOsType,
+    #[serde(rename = "preferredLocation")]
+    pub preferred_location: String,
+    #[serde(rename = "storageProfile")]
+    pub storage_profile: StorageProfile,
+    #[serde(rename = "terminalSettings")]
+    pub terminal_settings: TerminalSettings,
+    #[serde(rename = "preferredShellType")]
+    pub preferred_shell_type: user_properties::PreferredShellType,
+}
+pub mod user_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PreferredOsType {
+        Windows,
+        Linux,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PreferredShellType {
+        #[serde(rename = "bash")]
+        Bash,
+        #[serde(rename = "pwsh")]
+        Pwsh,
+        #[serde(rename = "powershell")]
+        Powershell,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserSettingsResponse {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: UserProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudShellPatchUserSettings {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UserProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: ErrorDetail,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    pub code: String,
-    pub message: String,
 }

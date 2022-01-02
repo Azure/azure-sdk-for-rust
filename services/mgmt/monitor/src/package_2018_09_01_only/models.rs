@@ -3,25 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroupResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ActionGroup>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroup {
     #[serde(rename = "groupShortName")]
     pub group_short_name: String,
@@ -55,51 +36,29 @@ pub struct ActionGroupList {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EmailReceiver {
-    pub name: String,
-    #[serde(rename = "emailAddress")]
-    pub email_address: String,
+pub struct ActionGroupPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<ReceiverStatus>,
+    pub enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReceiverStatus {
-    NotSpecified,
-    Enabled,
-    Disabled,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SmsReceiver {
-    pub name: String,
-    #[serde(rename = "countryCode")]
-    pub country_code: String,
-    #[serde(rename = "phoneNumber")]
-    pub phone_number: String,
+pub struct ActionGroupPatchBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<ReceiverStatus>,
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActionGroupPatch>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WebhookReceiver {
-    pub name: String,
-    #[serde(rename = "serviceUri")]
-    pub service_uri: String,
+pub struct ActionGroupResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActionGroup>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ItsmReceiver {
+pub struct ArmRoleReceiver {
     pub name: String,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: String,
-    #[serde(rename = "connectionId")]
-    pub connection_id: String,
-    #[serde(rename = "ticketConfiguration")]
-    pub ticket_configuration: String,
-    pub region: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureAppPushReceiver {
-    pub name: String,
-    #[serde(rename = "emailAddress")]
-    pub email_address: String,
+    #[serde(rename = "roleId")]
+    pub role_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRunbookReceiver {
@@ -117,20 +76,10 @@ pub struct AutomationRunbookReceiver {
     pub service_uri: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VoiceReceiver {
+pub struct AzureAppPushReceiver {
     pub name: String,
-    #[serde(rename = "countryCode")]
-    pub country_code: String,
-    #[serde(rename = "phoneNumber")]
-    pub phone_number: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogicAppReceiver {
-    pub name: String,
-    #[serde(rename = "resourceId")]
-    pub resource_id: String,
-    #[serde(rename = "callbackUrl")]
-    pub callback_url: String,
+    #[serde(rename = "emailAddress")]
+    pub email_address: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
@@ -143,40 +92,31 @@ pub struct AzureFunctionReceiver {
     pub http_trigger_url: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ArmRoleReceiver {
-    pub name: String,
-    #[serde(rename = "roleId")]
-    pub role_id: String,
+pub struct Baseline {
+    pub sensitivity: baseline::Sensitivity,
+    #[serde(rename = "lowThresholds")]
+    pub low_thresholds: Vec<f64>,
+    #[serde(rename = "highThresholds")]
+    pub high_thresholds: Vec<f64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub timestamps: Vec<String>,
+    #[serde(rename = "PredictionResultType", default, skip_serializing_if = "Option::is_none")]
+    pub prediction_result_type: Option<baseline::PredictionResultType>,
+    #[serde(rename = "ErrorType", default, skip_serializing_if = "Option::is_none")]
+    pub error_type: Option<baseline::ErrorType>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnableRequest {
-    #[serde(rename = "receiverName")]
-    pub receiver_name: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroupPatchBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ActionGroupPatch>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroupPatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LocalizableString {
-    pub value: String,
-    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
-    pub localized_value: Option<String>,
+pub mod baseline {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Sensitivity {
+        Low,
+        Medium,
+        High,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PredictionResultType {}
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ErrorType {}
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaselineMetadataValue {
@@ -184,6 +124,17 @@ pub struct BaselineMetadataValue {
     pub name: Option<LocalizableString>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BaselineProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timespan: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub aggregation: Option<String>,
+    #[serde(rename = "internalOperationId", default, skip_serializing_if = "Option::is_none")]
+    pub internal_operation_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaselineResponse {
@@ -214,51 +165,6 @@ pub mod baseline_response {
     pub enum ErrorType {}
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BaselineProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timespan: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub aggregation: Option<String>,
-    #[serde(rename = "internalOperationId", default, skip_serializing_if = "Option::is_none")]
-    pub internal_operation_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Baseline {
-    pub sensitivity: baseline::Sensitivity,
-    #[serde(rename = "lowThresholds")]
-    pub low_thresholds: Vec<f64>,
-    #[serde(rename = "highThresholds")]
-    pub high_thresholds: Vec<f64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub timestamps: Vec<String>,
-    #[serde(rename = "PredictionResultType", default, skip_serializing_if = "Option::is_none")]
-    pub prediction_result_type: Option<baseline::PredictionResultType>,
-    #[serde(rename = "ErrorType", default, skip_serializing_if = "Option::is_none")]
-    pub error_type: Option<baseline::ErrorType>,
-}
-pub mod baseline {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Sensitivity {
-        Low,
-        Medium,
-        High,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PredictionResultType {}
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ErrorType {}
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimeSeriesInformation {
-    pub sensitivities: Vec<String>,
-    pub values: Vec<f64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub timestamps: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CalculateBaselineResponse {
     #[serde(rename = "type")]
     pub type_: String,
@@ -285,4 +191,98 @@ pub mod calculate_baseline_response {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ErrorType {}
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EmailReceiver {
+    pub name: String,
+    #[serde(rename = "emailAddress")]
+    pub email_address: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<ReceiverStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EnableRequest {
+    #[serde(rename = "receiverName")]
+    pub receiver_name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ItsmReceiver {
+    pub name: String,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: String,
+    #[serde(rename = "connectionId")]
+    pub connection_id: String,
+    #[serde(rename = "ticketConfiguration")]
+    pub ticket_configuration: String,
+    pub region: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LocalizableString {
+    pub value: String,
+    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
+    pub localized_value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogicAppReceiver {
+    pub name: String,
+    #[serde(rename = "resourceId")]
+    pub resource_id: String,
+    #[serde(rename = "callbackUrl")]
+    pub callback_url: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ReceiverStatus {
+    NotSpecified,
+    Enabled,
+    Disabled,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmsReceiver {
+    pub name: String,
+    #[serde(rename = "countryCode")]
+    pub country_code: String,
+    #[serde(rename = "phoneNumber")]
+    pub phone_number: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<ReceiverStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TimeSeriesInformation {
+    pub sensitivities: Vec<String>,
+    pub values: Vec<f64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub timestamps: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VoiceReceiver {
+    pub name: String,
+    #[serde(rename = "countryCode")]
+    pub country_code: String,
+    #[serde(rename = "phoneNumber")]
+    pub phone_number: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebhookReceiver {
+    pub name: String,
+    #[serde(rename = "serviceUri")]
+    pub service_uri: String,
 }

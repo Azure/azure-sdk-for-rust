@@ -3,6 +3,117 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Column {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: ColumnDataType,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ColumnDataType {
+    #[serde(rename = "string")]
+    String,
+    #[serde(rename = "integer")]
+    Integer,
+    #[serde(rename = "number")]
+    Number,
+    #[serde(rename = "boolean")]
+    Boolean,
+    #[serde(rename = "object")]
+    Object,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Error {
+    pub code: String,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetails {
+    pub code: String,
+    pub message: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error: Error,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Facet {
+    pub expression: String,
+    #[serde(rename = "resultType")]
+    pub result_type: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FacetError {
+    #[serde(flatten)]
+    pub facet: Facet,
+    pub errors: Vec<ErrorDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FacetRequest {
+    pub expression: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub options: Option<FacetRequestOptions>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FacetRequestOptions {
+    #[serde(rename = "sortBy", default, skip_serializing_if = "Option::is_none")]
+    pub sort_by: Option<String>,
+    #[serde(rename = "sortOrder", default, skip_serializing_if = "Option::is_none")]
+    pub sort_order: Option<facet_request_options::SortOrder>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<String>,
+    #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
+    pub top: Option<i32>,
+}
+pub mod facet_request_options {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SortOrder {
+        #[serde(rename = "asc")]
+        Asc,
+        #[serde(rename = "desc")]
+        Desc,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FacetResult {
+    #[serde(flatten)]
+    pub facet: Facet,
+    #[serde(rename = "totalRecords")]
+    pub total_records: i64,
+    pub count: i32,
+    pub data: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
     pub subscriptions: Vec<String>,
     pub query: String,
@@ -33,33 +144,6 @@ pub mod query_request_options {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FacetRequest {
-    pub expression: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub options: Option<FacetRequestOptions>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FacetRequestOptions {
-    #[serde(rename = "sortBy", default, skip_serializing_if = "Option::is_none")]
-    pub sort_by: Option<String>,
-    #[serde(rename = "sortOrder", default, skip_serializing_if = "Option::is_none")]
-    pub sort_order: Option<facet_request_options::SortOrder>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<String>,
-    #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
-    pub top: Option<i32>,
-}
-pub mod facet_request_options {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SortOrder {
-        #[serde(rename = "asc")]
-        Asc,
-        #[serde(rename = "desc")]
-        Desc,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryResponse {
     #[serde(rename = "totalRecords")]
     pub total_records: i64,
@@ -82,93 +166,9 @@ pub mod query_response {
         False,
     }
 }
+pub type Row = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Table {
     pub columns: Vec<Column>,
     pub rows: Vec<Row>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Column {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: ColumnDataType,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ColumnDataType {
-    #[serde(rename = "string")]
-    String,
-    #[serde(rename = "integer")]
-    Integer,
-    #[serde(rename = "number")]
-    Number,
-    #[serde(rename = "boolean")]
-    Boolean,
-    #[serde(rename = "object")]
-    Object,
-}
-pub type Row = Vec<serde_json::Value>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Facet {
-    pub expression: String,
-    #[serde(rename = "resultType")]
-    pub result_type: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FacetResult {
-    #[serde(flatten)]
-    pub facet: Facet,
-    #[serde(rename = "totalRecords")]
-    pub total_records: i64,
-    pub count: i32,
-    pub data: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FacetError {
-    #[serde(flatten)]
-    pub facet: Facet,
-    pub errors: Vec<ErrorDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: Error,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    pub code: String,
-    pub message: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetails {
-    pub code: String,
-    pub message: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
-}
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
-    }
 }

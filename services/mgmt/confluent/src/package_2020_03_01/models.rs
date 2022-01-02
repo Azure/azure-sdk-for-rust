@@ -40,33 +40,6 @@ pub struct ConfluentAgreementResourceListResponse {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationDisplay {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationResult {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<OperationDisplay>,
-    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
-    pub is_data_action: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<OperationResult>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -76,36 +49,6 @@ pub struct ErrorResponseBody {
     pub target: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceProviderDefaultErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponseBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProvisioningState {
-    Accepted,
-    Creating,
-    Updating,
-    Deleting,
-    Succeeded,
-    Failed,
-    Canceled,
-    Deleted,
-    NotSpecified,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SaaSOfferStatus {
-    Started,
-    PendingFulfillmentStart,
-    InProgress,
-    Subscribed,
-    Suspended,
-    Reinstated,
-    Succeeded,
-    Failed,
-    Unsubscribed,
-    Updating,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfferDetail {
@@ -123,28 +66,31 @@ pub struct OfferDetail {
     pub status: Option<SaaSOfferStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserDetail {
-    #[serde(rename = "firstName", default, skip_serializing_if = "Option::is_none")]
-    pub first_name: Option<String>,
-    #[serde(rename = "lastName", default, skip_serializing_if = "Option::is_none")]
-    pub last_name: Option<String>,
-    #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
-    pub email_address: Option<String>,
+pub struct OperationDisplay {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OrganizationResourceProperties {
-    #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
-    pub created_time: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "organizationId", default, skip_serializing_if = "Option::is_none")]
-    pub organization_id: Option<String>,
-    #[serde(rename = "ssoUrl", default, skip_serializing_if = "Option::is_none")]
-    pub sso_url: Option<String>,
-    #[serde(rename = "offerDetail", default, skip_serializing_if = "Option::is_none")]
-    pub offer_detail: Option<serde_json::Value>,
-    #[serde(rename = "userDetail", default, skip_serializing_if = "Option::is_none")]
-    pub user_detail: Option<serde_json::Value>,
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<OperationResult>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationResult {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<OperationDisplay>,
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrganizationResource {
@@ -169,7 +115,61 @@ pub struct OrganizationResourceListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OrganizationResourceProperties {
+    #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
+    pub created_time: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "organizationId", default, skip_serializing_if = "Option::is_none")]
+    pub organization_id: Option<String>,
+    #[serde(rename = "ssoUrl", default, skip_serializing_if = "Option::is_none")]
+    pub sso_url: Option<String>,
+    #[serde(rename = "offerDetail", default, skip_serializing_if = "Option::is_none")]
+    pub offer_detail: Option<serde_json::Value>,
+    #[serde(rename = "userDetail", default, skip_serializing_if = "Option::is_none")]
+    pub user_detail: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrganizationResourceUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProvisioningState {
+    Accepted,
+    Creating,
+    Updating,
+    Deleting,
+    Succeeded,
+    Failed,
+    Canceled,
+    Deleted,
+    NotSpecified,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceProviderDefaultErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponseBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SaaSOfferStatus {
+    Started,
+    PendingFulfillmentStart,
+    InProgress,
+    Subscribed,
+    Suspended,
+    Reinstated,
+    Succeeded,
+    Failed,
+    Unsubscribed,
+    Updating,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserDetail {
+    #[serde(rename = "firstName", default, skip_serializing_if = "Option::is_none")]
+    pub first_name: Option<String>,
+    #[serde(rename = "lastName", default, skip_serializing_if = "Option::is_none")]
+    pub last_name: Option<String>,
+    #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
+    pub email_address: Option<String>,
 }

@@ -3,13 +3,18 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobDetailsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobDetails>,
+pub struct BlobDetails {
+    #[serde(rename = "containerName")]
+    pub container_name: String,
+    #[serde(rename = "blobName", default, skip_serializing_if = "Option::is_none")]
+    pub blob_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i64>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDetails {
@@ -59,28 +64,11 @@ pub mod job_details {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorData {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobDetails {
-    #[serde(rename = "containerName")]
-    pub container_name: String,
-    #[serde(rename = "blobName", default, skip_serializing_if = "Option::is_none")]
-    pub blob_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SasUriResponse {
-    #[serde(rename = "sasUri", default, skip_serializing_if = "Option::is_none")]
-    pub sas_uri: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProviderStatusList {
+pub struct JobDetailsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ProviderStatus>,
+    pub value: Vec<JobDetails>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -103,29 +91,9 @@ pub mod provider_status {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "currentAvailability", default, skip_serializing_if = "Option::is_none")]
-    pub current_availability: Option<target_status::CurrentAvailability>,
-    #[serde(rename = "averageQueueTime", default, skip_serializing_if = "Option::is_none")]
-    pub average_queue_time: Option<i64>,
-    #[serde(rename = "statusPage", default, skip_serializing_if = "Option::is_none")]
-    pub status_page: Option<String>,
-}
-pub mod target_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CurrentAvailability {
-        Available,
-        Degraded,
-        Unavailable,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuotaList {
+pub struct ProviderStatusList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Quota>,
+    pub value: Vec<ProviderStatus>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -157,6 +125,38 @@ pub mod quota {
     pub enum Period {
         None,
         Monthly,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuotaList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Quota>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SasUriResponse {
+    #[serde(rename = "sasUri", default, skip_serializing_if = "Option::is_none")]
+    pub sas_uri: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TargetStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "currentAvailability", default, skip_serializing_if = "Option::is_none")]
+    pub current_availability: Option<target_status::CurrentAvailability>,
+    #[serde(rename = "averageQueueTime", default, skip_serializing_if = "Option::is_none")]
+    pub average_queue_time: Option<i64>,
+    #[serde(rename = "statusPage", default, skip_serializing_if = "Option::is_none")]
+    pub status_page: Option<String>,
+}
+pub mod target_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CurrentAvailability {
+        Available,
+        Degraded,
+        Unavailable,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -3,6 +3,164 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessUri {
+    #[serde(rename = "accessSAS", default, skip_serializing_if = "Option::is_none")]
+    pub access_sas: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdditionalCapabilities {
+    #[serde(rename = "ultraSSDEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub ultra_ssd_enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AdditionalUnattendContent {
+    #[serde(rename = "passName", default, skip_serializing_if = "Option::is_none")]
+    pub pass_name: Option<additional_unattend_content::PassName>,
+    #[serde(rename = "componentName", default, skip_serializing_if = "Option::is_none")]
+    pub component_name: Option<additional_unattend_content::ComponentName>,
+    #[serde(rename = "settingName", default, skip_serializing_if = "Option::is_none")]
+    pub setting_name: Option<additional_unattend_content::SettingName>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+}
+pub mod additional_unattend_content {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PassName {
+        OobeSystem,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ComponentName {
+        #[serde(rename = "Microsoft-Windows-Shell-Setup")]
+        MicrosoftWindowsShellSetup,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SettingName {
+        AutoLogon,
+        FirstLogonCommands,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiEntityReference {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiError {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ApiErrorBase>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<InnerError>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiErrorBase {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutomaticOsUpgradePolicy {
+    #[serde(rename = "enableAutomaticOSUpgrade", default, skip_serializing_if = "Option::is_none")]
+    pub enable_automatic_os_upgrade: Option<bool>,
+    #[serde(rename = "disableAutomaticRollback", default, skip_serializing_if = "Option::is_none")]
+    pub disable_automatic_rollback: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutomaticOsUpgradeProperties {
+    #[serde(rename = "automaticOSUpgradeSupported")]
+    pub automatic_os_upgrade_supported: bool,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutomaticRepairsPolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "gracePeriod", default, skip_serializing_if = "Option::is_none")]
+    pub grace_period: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailabilitySet {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AvailabilitySetProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailabilitySetListResult {
+    pub value: Vec<AvailabilitySet>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailabilitySetProperties {
+    #[serde(rename = "platformUpdateDomainCount", default, skip_serializing_if = "Option::is_none")]
+    pub platform_update_domain_count: Option<i32>,
+    #[serde(rename = "platformFaultDomainCount", default, skip_serializing_if = "Option::is_none")]
+    pub platform_fault_domain_count: Option<i32>,
+    #[serde(rename = "virtualMachines", default, skip_serializing_if = "Vec::is_empty")]
+    pub virtual_machines: Vec<SubResource>,
+    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
+    pub proximity_placement_group: Option<SubResource>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum AvailabilitySetSkuType {
+    Classic,
+    Aligned,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AvailabilitySetUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AvailabilitySetProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BillingProfile {
+    #[serde(rename = "maxPrice", default, skip_serializing_if = "Option::is_none")]
+    pub max_price: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BootDiagnostics {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
+    pub storage_uri: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BootDiagnosticsInstanceView {
+    #[serde(rename = "consoleScreenshotBlobUri", default, skip_serializing_if = "Option::is_none")]
+    pub console_screenshot_blob_uri: Option<String>,
+    #[serde(rename = "serialConsoleLogBlobUri", default, skip_serializing_if = "Option::is_none")]
+    pub serial_console_log_blob_uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Caching {
+    None,
+    ReadOnly,
+    ReadWrite,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ApiError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeOperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ComputeOperationValue>,
@@ -28,172 +186,299 @@ pub struct ComputeOperationValueDisplay {
     pub provider: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum HyperVGenerationType {
-    V1,
-    V2,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InstanceViewStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<instance_view_status::Level>,
-    #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
-    pub display_status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub time: Option<String>,
-}
-pub mod instance_view_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Level {
-        Info,
-        Warning,
-        Error,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilitySetProperties {
-    #[serde(rename = "platformUpdateDomainCount", default, skip_serializing_if = "Option::is_none")]
-    pub platform_update_domain_count: Option<i32>,
-    #[serde(rename = "platformFaultDomainCount", default, skip_serializing_if = "Option::is_none")]
-    pub platform_fault_domain_count: Option<i32>,
-    #[serde(rename = "virtualMachines", default, skip_serializing_if = "Vec::is_empty")]
-    pub virtual_machines: Vec<SubResource>,
-    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
-    pub proximity_placement_group: Option<SubResource>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses: Vec<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum AvailabilitySetSkuType {
-    Classic,
-    Aligned,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilitySet {
+pub struct ContainerService {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AvailabilitySetProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
+    pub properties: Option<ContainerServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
+pub struct ContainerServiceAgentPoolProfile {
+    pub name: String,
+    pub count: i32,
+    #[serde(rename = "vmSize")]
+    pub vm_size: container_service_agent_pool_profile::VmSize,
+    #[serde(rename = "dnsPrefix")]
+    pub dns_prefix: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fqdn: Option<String>,
+}
+pub mod container_service_agent_pool_profile {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum VmSize {
+        #[serde(rename = "Standard_A0")]
+        StandardA0,
+        #[serde(rename = "Standard_A1")]
+        StandardA1,
+        #[serde(rename = "Standard_A2")]
+        StandardA2,
+        #[serde(rename = "Standard_A3")]
+        StandardA3,
+        #[serde(rename = "Standard_A4")]
+        StandardA4,
+        #[serde(rename = "Standard_A5")]
+        StandardA5,
+        #[serde(rename = "Standard_A6")]
+        StandardA6,
+        #[serde(rename = "Standard_A7")]
+        StandardA7,
+        #[serde(rename = "Standard_A8")]
+        StandardA8,
+        #[serde(rename = "Standard_A9")]
+        StandardA9,
+        #[serde(rename = "Standard_A10")]
+        StandardA10,
+        #[serde(rename = "Standard_A11")]
+        StandardA11,
+        #[serde(rename = "Standard_D1")]
+        StandardD1,
+        #[serde(rename = "Standard_D2")]
+        StandardD2,
+        #[serde(rename = "Standard_D3")]
+        StandardD3,
+        #[serde(rename = "Standard_D4")]
+        StandardD4,
+        #[serde(rename = "Standard_D11")]
+        StandardD11,
+        #[serde(rename = "Standard_D12")]
+        StandardD12,
+        #[serde(rename = "Standard_D13")]
+        StandardD13,
+        #[serde(rename = "Standard_D14")]
+        StandardD14,
+        #[serde(rename = "Standard_D1_v2")]
+        StandardD1V2,
+        #[serde(rename = "Standard_D2_v2")]
+        StandardD2V2,
+        #[serde(rename = "Standard_D3_v2")]
+        StandardD3V2,
+        #[serde(rename = "Standard_D4_v2")]
+        StandardD4V2,
+        #[serde(rename = "Standard_D5_v2")]
+        StandardD5V2,
+        #[serde(rename = "Standard_D11_v2")]
+        StandardD11V2,
+        #[serde(rename = "Standard_D12_v2")]
+        StandardD12V2,
+        #[serde(rename = "Standard_D13_v2")]
+        StandardD13V2,
+        #[serde(rename = "Standard_D14_v2")]
+        StandardD14V2,
+        #[serde(rename = "Standard_G1")]
+        StandardG1,
+        #[serde(rename = "Standard_G2")]
+        StandardG2,
+        #[serde(rename = "Standard_G3")]
+        StandardG3,
+        #[serde(rename = "Standard_G4")]
+        StandardG4,
+        #[serde(rename = "Standard_G5")]
+        StandardG5,
+        #[serde(rename = "Standard_DS1")]
+        StandardDs1,
+        #[serde(rename = "Standard_DS2")]
+        StandardDs2,
+        #[serde(rename = "Standard_DS3")]
+        StandardDs3,
+        #[serde(rename = "Standard_DS4")]
+        StandardDs4,
+        #[serde(rename = "Standard_DS11")]
+        StandardDs11,
+        #[serde(rename = "Standard_DS12")]
+        StandardDs12,
+        #[serde(rename = "Standard_DS13")]
+        StandardDs13,
+        #[serde(rename = "Standard_DS14")]
+        StandardDs14,
+        #[serde(rename = "Standard_GS1")]
+        StandardGs1,
+        #[serde(rename = "Standard_GS2")]
+        StandardGs2,
+        #[serde(rename = "Standard_GS3")]
+        StandardGs3,
+        #[serde(rename = "Standard_GS4")]
+        StandardGs4,
+        #[serde(rename = "Standard_GS5")]
+        StandardGs5,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceCustomProfile {
+    pub orchestrator: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceDiagnosticsProfile {
+    #[serde(rename = "vmDiagnostics")]
+    pub vm_diagnostics: ContainerServiceVmDiagnostics,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceLinuxProfile {
+    #[serde(rename = "adminUsername")]
+    pub admin_username: String,
+    pub ssh: ContainerServiceSshConfiguration,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ContainerService>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceMasterProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<container_service_master_profile::Count>,
+    #[serde(rename = "dnsPrefix")]
+    pub dns_prefix: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fqdn: Option<String>,
+}
+pub mod container_service_master_profile {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Count {}
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceOrchestratorProfile {
+    #[serde(rename = "orchestratorType")]
+    pub orchestrator_type: container_service_orchestrator_profile::OrchestratorType,
+}
+pub mod container_service_orchestrator_profile {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OrchestratorType {
+        Swarm,
+        #[serde(rename = "DCOS")]
+        Dcos,
+        Custom,
+        Kubernetes,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "orchestratorProfile", default, skip_serializing_if = "Option::is_none")]
+    pub orchestrator_profile: Option<ContainerServiceOrchestratorProfile>,
+    #[serde(rename = "customProfile", default, skip_serializing_if = "Option::is_none")]
+    pub custom_profile: Option<ContainerServiceCustomProfile>,
+    #[serde(rename = "servicePrincipalProfile", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_profile: Option<ContainerServiceServicePrincipalProfile>,
+    #[serde(rename = "masterProfile")]
+    pub master_profile: ContainerServiceMasterProfile,
+    #[serde(rename = "agentPoolProfiles")]
+    pub agent_pool_profiles: Vec<ContainerServiceAgentPoolProfile>,
+    #[serde(rename = "windowsProfile", default, skip_serializing_if = "Option::is_none")]
+    pub windows_profile: Option<ContainerServiceWindowsProfile>,
+    #[serde(rename = "linuxProfile")]
+    pub linux_profile: ContainerServiceLinuxProfile,
+    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
+    pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceServicePrincipalProfile {
+    #[serde(rename = "clientId")]
+    pub client_id: String,
+    pub secret: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceSshConfiguration {
+    #[serde(rename = "publicKeys")]
+    pub public_keys: Vec<ContainerServiceSshPublicKey>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceSshPublicKey {
+    #[serde(rename = "keyData")]
+    pub key_data: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceVmDiagnostics {
+    pub enabled: bool,
+    #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
+    pub storage_uri: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceWindowsProfile {
+    #[serde(rename = "adminUsername")]
+    pub admin_username: String,
+    #[serde(rename = "adminPassword")]
+    pub admin_password: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum CreateOption {
+    FromImage,
+    Empty,
+    Attach,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreationData {
+    #[serde(rename = "createOption")]
+    pub create_option: creation_data::CreateOption,
+    #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_id: Option<String>,
+    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
+    pub image_reference: Option<ImageDiskReference>,
+    #[serde(rename = "sourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub source_uri: Option<String>,
+    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_resource_id: Option<String>,
+    #[serde(rename = "sourceUniqueId", default, skip_serializing_if = "Option::is_none")]
+    pub source_unique_id: Option<String>,
+    #[serde(rename = "uploadSizeBytes", default, skip_serializing_if = "Option::is_none")]
+    pub upload_size_bytes: Option<i64>,
+}
+pub mod creation_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreateOption {
+        Empty,
+        Attach,
+        FromImage,
+        Import,
+        Copy,
+        Restore,
+        Upload,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataDisk {
+    pub lun: i32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
+    pub vhd: Option<VirtualHardDisk>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilitySetUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
+    pub image: Option<VirtualHardDisk>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AvailabilitySetProperties>,
+    pub caching: Option<Caching>,
+    #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_accelerator_enabled: Option<bool>,
+    #[serde(rename = "createOption")]
+    pub create_option: CreateOption,
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i32>,
+    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
+    pub managed_disk: Option<ManagedDiskParameters>,
+    #[serde(rename = "toBeDetached", default, skip_serializing_if = "Option::is_none")]
+    pub to_be_detached: Option<bool>,
+    #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub disk_iops_read_write: Option<i64>,
+    #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub disk_m_bps_read_write: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataDiskImage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
+    pub lun: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilitySetListResult {
-    pub value: Vec<AvailabilitySet>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubResourceWithColocationStatus {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
-    #[serde(rename = "colocationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub colocation_status: Option<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProximityPlacementGroupProperties {
-    #[serde(rename = "proximityPlacementGroupType", default, skip_serializing_if = "Option::is_none")]
-    pub proximity_placement_group_type: Option<proximity_placement_group_properties::ProximityPlacementGroupType>,
-    #[serde(rename = "virtualMachines", default, skip_serializing_if = "Vec::is_empty")]
-    pub virtual_machines: Vec<SubResourceWithColocationStatus>,
-    #[serde(rename = "virtualMachineScaleSets", default, skip_serializing_if = "Vec::is_empty")]
-    pub virtual_machine_scale_sets: Vec<SubResourceWithColocationStatus>,
-    #[serde(rename = "availabilitySets", default, skip_serializing_if = "Vec::is_empty")]
-    pub availability_sets: Vec<SubResourceWithColocationStatus>,
-    #[serde(rename = "colocationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub colocation_status: Option<InstanceViewStatus>,
-}
-pub mod proximity_placement_group_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProximityPlacementGroupType {
-        Standard,
-        Ultra,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProximityPlacementGroup {
+pub struct DedicatedHost {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProximityPlacementGroupProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProximityPlacementGroupUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProximityPlacementGroupListResult {
-    pub value: Vec<ProximityPlacementGroup>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHostGroupProperties {
-    #[serde(rename = "platformFaultDomainCount")]
-    pub platform_fault_domain_count: i32,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub hosts: Vec<SubResourceReadOnly>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHostGroup {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DedicatedHostGroupProperties>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHostGroupUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DedicatedHostGroupProperties>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHostGroupListResult {
-    pub value: Vec<DedicatedHostGroup>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum DedicatedHostLicenseType {
-    None,
-    #[serde(rename = "Windows_Server_Hybrid")]
-    WindowsServerHybrid,
-    #[serde(rename = "Windows_Server_Perpetual")]
-    WindowsServerPerpetual,
+    pub properties: Option<DedicatedHostProperties>,
+    pub sku: Sku,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedHostAllocatableVm {
@@ -208,6 +493,37 @@ pub struct DedicatedHostAvailableCapacity {
     pub allocatable_v_ms: Vec<DedicatedHostAllocatableVm>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHostGroup {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DedicatedHostGroupProperties>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHostGroupListResult {
+    pub value: Vec<DedicatedHostGroup>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHostGroupProperties {
+    #[serde(rename = "platformFaultDomainCount")]
+    pub platform_fault_domain_count: i32,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hosts: Vec<SubResourceReadOnly>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHostGroupUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DedicatedHostGroupProperties>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedHostInstanceView {
     #[serde(rename = "assetId", default, skip_serializing_if = "Option::is_none")]
     pub asset_id: Option<String>,
@@ -215,6 +531,20 @@ pub struct DedicatedHostInstanceView {
     pub available_capacity: Option<DedicatedHostAvailableCapacity>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DedicatedHostLicenseType {
+    None,
+    #[serde(rename = "Windows_Server_Hybrid")]
+    WindowsServerHybrid,
+    #[serde(rename = "Windows_Server_Perpetual")]
+    WindowsServerPerpetual,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHostListResult {
+    pub value: Vec<DedicatedHost>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedHostProperties {
@@ -236,14 +566,6 @@ pub struct DedicatedHostProperties {
     pub instance_view: Option<DedicatedHostInstanceView>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHost {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DedicatedHostProperties>,
-    pub sku: Sku,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedHostUpdate {
     #[serde(flatten)]
     pub update_resource: UpdateResource,
@@ -251,244 +573,609 @@ pub struct DedicatedHostUpdate {
     pub properties: Option<DedicatedHostProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedHostListResult {
-    pub value: Vec<DedicatedHost>,
+pub struct DiagnosticsProfile {
+    #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
+    pub boot_diagnostics: Option<BootDiagnostics>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DiffDiskOption {
+    Local,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiffDiskSettings {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub option: Option<DiffDiskOption>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Disallowed {
+    #[serde(rename = "diskTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub disk_types: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Disk {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
+    pub managed_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<DiskSku>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DiskProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskEncryptionSet {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<EncryptionSetIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<EncryptionSetProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskEncryptionSetList {
+    pub value: Vec<DiskEncryptionSet>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineSize {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "numberOfCores", default, skip_serializing_if = "Option::is_none")]
-    pub number_of_cores: Option<i32>,
-    #[serde(rename = "osDiskSizeInMB", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk_size_in_mb: Option<i32>,
-    #[serde(rename = "resourceDiskSizeInMB", default, skip_serializing_if = "Option::is_none")]
-    pub resource_disk_size_in_mb: Option<i32>,
-    #[serde(rename = "memoryInMB", default, skip_serializing_if = "Option::is_none")]
-    pub memory_in_mb: Option<i32>,
-    #[serde(rename = "maxDataDiskCount", default, skip_serializing_if = "Option::is_none")]
-    pub max_data_disk_count: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineSizeListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<VirtualMachineSize>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtensionImageProperties {
-    #[serde(rename = "operatingSystem")]
-    pub operating_system: String,
-    #[serde(rename = "computeRole")]
-    pub compute_role: String,
-    #[serde(rename = "handlerSchema")]
-    pub handler_schema: String,
-    #[serde(rename = "vmScaleSetEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub vm_scale_set_enabled: Option<bool>,
-    #[serde(rename = "supportsMultipleExtensions", default, skip_serializing_if = "Option::is_none")]
-    pub supports_multiple_extensions: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtensionImage {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineExtensionImageProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineImageResource {
+pub struct DiskEncryptionSetParameters {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    pub name: String,
-    pub location: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskEncryptionSetUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DiskEncryptionSetUpdateProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtensionInstanceView {
+pub struct DiskEncryptionSetUpdateProperties {
+    #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
+    pub active_key: Option<KeyVaultAndKeyReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskEncryptionSettings {
+    #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub disk_encryption_key: Option<KeyVaultSecretReference>,
+    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub key_encryption_key: Option<KeyVaultKeyReference>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskInstanceView {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
-    pub type_handler_version: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub substatuses: Vec<InstanceViewStatus>,
+    #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Vec::is_empty")]
+    pub encryption_settings: Vec<DiskEncryptionSettings>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtensionProperties {
-    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
-    pub force_update_tag: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publisher: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
-    pub type_handler_version: Option<String>,
-    #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
-    pub auto_upgrade_minor_version: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub settings: Option<serde_json::Value>,
-    #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
-    pub protected_settings: Option<serde_json::Value>,
+pub struct DiskList {
+    pub value: Vec<Disk>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskProperties {
+    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
+    pub time_created: Option<String>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<disk_properties::OsType>,
+    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
+    pub hyper_v_generation: Option<disk_properties::HyperVGeneration>,
+    #[serde(rename = "creationData")]
+    pub creation_data: CreationData,
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i32>,
+    #[serde(rename = "diskSizeBytes", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_bytes: Option<i64>,
+    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
+    pub unique_id: Option<String>,
+    #[serde(rename = "encryptionSettingsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
-    pub instance_view: Option<VirtualMachineExtensionInstanceView>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtensionUpdateProperties {
-    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
-    pub force_update_tag: Option<String>,
+    #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub disk_iops_read_write: Option<i64>,
+    #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub disk_m_bps_read_write: Option<i32>,
+    #[serde(rename = "diskState", default, skip_serializing_if = "Option::is_none")]
+    pub disk_state: Option<disk_properties::DiskState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publisher: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
-    pub type_handler_version: Option<String>,
-    #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
-    pub auto_upgrade_minor_version: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub settings: Option<serde_json::Value>,
-    #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
-    pub protected_settings: Option<serde_json::Value>,
+    pub encryption: Option<Encryption>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtension {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineExtensionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtensionUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineExtensionUpdateProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtensionsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<VirtualMachineExtension>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PurchasePlan {
-    pub publisher: String,
-    pub name: String,
-    pub product: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OsDiskImage {
-    #[serde(rename = "operatingSystem")]
-    pub operating_system: os_disk_image::OperatingSystem,
-}
-pub mod os_disk_image {
+pub mod disk_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OperatingSystem {
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HyperVGeneration {
+        V1,
+        V2,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DiskState {
+        Unattached,
+        Attached,
+        Reserved,
+        #[serde(rename = "ActiveSAS")]
+        ActiveSas,
+        ReadyToUpload,
+        ActiveUpload,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskSku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<disk_sku::Name>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+}
+pub mod disk_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        #[serde(rename = "Standard_LRS")]
+        StandardLrs,
+        #[serde(rename = "Premium_LRS")]
+        PremiumLrs,
+        #[serde(rename = "StandardSSD_LRS")]
+        StandardSsdLrs,
+        #[serde(rename = "UltraSSD_LRS")]
+        UltraSsdLrs,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DiskUpdateProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<DiskSku>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskUpdateProperties {
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<disk_update_properties::OsType>,
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i32>,
+    #[serde(rename = "encryptionSettingsCollection", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
+    #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub disk_iops_read_write: Option<i64>,
+    #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub disk_m_bps_read_write: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<Encryption>,
+}
+pub mod disk_update_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
         Windows,
         Linux,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataDiskImage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub lun: Option<i32>,
+pub struct Encryption {
+    #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
+    pub disk_encryption_set_id: Option<String>,
+    #[serde(rename = "type")]
+    pub type_: encryption::Type,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutomaticOsUpgradeProperties {
-    #[serde(rename = "automaticOSUpgradeSupported")]
-    pub automatic_os_upgrade_supported: bool,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineImageProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<PurchasePlan>,
-    #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk_image: Option<OsDiskImage>,
-    #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_disk_images: Vec<DataDiskImage>,
-    #[serde(rename = "automaticOSUpgradeProperties", default, skip_serializing_if = "Option::is_none")]
-    pub automatic_os_upgrade_properties: Option<AutomaticOsUpgradeProperties>,
-    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
-    pub hyper_v_generation: Option<HyperVGenerationType>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineImage {
-    #[serde(flatten)]
-    pub virtual_machine_image_resource: VirtualMachineImageResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineImageProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UsageName {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
-    pub localized_value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Usage {
-    pub unit: usage::Unit,
-    #[serde(rename = "currentValue")]
-    pub current_value: i32,
-    pub limit: i64,
-    pub name: UsageName,
-}
-pub mod usage {
+pub mod encryption {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Unit {
-        Count,
+    pub enum Type {
+        EncryptionAtRestWithPlatformKey,
+        EncryptionAtRestWithCustomerKey,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListUsagesResult {
-    pub value: Vec<Usage>,
+pub struct EncryptionSetIdentity {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<encryption_set_identity::Type>,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+pub mod encryption_set_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionSetProperties {
+    #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
+    pub active_key: Option<KeyVaultAndKeyReference>,
+    #[serde(rename = "previousKeys", default, skip_serializing_if = "Vec::is_empty")]
+    pub previous_keys: Vec<KeyVaultAndKeyReference>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionSettingsCollection {
+    pub enabled: bool,
+    #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Vec::is_empty")]
+    pub encryption_settings: Vec<EncryptionSettingsElement>,
+    #[serde(rename = "encryptionSettingsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_settings_version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionSettingsElement {
+    #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub disk_encryption_key: Option<KeyVaultAndSecretReference>,
+    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
+    pub key_encryption_key: Option<KeyVaultAndKeyReference>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Gallery {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GalleryProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryApplication {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GalleryApplicationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryApplicationList {
+    pub value: Vec<GalleryApplication>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineReimageParameters {
-    #[serde(rename = "tempDisk", default, skip_serializing_if = "Option::is_none")]
-    pub temp_disk: Option<bool>,
+pub struct GalleryApplicationProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub eula: Option<String>,
+    #[serde(rename = "privacyStatementUri", default, skip_serializing_if = "Option::is_none")]
+    pub privacy_statement_uri: Option<String>,
+    #[serde(rename = "releaseNoteUri", default, skip_serializing_if = "Option::is_none")]
+    pub release_note_uri: Option<String>,
+    #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_of_life_date: Option<String>,
+    #[serde(rename = "supportedOSType")]
+    pub supported_os_type: gallery_application_properties::SupportedOsType,
+}
+pub mod gallery_application_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SupportedOsType {
+        Windows,
+        Linux,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineCaptureParameters {
-    #[serde(rename = "vhdPrefix")]
-    pub vhd_prefix: String,
-    #[serde(rename = "destinationContainerName")]
-    pub destination_container_name: String,
-    #[serde(rename = "overwriteVhds")]
-    pub overwrite_vhds: bool,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineCaptureResult {
+pub struct GalleryApplicationUpdate {
     #[serde(flatten)]
-    pub sub_resource: SubResource,
-    #[serde(rename = "$schema", default, skip_serializing_if = "Option::is_none")]
-    pub schema: Option<String>,
-    #[serde(rename = "contentVersion", default, skip_serializing_if = "Option::is_none")]
-    pub content_version: Option<String>,
+    pub update_resource: UpdateResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resources: Vec<serde_json::Value>,
+    pub properties: Option<GalleryApplicationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Plan {
+pub struct GalleryApplicationVersion {
+    #[serde(flatten)]
+    pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    pub properties: Option<GalleryApplicationVersionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryApplicationVersionList {
+    pub value: Vec<GalleryApplicationVersion>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryApplicationVersionProperties {
+    #[serde(rename = "publishingProfile")]
+    pub publishing_profile: GalleryApplicationVersionPublishingProfile,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<gallery_application_version_properties::ProvisioningState>,
+    #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub replication_status: Option<ReplicationStatus>,
+}
+pub mod gallery_application_version_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Creating,
+        Updating,
+        Failed,
+        Succeeded,
+        Deleting,
+        Migrating,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryApplicationVersionPublishingProfile {
+    #[serde(flatten)]
+    pub gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase,
+    pub source: UserArtifactSource,
+    #[serde(rename = "manageActions", default, skip_serializing_if = "Option::is_none")]
+    pub manage_actions: Option<UserArtifactManage>,
+    #[serde(rename = "enableHealthCheck", default, skip_serializing_if = "Option::is_none")]
+    pub enable_health_check: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryApplicationVersionUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publisher: Option<String>,
+    pub properties: Option<GalleryApplicationVersionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryArtifactPublishingProfileBase {
+    #[serde(rename = "targetRegions", default, skip_serializing_if = "Vec::is_empty")]
+    pub target_regions: Vec<TargetRegion>,
+    #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
+    pub replica_count: Option<i32>,
+    #[serde(rename = "excludeFromLatest", default, skip_serializing_if = "Option::is_none")]
+    pub exclude_from_latest: Option<bool>,
+    #[serde(rename = "publishedDate", default, skip_serializing_if = "Option::is_none")]
+    pub published_date: Option<String>,
+    #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_of_life_date: Option<String>,
+    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_type: Option<gallery_artifact_publishing_profile_base::StorageAccountType>,
+}
+pub mod gallery_artifact_publishing_profile_base {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageAccountType {
+        #[serde(rename = "Standard_LRS")]
+        StandardLrs,
+        #[serde(rename = "Standard_ZRS")]
+        StandardZrs,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryArtifactSource {
+    #[serde(rename = "managedImage")]
+    pub managed_image: ManagedArtifact,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryArtifactVersionSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub product: Option<String>,
-    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
-    pub promotion_code: Option<String>,
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryDataDiskImage {
+    #[serde(flatten)]
+    pub gallery_disk_image: GalleryDiskImage,
+    pub lun: i32,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryDiskImage {
+    #[serde(rename = "sizeInGB", default, skip_serializing_if = "Option::is_none")]
+    pub size_in_gb: Option<i32>,
+    #[serde(rename = "hostCaching", default, skip_serializing_if = "Option::is_none")]
+    pub host_caching: Option<gallery_disk_image::HostCaching>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<GalleryArtifactVersionSource>,
+}
+pub mod gallery_disk_image {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HostCaching {
+        None,
+        ReadOnly,
+        ReadWrite,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryIdentifier {
+    #[serde(rename = "uniqueName", default, skip_serializing_if = "Option::is_none")]
+    pub unique_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImage {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GalleryImageProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageIdentifier {
+    pub publisher: String,
+    pub offer: String,
+    pub sku: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageList {
+    pub value: Vec<GalleryImage>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub eula: Option<String>,
+    #[serde(rename = "privacyStatementUri", default, skip_serializing_if = "Option::is_none")]
+    pub privacy_statement_uri: Option<String>,
+    #[serde(rename = "releaseNoteUri", default, skip_serializing_if = "Option::is_none")]
+    pub release_note_uri: Option<String>,
+    #[serde(rename = "osType")]
+    pub os_type: gallery_image_properties::OsType,
+    #[serde(rename = "osState")]
+    pub os_state: gallery_image_properties::OsState,
+    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
+    pub hyper_v_generation: Option<gallery_image_properties::HyperVGeneration>,
+    #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_of_life_date: Option<String>,
+    pub identifier: GalleryImageIdentifier,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recommended: Option<RecommendedMachineConfiguration>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disallowed: Option<Disallowed>,
+    #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
+    pub purchase_plan: Option<ImagePurchasePlan>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<gallery_image_properties::ProvisioningState>,
+}
+pub mod gallery_image_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsState {
+        Generalized,
+        Specialized,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HyperVGeneration {
+        V1,
+        V2,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Creating,
+        Updating,
+        Failed,
+        Succeeded,
+        Deleting,
+        Migrating,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GalleryImageProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageVersion {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GalleryImageVersionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageVersionList {
+    pub value: Vec<GalleryImageVersion>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageVersionProperties {
+    #[serde(rename = "publishingProfile", default, skip_serializing_if = "Option::is_none")]
+    pub publishing_profile: Option<GalleryImageVersionPublishingProfile>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<gallery_image_version_properties::ProvisioningState>,
+    #[serde(rename = "storageProfile")]
+    pub storage_profile: GalleryImageVersionStorageProfile,
+    #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub replication_status: Option<ReplicationStatus>,
+}
+pub mod gallery_image_version_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Creating,
+        Updating,
+        Failed,
+        Succeeded,
+        Deleting,
+        Migrating,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageVersionPublishingProfile {
+    #[serde(flatten)]
+    pub gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageVersionStorageProfile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<GalleryArtifactVersionSource>,
+    #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk_image: Option<GalleryOsDiskImage>,
+    #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_disk_images: Vec<GalleryDataDiskImage>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryImageVersionUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GalleryImageVersionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryList {
+    pub value: Vec<Gallery>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryOsDiskImage {
+    #[serde(flatten)]
+    pub gallery_disk_image: GalleryDiskImage,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identifier: Option<GalleryIdentifier>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<gallery_properties::ProvisioningState>,
+}
+pub mod gallery_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Creating,
+        Updating,
+        Failed,
+        Succeeded,
+        Deleting,
+        Migrating,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GalleryUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GalleryProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GrantAccessData {
+    pub access: grant_access_data::Access,
+    #[serde(rename = "durationInSeconds")]
+    pub duration_in_seconds: i32,
+}
+pub mod grant_access_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Access {
+        None,
+        Read,
+        Write,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HardwareProfile {
@@ -834,6 +1521,104 @@ pub mod hardware_profile {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum HyperVGenerationType {
+    V1,
+    V2,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Image {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ImageProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageDataDisk {
+    #[serde(flatten)]
+    pub image_disk: ImageDisk,
+    pub lun: i32,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageDisk {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot: Option<SubResource>,
+    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
+    pub managed_disk: Option<SubResource>,
+    #[serde(rename = "blobUri", default, skip_serializing_if = "Option::is_none")]
+    pub blob_uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caching: Option<image_disk::Caching>,
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i32>,
+    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_type: Option<StorageAccountType>,
+    #[serde(rename = "diskEncryptionSet", default, skip_serializing_if = "Option::is_none")]
+    pub disk_encryption_set: Option<DiskEncryptionSetParameters>,
+}
+pub mod image_disk {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Caching {
+        None,
+        ReadOnly,
+        ReadWrite,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageDiskReference {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lun: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageListResult {
+    pub value: Vec<Image>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageOsDisk {
+    #[serde(flatten)]
+    pub image_disk: ImageDisk,
+    #[serde(rename = "osType")]
+    pub os_type: image_os_disk::OsType,
+    #[serde(rename = "osState")]
+    pub os_state: image_os_disk::OsState,
+}
+pub mod image_os_disk {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsState {
+        Generalized,
+        Specialized,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageProperties {
+    #[serde(rename = "sourceVirtualMachine", default, skip_serializing_if = "Option::is_none")]
+    pub source_virtual_machine: Option<SubResource>,
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<ImageStorageProfile>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
+    pub hyper_v_generation: Option<HyperVGenerationType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImagePurchasePlan {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageReference {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -849,16 +1634,63 @@ pub struct ImageReference {
     pub exact_version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultSecretReference {
-    #[serde(rename = "secretUrl")]
-    pub secret_url: String,
-    #[serde(rename = "sourceVault")]
-    pub source_vault: SubResource,
+pub struct ImageStorageProfile {
+    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk: Option<ImageOsDisk>,
+    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_disks: Vec<ImageDataDisk>,
+    #[serde(rename = "zoneResilient", default, skip_serializing_if = "Option::is_none")]
+    pub zone_resilient: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskEncryptionSetParameters {
+pub struct ImageUpdate {
     #[serde(flatten)]
-    pub sub_resource: SubResource,
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ImageProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InnerError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exceptiontype: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub errordetail: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InstanceViewStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level: Option<instance_view_status::Level>,
+    #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
+    pub display_status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub time: Option<String>,
+}
+pub mod instance_view_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Level {
+        Info,
+        Warning,
+        Error,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultAndKeyReference {
+    #[serde(rename = "sourceVault")]
+    pub source_vault: SourceVault,
+    #[serde(rename = "keyUrl")]
+    pub key_url: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultAndSecretReference {
+    #[serde(rename = "sourceVault")]
+    pub source_vault: SourceVault,
+    #[serde(rename = "secretUrl")]
+    pub secret_url: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultKeyReference {
@@ -868,50 +1700,82 @@ pub struct KeyVaultKeyReference {
     pub source_vault: SubResource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskEncryptionSettings {
-    #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
-    pub disk_encryption_key: Option<KeyVaultSecretReference>,
-    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
-    pub key_encryption_key: Option<KeyVaultKeyReference>,
+pub struct KeyVaultSecretReference {
+    #[serde(rename = "secretUrl")]
+    pub secret_url: String,
+    #[serde(rename = "sourceVault")]
+    pub source_vault: SubResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinuxConfiguration {
+    #[serde(rename = "disablePasswordAuthentication", default, skip_serializing_if = "Option::is_none")]
+    pub disable_password_authentication: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
+    pub ssh: Option<SshConfiguration>,
+    #[serde(rename = "provisionVMAgent", default, skip_serializing_if = "Option::is_none")]
+    pub provision_vm_agent: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualHardDisk {
+pub struct ListUsagesResult {
+    pub value: Vec<Usage>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogAnalyticsInputBase {
+    #[serde(rename = "blobContainerSasUri")]
+    pub blob_container_sas_uri: String,
+    #[serde(rename = "fromTime")]
+    pub from_time: String,
+    #[serde(rename = "toTime")]
+    pub to_time: String,
+    #[serde(rename = "groupByThrottlePolicy", default, skip_serializing_if = "Option::is_none")]
+    pub group_by_throttle_policy: Option<bool>,
+    #[serde(rename = "groupByOperationName", default, skip_serializing_if = "Option::is_none")]
+    pub group_by_operation_name: Option<bool>,
+    #[serde(rename = "groupByResourceName", default, skip_serializing_if = "Option::is_none")]
+    pub group_by_resource_name: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogAnalyticsOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
+    pub properties: Option<LogAnalyticsOutput>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Caching {
-    None,
-    ReadOnly,
-    ReadWrite,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum CreateOption {
-    FromImage,
-    Empty,
-    Attach,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum StorageAccountType {
-    #[serde(rename = "Standard_LRS")]
-    StandardLrs,
-    #[serde(rename = "Premium_LRS")]
-    PremiumLrs,
-    #[serde(rename = "StandardSSD_LRS")]
-    StandardSsdLrs,
-    #[serde(rename = "UltraSSD_LRS")]
-    UltraSsdLrs,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum DiffDiskOption {
-    Local,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiffDiskSettings {
+pub struct LogAnalyticsOutput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub option: Option<DiffDiskOption>,
+    pub output: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MaintenanceRedeployStatus {
+    #[serde(rename = "isCustomerInitiatedMaintenanceAllowed", default, skip_serializing_if = "Option::is_none")]
+    pub is_customer_initiated_maintenance_allowed: Option<bool>,
+    #[serde(rename = "preMaintenanceWindowStartTime", default, skip_serializing_if = "Option::is_none")]
+    pub pre_maintenance_window_start_time: Option<String>,
+    #[serde(rename = "preMaintenanceWindowEndTime", default, skip_serializing_if = "Option::is_none")]
+    pub pre_maintenance_window_end_time: Option<String>,
+    #[serde(rename = "maintenanceWindowStartTime", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_window_start_time: Option<String>,
+    #[serde(rename = "maintenanceWindowEndTime", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_window_end_time: Option<String>,
+    #[serde(rename = "lastOperationResultCode", default, skip_serializing_if = "Option::is_none")]
+    pub last_operation_result_code: Option<maintenance_redeploy_status::LastOperationResultCode>,
+    #[serde(rename = "lastOperationMessage", default, skip_serializing_if = "Option::is_none")]
+    pub last_operation_message: Option<String>,
+}
+pub mod maintenance_redeploy_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastOperationResultCode {
+        None,
+        RetryLater,
+        MaintenanceAborted,
+        MaintenanceCompleted,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedArtifact {
+    pub id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedDiskParameters {
@@ -921,6 +1785,23 @@ pub struct ManagedDiskParameters {
     pub storage_account_type: Option<StorageAccountType>,
     #[serde(rename = "diskEncryptionSet", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_set: Option<DiskEncryptionSetParameters>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkInterfaceReference {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<NetworkInterfaceReferenceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkInterfaceReferenceProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkProfile {
+    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_interfaces: Vec<NetworkInterfaceReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsDisk {
@@ -956,140 +1837,17 @@ pub mod os_disk {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataDisk {
-    pub lun: i32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vhd: Option<VirtualHardDisk>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub image: Option<VirtualHardDisk>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub caching: Option<Caching>,
-    #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_accelerator_enabled: Option<bool>,
-    #[serde(rename = "createOption")]
-    pub create_option: CreateOption,
-    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_gb: Option<i32>,
-    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
-    pub managed_disk: Option<ManagedDiskParameters>,
-    #[serde(rename = "toBeDetached", default, skip_serializing_if = "Option::is_none")]
-    pub to_be_detached: Option<bool>,
-    #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub disk_iops_read_write: Option<i64>,
-    #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub disk_m_bps_read_write: Option<i64>,
+pub struct OsDiskImage {
+    #[serde(rename = "operatingSystem")]
+    pub operating_system: os_disk_image::OperatingSystem,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageProfile {
-    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
-    pub image_reference: Option<ImageReference>,
-    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk: Option<OsDisk>,
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_disks: Vec<DataDisk>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdditionalCapabilities {
-    #[serde(rename = "ultraSSDEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub ultra_ssd_enabled: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdditionalUnattendContent {
-    #[serde(rename = "passName", default, skip_serializing_if = "Option::is_none")]
-    pub pass_name: Option<additional_unattend_content::PassName>,
-    #[serde(rename = "componentName", default, skip_serializing_if = "Option::is_none")]
-    pub component_name: Option<additional_unattend_content::ComponentName>,
-    #[serde(rename = "settingName", default, skip_serializing_if = "Option::is_none")]
-    pub setting_name: Option<additional_unattend_content::SettingName>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub content: Option<String>,
-}
-pub mod additional_unattend_content {
+pub mod os_disk_image {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PassName {
-        OobeSystem,
+    pub enum OperatingSystem {
+        Windows,
+        Linux,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComponentName {
-        #[serde(rename = "Microsoft-Windows-Shell-Setup")]
-        MicrosoftWindowsShellSetup,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SettingName {
-        AutoLogon,
-        FirstLogonCommands,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WinRmListener {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub protocol: Option<win_rm_listener::Protocol>,
-    #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
-    pub certificate_url: Option<String>,
-}
-pub mod win_rm_listener {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Protocol {
-        Http,
-        Https,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WinRmConfiguration {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub listeners: Vec<WinRmListener>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WindowsConfiguration {
-    #[serde(rename = "provisionVMAgent", default, skip_serializing_if = "Option::is_none")]
-    pub provision_vm_agent: Option<bool>,
-    #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
-    pub enable_automatic_updates: Option<bool>,
-    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    #[serde(rename = "additionalUnattendContent", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_unattend_content: Vec<AdditionalUnattendContent>,
-    #[serde(rename = "winRM", default, skip_serializing_if = "Option::is_none")]
-    pub win_rm: Option<WinRmConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SshPublicKey {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-    #[serde(rename = "keyData", default, skip_serializing_if = "Option::is_none")]
-    pub key_data: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SshConfiguration {
-    #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
-    pub public_keys: Vec<SshPublicKey>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinuxConfiguration {
-    #[serde(rename = "disablePasswordAuthentication", default, skip_serializing_if = "Option::is_none")]
-    pub disable_password_authentication: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ssh: Option<SshConfiguration>,
-    #[serde(rename = "provisionVMAgent", default, skip_serializing_if = "Option::is_none")]
-    pub provision_vm_agent: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VaultCertificate {
-    #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
-    pub certificate_url: Option<String>,
-    #[serde(rename = "certificateStore", default, skip_serializing_if = "Option::is_none")]
-    pub certificate_store: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VaultSecretGroup {
-    #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
-    pub source_vault: Option<SubResource>,
-    #[serde(rename = "vaultCertificates", default, skip_serializing_if = "Vec::is_empty")]
-    pub vault_certificates: Vec<VaultCertificate>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsProfile {
@@ -1113,1287 +1871,67 @@ pub struct OsProfile {
     pub require_guest_provision_signal: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutomaticRepairsPolicy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "gracePeriod", default, skip_serializing_if = "Option::is_none")]
-    pub grace_period: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkInterfaceReferenceProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub primary: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkInterfaceReference {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<NetworkInterfaceReferenceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkProfile {
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
-    pub network_interfaces: Vec<NetworkInterfaceReference>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BootDiagnostics {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
-    pub storage_uri: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiagnosticsProfile {
-    #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub boot_diagnostics: Option<BootDiagnostics>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum Priority {
-    Regular,
-    Low,
-    Spot,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum EvictionPolicy {
-    Deallocate,
-    Delete,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BillingProfile {
-    #[serde(rename = "maxPrice", default, skip_serializing_if = "Option::is_none")]
-    pub max_price: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineExtensionHandlerInstanceView {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
-    pub type_handler_version: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineAgentInstanceView {
-    #[serde(rename = "vmAgentVersion", default, skip_serializing_if = "Option::is_none")]
-    pub vm_agent_version: Option<String>,
-    #[serde(rename = "extensionHandlers", default, skip_serializing_if = "Vec::is_empty")]
-    pub extension_handlers: Vec<VirtualMachineExtensionHandlerInstanceView>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses: Vec<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskInstanceView {
+pub struct Plan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Vec::is_empty")]
-    pub encryption_settings: Vec<DiskEncryptionSettings>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses: Vec<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BootDiagnosticsInstanceView {
-    #[serde(rename = "consoleScreenshotBlobUri", default, skip_serializing_if = "Option::is_none")]
-    pub console_screenshot_blob_uri: Option<String>,
-    #[serde(rename = "serialConsoleLogBlobUri", default, skip_serializing_if = "Option::is_none")]
-    pub serial_console_log_blob_uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<virtual_machine_identity::Type>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-pub mod virtual_machine_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned, UserAssigned")]
-        SystemAssignedUserAssigned,
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MaintenanceRedeployStatus {
-    #[serde(rename = "isCustomerInitiatedMaintenanceAllowed", default, skip_serializing_if = "Option::is_none")]
-    pub is_customer_initiated_maintenance_allowed: Option<bool>,
-    #[serde(rename = "preMaintenanceWindowStartTime", default, skip_serializing_if = "Option::is_none")]
-    pub pre_maintenance_window_start_time: Option<String>,
-    #[serde(rename = "preMaintenanceWindowEndTime", default, skip_serializing_if = "Option::is_none")]
-    pub pre_maintenance_window_end_time: Option<String>,
-    #[serde(rename = "maintenanceWindowStartTime", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_window_start_time: Option<String>,
-    #[serde(rename = "maintenanceWindowEndTime", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_window_end_time: Option<String>,
-    #[serde(rename = "lastOperationResultCode", default, skip_serializing_if = "Option::is_none")]
-    pub last_operation_result_code: Option<maintenance_redeploy_status::LastOperationResultCode>,
-    #[serde(rename = "lastOperationMessage", default, skip_serializing_if = "Option::is_none")]
-    pub last_operation_message: Option<String>,
-}
-pub mod maintenance_redeploy_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastOperationResultCode {
-        None,
-        RetryLater,
-        MaintenanceAborted,
-        MaintenanceCompleted,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineInstanceView {
-    #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
-    pub platform_update_domain: Option<i32>,
-    #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
-    pub platform_fault_domain: Option<i32>,
-    #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
-    pub computer_name: Option<String>,
-    #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
-    pub os_name: Option<String>,
-    #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
-    pub os_version: Option<String>,
-    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
-    pub hyper_v_generation: Option<virtual_machine_instance_view::HyperVGeneration>,
-    #[serde(rename = "rdpThumbPrint", default, skip_serializing_if = "Option::is_none")]
-    pub rdp_thumb_print: Option<String>,
-    #[serde(rename = "vmAgent", default, skip_serializing_if = "Option::is_none")]
-    pub vm_agent: Option<VirtualMachineAgentInstanceView>,
-    #[serde(rename = "maintenanceRedeployStatus", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_redeploy_status: Option<MaintenanceRedeployStatus>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub disks: Vec<DiskInstanceView>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub extensions: Vec<VirtualMachineExtensionInstanceView>,
-    #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub boot_diagnostics: Option<BootDiagnosticsInstanceView>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses: Vec<InstanceViewStatus>,
-}
-pub mod virtual_machine_instance_view {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum HyperVGeneration {
-        V1,
-        V2,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineProperties {
-    #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
-    pub hardware_profile: Option<HardwareProfile>,
-    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
-    pub storage_profile: Option<StorageProfile>,
-    #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Option::is_none")]
-    pub additional_capabilities: Option<AdditionalCapabilities>,
-    #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
-    pub os_profile: Option<OsProfile>,
-    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
-    pub network_profile: Option<NetworkProfile>,
-    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
-    pub diagnostics_profile: Option<DiagnosticsProfile>,
-    #[serde(rename = "availabilitySet", default, skip_serializing_if = "Option::is_none")]
-    pub availability_set: Option<SubResource>,
-    #[serde(rename = "virtualMachineScaleSet", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_machine_scale_set: Option<SubResource>,
-    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
-    pub proximity_placement_group: Option<SubResource>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub priority: Option<Priority>,
-    #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub eviction_policy: Option<EvictionPolicy>,
-    #[serde(rename = "billingProfile", default, skip_serializing_if = "Option::is_none")]
-    pub billing_profile: Option<BillingProfile>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub host: Option<SubResource>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
-    pub instance_view: Option<VirtualMachineInstanceView>,
-    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
-    pub license_type: Option<String>,
-    #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
-    pub vm_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachine {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<Plan>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineProperties>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resources: Vec<VirtualMachineExtension>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<VirtualMachineIdentity>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<Plan>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<VirtualMachineIdentity>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineListResult {
-    pub value: Vec<VirtualMachine>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutomaticOsUpgradePolicy {
-    #[serde(rename = "enableAutomaticOSUpgrade", default, skip_serializing_if = "Option::is_none")]
-    pub enable_automatic_os_upgrade: Option<bool>,
-    #[serde(rename = "disableAutomaticRollback", default, skip_serializing_if = "Option::is_none")]
-    pub disable_automatic_rollback: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpgradePolicy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mode: Option<upgrade_policy::Mode>,
-    #[serde(rename = "rollingUpgradePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub rolling_upgrade_policy: Option<RollingUpgradePolicy>,
-    #[serde(rename = "automaticOSUpgradePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub automatic_os_upgrade_policy: Option<AutomaticOsUpgradePolicy>,
-}
-pub mod upgrade_policy {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Mode {
-        Automatic,
-        Manual,
-        Rolling,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RollingUpgradePolicy {
-    #[serde(rename = "maxBatchInstancePercent", default, skip_serializing_if = "Option::is_none")]
-    pub max_batch_instance_percent: Option<i32>,
-    #[serde(rename = "maxUnhealthyInstancePercent", default, skip_serializing_if = "Option::is_none")]
-    pub max_unhealthy_instance_percent: Option<i32>,
-    #[serde(rename = "maxUnhealthyUpgradedInstancePercent", default, skip_serializing_if = "Option::is_none")]
-    pub max_unhealthy_upgraded_instance_percent: Option<i32>,
-    #[serde(rename = "pauseTimeBetweenBatches", default, skip_serializing_if = "Option::is_none")]
-    pub pause_time_between_batches: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScaleInPolicy {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rules: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageOsDisk {
-    #[serde(flatten)]
-    pub image_disk: ImageDisk,
-    #[serde(rename = "osType")]
-    pub os_type: image_os_disk::OsType,
-    #[serde(rename = "osState")]
-    pub os_state: image_os_disk::OsState,
-}
-pub mod image_os_disk {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Windows,
-        Linux,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsState {
-        Generalized,
-        Specialized,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageDataDisk {
-    #[serde(flatten)]
-    pub image_disk: ImageDisk,
-    pub lun: i32,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageDisk {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub snapshot: Option<SubResource>,
-    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
-    pub managed_disk: Option<SubResource>,
-    #[serde(rename = "blobUri", default, skip_serializing_if = "Option::is_none")]
-    pub blob_uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub caching: Option<image_disk::Caching>,
-    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_gb: Option<i32>,
-    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_type: Option<StorageAccountType>,
-    #[serde(rename = "diskEncryptionSet", default, skip_serializing_if = "Option::is_none")]
-    pub disk_encryption_set: Option<DiskEncryptionSetParameters>,
-}
-pub mod image_disk {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Caching {
-        None,
-        ReadOnly,
-        ReadWrite,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageStorageProfile {
-    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk: Option<ImageOsDisk>,
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_disks: Vec<ImageDataDisk>,
-    #[serde(rename = "zoneResilient", default, skip_serializing_if = "Option::is_none")]
-    pub zone_resilient: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageProperties {
-    #[serde(rename = "sourceVirtualMachine", default, skip_serializing_if = "Option::is_none")]
-    pub source_virtual_machine: Option<SubResource>,
-    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
-    pub storage_profile: Option<ImageStorageProfile>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
-    pub hyper_v_generation: Option<HyperVGenerationType>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Image {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ImageProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ImageProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageListResult {
-    pub value: Vec<Image>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<virtual_machine_scale_set_identity::Type>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-pub mod virtual_machine_scale_set_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned, UserAssigned")]
-        SystemAssignedUserAssigned,
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetOsProfile {
-    #[serde(rename = "computerNamePrefix", default, skip_serializing_if = "Option::is_none")]
-    pub computer_name_prefix: Option<String>,
-    #[serde(rename = "adminUsername", default, skip_serializing_if = "Option::is_none")]
-    pub admin_username: Option<String>,
-    #[serde(rename = "adminPassword", default, skip_serializing_if = "Option::is_none")]
-    pub admin_password: Option<String>,
-    #[serde(rename = "customData", default, skip_serializing_if = "Option::is_none")]
-    pub custom_data: Option<String>,
-    #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub windows_configuration: Option<WindowsConfiguration>,
-    #[serde(rename = "linuxConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub linux_configuration: Option<LinuxConfiguration>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub secrets: Vec<VaultSecretGroup>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateOsProfile {
-    #[serde(rename = "customData", default, skip_serializing_if = "Option::is_none")]
-    pub custom_data: Option<String>,
-    #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub windows_configuration: Option<WindowsConfiguration>,
-    #[serde(rename = "linuxConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub linux_configuration: Option<LinuxConfiguration>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub secrets: Vec<VaultSecretGroup>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetManagedDiskParameters {
-    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_type: Option<StorageAccountType>,
-    #[serde(rename = "diskEncryptionSet", default, skip_serializing_if = "Option::is_none")]
-    pub disk_encryption_set: Option<DiskEncryptionSetParameters>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetOsDisk {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub caching: Option<Caching>,
-    #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_accelerator_enabled: Option<bool>,
-    #[serde(rename = "createOption")]
-    pub create_option: CreateOption,
-    #[serde(rename = "diffDiskSettings", default, skip_serializing_if = "Option::is_none")]
-    pub diff_disk_settings: Option<DiffDiskSettings>,
-    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_gb: Option<i32>,
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<virtual_machine_scale_set_os_disk::OsType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub image: Option<VirtualHardDisk>,
-    #[serde(rename = "vhdContainers", default, skip_serializing_if = "Vec::is_empty")]
-    pub vhd_containers: Vec<String>,
-    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
-    pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
-}
-pub mod virtual_machine_scale_set_os_disk {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Windows,
-        Linux,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateOsDisk {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub caching: Option<Caching>,
-    #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_accelerator_enabled: Option<bool>,
-    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_gb: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub image: Option<VirtualHardDisk>,
-    #[serde(rename = "vhdContainers", default, skip_serializing_if = "Vec::is_empty")]
-    pub vhd_containers: Vec<String>,
-    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
-    pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetDataDisk {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    pub lun: i32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub caching: Option<Caching>,
-    #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_accelerator_enabled: Option<bool>,
-    #[serde(rename = "createOption")]
-    pub create_option: CreateOption,
-    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_gb: Option<i32>,
-    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
-    pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
-    #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub disk_iops_read_write: Option<i64>,
-    #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub disk_m_bps_read_write: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetStorageProfile {
-    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
-    pub image_reference: Option<ImageReference>,
-    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk: Option<VirtualMachineScaleSetOsDisk>,
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_disks: Vec<VirtualMachineScaleSetDataDisk>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateStorageProfile {
-    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
-    pub image_reference: Option<ImageReference>,
-    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk: Option<VirtualMachineScaleSetUpdateOsDisk>,
-    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_disks: Vec<VirtualMachineScaleSetDataDisk>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiEntityReference {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetIpConfigurationProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subnet: Option<ApiEntityReference>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub primary: Option<bool>,
-    #[serde(rename = "publicIPAddressConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_address_configuration: Option<VirtualMachineScaleSetPublicIpAddressConfiguration>,
-    #[serde(rename = "privateIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
-    pub private_ip_address_version: Option<virtual_machine_scale_set_ip_configuration_properties::PrivateIpAddressVersion>,
-    #[serde(rename = "applicationGatewayBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
-    pub application_gateway_backend_address_pools: Vec<SubResource>,
-    #[serde(rename = "applicationSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
-    pub application_security_groups: Vec<SubResource>,
-    #[serde(rename = "loadBalancerBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
-    pub load_balancer_backend_address_pools: Vec<SubResource>,
-    #[serde(rename = "loadBalancerInboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
-    pub load_balancer_inbound_nat_pools: Vec<SubResource>,
-}
-pub mod virtual_machine_scale_set_ip_configuration_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PrivateIpAddressVersion {
-        IPv4,
-        IPv6,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetPublicIpAddressConfiguration {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetPublicIpAddressConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetPublicIpAddressConfigurationProperties {
-    #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
-    pub idle_timeout_in_minutes: Option<i32>,
-    #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
-    pub dns_settings: Option<VirtualMachineScaleSetPublicIpAddressConfigurationDnsSettings>,
-    #[serde(rename = "ipTags", default, skip_serializing_if = "Vec::is_empty")]
-    pub ip_tags: Vec<VirtualMachineScaleSetIpTag>,
-    #[serde(rename = "publicIPPrefix", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_prefix: Option<SubResource>,
-    #[serde(rename = "publicIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_address_version: Option<virtual_machine_scale_set_public_ip_address_configuration_properties::PublicIpAddressVersion>,
-}
-pub mod virtual_machine_scale_set_public_ip_address_configuration_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PublicIpAddressVersion {
-        IPv4,
-        IPv6,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetPublicIpAddressConfigurationDnsSettings {
-    #[serde(rename = "domainNameLabel")]
-    pub domain_name_label: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateIpConfigurationProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subnet: Option<ApiEntityReference>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub primary: Option<bool>,
-    #[serde(rename = "publicIPAddressConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_address_configuration: Option<VirtualMachineScaleSetUpdatePublicIpAddressConfiguration>,
-    #[serde(rename = "privateIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
-    pub private_ip_address_version: Option<virtual_machine_scale_set_update_ip_configuration_properties::PrivateIpAddressVersion>,
-    #[serde(rename = "applicationGatewayBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
-    pub application_gateway_backend_address_pools: Vec<SubResource>,
-    #[serde(rename = "applicationSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
-    pub application_security_groups: Vec<SubResource>,
-    #[serde(rename = "loadBalancerBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
-    pub load_balancer_backend_address_pools: Vec<SubResource>,
-    #[serde(rename = "loadBalancerInboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
-    pub load_balancer_inbound_nat_pools: Vec<SubResource>,
-}
-pub mod virtual_machine_scale_set_update_ip_configuration_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PrivateIpAddressVersion {
-        IPv4,
-        IPv6,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdatePublicIpAddressConfiguration {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetUpdatePublicIpAddressConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdatePublicIpAddressConfigurationProperties {
-    #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
-    pub idle_timeout_in_minutes: Option<i32>,
-    #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
-    pub dns_settings: Option<VirtualMachineScaleSetPublicIpAddressConfigurationDnsSettings>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetIpConfiguration {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetIpConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateIpConfiguration {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetUpdateIpConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetNetworkConfigurationProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub primary: Option<bool>,
-    #[serde(rename = "enableAcceleratedNetworking", default, skip_serializing_if = "Option::is_none")]
-    pub enable_accelerated_networking: Option<bool>,
-    #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
-    pub network_security_group: Option<SubResource>,
-    #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
-    pub dns_settings: Option<VirtualMachineScaleSetNetworkConfigurationDnsSettings>,
-    #[serde(rename = "ipConfigurations")]
-    pub ip_configurations: Vec<VirtualMachineScaleSetIpConfiguration>,
-    #[serde(rename = "enableIPForwarding", default, skip_serializing_if = "Option::is_none")]
-    pub enable_ip_forwarding: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetNetworkConfigurationDnsSettings {
-    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
-    pub dns_servers: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateNetworkConfigurationProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub primary: Option<bool>,
-    #[serde(rename = "enableAcceleratedNetworking", default, skip_serializing_if = "Option::is_none")]
-    pub enable_accelerated_networking: Option<bool>,
-    #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
-    pub network_security_group: Option<SubResource>,
-    #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
-    pub dns_settings: Option<VirtualMachineScaleSetNetworkConfigurationDnsSettings>,
-    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
-    pub ip_configurations: Vec<VirtualMachineScaleSetUpdateIpConfiguration>,
-    #[serde(rename = "enableIPForwarding", default, skip_serializing_if = "Option::is_none")]
-    pub enable_ip_forwarding: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetNetworkConfiguration {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetNetworkConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateNetworkConfiguration {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetUpdateNetworkConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetIpTag {
-    #[serde(rename = "ipTagType", default, skip_serializing_if = "Option::is_none")]
-    pub ip_tag_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetNetworkProfile {
-    #[serde(rename = "healthProbe", default, skip_serializing_if = "Option::is_none")]
-    pub health_probe: Option<ApiEntityReference>,
-    #[serde(rename = "networkInterfaceConfigurations", default, skip_serializing_if = "Vec::is_empty")]
-    pub network_interface_configurations: Vec<VirtualMachineScaleSetNetworkConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateNetworkProfile {
-    #[serde(rename = "healthProbe", default, skip_serializing_if = "Option::is_none")]
-    pub health_probe: Option<ApiEntityReference>,
-    #[serde(rename = "networkInterfaceConfigurations", default, skip_serializing_if = "Vec::is_empty")]
-    pub network_interface_configurations: Vec<VirtualMachineScaleSetUpdateNetworkConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetExtensionProperties {
-    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
-    pub force_update_tag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
-    pub type_handler_version: Option<String>,
-    #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
-    pub auto_upgrade_minor_version: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub settings: Option<serde_json::Value>,
-    #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
-    pub protected_settings: Option<serde_json::Value>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "provisionAfterExtensions", default, skip_serializing_if = "Vec::is_empty")]
-    pub provision_after_extensions: Vec<String>,
+    pub product: Option<String>,
+    #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
+    pub promotion_code: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetExtension {
+pub struct ProximityPlacementGroup {
     #[serde(flatten)]
-    pub sub_resource_read_only: SubResourceReadOnly,
+    pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetExtensionProperties>,
+    pub properties: Option<ProximityPlacementGroupProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetExtensionUpdate {
-    #[serde(flatten)]
-    pub sub_resource_read_only: SubResourceReadOnly,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetExtensionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetExtensionListResult {
-    pub value: Vec<VirtualMachineScaleSetExtension>,
+pub struct ProximityPlacementGroupListResult {
+    pub value: Vec<ProximityPlacementGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetExtensionProfile {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub extensions: Vec<VirtualMachineScaleSetExtension>,
+pub struct ProximityPlacementGroupProperties {
+    #[serde(rename = "proximityPlacementGroupType", default, skip_serializing_if = "Option::is_none")]
+    pub proximity_placement_group_type: Option<proximity_placement_group_properties::ProximityPlacementGroupType>,
+    #[serde(rename = "virtualMachines", default, skip_serializing_if = "Vec::is_empty")]
+    pub virtual_machines: Vec<SubResourceWithColocationStatus>,
+    #[serde(rename = "virtualMachineScaleSets", default, skip_serializing_if = "Vec::is_empty")]
+    pub virtual_machine_scale_sets: Vec<SubResourceWithColocationStatus>,
+    #[serde(rename = "availabilitySets", default, skip_serializing_if = "Vec::is_empty")]
+    pub availability_sets: Vec<SubResourceWithColocationStatus>,
+    #[serde(rename = "colocationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub colocation_status: Option<InstanceViewStatus>,
+}
+pub mod proximity_placement_group_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProximityPlacementGroupType {
+        Standard,
+        Ultra,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmProfile {
-    #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
-    pub os_profile: Option<VirtualMachineScaleSetOsProfile>,
-    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
-    pub storage_profile: Option<VirtualMachineScaleSetStorageProfile>,
-    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
-    pub network_profile: Option<VirtualMachineScaleSetNetworkProfile>,
-    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
-    pub diagnostics_profile: Option<DiagnosticsProfile>,
-    #[serde(rename = "extensionProfile", default, skip_serializing_if = "Option::is_none")]
-    pub extension_profile: Option<VirtualMachineScaleSetExtensionProfile>,
-    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
-    pub license_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub priority: Option<Priority>,
-    #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub eviction_policy: Option<EvictionPolicy>,
-    #[serde(rename = "billingProfile", default, skip_serializing_if = "Option::is_none")]
-    pub billing_profile: Option<BillingProfile>,
-    #[serde(rename = "scheduledEventsProfile", default, skip_serializing_if = "Option::is_none")]
-    pub scheduled_events_profile: Option<ScheduledEventsProfile>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScheduledEventsProfile {
-    #[serde(rename = "terminateNotificationProfile", default, skip_serializing_if = "Option::is_none")]
-    pub terminate_notification_profile: Option<TerminateNotificationProfile>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TerminateNotificationProfile {
-    #[serde(rename = "notBeforeTimeout", default, skip_serializing_if = "Option::is_none")]
-    pub not_before_timeout: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enable: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateVmProfile {
-    #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
-    pub os_profile: Option<VirtualMachineScaleSetUpdateOsProfile>,
-    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
-    pub storage_profile: Option<VirtualMachineScaleSetUpdateStorageProfile>,
-    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
-    pub network_profile: Option<VirtualMachineScaleSetUpdateNetworkProfile>,
-    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
-    pub diagnostics_profile: Option<DiagnosticsProfile>,
-    #[serde(rename = "extensionProfile", default, skip_serializing_if = "Option::is_none")]
-    pub extension_profile: Option<VirtualMachineScaleSetExtensionProfile>,
-    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
-    pub license_type: Option<String>,
-    #[serde(rename = "billingProfile", default, skip_serializing_if = "Option::is_none")]
-    pub billing_profile: Option<BillingProfile>,
-    #[serde(rename = "scheduledEventsProfile", default, skip_serializing_if = "Option::is_none")]
-    pub scheduled_events_profile: Option<ScheduledEventsProfile>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetProperties {
-    #[serde(rename = "upgradePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub upgrade_policy: Option<UpgradePolicy>,
-    #[serde(rename = "automaticRepairsPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub automatic_repairs_policy: Option<AutomaticRepairsPolicy>,
-    #[serde(rename = "virtualMachineProfile", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_machine_profile: Option<VirtualMachineScaleSetVmProfile>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub overprovision: Option<bool>,
-    #[serde(
-        rename = "doNotRunExtensionsOnOverprovisionedVMs",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub do_not_run_extensions_on_overprovisioned_v_ms: Option<bool>,
-    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
-    pub unique_id: Option<String>,
-    #[serde(rename = "singlePlacementGroup", default, skip_serializing_if = "Option::is_none")]
-    pub single_placement_group: Option<bool>,
-    #[serde(rename = "zoneBalance", default, skip_serializing_if = "Option::is_none")]
-    pub zone_balance: Option<bool>,
-    #[serde(rename = "platformFaultDomainCount", default, skip_serializing_if = "Option::is_none")]
-    pub platform_fault_domain_count: Option<i32>,
-    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
-    pub proximity_placement_group: Option<SubResource>,
-    #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Option::is_none")]
-    pub additional_capabilities: Option<AdditionalCapabilities>,
-    #[serde(rename = "scaleInPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub scale_in_policy: Option<ScaleInPolicy>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdateProperties {
-    #[serde(rename = "upgradePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub upgrade_policy: Option<UpgradePolicy>,
-    #[serde(rename = "automaticRepairsPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub automatic_repairs_policy: Option<AutomaticRepairsPolicy>,
-    #[serde(rename = "virtualMachineProfile", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_machine_profile: Option<VirtualMachineScaleSetUpdateVmProfile>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub overprovision: Option<bool>,
-    #[serde(
-        rename = "doNotRunExtensionsOnOverprovisionedVMs",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub do_not_run_extensions_on_overprovisioned_v_ms: Option<bool>,
-    #[serde(rename = "singlePlacementGroup", default, skip_serializing_if = "Option::is_none")]
-    pub single_placement_group: Option<bool>,
-    #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Option::is_none")]
-    pub additional_capabilities: Option<AdditionalCapabilities>,
-    #[serde(rename = "scaleInPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub scale_in_policy: Option<ScaleInPolicy>,
-    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
-    pub proximity_placement_group: Option<SubResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSet {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<Plan>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<VirtualMachineScaleSetIdentity>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmReimageParameters {
-    #[serde(flatten)]
-    pub virtual_machine_reimage_parameters: VirtualMachineReimageParameters,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetReimageParameters {
-    #[serde(flatten)]
-    pub virtual_machine_scale_set_vm_reimage_parameters: VirtualMachineScaleSetVmReimageParameters,
-    #[serde(rename = "instanceIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub instance_ids: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetUpdate {
+pub struct ProximityPlacementGroupUpdate {
     #[serde(flatten)]
     pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<Plan>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetUpdateProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<VirtualMachineScaleSetIdentity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmInstanceIDs {
-    #[serde(rename = "instanceIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub instance_ids: Vec<String>,
+pub struct PurchasePlan {
+    pub publisher: String,
+    pub name: String,
+    pub product: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmInstanceRequiredIDs {
-    #[serde(rename = "instanceIds")]
-    pub instance_ids: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineStatusCodeCount {
+pub struct RecommendedMachineConfiguration {
+    #[serde(rename = "vCPUs", default, skip_serializing_if = "Option::is_none")]
+    pub v_cp_us: Option<ResourceRange>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetInstanceViewStatusesSummary {
-    #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses_summary: Vec<VirtualMachineStatusCodeCount>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmExtensionsSummary {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses_summary: Vec<VirtualMachineStatusCodeCount>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetInstanceView {
-    #[serde(rename = "virtualMachine", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_machine: Option<VirtualMachineScaleSetInstanceViewStatusesSummary>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub extensions: Vec<VirtualMachineScaleSetVmExtensionsSummary>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses: Vec<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetListResult {
-    pub value: Vec<VirtualMachineScaleSet>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetListWithLinkResult {
-    pub value: Vec<VirtualMachineScaleSet>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetSkuCapacity {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minimum: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub maximum: Option<i64>,
-    #[serde(rename = "defaultCapacity", default, skip_serializing_if = "Option::is_none")]
-    pub default_capacity: Option<i64>,
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
-    pub scale_type: Option<virtual_machine_scale_set_sku_capacity::ScaleType>,
-}
-pub mod virtual_machine_scale_set_sku_capacity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ScaleType {
-        Automatic,
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetSku {
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<VirtualMachineScaleSetSkuCapacity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetListSkusResult {
-    pub value: Vec<VirtualMachineScaleSetSku>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RollbackStatusInfo {
-    #[serde(rename = "successfullyRolledbackInstanceCount", default, skip_serializing_if = "Option::is_none")]
-    pub successfully_rolledback_instance_count: Option<i32>,
-    #[serde(rename = "failedRolledbackInstanceCount", default, skip_serializing_if = "Option::is_none")]
-    pub failed_rolledback_instance_count: Option<i32>,
-    #[serde(rename = "rollbackError", default, skip_serializing_if = "Option::is_none")]
-    pub rollback_error: Option<ApiError>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiError {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ApiErrorBase>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<InnerError>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InnerError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exceptiontype: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub errordetail: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpgradeOperationHistoryStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<upgrade_operation_history_status::Code>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-}
-pub mod upgrade_operation_history_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Code {
-        RollingForward,
-        Cancelled,
-        Completed,
-        Faulted,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpgradeOperationHistoricalStatusInfoProperties {
-    #[serde(rename = "runningStatus", default, skip_serializing_if = "Option::is_none")]
-    pub running_status: Option<UpgradeOperationHistoryStatus>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub progress: Option<RollingUpgradeProgressInfo>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ApiError>,
-    #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
-    pub started_by: Option<upgrade_operation_historical_status_info_properties::StartedBy>,
-    #[serde(rename = "targetImageReference", default, skip_serializing_if = "Option::is_none")]
-    pub target_image_reference: Option<ImageReference>,
-    #[serde(rename = "rollbackInfo", default, skip_serializing_if = "Option::is_none")]
-    pub rollback_info: Option<RollbackStatusInfo>,
-}
-pub mod upgrade_operation_historical_status_info_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StartedBy {
-        Unknown,
-        User,
-        Platform,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RollingUpgradeProgressInfo {
-    #[serde(rename = "successfulInstanceCount", default, skip_serializing_if = "Option::is_none")]
-    pub successful_instance_count: Option<i32>,
-    #[serde(rename = "failedInstanceCount", default, skip_serializing_if = "Option::is_none")]
-    pub failed_instance_count: Option<i32>,
-    #[serde(rename = "inProgressInstanceCount", default, skip_serializing_if = "Option::is_none")]
-    pub in_progress_instance_count: Option<i32>,
-    #[serde(rename = "pendingInstanceCount", default, skip_serializing_if = "Option::is_none")]
-    pub pending_instance_count: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpgradeOperationHistoricalStatusInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<UpgradeOperationHistoricalStatusInfoProperties>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetListOsUpgradeHistory {
-    pub value: Vec<UpgradeOperationHistoricalStatusInfo>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmProperties {
-    #[serde(rename = "latestModelApplied", default, skip_serializing_if = "Option::is_none")]
-    pub latest_model_applied: Option<bool>,
-    #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
-    pub vm_id: Option<String>,
-    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
-    pub instance_view: Option<VirtualMachineScaleSetVmInstanceView>,
-    #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
-    pub hardware_profile: Option<HardwareProfile>,
-    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
-    pub storage_profile: Option<StorageProfile>,
-    #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Option::is_none")]
-    pub additional_capabilities: Option<AdditionalCapabilities>,
-    #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
-    pub os_profile: Option<OsProfile>,
-    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
-    pub network_profile: Option<NetworkProfile>,
-    #[serde(rename = "networkProfileConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub network_profile_configuration: Option<VirtualMachineScaleSetVmNetworkProfileConfiguration>,
-    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
-    pub diagnostics_profile: Option<DiagnosticsProfile>,
-    #[serde(rename = "availabilitySet", default, skip_serializing_if = "Option::is_none")]
-    pub availability_set: Option<SubResource>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
-    pub license_type: Option<String>,
-    #[serde(rename = "modelDefinitionApplied", default, skip_serializing_if = "Option::is_none")]
-    pub model_definition_applied: Option<String>,
-    #[serde(rename = "protectionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub protection_policy: Option<VirtualMachineScaleSetVmProtectionPolicy>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmInstanceView {
-    #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
-    pub platform_update_domain: Option<i32>,
-    #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
-    pub platform_fault_domain: Option<i32>,
-    #[serde(rename = "rdpThumbPrint", default, skip_serializing_if = "Option::is_none")]
-    pub rdp_thumb_print: Option<String>,
-    #[serde(rename = "vmAgent", default, skip_serializing_if = "Option::is_none")]
-    pub vm_agent: Option<VirtualMachineAgentInstanceView>,
-    #[serde(rename = "maintenanceRedeployStatus", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_redeploy_status: Option<MaintenanceRedeployStatus>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub disks: Vec<DiskInstanceView>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub extensions: Vec<VirtualMachineExtensionInstanceView>,
-    #[serde(rename = "vmHealth", default, skip_serializing_if = "Option::is_none")]
-    pub vm_health: Option<VirtualMachineHealthStatus>,
-    #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
-    pub boot_diagnostics: Option<BootDiagnosticsInstanceView>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses: Vec<InstanceViewStatus>,
-    #[serde(rename = "placementGroupId", default, skip_serializing_if = "Option::is_none")]
-    pub placement_group_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineHealthStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmNetworkProfileConfiguration {
-    #[serde(rename = "networkInterfaceConfigurations", default, skip_serializing_if = "Vec::is_empty")]
-    pub network_interface_configurations: Vec<VirtualMachineScaleSetNetworkConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmProtectionPolicy {
-    #[serde(rename = "protectFromScaleIn", default, skip_serializing_if = "Option::is_none")]
-    pub protect_from_scale_in: Option<bool>,
-    #[serde(rename = "protectFromScaleSetActions", default, skip_serializing_if = "Option::is_none")]
-    pub protect_from_scale_set_actions: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVm {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
-    pub instance_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<VirtualMachineScaleSetVmProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<Plan>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resources: Vec<VirtualMachineExtension>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualMachineScaleSetVmListResult {
-    pub value: Vec<VirtualMachineScaleSetVm>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RollingUpgradeStatusInfo {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RollingUpgradeStatusInfoProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RollingUpgradeStatusInfoProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub policy: Option<RollingUpgradePolicy>,
-    #[serde(rename = "runningStatus", default, skip_serializing_if = "Option::is_none")]
-    pub running_status: Option<RollingUpgradeRunningStatus>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub progress: Option<RollingUpgradeProgressInfo>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ApiError>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RollingUpgradeRunningStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<rolling_upgrade_running_status::Code>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "lastAction", default, skip_serializing_if = "Option::is_none")]
-    pub last_action: Option<rolling_upgrade_running_status::LastAction>,
-    #[serde(rename = "lastActionTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_action_time: Option<String>,
-}
-pub mod rolling_upgrade_running_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Code {
-        RollingForward,
-        Cancelled,
-        Completed,
-        Faulted,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastAction {
-        Start,
-        Cancel,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiErrorBase {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ApiError>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubResourceReadOnly {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub memory: Option<ResourceRange>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryWalkResponse {
@@ -2401,6 +1939,44 @@ pub struct RecoveryWalkResponse {
     pub walk_performed: Option<bool>,
     #[serde(rename = "nextPlatformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
     pub next_platform_update_domain: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegionalReplicationStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub region: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<regional_replication_status::State>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<i32>,
+}
+pub mod regional_replication_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Unknown,
+        Replicating,
+        Completed,
+        Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReplicationStatus {
+    #[serde(rename = "aggregatedState", default, skip_serializing_if = "Option::is_none")]
+    pub aggregated_state: Option<replication_status::AggregatedState>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub summary: Vec<RegionalReplicationStatus>,
+}
+pub mod replication_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AggregatedState {
+        Unknown,
+        InProgress,
+        Completed,
+        Failed,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestRateByIntervalInput {
@@ -2420,174 +1996,24 @@ pub mod request_rate_by_interval_input {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThrottledRequestsInput {
-    #[serde(flatten)]
-    pub log_analytics_input_base: LogAnalyticsInputBase,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsInputBase {
-    #[serde(rename = "blobContainerSasUri")]
-    pub blob_container_sas_uri: String,
-    #[serde(rename = "fromTime")]
-    pub from_time: String,
-    #[serde(rename = "toTime")]
-    pub to_time: String,
-    #[serde(rename = "groupByThrottlePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub group_by_throttle_policy: Option<bool>,
-    #[serde(rename = "groupByOperationName", default, skip_serializing_if = "Option::is_none")]
-    pub group_by_operation_name: Option<bool>,
-    #[serde(rename = "groupByResourceName", default, skip_serializing_if = "Option::is_none")]
-    pub group_by_resource_name: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsOperationResult {
+pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LogAnalyticsOutput>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsOutput {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub output: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmScaleSetConvertToSinglePlacementGroupInput {
-    #[serde(rename = "activePlacementGroupId", default, skip_serializing_if = "Option::is_none")]
-    pub active_placement_group_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunCommandInputParameter {
-    pub name: String,
-    pub value: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunCommandInput {
-    #[serde(rename = "commandId")]
-    pub command_id: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub script: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parameters: Vec<RunCommandInputParameter>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunCommandParameterDefinition {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
-    pub default_value: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub required: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunCommandDocumentBase {
-    #[serde(rename = "$schema")]
-    pub schema: String,
-    pub id: String,
-    #[serde(rename = "osType")]
-    pub os_type: run_command_document_base::OsType,
-    pub label: String,
-    pub description: String,
-}
-pub mod run_command_document_base {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Windows,
-        Linux,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunCommandDocument {
-    #[serde(flatten)]
-    pub run_command_document_base: RunCommandDocumentBase,
-    pub script: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parameters: Vec<RunCommandParameterDefinition>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunCommandListResult {
-    pub value: Vec<RunCommandDocumentBase>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunCommandResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<InstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSkuCapacity {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minimum: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub maximum: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i64>,
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
-    pub scale_type: Option<resource_sku_capacity::ScaleType>,
-}
-pub mod resource_sku_capacity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ScaleType {
-        Automatic,
-        Manual,
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSkuCosts {
-    #[serde(rename = "meterID", default, skip_serializing_if = "Option::is_none")]
-    pub meter_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub quantity: Option<i64>,
-    #[serde(rename = "extendedUnit", default, skip_serializing_if = "Option::is_none")]
-    pub extended_unit: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSkuCapabilities {
+    pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSkuZoneDetails {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub name: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub capabilities: Vec<ResourceSkuCapabilities>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSkuRestrictions {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<resource_sku_restrictions::Type>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub values: Vec<String>,
-    #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
-    pub restriction_info: Option<ResourceSkuRestrictionInfo>,
-    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
-    pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
-}
-pub mod resource_sku_restrictions {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Location,
-        Zone,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ReasonCode {
-        QuotaId,
-        NotAvailableForSubscription,
-    }
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSkuRestrictionInfo {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub locations: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
+pub struct ResourceRange {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
@@ -2619,6 +2045,42 @@ pub struct ResourceSku {
     pub restrictions: Vec<ResourceSkuRestrictions>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSkuCapabilities {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSkuCapacity {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minimum: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub maximum: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default: Option<i64>,
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    pub scale_type: Option<resource_sku_capacity::ScaleType>,
+}
+pub mod resource_sku_capacity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ScaleType {
+        Automatic,
+        Manual,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSkuCosts {
+    #[serde(rename = "meterID", default, skip_serializing_if = "Option::is_none")]
+    pub meter_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i64>,
+    #[serde(rename = "extendedUnit", default, skip_serializing_if = "Option::is_none")]
+    pub extended_unit: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkuLocationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -2628,212 +2090,220 @@ pub struct ResourceSkuLocationInfo {
     pub zone_details: Vec<ResourceSkuZoneDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSkuRestrictionInfo {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub locations: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSkuRestrictions {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<resource_sku_restrictions::Type>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<String>,
+    #[serde(rename = "restrictionInfo", default, skip_serializing_if = "Option::is_none")]
+    pub restriction_info: Option<ResourceSkuRestrictionInfo>,
+    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
+    pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
+}
+pub mod resource_sku_restrictions {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Location,
+        Zone,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ReasonCode {
+        QuotaId,
+        NotAvailableForSubscription,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSkuZoneDetails {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub name: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub capabilities: Vec<ResourceSkuCapabilities>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkusResult {
     pub value: Vec<ResourceSku>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Disk {
+pub struct RollbackStatusInfo {
+    #[serde(rename = "successfullyRolledbackInstanceCount", default, skip_serializing_if = "Option::is_none")]
+    pub successfully_rolledback_instance_count: Option<i32>,
+    #[serde(rename = "failedRolledbackInstanceCount", default, skip_serializing_if = "Option::is_none")]
+    pub failed_rolledback_instance_count: Option<i32>,
+    #[serde(rename = "rollbackError", default, skip_serializing_if = "Option::is_none")]
+    pub rollback_error: Option<ApiError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RollingUpgradePolicy {
+    #[serde(rename = "maxBatchInstancePercent", default, skip_serializing_if = "Option::is_none")]
+    pub max_batch_instance_percent: Option<i32>,
+    #[serde(rename = "maxUnhealthyInstancePercent", default, skip_serializing_if = "Option::is_none")]
+    pub max_unhealthy_instance_percent: Option<i32>,
+    #[serde(rename = "maxUnhealthyUpgradedInstancePercent", default, skip_serializing_if = "Option::is_none")]
+    pub max_unhealthy_upgraded_instance_percent: Option<i32>,
+    #[serde(rename = "pauseTimeBetweenBatches", default, skip_serializing_if = "Option::is_none")]
+    pub pause_time_between_batches: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RollingUpgradeProgressInfo {
+    #[serde(rename = "successfulInstanceCount", default, skip_serializing_if = "Option::is_none")]
+    pub successful_instance_count: Option<i32>,
+    #[serde(rename = "failedInstanceCount", default, skip_serializing_if = "Option::is_none")]
+    pub failed_instance_count: Option<i32>,
+    #[serde(rename = "inProgressInstanceCount", default, skip_serializing_if = "Option::is_none")]
+    pub in_progress_instance_count: Option<i32>,
+    #[serde(rename = "pendingInstanceCount", default, skip_serializing_if = "Option::is_none")]
+    pub pending_instance_count: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RollingUpgradeRunningStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<rolling_upgrade_running_status::Code>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "lastAction", default, skip_serializing_if = "Option::is_none")]
+    pub last_action: Option<rolling_upgrade_running_status::LastAction>,
+    #[serde(rename = "lastActionTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_action_time: Option<String>,
+}
+pub mod rolling_upgrade_running_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Code {
+        RollingForward,
+        Cancelled,
+        Completed,
+        Faulted,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastAction {
+        Start,
+        Cancel,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RollingUpgradeStatusInfo {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RollingUpgradeStatusInfoProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RollingUpgradeStatusInfoProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<RollingUpgradePolicy>,
+    #[serde(rename = "runningStatus", default, skip_serializing_if = "Option::is_none")]
+    pub running_status: Option<RollingUpgradeRunningStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<RollingUpgradeProgressInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ApiError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunCommandDocument {
+    #[serde(flatten)]
+    pub run_command_document_base: RunCommandDocumentBase,
+    pub script: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameters: Vec<RunCommandParameterDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunCommandDocumentBase {
+    #[serde(rename = "$schema")]
+    pub schema: String,
+    pub id: String,
+    #[serde(rename = "osType")]
+    pub os_type: run_command_document_base::OsType,
+    pub label: String,
+    pub description: String,
+}
+pub mod run_command_document_base {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunCommandInput {
+    #[serde(rename = "commandId")]
+    pub command_id: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub script: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameters: Vec<RunCommandInputParameter>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunCommandInputParameter {
+    pub name: String,
+    pub value: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunCommandListResult {
+    pub value: Vec<RunCommandDocumentBase>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunCommandParameterDefinition {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
+    pub default_value: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunCommandResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScaleInPolicy {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rules: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScheduledEventsProfile {
+    #[serde(rename = "terminateNotificationProfile", default, skip_serializing_if = "Option::is_none")]
+    pub terminate_notification_profile: Option<TerminateNotificationProfile>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Snapshot {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
     pub managed_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<DiskSku>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub zones: Vec<String>,
+    pub sku: Option<SnapshotSku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DiskProperties>,
+    pub properties: Option<SnapshotProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<disk_sku::Name>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-}
-pub mod disk_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        #[serde(rename = "Standard_LRS")]
-        StandardLrs,
-        #[serde(rename = "Premium_LRS")]
-        PremiumLrs,
-        #[serde(rename = "StandardSSD_LRS")]
-        StandardSsdLrs,
-        #[serde(rename = "UltraSSD_LRS")]
-        UltraSsdLrs,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskProperties {
-    #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
-    pub time_created: Option<String>,
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<disk_properties::OsType>,
-    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
-    pub hyper_v_generation: Option<disk_properties::HyperVGeneration>,
-    #[serde(rename = "creationData")]
-    pub creation_data: CreationData,
-    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_gb: Option<i32>,
-    #[serde(rename = "diskSizeBytes", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_bytes: Option<i64>,
-    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
-    pub unique_id: Option<String>,
-    #[serde(rename = "encryptionSettingsCollection", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-    #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub disk_iops_read_write: Option<i64>,
-    #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub disk_m_bps_read_write: Option<i32>,
-    #[serde(rename = "diskState", default, skip_serializing_if = "Option::is_none")]
-    pub disk_state: Option<disk_properties::DiskState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encryption: Option<Encryption>,
-}
-pub mod disk_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Windows,
-        Linux,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum HyperVGeneration {
-        V1,
-        V2,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DiskState {
-        Unattached,
-        Attached,
-        Reserved,
-        #[serde(rename = "ActiveSAS")]
-        ActiveSas,
-        ReadyToUpload,
-        ActiveUpload,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreationData {
-    #[serde(rename = "createOption")]
-    pub create_option: creation_data::CreateOption,
-    #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_id: Option<String>,
-    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
-    pub image_reference: Option<ImageDiskReference>,
-    #[serde(rename = "sourceUri", default, skip_serializing_if = "Option::is_none")]
-    pub source_uri: Option<String>,
-    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub source_resource_id: Option<String>,
-    #[serde(rename = "sourceUniqueId", default, skip_serializing_if = "Option::is_none")]
-    pub source_unique_id: Option<String>,
-    #[serde(rename = "uploadSizeBytes", default, skip_serializing_if = "Option::is_none")]
-    pub upload_size_bytes: Option<i64>,
-}
-pub mod creation_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreateOption {
-        Empty,
-        Attach,
-        FromImage,
-        Import,
-        Copy,
-        Restore,
-        Upload,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageDiskReference {
-    pub id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub lun: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionSettingsCollection {
-    pub enabled: bool,
-    #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Vec::is_empty")]
-    pub encryption_settings: Vec<EncryptionSettingsElement>,
-    #[serde(rename = "encryptionSettingsVersion", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_settings_version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Encryption {
-    #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
-    pub disk_encryption_set_id: Option<String>,
-    #[serde(rename = "type")]
-    pub type_: encryption::Type,
-}
-pub mod encryption {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        EncryptionAtRestWithPlatformKey,
-        EncryptionAtRestWithCustomerKey,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskUpdate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DiskUpdateProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<DiskSku>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskUpdateProperties {
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<disk_update_properties::OsType>,
-    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub disk_size_gb: Option<i32>,
-    #[serde(rename = "encryptionSettingsCollection", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_settings_collection: Option<EncryptionSettingsCollection>,
-    #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub disk_iops_read_write: Option<i64>,
-    #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
-    pub disk_m_bps_read_write: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encryption: Option<Encryption>,
-}
-pub mod disk_update_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Windows,
-        Linux,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskList {
-    pub value: Vec<Disk>,
+pub struct SnapshotList {
+    pub value: Vec<Snapshot>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SnapshotSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<snapshot_sku::Name>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-}
-pub mod snapshot_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        #[serde(rename = "Standard_LRS")]
-        StandardLrs,
-        #[serde(rename = "Premium_LRS")]
-        PremiumLrs,
-        #[serde(rename = "Standard_ZRS")]
-        StandardZrs,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
@@ -2874,39 +2344,32 @@ pub mod snapshot_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionSetProperties {
-    #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
-    pub active_key: Option<KeyVaultAndKeyReference>,
-    #[serde(rename = "previousKeys", default, skip_serializing_if = "Vec::is_empty")]
-    pub previous_keys: Vec<KeyVaultAndKeyReference>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultAndKeyReference {
-    #[serde(rename = "sourceVault")]
-    pub source_vault: SourceVault,
-    #[serde(rename = "keyUrl")]
-    pub key_url: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceVault {
+pub struct SnapshotSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub name: Option<snapshot_sku::Name>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+}
+pub mod snapshot_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Name {
+        #[serde(rename = "Standard_LRS")]
+        StandardLrs,
+        #[serde(rename = "Premium_LRS")]
+        PremiumLrs,
+        #[serde(rename = "Standard_ZRS")]
+        StandardZrs,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionSettingsElement {
-    #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
-    pub disk_encryption_key: Option<KeyVaultAndSecretReference>,
-    #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
-    pub key_encryption_key: Option<KeyVaultAndKeyReference>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultAndSecretReference {
-    #[serde(rename = "sourceVault")]
-    pub source_vault: SourceVault,
-    #[serde(rename = "secretUrl")]
-    pub secret_url: String,
+pub struct SnapshotUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SnapshotUpdateProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<SnapshotSku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotUpdateProperties {
@@ -2928,435 +2391,58 @@ pub mod snapshot_update_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskEncryptionSetUpdateProperties {
-    #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
-    pub active_key: Option<KeyVaultAndKeyReference>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GrantAccessData {
-    pub access: grant_access_data::Access,
-    #[serde(rename = "durationInSeconds")]
-    pub duration_in_seconds: i32,
-}
-pub mod grant_access_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Access {
-        None,
-        Read,
-        Write,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccessUri {
-    #[serde(rename = "accessSAS", default, skip_serializing_if = "Option::is_none")]
-    pub access_sas: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Snapshot {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
-    pub managed_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<SnapshotSku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SnapshotProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SnapshotUpdate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SnapshotUpdateProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<SnapshotSku>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SnapshotList {
-    pub value: Vec<Snapshot>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionSetIdentity {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<encryption_set_identity::Type>,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-pub mod encryption_set_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskEncryptionSet {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<EncryptionSetIdentity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<EncryptionSetProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskEncryptionSetUpdate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DiskEncryptionSetUpdateProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskEncryptionSetList {
-    pub value: Vec<DiskEncryptionSet>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Gallery {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identifier: Option<GalleryIdentifier>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<gallery_properties::ProvisioningState>,
-}
-pub mod gallery_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Creating,
-        Updating,
-        Failed,
-        Succeeded,
-        Deleting,
-        Migrating,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryIdentifier {
-    #[serde(rename = "uniqueName", default, skip_serializing_if = "Option::is_none")]
-    pub unique_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplication {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryApplicationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplicationProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub eula: Option<String>,
-    #[serde(rename = "privacyStatementUri", default, skip_serializing_if = "Option::is_none")]
-    pub privacy_statement_uri: Option<String>,
-    #[serde(rename = "releaseNoteUri", default, skip_serializing_if = "Option::is_none")]
-    pub release_note_uri: Option<String>,
-    #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
-    pub end_of_life_date: Option<String>,
-    #[serde(rename = "supportedOSType")]
-    pub supported_os_type: gallery_application_properties::SupportedOsType,
-}
-pub mod gallery_application_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SupportedOsType {
-        Windows,
-        Linux,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplicationUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryApplicationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplicationVersion {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryApplicationVersionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplicationVersionProperties {
-    #[serde(rename = "publishingProfile")]
-    pub publishing_profile: GalleryApplicationVersionPublishingProfile,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<gallery_application_version_properties::ProvisioningState>,
-    #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub replication_status: Option<ReplicationStatus>,
-}
-pub mod gallery_application_version_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Creating,
-        Updating,
-        Failed,
-        Succeeded,
-        Deleting,
-        Migrating,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplicationVersionPublishingProfile {
-    #[serde(flatten)]
-    pub gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase,
-    pub source: UserArtifactSource,
-    #[serde(rename = "manageActions", default, skip_serializing_if = "Option::is_none")]
-    pub manage_actions: Option<UserArtifactManage>,
-    #[serde(rename = "enableHealthCheck", default, skip_serializing_if = "Option::is_none")]
-    pub enable_health_check: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserArtifactSource {
-    #[serde(rename = "mediaLink")]
-    pub media_link: String,
-    #[serde(rename = "defaultConfigurationLink", default, skip_serializing_if = "Option::is_none")]
-    pub default_configuration_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserArtifactManage {
-    pub install: String,
-    pub remove: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub update: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationStatus {
-    #[serde(rename = "aggregatedState", default, skip_serializing_if = "Option::is_none")]
-    pub aggregated_state: Option<replication_status::AggregatedState>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub summary: Vec<RegionalReplicationStatus>,
-}
-pub mod replication_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AggregatedState {
-        Unknown,
-        InProgress,
-        Completed,
-        Failed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplicationVersionUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryApplicationVersionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImage {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryImageProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub eula: Option<String>,
-    #[serde(rename = "privacyStatementUri", default, skip_serializing_if = "Option::is_none")]
-    pub privacy_statement_uri: Option<String>,
-    #[serde(rename = "releaseNoteUri", default, skip_serializing_if = "Option::is_none")]
-    pub release_note_uri: Option<String>,
-    #[serde(rename = "osType")]
-    pub os_type: gallery_image_properties::OsType,
-    #[serde(rename = "osState")]
-    pub os_state: gallery_image_properties::OsState,
-    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
-    pub hyper_v_generation: Option<gallery_image_properties::HyperVGeneration>,
-    #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
-    pub end_of_life_date: Option<String>,
-    pub identifier: GalleryImageIdentifier,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub recommended: Option<RecommendedMachineConfiguration>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub disallowed: Option<Disallowed>,
-    #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
-    pub purchase_plan: Option<ImagePurchasePlan>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<gallery_image_properties::ProvisioningState>,
-}
-pub mod gallery_image_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsType {
-        Windows,
-        Linux,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OsState {
-        Generalized,
-        Specialized,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum HyperVGeneration {
-        V1,
-        V2,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Creating,
-        Updating,
-        Failed,
-        Succeeded,
-        Deleting,
-        Migrating,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageIdentifier {
-    pub publisher: String,
-    pub offer: String,
-    pub sku: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecommendedMachineConfiguration {
-    #[serde(rename = "vCPUs", default, skip_serializing_if = "Option::is_none")]
-    pub v_cp_us: Option<ResourceRange>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub memory: Option<ResourceRange>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceRange {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub min: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub max: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Disallowed {
-    #[serde(rename = "diskTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub disk_types: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImagePurchasePlan {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publisher: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub product: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryImageProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageVersion {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryImageVersionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageVersionProperties {
-    #[serde(rename = "publishingProfile", default, skip_serializing_if = "Option::is_none")]
-    pub publishing_profile: Option<GalleryImageVersionPublishingProfile>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<gallery_image_version_properties::ProvisioningState>,
-    #[serde(rename = "storageProfile")]
-    pub storage_profile: GalleryImageVersionStorageProfile,
-    #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub replication_status: Option<ReplicationStatus>,
-}
-pub mod gallery_image_version_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Creating,
-        Updating,
-        Failed,
-        Succeeded,
-        Deleting,
-        Migrating,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageVersionPublishingProfile {
-    #[serde(flatten)]
-    pub gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageVersionStorageProfile {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<GalleryArtifactVersionSource>,
-    #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk_image: Option<GalleryOsDiskImage>,
-    #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_disk_images: Vec<GalleryDataDiskImage>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryArtifactVersionSource {
+pub struct SourceVault {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryOsDiskImage {
-    #[serde(flatten)]
-    pub gallery_disk_image: GalleryDiskImage,
+pub struct SshConfiguration {
+    #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
+    pub public_keys: Vec<SshPublicKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageVersionUpdate {
-    #[serde(flatten)]
-    pub update_resource: UpdateResource,
+pub struct SshPublicKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GalleryImageVersionProperties>,
+    pub path: Option<String>,
+    #[serde(rename = "keyData", default, skip_serializing_if = "Option::is_none")]
+    pub key_data: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryArtifactPublishingProfileBase {
-    #[serde(rename = "targetRegions", default, skip_serializing_if = "Vec::is_empty")]
-    pub target_regions: Vec<TargetRegion>,
-    #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
-    pub replica_count: Option<i32>,
-    #[serde(rename = "excludeFromLatest", default, skip_serializing_if = "Option::is_none")]
-    pub exclude_from_latest: Option<bool>,
-    #[serde(rename = "publishedDate", default, skip_serializing_if = "Option::is_none")]
-    pub published_date: Option<String>,
-    #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
-    pub end_of_life_date: Option<String>,
-    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_type: Option<gallery_artifact_publishing_profile_base::StorageAccountType>,
+pub enum StorageAccountType {
+    #[serde(rename = "Standard_LRS")]
+    StandardLrs,
+    #[serde(rename = "Premium_LRS")]
+    PremiumLrs,
+    #[serde(rename = "StandardSSD_LRS")]
+    StandardSsdLrs,
+    #[serde(rename = "UltraSSD_LRS")]
+    UltraSsdLrs,
 }
-pub mod gallery_artifact_publishing_profile_base {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageAccountType {
-        #[serde(rename = "Standard_LRS")]
-        StandardLrs,
-        #[serde(rename = "Standard_ZRS")]
-        StandardZrs,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageProfile {
+    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
+    pub image_reference: Option<ImageReference>,
+    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk: Option<OsDisk>,
+    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_disks: Vec<DataDisk>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubResourceReadOnly {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubResourceWithColocationStatus {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(rename = "colocationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub colocation_status: Option<InstanceViewStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetRegion {
@@ -3377,306 +2463,1220 @@ pub mod target_region {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryArtifactSource {
-    #[serde(rename = "managedImage")]
-    pub managed_image: ManagedArtifact,
+pub struct TerminateNotificationProfile {
+    #[serde(rename = "notBeforeTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub not_before_timeout: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enable: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedArtifact {
-    pub id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryDataDiskImage {
+pub struct ThrottledRequestsInput {
     #[serde(flatten)]
-    pub gallery_disk_image: GalleryDiskImage,
-    pub lun: i32,
+    pub log_analytics_input_base: LogAnalyticsInputBase,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryDiskImage {
-    #[serde(rename = "sizeInGB", default, skip_serializing_if = "Option::is_none")]
-    pub size_in_gb: Option<i32>,
-    #[serde(rename = "hostCaching", default, skip_serializing_if = "Option::is_none")]
-    pub host_caching: Option<gallery_disk_image::HostCaching>,
+pub struct UpdateResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<GalleryArtifactVersionSource>,
-}
-pub mod gallery_disk_image {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum HostCaching {
-        None,
-        ReadOnly,
-        ReadWrite,
-    }
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegionalReplicationStatus {
+pub struct UpgradeOperationHistoricalStatusInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub region: Option<String>,
+    pub properties: Option<UpgradeOperationHistoricalStatusInfoProperties>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<regional_replication_status::State>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub progress: Option<i32>,
+    pub location: Option<String>,
 }
-pub mod regional_replication_status {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpgradeOperationHistoricalStatusInfoProperties {
+    #[serde(rename = "runningStatus", default, skip_serializing_if = "Option::is_none")]
+    pub running_status: Option<UpgradeOperationHistoryStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<RollingUpgradeProgressInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ApiError>,
+    #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
+    pub started_by: Option<upgrade_operation_historical_status_info_properties::StartedBy>,
+    #[serde(rename = "targetImageReference", default, skip_serializing_if = "Option::is_none")]
+    pub target_image_reference: Option<ImageReference>,
+    #[serde(rename = "rollbackInfo", default, skip_serializing_if = "Option::is_none")]
+    pub rollback_info: Option<RollbackStatusInfo>,
+}
+pub mod upgrade_operation_historical_status_info_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
+    pub enum StartedBy {
         Unknown,
-        Replicating,
+        User,
+        Platform,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpgradeOperationHistoryStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<upgrade_operation_history_status::Code>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+}
+pub mod upgrade_operation_history_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Code {
+        RollingForward,
+        Cancelled,
         Completed,
-        Failed,
+        Faulted,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryList {
-    pub value: Vec<Gallery>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct UpgradePolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<upgrade_policy::Mode>,
+    #[serde(rename = "rollingUpgradePolicy", default, skip_serializing_if = "Option::is_none")]
+    pub rolling_upgrade_policy: Option<RollingUpgradePolicy>,
+    #[serde(rename = "automaticOSUpgradePolicy", default, skip_serializing_if = "Option::is_none")]
+    pub automatic_os_upgrade_policy: Option<AutomaticOsUpgradePolicy>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageList {
-    pub value: Vec<GalleryImage>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryImageVersionList {
-    pub value: Vec<GalleryImageVersion>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplicationList {
-    pub value: Vec<GalleryApplication>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GalleryApplicationVersionList {
-    pub value: Vec<GalleryApplicationVersion>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceCustomProfile {
-    pub orchestrator: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceServicePrincipalProfile {
-    #[serde(rename = "clientId")]
-    pub client_id: String,
-    pub secret: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceOrchestratorProfile {
-    #[serde(rename = "orchestratorType")]
-    pub orchestrator_type: container_service_orchestrator_profile::OrchestratorType,
-}
-pub mod container_service_orchestrator_profile {
+pub mod upgrade_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OrchestratorType {
-        Swarm,
-        #[serde(rename = "DCOS")]
-        Dcos,
-        Custom,
-        Kubernetes,
+    pub enum Mode {
+        Automatic,
+        Manual,
+        Rolling,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceMasterProfile {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<container_service_master_profile::Count>,
-    #[serde(rename = "dnsPrefix")]
-    pub dns_prefix: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fqdn: Option<String>,
+pub struct Usage {
+    pub unit: usage::Unit,
+    #[serde(rename = "currentValue")]
+    pub current_value: i32,
+    pub limit: i64,
+    pub name: UsageName,
 }
-pub mod container_service_master_profile {
+pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Count {}
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceAgentPoolProfile {
-    pub name: String,
-    pub count: i32,
-    #[serde(rename = "vmSize")]
-    pub vm_size: container_service_agent_pool_profile::VmSize,
-    #[serde(rename = "dnsPrefix")]
-    pub dns_prefix: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fqdn: Option<String>,
-}
-pub mod container_service_agent_pool_profile {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum VmSize {
-        #[serde(rename = "Standard_A0")]
-        StandardA0,
-        #[serde(rename = "Standard_A1")]
-        StandardA1,
-        #[serde(rename = "Standard_A2")]
-        StandardA2,
-        #[serde(rename = "Standard_A3")]
-        StandardA3,
-        #[serde(rename = "Standard_A4")]
-        StandardA4,
-        #[serde(rename = "Standard_A5")]
-        StandardA5,
-        #[serde(rename = "Standard_A6")]
-        StandardA6,
-        #[serde(rename = "Standard_A7")]
-        StandardA7,
-        #[serde(rename = "Standard_A8")]
-        StandardA8,
-        #[serde(rename = "Standard_A9")]
-        StandardA9,
-        #[serde(rename = "Standard_A10")]
-        StandardA10,
-        #[serde(rename = "Standard_A11")]
-        StandardA11,
-        #[serde(rename = "Standard_D1")]
-        StandardD1,
-        #[serde(rename = "Standard_D2")]
-        StandardD2,
-        #[serde(rename = "Standard_D3")]
-        StandardD3,
-        #[serde(rename = "Standard_D4")]
-        StandardD4,
-        #[serde(rename = "Standard_D11")]
-        StandardD11,
-        #[serde(rename = "Standard_D12")]
-        StandardD12,
-        #[serde(rename = "Standard_D13")]
-        StandardD13,
-        #[serde(rename = "Standard_D14")]
-        StandardD14,
-        #[serde(rename = "Standard_D1_v2")]
-        StandardD1V2,
-        #[serde(rename = "Standard_D2_v2")]
-        StandardD2V2,
-        #[serde(rename = "Standard_D3_v2")]
-        StandardD3V2,
-        #[serde(rename = "Standard_D4_v2")]
-        StandardD4V2,
-        #[serde(rename = "Standard_D5_v2")]
-        StandardD5V2,
-        #[serde(rename = "Standard_D11_v2")]
-        StandardD11V2,
-        #[serde(rename = "Standard_D12_v2")]
-        StandardD12V2,
-        #[serde(rename = "Standard_D13_v2")]
-        StandardD13V2,
-        #[serde(rename = "Standard_D14_v2")]
-        StandardD14V2,
-        #[serde(rename = "Standard_G1")]
-        StandardG1,
-        #[serde(rename = "Standard_G2")]
-        StandardG2,
-        #[serde(rename = "Standard_G3")]
-        StandardG3,
-        #[serde(rename = "Standard_G4")]
-        StandardG4,
-        #[serde(rename = "Standard_G5")]
-        StandardG5,
-        #[serde(rename = "Standard_DS1")]
-        StandardDs1,
-        #[serde(rename = "Standard_DS2")]
-        StandardDs2,
-        #[serde(rename = "Standard_DS3")]
-        StandardDs3,
-        #[serde(rename = "Standard_DS4")]
-        StandardDs4,
-        #[serde(rename = "Standard_DS11")]
-        StandardDs11,
-        #[serde(rename = "Standard_DS12")]
-        StandardDs12,
-        #[serde(rename = "Standard_DS13")]
-        StandardDs13,
-        #[serde(rename = "Standard_DS14")]
-        StandardDs14,
-        #[serde(rename = "Standard_GS1")]
-        StandardGs1,
-        #[serde(rename = "Standard_GS2")]
-        StandardGs2,
-        #[serde(rename = "Standard_GS3")]
-        StandardGs3,
-        #[serde(rename = "Standard_GS4")]
-        StandardGs4,
-        #[serde(rename = "Standard_GS5")]
-        StandardGs5,
+    pub enum Unit {
+        Count,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceWindowsProfile {
-    #[serde(rename = "adminUsername")]
-    pub admin_username: String,
-    #[serde(rename = "adminPassword")]
-    pub admin_password: String,
+pub struct UsageName {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
+    pub localized_value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceLinuxProfile {
-    #[serde(rename = "adminUsername")]
-    pub admin_username: String,
-    pub ssh: ContainerServiceSshConfiguration,
+pub struct UserArtifactManage {
+    pub install: String,
+    pub remove: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub update: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceSshConfiguration {
-    #[serde(rename = "publicKeys")]
-    pub public_keys: Vec<ContainerServiceSshPublicKey>,
+pub struct UserArtifactSource {
+    #[serde(rename = "mediaLink")]
+    pub media_link: String,
+    #[serde(rename = "defaultConfigurationLink", default, skip_serializing_if = "Option::is_none")]
+    pub default_configuration_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceSshPublicKey {
-    #[serde(rename = "keyData")]
-    pub key_data: String,
+pub struct VmScaleSetConvertToSinglePlacementGroupInput {
+    #[serde(rename = "activePlacementGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub active_placement_group_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceDiagnosticsProfile {
-    #[serde(rename = "vmDiagnostics")]
-    pub vm_diagnostics: ContainerServiceVmDiagnostics,
+pub struct VaultCertificate {
+    #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_url: Option<String>,
+    #[serde(rename = "certificateStore", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_store: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceVmDiagnostics {
-    pub enabled: bool,
-    #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
-    pub storage_uri: Option<String>,
+pub struct VaultSecretGroup {
+    #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
+    pub source_vault: Option<SubResource>,
+    #[serde(rename = "vaultCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    pub vault_certificates: Vec<VaultCertificate>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerService {
+pub struct VirtualHardDisk {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachine {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ContainerServiceProperties>,
+    pub plan: Option<Plan>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineProperties>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resources: Vec<VirtualMachineExtension>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<VirtualMachineIdentity>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceProperties {
+pub struct VirtualMachineAgentInstanceView {
+    #[serde(rename = "vmAgentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub vm_agent_version: Option<String>,
+    #[serde(rename = "extensionHandlers", default, skip_serializing_if = "Vec::is_empty")]
+    pub extension_handlers: Vec<VirtualMachineExtensionHandlerInstanceView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineCaptureParameters {
+    #[serde(rename = "vhdPrefix")]
+    pub vhd_prefix: String,
+    #[serde(rename = "destinationContainerName")]
+    pub destination_container_name: String,
+    #[serde(rename = "overwriteVhds")]
+    pub overwrite_vhds: bool,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineCaptureResult {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(rename = "$schema", default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
+    #[serde(rename = "contentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub content_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resources: Vec<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineExtension {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineExtensionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineExtensionHandlerInstanceView {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
+    pub type_handler_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineExtensionImage {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineExtensionImageProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineExtensionImageProperties {
+    #[serde(rename = "operatingSystem")]
+    pub operating_system: String,
+    #[serde(rename = "computeRole")]
+    pub compute_role: String,
+    #[serde(rename = "handlerSchema")]
+    pub handler_schema: String,
+    #[serde(rename = "vmScaleSetEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub vm_scale_set_enabled: Option<bool>,
+    #[serde(rename = "supportsMultipleExtensions", default, skip_serializing_if = "Option::is_none")]
+    pub supports_multiple_extensions: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineExtensionInstanceView {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
+    pub type_handler_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub substatuses: Vec<InstanceViewStatus>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineExtensionProperties {
+    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
+    pub force_update_tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
+    pub type_handler_version: Option<String>,
+    #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
+    pub auto_upgrade_minor_version: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Value>,
+    #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
+    pub protected_settings: Option<serde_json::Value>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[serde(rename = "orchestratorProfile", default, skip_serializing_if = "Option::is_none")]
-    pub orchestrator_profile: Option<ContainerServiceOrchestratorProfile>,
-    #[serde(rename = "customProfile", default, skip_serializing_if = "Option::is_none")]
-    pub custom_profile: Option<ContainerServiceCustomProfile>,
-    #[serde(rename = "servicePrincipalProfile", default, skip_serializing_if = "Option::is_none")]
-    pub service_principal_profile: Option<ContainerServiceServicePrincipalProfile>,
-    #[serde(rename = "masterProfile")]
-    pub master_profile: ContainerServiceMasterProfile,
-    #[serde(rename = "agentPoolProfiles")]
-    pub agent_pool_profiles: Vec<ContainerServiceAgentPoolProfile>,
-    #[serde(rename = "windowsProfile", default, skip_serializing_if = "Option::is_none")]
-    pub windows_profile: Option<ContainerServiceWindowsProfile>,
-    #[serde(rename = "linuxProfile")]
-    pub linux_profile: ContainerServiceLinuxProfile,
-    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
-    pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
+    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
+    pub instance_view: Option<VirtualMachineExtensionInstanceView>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceListResult {
+pub struct VirtualMachineExtensionUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineExtensionUpdateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineExtensionUpdateProperties {
+    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
+    pub force_update_tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
+    pub type_handler_version: Option<String>,
+    #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
+    pub auto_upgrade_minor_version: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Value>,
+    #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
+    pub protected_settings: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineExtensionsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ContainerService>,
+    pub value: Vec<VirtualMachineExtension>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineHealthStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<virtual_machine_identity::Type>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+pub mod virtual_machine_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned, UserAssigned")]
+        SystemAssignedUserAssigned,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineImage {
+    #[serde(flatten)]
+    pub virtual_machine_image_resource: VirtualMachineImageResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineImageProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineImageProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<PurchasePlan>,
+    #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk_image: Option<OsDiskImage>,
+    #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_disk_images: Vec<DataDiskImage>,
+    #[serde(rename = "automaticOSUpgradeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub automatic_os_upgrade_properties: Option<AutomaticOsUpgradeProperties>,
+    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
+    pub hyper_v_generation: Option<HyperVGenerationType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineImageResource {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    pub name: String,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineInstanceView {
+    #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
+    pub platform_update_domain: Option<i32>,
+    #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
+    pub platform_fault_domain: Option<i32>,
+    #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
+    pub computer_name: Option<String>,
+    #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
+    pub os_name: Option<String>,
+    #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
+    pub os_version: Option<String>,
+    #[serde(rename = "hyperVGeneration", default, skip_serializing_if = "Option::is_none")]
+    pub hyper_v_generation: Option<virtual_machine_instance_view::HyperVGeneration>,
+    #[serde(rename = "rdpThumbPrint", default, skip_serializing_if = "Option::is_none")]
+    pub rdp_thumb_print: Option<String>,
+    #[serde(rename = "vmAgent", default, skip_serializing_if = "Option::is_none")]
+    pub vm_agent: Option<VirtualMachineAgentInstanceView>,
+    #[serde(rename = "maintenanceRedeployStatus", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_redeploy_status: Option<MaintenanceRedeployStatus>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub disks: Vec<DiskInstanceView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extensions: Vec<VirtualMachineExtensionInstanceView>,
+    #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
+    pub boot_diagnostics: Option<BootDiagnosticsInstanceView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<InstanceViewStatus>,
+}
+pub mod virtual_machine_instance_view {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum HyperVGeneration {
+        V1,
+        V2,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineListResult {
+    pub value: Vec<VirtualMachine>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineProperties {
+    #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
+    pub hardware_profile: Option<HardwareProfile>,
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<StorageProfile>,
+    #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Option::is_none")]
+    pub additional_capabilities: Option<AdditionalCapabilities>,
+    #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
+    pub os_profile: Option<OsProfile>,
+    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
+    pub network_profile: Option<NetworkProfile>,
+    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
+    pub diagnostics_profile: Option<DiagnosticsProfile>,
+    #[serde(rename = "availabilitySet", default, skip_serializing_if = "Option::is_none")]
+    pub availability_set: Option<SubResource>,
+    #[serde(rename = "virtualMachineScaleSet", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_scale_set: Option<SubResource>,
+    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
+    pub proximity_placement_group: Option<SubResource>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<Priority>,
+    #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub eviction_policy: Option<EvictionPolicy>,
+    #[serde(rename = "billingProfile", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile: Option<BillingProfile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub host: Option<SubResource>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
+    pub instance_view: Option<VirtualMachineInstanceView>,
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
+    pub license_type: Option<String>,
+    #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
+    pub vm_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineReimageParameters {
+    #[serde(rename = "tempDisk", default, skip_serializing_if = "Option::is_none")]
+    pub temp_disk: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSet {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<Plan>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<VirtualMachineScaleSetIdentity>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetDataDisk {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    pub lun: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caching: Option<Caching>,
+    #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_accelerator_enabled: Option<bool>,
+    #[serde(rename = "createOption")]
+    pub create_option: CreateOption,
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i32>,
+    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
+    pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
+    #[serde(rename = "diskIOPSReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub disk_iops_read_write: Option<i64>,
+    #[serde(rename = "diskMBpsReadWrite", default, skip_serializing_if = "Option::is_none")]
+    pub disk_m_bps_read_write: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetExtension {
+    #[serde(flatten)]
+    pub sub_resource_read_only: SubResourceReadOnly,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetExtensionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetExtensionListResult {
+    pub value: Vec<VirtualMachineScaleSetExtension>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetExtensionProfile {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extensions: Vec<VirtualMachineScaleSetExtension>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetExtensionProperties {
+    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
+    pub force_update_tag: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
+    pub type_handler_version: Option<String>,
+    #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
+    pub auto_upgrade_minor_version: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Value>,
+    #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
+    pub protected_settings: Option<serde_json::Value>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "provisionAfterExtensions", default, skip_serializing_if = "Vec::is_empty")]
+    pub provision_after_extensions: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetExtensionUpdate {
+    #[serde(flatten)]
+    pub sub_resource_read_only: SubResourceReadOnly,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetExtensionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetIpConfiguration {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetIpConfigurationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetIpConfigurationProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subnet: Option<ApiEntityReference>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<bool>,
+    #[serde(rename = "publicIPAddressConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_address_configuration: Option<VirtualMachineScaleSetPublicIpAddressConfiguration>,
+    #[serde(rename = "privateIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
+    pub private_ip_address_version: Option<virtual_machine_scale_set_ip_configuration_properties::PrivateIpAddressVersion>,
+    #[serde(rename = "applicationGatewayBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    pub application_gateway_backend_address_pools: Vec<SubResource>,
+    #[serde(rename = "applicationSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
+    pub application_security_groups: Vec<SubResource>,
+    #[serde(rename = "loadBalancerBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    pub load_balancer_backend_address_pools: Vec<SubResource>,
+    #[serde(rename = "loadBalancerInboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
+    pub load_balancer_inbound_nat_pools: Vec<SubResource>,
+}
+pub mod virtual_machine_scale_set_ip_configuration_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrivateIpAddressVersion {
+        IPv4,
+        IPv6,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<virtual_machine_scale_set_identity::Type>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+pub mod virtual_machine_scale_set_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        #[serde(rename = "SystemAssigned, UserAssigned")]
+        SystemAssignedUserAssigned,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetInstanceView {
+    #[serde(rename = "virtualMachine", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine: Option<VirtualMachineScaleSetInstanceViewStatusesSummary>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extensions: Vec<VirtualMachineScaleSetVmExtensionsSummary>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<InstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetInstanceViewStatusesSummary {
+    #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses_summary: Vec<VirtualMachineStatusCodeCount>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetIpTag {
+    #[serde(rename = "ipTagType", default, skip_serializing_if = "Option::is_none")]
+    pub ip_tag_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetListOsUpgradeHistory {
+    pub value: Vec<UpgradeOperationHistoricalStatusInfo>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetListResult {
+    pub value: Vec<VirtualMachineScaleSet>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetListSkusResult {
+    pub value: Vec<VirtualMachineScaleSetSku>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetListWithLinkResult {
+    pub value: Vec<VirtualMachineScaleSet>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetManagedDiskParameters {
+    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_type: Option<StorageAccountType>,
+    #[serde(rename = "diskEncryptionSet", default, skip_serializing_if = "Option::is_none")]
+    pub disk_encryption_set: Option<DiskEncryptionSetParameters>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetNetworkConfiguration {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetNetworkConfigurationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetNetworkConfigurationDnsSettings {
+    #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    pub dns_servers: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetNetworkConfigurationProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<bool>,
+    #[serde(rename = "enableAcceleratedNetworking", default, skip_serializing_if = "Option::is_none")]
+    pub enable_accelerated_networking: Option<bool>,
+    #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
+    pub network_security_group: Option<SubResource>,
+    #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
+    pub dns_settings: Option<VirtualMachineScaleSetNetworkConfigurationDnsSettings>,
+    #[serde(rename = "ipConfigurations")]
+    pub ip_configurations: Vec<VirtualMachineScaleSetIpConfiguration>,
+    #[serde(rename = "enableIPForwarding", default, skip_serializing_if = "Option::is_none")]
+    pub enable_ip_forwarding: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetNetworkProfile {
+    #[serde(rename = "healthProbe", default, skip_serializing_if = "Option::is_none")]
+    pub health_probe: Option<ApiEntityReference>,
+    #[serde(rename = "networkInterfaceConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_interface_configurations: Vec<VirtualMachineScaleSetNetworkConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetOsDisk {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caching: Option<Caching>,
+    #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_accelerator_enabled: Option<bool>,
+    #[serde(rename = "createOption")]
+    pub create_option: CreateOption,
+    #[serde(rename = "diffDiskSettings", default, skip_serializing_if = "Option::is_none")]
+    pub diff_disk_settings: Option<DiffDiskSettings>,
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i32>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<virtual_machine_scale_set_os_disk::OsType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image: Option<VirtualHardDisk>,
+    #[serde(rename = "vhdContainers", default, skip_serializing_if = "Vec::is_empty")]
+    pub vhd_containers: Vec<String>,
+    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
+    pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
+}
+pub mod virtual_machine_scale_set_os_disk {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OsType {
+        Windows,
+        Linux,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetOsProfile {
+    #[serde(rename = "computerNamePrefix", default, skip_serializing_if = "Option::is_none")]
+    pub computer_name_prefix: Option<String>,
+    #[serde(rename = "adminUsername", default, skip_serializing_if = "Option::is_none")]
+    pub admin_username: Option<String>,
+    #[serde(rename = "adminPassword", default, skip_serializing_if = "Option::is_none")]
+    pub admin_password: Option<String>,
+    #[serde(rename = "customData", default, skip_serializing_if = "Option::is_none")]
+    pub custom_data: Option<String>,
+    #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub windows_configuration: Option<WindowsConfiguration>,
+    #[serde(rename = "linuxConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub linux_configuration: Option<LinuxConfiguration>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub secrets: Vec<VaultSecretGroup>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetProperties {
+    #[serde(rename = "upgradePolicy", default, skip_serializing_if = "Option::is_none")]
+    pub upgrade_policy: Option<UpgradePolicy>,
+    #[serde(rename = "automaticRepairsPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub automatic_repairs_policy: Option<AutomaticRepairsPolicy>,
+    #[serde(rename = "virtualMachineProfile", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_profile: Option<VirtualMachineScaleSetVmProfile>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub overprovision: Option<bool>,
+    #[serde(
+        rename = "doNotRunExtensionsOnOverprovisionedVMs",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub do_not_run_extensions_on_overprovisioned_v_ms: Option<bool>,
+    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
+    pub unique_id: Option<String>,
+    #[serde(rename = "singlePlacementGroup", default, skip_serializing_if = "Option::is_none")]
+    pub single_placement_group: Option<bool>,
+    #[serde(rename = "zoneBalance", default, skip_serializing_if = "Option::is_none")]
+    pub zone_balance: Option<bool>,
+    #[serde(rename = "platformFaultDomainCount", default, skip_serializing_if = "Option::is_none")]
+    pub platform_fault_domain_count: Option<i32>,
+    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
+    pub proximity_placement_group: Option<SubResource>,
+    #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Option::is_none")]
+    pub additional_capabilities: Option<AdditionalCapabilities>,
+    #[serde(rename = "scaleInPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub scale_in_policy: Option<ScaleInPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetPublicIpAddressConfiguration {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetPublicIpAddressConfigurationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetPublicIpAddressConfigurationDnsSettings {
+    #[serde(rename = "domainNameLabel")]
+    pub domain_name_label: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetPublicIpAddressConfigurationProperties {
+    #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
+    pub idle_timeout_in_minutes: Option<i32>,
+    #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
+    pub dns_settings: Option<VirtualMachineScaleSetPublicIpAddressConfigurationDnsSettings>,
+    #[serde(rename = "ipTags", default, skip_serializing_if = "Vec::is_empty")]
+    pub ip_tags: Vec<VirtualMachineScaleSetIpTag>,
+    #[serde(rename = "publicIPPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_prefix: Option<SubResource>,
+    #[serde(rename = "publicIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_address_version: Option<virtual_machine_scale_set_public_ip_address_configuration_properties::PublicIpAddressVersion>,
+}
+pub mod virtual_machine_scale_set_public_ip_address_configuration_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PublicIpAddressVersion {
+        IPv4,
+        IPv6,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetReimageParameters {
+    #[serde(flatten)]
+    pub virtual_machine_scale_set_vm_reimage_parameters: VirtualMachineScaleSetVmReimageParameters,
+    #[serde(rename = "instanceIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub instance_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetSku {
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<VirtualMachineScaleSetSkuCapacity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetSkuCapacity {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minimum: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub maximum: Option<i64>,
+    #[serde(rename = "defaultCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub default_capacity: Option<i64>,
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    pub scale_type: Option<virtual_machine_scale_set_sku_capacity::ScaleType>,
+}
+pub mod virtual_machine_scale_set_sku_capacity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ScaleType {
+        Automatic,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetStorageProfile {
+    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
+    pub image_reference: Option<ImageReference>,
+    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk: Option<VirtualMachineScaleSetOsDisk>,
+    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_disks: Vec<VirtualMachineScaleSetDataDisk>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<Plan>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetUpdateProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<VirtualMachineScaleSetIdentity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateIpConfiguration {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetUpdateIpConfigurationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateIpConfigurationProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subnet: Option<ApiEntityReference>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<bool>,
+    #[serde(rename = "publicIPAddressConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_address_configuration: Option<VirtualMachineScaleSetUpdatePublicIpAddressConfiguration>,
+    #[serde(rename = "privateIPAddressVersion", default, skip_serializing_if = "Option::is_none")]
+    pub private_ip_address_version: Option<virtual_machine_scale_set_update_ip_configuration_properties::PrivateIpAddressVersion>,
+    #[serde(rename = "applicationGatewayBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    pub application_gateway_backend_address_pools: Vec<SubResource>,
+    #[serde(rename = "applicationSecurityGroups", default, skip_serializing_if = "Vec::is_empty")]
+    pub application_security_groups: Vec<SubResource>,
+    #[serde(rename = "loadBalancerBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
+    pub load_balancer_backend_address_pools: Vec<SubResource>,
+    #[serde(rename = "loadBalancerInboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
+    pub load_balancer_inbound_nat_pools: Vec<SubResource>,
+}
+pub mod virtual_machine_scale_set_update_ip_configuration_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrivateIpAddressVersion {
+        IPv4,
+        IPv6,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateNetworkConfiguration {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetUpdateNetworkConfigurationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateNetworkConfigurationProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<bool>,
+    #[serde(rename = "enableAcceleratedNetworking", default, skip_serializing_if = "Option::is_none")]
+    pub enable_accelerated_networking: Option<bool>,
+    #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
+    pub network_security_group: Option<SubResource>,
+    #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
+    pub dns_settings: Option<VirtualMachineScaleSetNetworkConfigurationDnsSettings>,
+    #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    pub ip_configurations: Vec<VirtualMachineScaleSetUpdateIpConfiguration>,
+    #[serde(rename = "enableIPForwarding", default, skip_serializing_if = "Option::is_none")]
+    pub enable_ip_forwarding: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateNetworkProfile {
+    #[serde(rename = "healthProbe", default, skip_serializing_if = "Option::is_none")]
+    pub health_probe: Option<ApiEntityReference>,
+    #[serde(rename = "networkInterfaceConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_interface_configurations: Vec<VirtualMachineScaleSetUpdateNetworkConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateOsDisk {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caching: Option<Caching>,
+    #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_accelerator_enabled: Option<bool>,
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image: Option<VirtualHardDisk>,
+    #[serde(rename = "vhdContainers", default, skip_serializing_if = "Vec::is_empty")]
+    pub vhd_containers: Vec<String>,
+    #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
+    pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateOsProfile {
+    #[serde(rename = "customData", default, skip_serializing_if = "Option::is_none")]
+    pub custom_data: Option<String>,
+    #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub windows_configuration: Option<WindowsConfiguration>,
+    #[serde(rename = "linuxConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub linux_configuration: Option<LinuxConfiguration>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub secrets: Vec<VaultSecretGroup>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateProperties {
+    #[serde(rename = "upgradePolicy", default, skip_serializing_if = "Option::is_none")]
+    pub upgrade_policy: Option<UpgradePolicy>,
+    #[serde(rename = "automaticRepairsPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub automatic_repairs_policy: Option<AutomaticRepairsPolicy>,
+    #[serde(rename = "virtualMachineProfile", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_profile: Option<VirtualMachineScaleSetUpdateVmProfile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub overprovision: Option<bool>,
+    #[serde(
+        rename = "doNotRunExtensionsOnOverprovisionedVMs",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub do_not_run_extensions_on_overprovisioned_v_ms: Option<bool>,
+    #[serde(rename = "singlePlacementGroup", default, skip_serializing_if = "Option::is_none")]
+    pub single_placement_group: Option<bool>,
+    #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Option::is_none")]
+    pub additional_capabilities: Option<AdditionalCapabilities>,
+    #[serde(rename = "scaleInPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub scale_in_policy: Option<ScaleInPolicy>,
+    #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
+    pub proximity_placement_group: Option<SubResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdatePublicIpAddressConfiguration {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetUpdatePublicIpAddressConfigurationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdatePublicIpAddressConfigurationProperties {
+    #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
+    pub idle_timeout_in_minutes: Option<i32>,
+    #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
+    pub dns_settings: Option<VirtualMachineScaleSetPublicIpAddressConfigurationDnsSettings>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateStorageProfile {
+    #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
+    pub image_reference: Option<ImageReference>,
+    #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk: Option<VirtualMachineScaleSetUpdateOsDisk>,
+    #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_disks: Vec<VirtualMachineScaleSetDataDisk>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetUpdateVmProfile {
+    #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
+    pub os_profile: Option<VirtualMachineScaleSetUpdateOsProfile>,
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<VirtualMachineScaleSetUpdateStorageProfile>,
+    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
+    pub network_profile: Option<VirtualMachineScaleSetUpdateNetworkProfile>,
+    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
+    pub diagnostics_profile: Option<DiagnosticsProfile>,
+    #[serde(rename = "extensionProfile", default, skip_serializing_if = "Option::is_none")]
+    pub extension_profile: Option<VirtualMachineScaleSetExtensionProfile>,
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
+    pub license_type: Option<String>,
+    #[serde(rename = "billingProfile", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile: Option<BillingProfile>,
+    #[serde(rename = "scheduledEventsProfile", default, skip_serializing_if = "Option::is_none")]
+    pub scheduled_events_profile: Option<ScheduledEventsProfile>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVm {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
+    pub instance_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineScaleSetVmProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<Plan>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resources: Vec<VirtualMachineExtension>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmExtensionsSummary {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses_summary: Vec<VirtualMachineStatusCodeCount>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmInstanceIDs {
+    #[serde(rename = "instanceIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub instance_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmInstanceRequiredIDs {
+    #[serde(rename = "instanceIds")]
+    pub instance_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmInstanceView {
+    #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
+    pub platform_update_domain: Option<i32>,
+    #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
+    pub platform_fault_domain: Option<i32>,
+    #[serde(rename = "rdpThumbPrint", default, skip_serializing_if = "Option::is_none")]
+    pub rdp_thumb_print: Option<String>,
+    #[serde(rename = "vmAgent", default, skip_serializing_if = "Option::is_none")]
+    pub vm_agent: Option<VirtualMachineAgentInstanceView>,
+    #[serde(rename = "maintenanceRedeployStatus", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_redeploy_status: Option<MaintenanceRedeployStatus>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub disks: Vec<DiskInstanceView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extensions: Vec<VirtualMachineExtensionInstanceView>,
+    #[serde(rename = "vmHealth", default, skip_serializing_if = "Option::is_none")]
+    pub vm_health: Option<VirtualMachineHealthStatus>,
+    #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
+    pub boot_diagnostics: Option<BootDiagnosticsInstanceView>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<InstanceViewStatus>,
+    #[serde(rename = "placementGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub placement_group_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmListResult {
+    pub value: Vec<VirtualMachineScaleSetVm>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmNetworkProfileConfiguration {
+    #[serde(rename = "networkInterfaceConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_interface_configurations: Vec<VirtualMachineScaleSetNetworkConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmProfile {
+    #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
+    pub os_profile: Option<VirtualMachineScaleSetOsProfile>,
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<VirtualMachineScaleSetStorageProfile>,
+    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
+    pub network_profile: Option<VirtualMachineScaleSetNetworkProfile>,
+    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
+    pub diagnostics_profile: Option<DiagnosticsProfile>,
+    #[serde(rename = "extensionProfile", default, skip_serializing_if = "Option::is_none")]
+    pub extension_profile: Option<VirtualMachineScaleSetExtensionProfile>,
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
+    pub license_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<Priority>,
+    #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub eviction_policy: Option<EvictionPolicy>,
+    #[serde(rename = "billingProfile", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile: Option<BillingProfile>,
+    #[serde(rename = "scheduledEventsProfile", default, skip_serializing_if = "Option::is_none")]
+    pub scheduled_events_profile: Option<ScheduledEventsProfile>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmProperties {
+    #[serde(rename = "latestModelApplied", default, skip_serializing_if = "Option::is_none")]
+    pub latest_model_applied: Option<bool>,
+    #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
+    pub vm_id: Option<String>,
+    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
+    pub instance_view: Option<VirtualMachineScaleSetVmInstanceView>,
+    #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
+    pub hardware_profile: Option<HardwareProfile>,
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<StorageProfile>,
+    #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Option::is_none")]
+    pub additional_capabilities: Option<AdditionalCapabilities>,
+    #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
+    pub os_profile: Option<OsProfile>,
+    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
+    pub network_profile: Option<NetworkProfile>,
+    #[serde(rename = "networkProfileConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub network_profile_configuration: Option<VirtualMachineScaleSetVmNetworkProfileConfiguration>,
+    #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
+    pub diagnostics_profile: Option<DiagnosticsProfile>,
+    #[serde(rename = "availabilitySet", default, skip_serializing_if = "Option::is_none")]
+    pub availability_set: Option<SubResource>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
+    pub license_type: Option<String>,
+    #[serde(rename = "modelDefinitionApplied", default, skip_serializing_if = "Option::is_none")]
+    pub model_definition_applied: Option<String>,
+    #[serde(rename = "protectionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub protection_policy: Option<VirtualMachineScaleSetVmProtectionPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmProtectionPolicy {
+    #[serde(rename = "protectFromScaleIn", default, skip_serializing_if = "Option::is_none")]
+    pub protect_from_scale_in: Option<bool>,
+    #[serde(rename = "protectFromScaleSetActions", default, skip_serializing_if = "Option::is_none")]
+    pub protect_from_scale_set_actions: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineScaleSetVmReimageParameters {
+    #[serde(flatten)]
+    pub virtual_machine_reimage_parameters: VirtualMachineReimageParameters,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineSize {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "numberOfCores", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_cores: Option<i32>,
+    #[serde(rename = "osDiskSizeInMB", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk_size_in_mb: Option<i32>,
+    #[serde(rename = "resourceDiskSizeInMB", default, skip_serializing_if = "Option::is_none")]
+    pub resource_disk_size_in_mb: Option<i32>,
+    #[serde(rename = "memoryInMB", default, skip_serializing_if = "Option::is_none")]
+    pub memory_in_mb: Option<i32>,
+    #[serde(rename = "maxDataDiskCount", default, skip_serializing_if = "Option::is_none")]
+    pub max_data_disk_count: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineSizeListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<VirtualMachineSize>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineStatusCodeCount {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualMachineUpdate {
+    #[serde(flatten)]
+    pub update_resource: UpdateResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<Plan>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<VirtualMachineProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<VirtualMachineIdentity>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WinRmConfiguration {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub listeners: Vec<WinRmListener>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WinRmListener {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<win_rm_listener::Protocol>,
+    #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_url: Option<String>,
+}
+pub mod win_rm_listener {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Protocol {
+        Http,
+        Https,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WindowsConfiguration {
+    #[serde(rename = "provisionVMAgent", default, skip_serializing_if = "Option::is_none")]
+    pub provision_vm_agent: Option<bool>,
+    #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
+    pub enable_automatic_updates: Option<bool>,
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    #[serde(rename = "additionalUnattendContent", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_unattend_content: Vec<AdditionalUnattendContent>,
+    #[serde(rename = "winRM", default, skip_serializing_if = "Option::is_none")]
+    pub win_rm: Option<WinRmConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum EvictionPolicy {
+    Deallocate,
+    Delete,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum Priority {
+    Regular,
+    Low,
+    Spot,
 }

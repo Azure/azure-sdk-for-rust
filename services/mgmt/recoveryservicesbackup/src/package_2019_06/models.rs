@@ -3,49 +3,96 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureFileshareProtectedItem {
+pub struct AzureBackupGoalFeatureSupportRequest {
     #[serde(flatten)]
-    pub protected_item: ProtectedItem,
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
-    pub protection_status: Option<String>,
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
-    pub protection_state: Option<azure_fileshare_protected_item::ProtectionState>,
-    #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
-    pub last_backup_status: Option<String>,
-    #[serde(rename = "lastBackupTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_backup_time: Option<String>,
-    #[serde(rename = "kpisHealths", default, skip_serializing_if = "Option::is_none")]
-    pub kpis_healths: Option<serde_json::Value>,
-    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub extended_info: Option<AzureFileshareProtectedItemExtendedInfo>,
+    pub feature_support_request: FeatureSupportRequest,
 }
-pub mod azure_fileshare_protected_item {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureBackupServerContainer {
+    #[serde(flatten)]
+    pub dpm_container: DpmContainer,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureBackupServerEngine {
+    #[serde(flatten)]
+    pub backup_engine_base: BackupEngineBase,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureFileShareBackupRequest {
+    #[serde(flatten)]
+    pub backup_request: BackupRequest,
+    #[serde(rename = "recoveryPointExpiryTimeInUTC", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_point_expiry_time_in_utc: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureFileShareProtectableItem {
+    #[serde(flatten)]
+    pub workload_protectable_item: WorkloadProtectableItem,
+    #[serde(rename = "parentContainerFabricId", default, skip_serializing_if = "Option::is_none")]
+    pub parent_container_fabric_id: Option<String>,
+    #[serde(rename = "parentContainerFriendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub parent_container_friendly_name: Option<String>,
+    #[serde(rename = "azureFileShareType", default, skip_serializing_if = "Option::is_none")]
+    pub azure_file_share_type: Option<azure_file_share_protectable_item::AzureFileShareType>,
+}
+pub mod azure_file_share_protectable_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProtectionState {
+    pub enum AzureFileShareType {
         Invalid,
-        #[serde(rename = "IRPending")]
-        IrPending,
-        Protected,
-        ProtectionError,
-        ProtectionStopped,
-        ProtectionPaused,
+        #[serde(rename = "XSMB")]
+        Xsmb,
+        XSync,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureFileshareProtectedItemExtendedInfo {
-    #[serde(rename = "oldestRecoveryPoint", default, skip_serializing_if = "Option::is_none")]
-    pub oldest_recovery_point: Option<String>,
-    #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_point_count: Option<i32>,
-    #[serde(rename = "policyState", default, skip_serializing_if = "Option::is_none")]
-    pub policy_state: Option<String>,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
-    pub resource_state: Option<String>,
-    #[serde(rename = "resourceStateSyncTime", default, skip_serializing_if = "Option::is_none")]
-    pub resource_state_sync_time: Option<String>,
+pub struct AzureFileShareProtectionPolicy {
+    #[serde(flatten)]
+    pub protection_policy: ProtectionPolicy,
+    #[serde(rename = "workLoadType", default, skip_serializing_if = "Option::is_none")]
+    pub work_load_type: Option<azure_file_share_protection_policy::WorkLoadType>,
+    #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
+    pub schedule_policy: Option<SchedulePolicy>,
+    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub retention_policy: Option<RetentionPolicy>,
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+}
+pub mod azure_file_share_protection_policy {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WorkLoadType {
+        Invalid,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureFileShareProvisionIlrRequest {
+    #[serde(flatten)]
+    pub ilr_request: IlrRequest,
+    #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_point_id: Option<String>,
+    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFileShareRecoveryPoint {
@@ -103,115 +150,74 @@ pub mod azure_file_share_restore_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetAfsRestoreInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub target_resource_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadProtectionPolicy {
+pub struct AzureFileshareProtectedItem {
     #[serde(flatten)]
-    pub protection_policy: ProtectionPolicy,
-    #[serde(rename = "workLoadType", default, skip_serializing_if = "Option::is_none")]
-    pub work_load_type: Option<azure_vm_workload_protection_policy::WorkLoadType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub settings: Option<Settings>,
-    #[serde(rename = "subProtectionPolicy", default, skip_serializing_if = "Vec::is_empty")]
-    pub sub_protection_policy: Vec<SubProtectionPolicy>,
-    #[serde(rename = "makePolicyConsistent", default, skip_serializing_if = "Option::is_none")]
-    pub make_policy_consistent: Option<bool>,
+    pub protected_item: ProtectedItem,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub protection_status: Option<String>,
+    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    pub protection_state: Option<azure_fileshare_protected_item::ProtectionState>,
+    #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
+    pub last_backup_status: Option<String>,
+    #[serde(rename = "lastBackupTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_backup_time: Option<String>,
+    #[serde(rename = "kpisHealths", default, skip_serializing_if = "Option::is_none")]
+    pub kpis_healths: Option<serde_json::Value>,
+    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
+    pub extended_info: Option<AzureFileshareProtectedItemExtendedInfo>,
 }
-pub mod azure_vm_workload_protection_policy {
+pub mod azure_fileshare_protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WorkLoadType {
+    pub enum ProtectionState {
         Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
+        #[serde(rename = "IRPending")]
+        IrPending,
+        Protected,
+        ProtectionError,
+        ProtectionStopped,
+        ProtectionPaused,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Settings {
-    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub issqlcompression: Option<bool>,
-    #[serde(rename = "isCompression", default, skip_serializing_if = "Option::is_none")]
-    pub is_compression: Option<bool>,
+pub struct AzureFileshareProtectedItemExtendedInfo {
+    #[serde(rename = "oldestRecoveryPoint", default, skip_serializing_if = "Option::is_none")]
+    pub oldest_recovery_point: Option<String>,
+    #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_point_count: Option<i32>,
+    #[serde(rename = "policyState", default, skip_serializing_if = "Option::is_none")]
+    pub policy_state: Option<String>,
+    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    pub resource_state: Option<String>,
+    #[serde(rename = "resourceStateSyncTime", default, skip_serializing_if = "Option::is_none")]
+    pub resource_state_sync_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureFileShareProtectionPolicy {
+pub struct AzureIaaSClassicComputeVmContainer {
     #[serde(flatten)]
-    pub protection_policy: ProtectionPolicy,
-    #[serde(rename = "workLoadType", default, skip_serializing_if = "Option::is_none")]
-    pub work_load_type: Option<azure_file_share_protection_policy::WorkLoadType>,
-    #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_policy: Option<SchedulePolicy>,
-    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
-    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-}
-pub mod azure_file_share_protection_policy {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WorkLoadType {
-        Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
+    pub iaa_svm_container: IaaSvmContainer,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SchedulePolicy {
-    #[serde(rename = "schedulePolicyType")]
-    pub schedule_policy_type: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetentionPolicy {
-    #[serde(rename = "retentionPolicyType")]
-    pub retention_policy_type: String,
+pub struct AzureIaaSClassicComputeVmProtectableItem {
+    #[serde(flatten)]
+    pub iaa_svm_protectable_item: IaaSvmProtectableItem,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureIaaSClassicComputeVmProtectedItem {
     #[serde(flatten)]
     pub azure_iaa_svm_protected_item: AzureIaaSvmProtectedItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureIaaSComputeVmContainer {
+    #[serde(flatten)]
+    pub iaa_svm_container: IaaSvmContainer,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureIaaSComputeVmProtectableItem {
+    #[serde(flatten)]
+    pub iaa_svm_protectable_item: IaaSvmProtectableItem,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureIaaSComputeVmProtectedItem {
@@ -226,17 +232,6 @@ pub struct AzureIaaSvmErrorInfo {
     pub error_title: Option<String>,
     #[serde(rename = "errorString", default, skip_serializing_if = "Option::is_none")]
     pub error_string: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub recommendations: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceHealthDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
 }
@@ -353,18 +348,6 @@ pub struct AzureIaaSvmProtectedItemExtendedInfo {
     pub policy_inconsistent: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtendedProperties {
-    #[serde(rename = "diskExclusionProperties", default, skip_serializing_if = "Option::is_none")]
-    pub disk_exclusion_properties: Option<DiskExclusionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskExclusionProperties {
-    #[serde(rename = "diskLunList", default, skip_serializing_if = "Vec::is_empty")]
-    pub disk_lun_list: Vec<i32>,
-    #[serde(rename = "isInclusionList", default, skip_serializing_if = "Option::is_none")]
-    pub is_inclusion_list: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureIaaSvmProtectionPolicy {
     #[serde(flatten)]
     pub protection_policy: ProtectionPolicy,
@@ -380,11 +363,26 @@ pub struct AzureIaaSvmProtectionPolicy {
     pub time_zone: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InstantRpAdditionalDetails {
-    #[serde(rename = "azureBackupRGNamePrefix", default, skip_serializing_if = "Option::is_none")]
-    pub azure_backup_rg_name_prefix: Option<String>,
-    #[serde(rename = "azureBackupRGNameSuffix", default, skip_serializing_if = "Option::is_none")]
-    pub azure_backup_rg_name_suffix: Option<String>,
+pub struct AzureRecoveryServiceVaultProtectionIntent {
+    #[serde(flatten)]
+    pub protection_intent: ProtectionIntent,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureResourceProtectionIntent {
+    #[serde(flatten)]
+    pub protection_intent: ProtectionIntent,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureSqlagWorkloadContainerProtectionContainer {
+    #[serde(flatten)]
+    pub azure_workload_container: AzureWorkloadContainer,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureSqlContainer {
+    #[serde(flatten)]
+    pub protection_container: ProtectionContainer,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSqlProtectedItem {
@@ -420,6 +418,26 @@ pub struct AzureSqlProtectedItemExtendedInfo {
     pub policy_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureSqlProtectionPolicy {
+    #[serde(flatten)]
+    pub protection_policy: ProtectionPolicy,
+    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub retention_policy: Option<RetentionPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureStorageContainer {
+    #[serde(flatten)]
+    pub protection_container: ProtectionContainer,
+    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_resource_id: Option<String>,
+    #[serde(rename = "storageAccountVersion", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_version: Option<String>,
+    #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
+    pub resource_group: Option<String>,
+    #[serde(rename = "protectedItemCount", default, skip_serializing_if = "Option::is_none")]
+    pub protected_item_count: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureStorageErrorInfo {
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
@@ -427,13 +445,6 @@ pub struct AzureStorageErrorInfo {
     pub error_string: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureSqlProtectionPolicy {
-    #[serde(flatten)]
-    pub protection_policy: ProtectionPolicy,
-    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureStorageJob {
@@ -467,6 +478,84 @@ pub struct AzureStorageJobTaskDetails {
     pub task_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureStorageProtectableContainer {
+    #[serde(flatten)]
+    pub protectable_container: ProtectableContainer,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmAppContainerProtectableContainer {
+    #[serde(flatten)]
+    pub protectable_container: ProtectableContainer,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmAppContainerProtectionContainer {
+    #[serde(flatten)]
+    pub azure_workload_container: AzureWorkloadContainer,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmResourceFeatureSupportRequest {
+    #[serde(flatten)]
+    pub feature_support_request: FeatureSupportRequest,
+    #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
+    pub vm_size: Option<String>,
+    #[serde(rename = "vmSku", default, skip_serializing_if = "Option::is_none")]
+    pub vm_sku: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmResourceFeatureSupportResponse {
+    #[serde(rename = "supportStatus", default, skip_serializing_if = "Option::is_none")]
+    pub support_status: Option<azure_vm_resource_feature_support_response::SupportStatus>,
+}
+pub mod azure_vm_resource_feature_support_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SupportStatus {
+        Invalid,
+        Supported,
+        #[serde(rename = "DefaultOFF")]
+        DefaultOff,
+        #[serde(rename = "DefaultON")]
+        DefaultOn,
+        NotSupported,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadItem {
+    #[serde(flatten)]
+    pub workload_item: WorkloadItem,
+    #[serde(rename = "parentName", default, skip_serializing_if = "Option::is_none")]
+    pub parent_name: Option<String>,
+    #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
+    pub server_name: Option<String>,
+    #[serde(rename = "isAutoProtectable", default, skip_serializing_if = "Option::is_none")]
+    pub is_auto_protectable: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subinquireditemcount: Option<i32>,
+    #[serde(rename = "subWorkloadItemCount", default, skip_serializing_if = "Option::is_none")]
+    pub sub_workload_item_count: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadProtectableItem {
+    #[serde(flatten)]
+    pub workload_protectable_item: WorkloadProtectableItem,
+    #[serde(rename = "parentName", default, skip_serializing_if = "Option::is_none")]
+    pub parent_name: Option<String>,
+    #[serde(rename = "parentUniqueName", default, skip_serializing_if = "Option::is_none")]
+    pub parent_unique_name: Option<String>,
+    #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
+    pub server_name: Option<String>,
+    #[serde(rename = "isAutoProtectable", default, skip_serializing_if = "Option::is_none")]
+    pub is_auto_protectable: Option<bool>,
+    #[serde(rename = "isAutoProtected", default, skip_serializing_if = "Option::is_none")]
+    pub is_auto_protected: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subinquireditemcount: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subprotectableitemcount: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prebackupvalidation: Option<PreBackupValidation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureVmWorkloadProtectedItem {
@@ -530,15 +619,6 @@ pub mod azure_vm_workload_protected_item {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub recommendations: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureVmWorkloadProtectedItemExtendedInfo {
     #[serde(rename = "oldestRecoveryPoint", default, skip_serializing_if = "Option::is_none")]
     pub oldest_recovery_point: Option<String>,
@@ -548,9 +628,69 @@ pub struct AzureVmWorkloadProtectedItemExtendedInfo {
     pub policy_state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadProtectionPolicy {
+    #[serde(flatten)]
+    pub protection_policy: ProtectionPolicy,
+    #[serde(rename = "workLoadType", default, skip_serializing_if = "Option::is_none")]
+    pub work_load_type: Option<azure_vm_workload_protection_policy::WorkLoadType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<Settings>,
+    #[serde(rename = "subProtectionPolicy", default, skip_serializing_if = "Vec::is_empty")]
+    pub sub_protection_policy: Vec<SubProtectionPolicy>,
+    #[serde(rename = "makePolicyConsistent", default, skip_serializing_if = "Option::is_none")]
+    pub make_policy_consistent: Option<bool>,
+}
+pub mod azure_vm_workload_protection_policy {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WorkLoadType {
+        Invalid,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureVmWorkloadSapAseDatabaseProtectedItem {
     #[serde(flatten)]
     pub azure_vm_workload_protected_item: AzureVmWorkloadProtectedItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSapAseDatabaseWorkloadItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_item: AzureVmWorkloadItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSapAseSystemProtectableItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSapAseSystemWorkloadItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_item: AzureVmWorkloadItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSapHanaDatabaseProtectableItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureVmWorkloadSapHanaDatabaseProtectedItem {
@@ -558,9 +698,135 @@ pub struct AzureVmWorkloadSapHanaDatabaseProtectedItem {
     pub azure_vm_workload_protected_item: AzureVmWorkloadProtectedItem,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSapHanaDatabaseWorkloadItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_item: AzureVmWorkloadItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSapHanaSystemProtectableItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSapHanaSystemWorkloadItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_item: AzureVmWorkloadItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSqlAvailabilityGroupProtectableItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSqlDatabaseProtectableItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureVmWorkloadSqlDatabaseProtectedItem {
     #[serde(flatten)]
     pub azure_vm_workload_protected_item: AzureVmWorkloadProtectedItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSqlDatabaseWorkloadItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_item: AzureVmWorkloadItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSqlInstanceProtectableItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureVmWorkloadSqlInstanceWorkloadItem {
+    #[serde(flatten)]
+    pub azure_vm_workload_item: AzureVmWorkloadItem,
+    #[serde(rename = "dataDirectoryPaths", default, skip_serializing_if = "Vec::is_empty")]
+    pub data_directory_paths: Vec<SqlDataDirectory>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureWorkloadAutoProtectionIntent {
+    #[serde(flatten)]
+    pub azure_recovery_service_vault_protection_intent: AzureRecoveryServiceVaultProtectionIntent,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureWorkloadBackupRequest {
+    #[serde(flatten)]
+    pub backup_request: BackupRequest,
+    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_type: Option<azure_workload_backup_request::BackupType>,
+    #[serde(rename = "enableCompression", default, skip_serializing_if = "Option::is_none")]
+    pub enable_compression: Option<bool>,
+    #[serde(rename = "recoveryPointExpiryTimeInUTC", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_point_expiry_time_in_utc: Option<String>,
+}
+pub mod azure_workload_backup_request {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupType {
+        Invalid,
+        Full,
+        Differential,
+        Log,
+        CopyOnlyFull,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureWorkloadContainer {
+    #[serde(flatten)]
+    pub protection_container: ProtectionContainer,
+    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_resource_id: Option<String>,
+    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_updated_time: Option<String>,
+    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
+    pub extended_info: Option<AzureWorkloadContainerExtendedInfo>,
+    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    pub workload_type: Option<azure_workload_container::WorkloadType>,
+    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+    pub operation_type: Option<azure_workload_container::OperationType>,
+}
+pub mod azure_workload_container {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WorkloadType {
+        Invalid,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OperationType {
+        Invalid,
+        Register,
+        Reregister,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureWorkloadContainerExtendedInfo {
+    #[serde(rename = "hostServerName", default, skip_serializing_if = "Option::is_none")]
+    pub host_server_name: Option<String>,
+    #[serde(rename = "inquiryInfo", default, skip_serializing_if = "Option::is_none")]
+    pub inquiry_info: Option<InquiryInfo>,
+    #[serde(rename = "nodesList", default, skip_serializing_if = "Vec::is_empty")]
+    pub nodes_list: Vec<DistributedNodesInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadErrorInfo {
@@ -672,26 +938,6 @@ pub mod azure_workload_restore_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetRestoreInfo {
-    #[serde(rename = "overwriteOption", default, skip_serializing_if = "Option::is_none")]
-    pub overwrite_option: Option<target_restore_info::OverwriteOption>,
-    #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
-    pub container_id: Option<String>,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "targetDirectoryForFileRestore", default, skip_serializing_if = "Option::is_none")]
-    pub target_directory_for_file_restore: Option<String>,
-}
-pub mod target_restore_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OverwriteOption {
-        Invalid,
-        FailOnConflict,
-        Overwrite,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSapHanaPointInTimeRecoveryPoint {
     #[serde(flatten)]
     pub azure_workload_point_in_time_recovery_point: AzureWorkloadPointInTimeRecoveryPoint,
@@ -712,6 +958,32 @@ pub struct AzureWorkloadSapHanaRecoveryPoint {
 pub struct AzureWorkloadSapHanaRestoreRequest {
     #[serde(flatten)]
     pub azure_workload_restore_request: AzureWorkloadRestoreRequest,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureWorkloadSqlAutoProtectionIntent {
+    #[serde(flatten)]
+    pub azure_workload_auto_protection_intent: AzureWorkloadAutoProtectionIntent,
+    #[serde(rename = "workloadItemType", default, skip_serializing_if = "Option::is_none")]
+    pub workload_item_type: Option<azure_workload_sql_auto_protection_intent::WorkloadItemType>,
+}
+pub mod azure_workload_sql_auto_protection_intent {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WorkloadItemType {
+        Invalid,
+        #[serde(rename = "SQLInstance")]
+        SqlInstance,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        #[serde(rename = "SAPHanaSystem")]
+        SapHanaSystem,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseSystem")]
+        SapAseSystem,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSqlPointInTimeRecoveryPoint {
@@ -751,6 +1023,512 @@ pub struct AzureWorkloadSqlRestoreRequest {
     pub is_non_recoverable: Option<bool>,
     #[serde(rename = "alternateDirectoryPaths", default, skip_serializing_if = "Vec::is_empty")]
     pub alternate_directory_paths: Vec<SqlDataDirectoryMapping>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BekDetails {
+    #[serde(rename = "secretUrl", default, skip_serializing_if = "Option::is_none")]
+    pub secret_url: Option<String>,
+    #[serde(rename = "secretVaultId", default, skip_serializing_if = "Option::is_none")]
+    pub secret_vault_id: Option<String>,
+    #[serde(rename = "secretData", default, skip_serializing_if = "Option::is_none")]
+    pub secret_data: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsBackupEngineQueryObject {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expand: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsBackupEnginesQueryObject {
+    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<bms_backup_engines_query_object::BackupManagementType>,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expand: Option<String>,
+}
+pub mod bms_backup_engines_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureBackupServer,
+        AzureSql,
+        AzureStorage,
+        AzureWorkload,
+        DefaultBackup,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsBackupSummariesQueryObject {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<bms_backup_summaries_query_object::Type>,
+}
+pub mod bms_backup_summaries_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Invalid,
+        BackupProtectedItemCountSummary,
+        BackupProtectionContainerCountSummary,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsContainerQueryObject {
+    #[serde(rename = "backupManagementType")]
+    pub backup_management_type: bms_container_query_object::BackupManagementType,
+    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
+    pub container_type: Option<bms_container_query_object::ContainerType>,
+    #[serde(rename = "backupEngineName", default, skip_serializing_if = "Option::is_none")]
+    pub backup_engine_name: Option<String>,
+    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
+    pub fabric_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+}
+pub mod bms_container_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureBackupServer,
+        AzureSql,
+        AzureStorage,
+        AzureWorkload,
+        DefaultBackup,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ContainerType {
+        Invalid,
+        Unknown,
+        #[serde(rename = "IaasVMContainer")]
+        IaasVmContainer,
+        #[serde(rename = "IaasVMServiceContainer")]
+        IaasVmServiceContainer,
+        #[serde(rename = "DPMContainer")]
+        DpmContainer,
+        AzureBackupServerContainer,
+        #[serde(rename = "MABContainer")]
+        MabContainer,
+        Cluster,
+        AzureSqlContainer,
+        Windows,
+        VCenter,
+        #[serde(rename = "VMAppContainer")]
+        VmAppContainer,
+        #[serde(rename = "SQLAGWorkLoadContainer")]
+        SqlagWorkLoadContainer,
+        StorageContainer,
+        GenericContainer,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsContainersInquiryQueryObject {
+    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<bms_containers_inquiry_query_object::BackupManagementType>,
+    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    pub workload_type: Option<bms_containers_inquiry_query_object::WorkloadType>,
+}
+pub mod bms_containers_inquiry_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureBackupServer,
+        AzureSql,
+        AzureStorage,
+        AzureWorkload,
+        DefaultBackup,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WorkloadType {
+        Invalid,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmspoQueryObject {
+    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<bmspo_query_object::BackupManagementType>,
+    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    pub workload_type: Option<bmspo_query_object::WorkloadType>,
+    #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
+    pub container_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+}
+pub mod bmspo_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureSql,
+        AzureBackupServer,
+        AzureWorkload,
+        AzureStorage,
+        DefaultBackup,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WorkloadType {
+        Invalid,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsrpQueryObject {
+    #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
+    pub start_date: Option<String>,
+    #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_date: Option<String>,
+    #[serde(rename = "restorePointQueryType", default, skip_serializing_if = "Option::is_none")]
+    pub restore_point_query_type: Option<bmsrp_query_object::RestorePointQueryType>,
+    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
+    pub extended_info: Option<bool>,
+}
+pub mod bmsrp_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RestorePointQueryType {
+        Invalid,
+        Full,
+        Log,
+        Differential,
+        FullAndDifferential,
+        All,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsRefreshContainersQueryObject {
+    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<bms_refresh_containers_query_object::BackupManagementType>,
+}
+pub mod bms_refresh_containers_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureBackupServer,
+        AzureSql,
+        AzureStorage,
+        AzureWorkload,
+        DefaultBackup,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsWorkloadItemQueryObject {
+    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<bms_workload_item_query_object::BackupManagementType>,
+    #[serde(rename = "workloadItemType", default, skip_serializing_if = "Option::is_none")]
+    pub workload_item_type: Option<bms_workload_item_query_object::WorkloadItemType>,
+    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    pub workload_type: Option<bms_workload_item_query_object::WorkloadType>,
+    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub protection_status: Option<bms_workload_item_query_object::ProtectionStatus>,
+}
+pub mod bms_workload_item_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureSql,
+        AzureBackupServer,
+        AzureWorkload,
+        AzureStorage,
+        DefaultBackup,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WorkloadItemType {
+        Invalid,
+        #[serde(rename = "SQLInstance")]
+        SqlInstance,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        #[serde(rename = "SAPHanaSystem")]
+        SapHanaSystem,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseSystem")]
+        SapAseSystem,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum WorkloadType {
+        Invalid,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProtectionStatus {
+        Invalid,
+        NotProtected,
+        Protecting,
+        Protected,
+        ProtectionFailed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupEngineBase {
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<backup_engine_base::BackupManagementType>,
+    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub registration_status: Option<String>,
+    #[serde(rename = "backupEngineState", default, skip_serializing_if = "Option::is_none")]
+    pub backup_engine_state: Option<String>,
+    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
+    pub health_status: Option<String>,
+    #[serde(rename = "backupEngineType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_engine_type: Option<backup_engine_base::BackupEngineType>,
+    #[serde(rename = "canReRegister", default, skip_serializing_if = "Option::is_none")]
+    pub can_re_register: Option<bool>,
+    #[serde(rename = "backupEngineId", default, skip_serializing_if = "Option::is_none")]
+    pub backup_engine_id: Option<String>,
+    #[serde(rename = "dpmVersion", default, skip_serializing_if = "Option::is_none")]
+    pub dpm_version: Option<String>,
+    #[serde(rename = "azureBackupAgentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub azure_backup_agent_version: Option<String>,
+    #[serde(rename = "isAzureBackupAgentUpgradeAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub is_azure_backup_agent_upgrade_available: Option<bool>,
+    #[serde(rename = "isDpmUpgradeAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub is_dpm_upgrade_available: Option<bool>,
+    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
+    pub extended_info: Option<BackupEngineExtendedInfo>,
+}
+pub mod backup_engine_base {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureBackupServer,
+        AzureSql,
+        AzureStorage,
+        AzureWorkload,
+        DefaultBackup,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupEngineType {
+        Invalid,
+        DpmBackupEngine,
+        AzureBackupServerEngine,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupEngineBaseResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BackupEngineBase>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupEngineBaseResourceList {
+    #[serde(flatten)]
+    pub resource_list: ResourceList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BackupEngineBaseResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupEngineExtendedInfo {
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "protectedItemsCount", default, skip_serializing_if = "Option::is_none")]
+    pub protected_items_count: Option<i32>,
+    #[serde(rename = "protectedServersCount", default, skip_serializing_if = "Option::is_none")]
+    pub protected_servers_count: Option<i32>,
+    #[serde(rename = "diskCount", default, skip_serializing_if = "Option::is_none")]
+    pub disk_count: Option<i32>,
+    #[serde(rename = "usedDiskSpace", default, skip_serializing_if = "Option::is_none")]
+    pub used_disk_space: Option<f64>,
+    #[serde(rename = "availableDiskSpace", default, skip_serializing_if = "Option::is_none")]
+    pub available_disk_space: Option<f64>,
+    #[serde(rename = "refreshedAt", default, skip_serializing_if = "Option::is_none")]
+    pub refreshed_at: Option<String>,
+    #[serde(rename = "azureProtectedInstances", default, skip_serializing_if = "Option::is_none")]
+    pub azure_protected_instances: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupManagementUsage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<backup_management_usage::Unit>,
+    #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub quota_period: Option<String>,
+    #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
+    pub next_reset_time: Option<String>,
+    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
+    pub current_value: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<NameInfo>,
+}
+pub mod backup_management_usage {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Unit {
+        Count,
+        Bytes,
+        Seconds,
+        Percent,
+        CountPerSecond,
+        BytesPerSecond,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupManagementUsageList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BackupManagementUsage>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupRequest {
+    #[serde(rename = "objectType")]
+    pub object_type: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupRequestResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BackupRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupResourceConfig {
+    #[serde(rename = "storageModelType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_model_type: Option<backup_resource_config::StorageModelType>,
+    #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_type: Option<backup_resource_config::StorageType>,
+    #[serde(rename = "storageTypeState", default, skip_serializing_if = "Option::is_none")]
+    pub storage_type_state: Option<backup_resource_config::StorageTypeState>,
+}
+pub mod backup_resource_config {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageModelType {
+        Invalid,
+        GeoRedundant,
+        LocallyRedundant,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageType {
+        Invalid,
+        GeoRedundant,
+        LocallyRedundant,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageTypeState {
+        Invalid,
+        Locked,
+        Unlocked,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupResourceConfigResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BackupResourceConfig>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupResourceVaultConfig {
@@ -806,130 +1584,154 @@ pub struct BackupResourceVaultConfigResource {
     pub properties: Option<BackupResourceVaultConfig>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BekDetails {
-    #[serde(rename = "secretUrl", default, skip_serializing_if = "Option::is_none")]
-    pub secret_url: Option<String>,
-    #[serde(rename = "secretVaultId", default, skip_serializing_if = "Option::is_none")]
-    pub secret_vault_id: Option<String>,
-    #[serde(rename = "secretData", default, skip_serializing_if = "Option::is_none")]
-    pub secret_data: Option<String>,
+pub struct BackupStatusRequest {
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<backup_status_request::ResourceType>,
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "poLogicalName", default, skip_serializing_if = "Option::is_none")]
+    pub po_logical_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsrpQueryObject {
-    #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
-    pub start_date: Option<String>,
-    #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
-    pub end_date: Option<String>,
-    #[serde(rename = "restorePointQueryType", default, skip_serializing_if = "Option::is_none")]
-    pub restore_point_query_type: Option<bmsrp_query_object::RestorePointQueryType>,
-    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub extended_info: Option<bool>,
-}
-pub mod bmsrp_query_object {
+pub mod backup_status_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RestorePointQueryType {
+    pub enum ResourceType {
         Invalid,
-        Full,
-        Log,
-        Differential,
-        FullAndDifferential,
-        All,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DiskInformation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub lun: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DailyRetentionFormat {
-    #[serde(rename = "daysOfTheMonth", default, skip_serializing_if = "Vec::is_empty")]
-    pub days_of_the_month: Vec<Day>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DailyRetentionSchedule {
-    #[serde(rename = "retentionTimes", default, skip_serializing_if = "Vec::is_empty")]
-    pub retention_times: Vec<String>,
-    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
-    pub retention_duration: Option<RetentionDuration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetentionDuration {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i32>,
-    #[serde(rename = "durationType", default, skip_serializing_if = "Option::is_none")]
-    pub duration_type: Option<retention_duration::DurationType>,
-}
-pub mod retention_duration {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DurationType {
-        Invalid,
-        Days,
-        Weeks,
-        Months,
-        Years,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Day {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub date: Option<i32>,
-    #[serde(rename = "isLast", default, skip_serializing_if = "Option::is_none")]
-    pub is_last: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DpmErrorInfo {
-    #[serde(rename = "errorString", default, skip_serializing_if = "Option::is_none")]
-    pub error_string: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub recommendations: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DpmJob {
-    #[serde(flatten)]
-    pub job: Job,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub duration: Option<String>,
-    #[serde(rename = "dpmServerName", default, skip_serializing_if = "Option::is_none")]
-    pub dpm_server_name: Option<String>,
+pub struct BackupStatusResponse {
+    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub protection_status: Option<backup_status_response::ProtectionStatus>,
+    #[serde(rename = "vaultId", default, skip_serializing_if = "Option::is_none")]
+    pub vault_id: Option<String>,
+    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
+    pub fabric_name: Option<backup_status_response::FabricName>,
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
-    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
-    pub container_type: Option<String>,
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
-    pub workload_type: Option<String>,
-    #[serde(rename = "actionsInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub actions_info: Vec<String>,
-    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub error_details: Vec<DpmErrorInfo>,
-    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub extended_info: Option<DpmJobExtendedInfo>,
+    #[serde(rename = "protectedItemName", default, skip_serializing_if = "Option::is_none")]
+    pub protected_item_name: Option<String>,
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
+    pub policy_name: Option<String>,
+    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub registration_status: Option<String>,
+}
+pub mod backup_status_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProtectionStatus {
+        Invalid,
+        NotProtected,
+        Protecting,
+        Protected,
+        ProtectionFailed,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum FabricName {
+        Invalid,
+        Azure,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DpmJobExtendedInfo {
-    #[serde(rename = "tasksList", default, skip_serializing_if = "Vec::is_empty")]
-    pub tasks_list: Vec<DpmJobTaskDetails>,
-    #[serde(rename = "propertyBag", default, skip_serializing_if = "Option::is_none")]
-    pub property_bag: Option<serde_json::Value>,
-    #[serde(rename = "dynamicErrorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub dynamic_error_message: Option<String>,
+pub struct ClientDiscoveryDisplay {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DpmJobTaskDetails {
-    #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
-    pub task_id: Option<String>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
+pub struct ClientDiscoveryForLogSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub duration: Option<String>,
+    pub name: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
+    pub blob_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClientDiscoveryForProperties {
+    #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
+    pub service_specification: Option<ClientDiscoveryForServiceSpecification>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClientDiscoveryForServiceSpecification {
+    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
+    pub log_specifications: Vec<ClientDiscoveryForLogSpecification>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClientDiscoveryResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ClientDiscoveryValueForSingleApi>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClientDiscoveryValueForSingleApi {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<ClientDiscoveryDisplay>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ClientDiscoveryForProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClientScriptForConnect {
+    #[serde(rename = "scriptContent", default, skip_serializing_if = "Option::is_none")]
+    pub script_content: Option<String>,
+    #[serde(rename = "scriptExtension", default, skip_serializing_if = "Option::is_none")]
+    pub script_extension: Option<String>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(rename = "scriptNameSuffix", default, skip_serializing_if = "Option::is_none")]
+    pub script_name_suffix: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerIdentityInfo {
+    #[serde(rename = "uniqueName", default, skip_serializing_if = "Option::is_none")]
+    pub unique_name: Option<String>,
+    #[serde(rename = "aadTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub aad_tenant_id: Option<String>,
+    #[serde(rename = "servicePrincipalClientId", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_client_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audience: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DpmContainerExtendedInfo {
+    #[serde(rename = "lastRefreshedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_refreshed_at: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DpmProtectedItem {
@@ -989,6 +1791,124 @@ pub struct DpmProtectedItemExtendedInfo {
     pub total_disk_storage_size_in_bytes: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DailyRetentionFormat {
+    #[serde(rename = "daysOfTheMonth", default, skip_serializing_if = "Vec::is_empty")]
+    pub days_of_the_month: Vec<Day>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DailyRetentionSchedule {
+    #[serde(rename = "retentionTimes", default, skip_serializing_if = "Vec::is_empty")]
+    pub retention_times: Vec<String>,
+    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
+    pub retention_duration: Option<RetentionDuration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Day {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub date: Option<i32>,
+    #[serde(rename = "isLast", default, skip_serializing_if = "Option::is_none")]
+    pub is_last: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskExclusionProperties {
+    #[serde(rename = "diskLunList", default, skip_serializing_if = "Vec::is_empty")]
+    pub disk_lun_list: Vec<i32>,
+    #[serde(rename = "isInclusionList", default, skip_serializing_if = "Option::is_none")]
+    pub is_inclusion_list: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DiskInformation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lun: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DistributedNodesInfo {
+    #[serde(rename = "nodeName", default, skip_serializing_if = "Option::is_none")]
+    pub node_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
+    pub error_detail: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DpmBackupEngine {
+    #[serde(flatten)]
+    pub backup_engine_base: BackupEngineBase,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DpmContainer {
+    #[serde(flatten)]
+    pub protection_container: ProtectionContainer,
+    #[serde(rename = "canReRegister", default, skip_serializing_if = "Option::is_none")]
+    pub can_re_register: Option<bool>,
+    #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
+    pub container_id: Option<String>,
+    #[serde(rename = "protectedItemCount", default, skip_serializing_if = "Option::is_none")]
+    pub protected_item_count: Option<i64>,
+    #[serde(rename = "dpmAgentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub dpm_agent_version: Option<String>,
+    #[serde(rename = "dpmServers", default, skip_serializing_if = "Vec::is_empty")]
+    pub dpm_servers: Vec<String>,
+    #[serde(rename = "upgradeAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub upgrade_available: Option<bool>,
+    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub protection_status: Option<String>,
+    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
+    pub extended_info: Option<DpmContainerExtendedInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DpmErrorInfo {
+    #[serde(rename = "errorString", default, skip_serializing_if = "Option::is_none")]
+    pub error_string: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub recommendations: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DpmJob {
+    #[serde(flatten)]
+    pub job: Job,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<String>,
+    #[serde(rename = "dpmServerName", default, skip_serializing_if = "Option::is_none")]
+    pub dpm_server_name: Option<String>,
+    #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
+    pub container_name: Option<String>,
+    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
+    pub container_type: Option<String>,
+    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    pub workload_type: Option<String>,
+    #[serde(rename = "actionsInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub actions_info: Vec<String>,
+    #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub error_details: Vec<DpmErrorInfo>,
+    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
+    pub extended_info: Option<DpmJobExtendedInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DpmJobExtendedInfo {
+    #[serde(rename = "tasksList", default, skip_serializing_if = "Vec::is_empty")]
+    pub tasks_list: Vec<DpmJobTaskDetails>,
+    #[serde(rename = "propertyBag", default, skip_serializing_if = "Option::is_none")]
+    pub property_bag: Option<serde_json::Value>,
+    #[serde(rename = "dynamicErrorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub dynamic_error_message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DpmJobTaskDetails {
+    #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<String>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionDetails {
     #[serde(rename = "encryptionEnabled", default, skip_serializing_if = "Option::is_none")]
     pub encryption_enabled: Option<bool>,
@@ -1000,6 +1920,35 @@ pub struct EncryptionDetails {
     pub kek_vault_id: Option<String>,
     #[serde(rename = "secretKeyVaultId", default, skip_serializing_if = "Option::is_none")]
     pub secret_key_vault_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub recommendations: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorResponse>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportJobsOperationResultInfo {
@@ -1015,15 +1964,32 @@ pub struct ExportJobsOperationResultInfo {
     pub excel_file_blob_sas_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GenericProtectionPolicy {
+pub struct ExtendedProperties {
+    #[serde(rename = "diskExclusionProperties", default, skip_serializing_if = "Option::is_none")]
+    pub disk_exclusion_properties: Option<DiskExclusionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FeatureSupportRequest {
+    #[serde(rename = "featureType", default, skip_serializing_if = "Option::is_none")]
+    pub feature_type: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GenericContainer {
     #[serde(flatten)]
-    pub protection_policy: ProtectionPolicy,
-    #[serde(rename = "subProtectionPolicy", default, skip_serializing_if = "Vec::is_empty")]
-    pub sub_protection_policy: Vec<SubProtectionPolicy>,
-    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
+    pub protection_container: ProtectionContainer,
     #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
     pub fabric_name: Option<String>,
+    #[serde(rename = "extendedInformation", default, skip_serializing_if = "Option::is_none")]
+    pub extended_information: Option<GenericContainerExtendedInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GenericContainerExtendedInfo {
+    #[serde(rename = "rawCertData", default, skip_serializing_if = "Option::is_none")]
+    pub raw_cert_data: Option<String>,
+    #[serde(rename = "containerIdentityInfo", default, skip_serializing_if = "Option::is_none")]
+    pub container_identity_info: Option<ContainerIdentityInfo>,
+    #[serde(rename = "serviceEndpoints", default, skip_serializing_if = "Option::is_none")]
+    pub service_endpoints: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenericProtectedItem {
@@ -1056,6 +2022,17 @@ pub mod generic_protected_item {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GenericProtectionPolicy {
+    #[serde(flatten)]
+    pub protection_policy: ProtectionPolicy,
+    #[serde(rename = "subProtectionPolicy", default, skip_serializing_if = "Vec::is_empty")]
+    pub sub_protection_policy: Vec<SubProtectionPolicy>,
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
+    pub fabric_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenericRecoveryPoint {
     #[serde(flatten)]
     pub recovery_point: RecoveryPoint,
@@ -1072,6 +2049,56 @@ pub struct GenericRecoveryPoint {
 pub struct GetProtectedItemQueryObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expand: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IlrRequest {
+    #[serde(rename = "objectType")]
+    pub object_type: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IlrRequestResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IlrRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IaaSvmContainer {
+    #[serde(flatten)]
+    pub protection_container: ProtectionContainer,
+    #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_id: Option<String>,
+    #[serde(rename = "virtualMachineVersion", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_version: Option<String>,
+    #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
+    pub resource_group: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IaaSvmProtectableItem {
+    #[serde(flatten)]
+    pub workload_protectable_item: WorkloadProtectableItem,
+    #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IaasVmBackupRequest {
+    #[serde(flatten)]
+    pub backup_request: BackupRequest,
+    #[serde(rename = "recoveryPointExpiryTimeInUTC", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_point_expiry_time_in_utc: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IaasVmilrRegistrationRequest {
+    #[serde(flatten)]
+    pub ilr_request: IlrRequest,
+    #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_point_id: Option<String>,
+    #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_id: Option<String>,
+    #[serde(rename = "initiatorName", default, skip_serializing_if = "Option::is_none")]
+    pub initiator_name: Option<String>,
+    #[serde(rename = "renewExistingRegistration", default, skip_serializing_if = "Option::is_none")]
+    pub renew_existing_registration: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IaasVmRecoveryPoint {
@@ -1103,35 +2130,6 @@ pub struct IaasVmRecoveryPoint {
     pub os_type: Option<String>,
     #[serde(rename = "recoveryPointDiskConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_disk_configuration: Option<RecoveryPointDiskConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyAndSecretDetails {
-    #[serde(rename = "kekDetails", default, skip_serializing_if = "Option::is_none")]
-    pub kek_details: Option<KekDetails>,
-    #[serde(rename = "bekDetails", default, skip_serializing_if = "Option::is_none")]
-    pub bek_details: Option<BekDetails>,
-    #[serde(rename = "encryptionMechanism", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_mechanism: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KekDetails {
-    #[serde(rename = "keyUrl", default, skip_serializing_if = "Option::is_none")]
-    pub key_url: Option<String>,
-    #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
-    pub key_vault_id: Option<String>,
-    #[serde(rename = "keyBackupData", default, skip_serializing_if = "Option::is_none")]
-    pub key_backup_data: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPointDiskConfiguration {
-    #[serde(rename = "numberOfDisksIncludedInBackup", default, skip_serializing_if = "Option::is_none")]
-    pub number_of_disks_included_in_backup: Option<i32>,
-    #[serde(rename = "numberOfDisksAttachedToVm", default, skip_serializing_if = "Option::is_none")]
-    pub number_of_disks_attached_to_vm: Option<i32>,
-    #[serde(rename = "includedDiskList", default, skip_serializing_if = "Vec::is_empty")]
-    pub included_disk_list: Vec<DiskInformation>,
-    #[serde(rename = "excludedDiskList", default, skip_serializing_if = "Vec::is_empty")]
-    pub excluded_disk_list: Vec<DiskInformation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IaasVmRestoreRequest {
@@ -1178,6 +2176,36 @@ pub mod iaas_vm_restore_request {
         RestoreDisks,
         Offline,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InquiryInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
+    pub error_detail: Option<ErrorDetail>,
+    #[serde(rename = "inquiryDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub inquiry_details: Vec<WorkloadInquiryDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InquiryValidation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
+    pub error_detail: Option<ErrorDetail>,
+    #[serde(rename = "additionalDetail", default, skip_serializing_if = "Option::is_none")]
+    pub additional_detail: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InstantItemRecoveryTarget {
+    #[serde(rename = "clientScripts", default, skip_serializing_if = "Vec::is_empty")]
+    pub client_scripts: Vec<ClientScriptForConnect>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InstantRpAdditionalDetails {
+    #[serde(rename = "azureBackupRGNamePrefix", default, skip_serializing_if = "Option::is_none")]
+    pub azure_backup_rg_name_prefix: Option<String>,
+    #[serde(rename = "azureBackupRGNameSuffix", default, skip_serializing_if = "Option::is_none")]
+    pub azure_backup_rg_name_suffix: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Job {
@@ -1287,6 +2315,43 @@ pub struct JobResourceList {
     pub value: Vec<JobResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KekDetails {
+    #[serde(rename = "keyUrl", default, skip_serializing_if = "Option::is_none")]
+    pub key_url: Option<String>,
+    #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_id: Option<String>,
+    #[serde(rename = "keyBackupData", default, skip_serializing_if = "Option::is_none")]
+    pub key_backup_data: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KpiResourceHealthDetails {
+    #[serde(rename = "resourceHealthStatus", default, skip_serializing_if = "Option::is_none")]
+    pub resource_health_status: Option<kpi_resource_health_details::ResourceHealthStatus>,
+    #[serde(rename = "resourceHealthDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub resource_health_details: Vec<ResourceHealthDetails>,
+}
+pub mod kpi_resource_health_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ResourceHealthStatus {
+        Healthy,
+        TransientDegraded,
+        PersistentDegraded,
+        TransientUnhealthy,
+        PersistentUnhealthy,
+        Invalid,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyAndSecretDetails {
+    #[serde(rename = "kekDetails", default, skip_serializing_if = "Option::is_none")]
+    pub kek_details: Option<KekDetails>,
+    #[serde(rename = "bekDetails", default, skip_serializing_if = "Option::is_none")]
+    pub bek_details: Option<BekDetails>,
+    #[serde(rename = "encryptionMechanism", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_mechanism: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSchedulePolicy {
     #[serde(flatten)]
     pub schedule_policy: SchedulePolicy,
@@ -1307,71 +2372,79 @@ pub struct LongTermRetentionPolicy {
     pub yearly_schedule: Option<YearlyRetentionSchedule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WeeklyRetentionSchedule {
-    #[serde(rename = "daysOfTheWeek", default, skip_serializing_if = "Vec::is_empty")]
-    pub days_of_the_week: Vec<String>,
-    #[serde(rename = "retentionTimes", default, skip_serializing_if = "Vec::is_empty")]
-    pub retention_times: Vec<String>,
-    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
-    pub retention_duration: Option<RetentionDuration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonthlyRetentionSchedule {
-    #[serde(rename = "retentionScheduleFormatType", default, skip_serializing_if = "Option::is_none")]
-    pub retention_schedule_format_type: Option<monthly_retention_schedule::RetentionScheduleFormatType>,
-    #[serde(rename = "retentionScheduleDaily", default, skip_serializing_if = "Option::is_none")]
-    pub retention_schedule_daily: Option<DailyRetentionFormat>,
-    #[serde(rename = "retentionScheduleWeekly", default, skip_serializing_if = "Option::is_none")]
-    pub retention_schedule_weekly: Option<WeeklyRetentionFormat>,
-    #[serde(rename = "retentionTimes", default, skip_serializing_if = "Vec::is_empty")]
-    pub retention_times: Vec<String>,
-    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
-    pub retention_duration: Option<RetentionDuration>,
-}
-pub mod monthly_retention_schedule {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RetentionScheduleFormatType {
-        Invalid,
-        Daily,
-        Weekly,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WeeklyRetentionFormat {
-    #[serde(rename = "daysOfTheWeek", default, skip_serializing_if = "Vec::is_empty")]
-    pub days_of_the_week: Vec<String>,
-    #[serde(rename = "weeksOfTheMonth", default, skip_serializing_if = "Vec::is_empty")]
-    pub weeks_of_the_month: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct YearlyRetentionSchedule {
-    #[serde(rename = "retentionScheduleFormatType", default, skip_serializing_if = "Option::is_none")]
-    pub retention_schedule_format_type: Option<yearly_retention_schedule::RetentionScheduleFormatType>,
-    #[serde(rename = "monthsOfYear", default, skip_serializing_if = "Vec::is_empty")]
-    pub months_of_year: Vec<String>,
-    #[serde(rename = "retentionScheduleDaily", default, skip_serializing_if = "Option::is_none")]
-    pub retention_schedule_daily: Option<DailyRetentionFormat>,
-    #[serde(rename = "retentionScheduleWeekly", default, skip_serializing_if = "Option::is_none")]
-    pub retention_schedule_weekly: Option<WeeklyRetentionFormat>,
-    #[serde(rename = "retentionTimes", default, skip_serializing_if = "Vec::is_empty")]
-    pub retention_times: Vec<String>,
-    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
-    pub retention_duration: Option<RetentionDuration>,
-}
-pub mod yearly_retention_schedule {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RetentionScheduleFormatType {
-        Invalid,
-        Daily,
-        Weekly,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LongTermSchedulePolicy {
     #[serde(flatten)]
     pub schedule_policy: SchedulePolicy,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MabContainerHealthDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub recommendations: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MabContainer {
+    #[serde(flatten)]
+    pub protection_container: ProtectionContainer,
+    #[serde(rename = "canReRegister", default, skip_serializing_if = "Option::is_none")]
+    pub can_re_register: Option<bool>,
+    #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
+    pub container_id: Option<i64>,
+    #[serde(rename = "protectedItemCount", default, skip_serializing_if = "Option::is_none")]
+    pub protected_item_count: Option<i64>,
+    #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub agent_version: Option<String>,
+    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
+    pub extended_info: Option<MabContainerExtendedInfo>,
+    #[serde(rename = "mabContainerHealthDetails", default, skip_serializing_if = "Vec::is_empty")]
+    pub mab_container_health_details: Vec<MabContainerHealthDetails>,
+    #[serde(rename = "containerHealthState", default, skip_serializing_if = "Option::is_none")]
+    pub container_health_state: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MabContainerExtendedInfo {
+    #[serde(rename = "lastRefreshedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_refreshed_at: Option<String>,
+    #[serde(rename = "backupItemType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_item_type: Option<mab_container_extended_info::BackupItemType>,
+    #[serde(rename = "backupItems", default, skip_serializing_if = "Vec::is_empty")]
+    pub backup_items: Vec<String>,
+    #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
+    pub policy_name: Option<String>,
+    #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
+    pub last_backup_status: Option<String>,
+}
+pub mod mab_container_extended_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupItemType {
+        Invalid,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MabErrorInfo {
@@ -1510,6 +2583,35 @@ pub struct MabProtectionPolicy {
     pub retention_policy: Option<RetentionPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonthlyRetentionSchedule {
+    #[serde(rename = "retentionScheduleFormatType", default, skip_serializing_if = "Option::is_none")]
+    pub retention_schedule_format_type: Option<monthly_retention_schedule::RetentionScheduleFormatType>,
+    #[serde(rename = "retentionScheduleDaily", default, skip_serializing_if = "Option::is_none")]
+    pub retention_schedule_daily: Option<DailyRetentionFormat>,
+    #[serde(rename = "retentionScheduleWeekly", default, skip_serializing_if = "Option::is_none")]
+    pub retention_schedule_weekly: Option<WeeklyRetentionFormat>,
+    #[serde(rename = "retentionTimes", default, skip_serializing_if = "Vec::is_empty")]
+    pub retention_times: Vec<String>,
+    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
+    pub retention_duration: Option<RetentionDuration>,
+}
+pub mod monthly_retention_schedule {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RetentionScheduleFormatType {
+        Invalid,
+        Daily,
+        Weekly,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NameInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
+    pub localized_value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResultInfo {
     #[serde(flatten)]
     pub operation_result_info_base: OperationResultInfoBase,
@@ -1522,30 +2624,74 @@ pub struct OperationResultInfoBase {
     pub object_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KpiResourceHealthDetails {
-    #[serde(rename = "resourceHealthStatus", default, skip_serializing_if = "Option::is_none")]
-    pub resource_health_status: Option<kpi_resource_health_details::ResourceHealthStatus>,
-    #[serde(rename = "resourceHealthDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub resource_health_details: Vec<ResourceHealthDetails>,
-}
-pub mod kpi_resource_health_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResourceHealthStatus {
-        Healthy,
-        TransientDegraded,
-        PersistentDegraded,
-        TransientUnhealthy,
-        PersistentUnhealthy,
-        Invalid,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResultInfoBaseResource {
     #[serde(flatten)]
     pub operation_worker_response: OperationWorkerResponse,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<OperationResultInfoBase>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<operation_status::Status>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<OperationStatusError>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OperationStatusExtendedInfo>,
+}
+pub mod operation_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Invalid,
+        InProgress,
+        Succeeded,
+        Failed,
+        Canceled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusExtendedInfo {
+    #[serde(rename = "objectType")]
+    pub object_type: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusJobExtendedInfo {
+    #[serde(flatten)]
+    pub operation_status_extended_info: OperationStatusExtendedInfo,
+    #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
+    pub job_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusJobsExtendedInfo {
+    #[serde(flatten)]
+    pub operation_status_extended_info: OperationStatusExtendedInfo,
+    #[serde(rename = "jobIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub job_ids: Vec<String>,
+    #[serde(rename = "failedJobsError", default, skip_serializing_if = "Option::is_none")]
+    pub failed_jobs_error: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusProvisionIlrExtendedInfo {
+    #[serde(flatten)]
+    pub operation_status_extended_info: OperationStatusExtendedInfo,
+    #[serde(rename = "recoveryTarget", default, skip_serializing_if = "Option::is_none")]
+    pub recovery_target: Option<InstantItemRecoveryTarget>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationWorkerResponse {
@@ -1614,6 +2760,155 @@ pub struct PointInTimeRange {
     pub start_time: Option<String>,
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PreBackupValidation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<pre_backup_validation::Status>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+pub mod pre_backup_validation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Invalid,
+        Success,
+        Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PreValidateEnableBackupRequest {
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<pre_validate_enable_backup_request::ResourceType>,
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "vaultId", default, skip_serializing_if = "Option::is_none")]
+    pub vault_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<String>,
+}
+pub mod pre_validate_enable_backup_request {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ResourceType {
+        Invalid,
+        #[serde(rename = "VM")]
+        Vm,
+        FileFolder,
+        AzureSqlDb,
+        #[serde(rename = "SQLDB")]
+        Sqldb,
+        Exchange,
+        Sharepoint,
+        #[serde(rename = "VMwareVM")]
+        VMwareVm,
+        SystemState,
+        Client,
+        GenericDataSource,
+        #[serde(rename = "SQLDataBase")]
+        SqlDataBase,
+        AzureFileShare,
+        #[serde(rename = "SAPHanaDatabase")]
+        SapHanaDatabase,
+        #[serde(rename = "SAPAseDatabase")]
+        SapAseDatabase,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PreValidateEnableBackupResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<pre_validate_enable_backup_response::Status>,
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recommendation: Option<String>,
+    #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
+    pub container_name: Option<String>,
+    #[serde(rename = "protectedItemName", default, skip_serializing_if = "Option::is_none")]
+    pub protected_item_name: Option<String>,
+}
+pub mod pre_validate_enable_backup_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Invalid,
+        Succeeded,
+        Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProtectableContainer {
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
+    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<protectable_container::BackupManagementType>,
+    #[serde(rename = "protectableContainerType", default, skip_serializing_if = "Option::is_none")]
+    pub protectable_container_type: Option<protectable_container::ProtectableContainerType>,
+    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
+    pub health_status: Option<String>,
+    #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
+    pub container_id: Option<String>,
+}
+pub mod protectable_container {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureBackupServer,
+        AzureSql,
+        AzureStorage,
+        AzureWorkload,
+        DefaultBackup,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProtectableContainerType {
+        Invalid,
+        Unknown,
+        #[serde(rename = "IaasVMContainer")]
+        IaasVmContainer,
+        #[serde(rename = "IaasVMServiceContainer")]
+        IaasVmServiceContainer,
+        #[serde(rename = "DPMContainer")]
+        DpmContainer,
+        AzureBackupServerContainer,
+        #[serde(rename = "MABContainer")]
+        MabContainer,
+        Cluster,
+        AzureSqlContainer,
+        Windows,
+        VCenter,
+        #[serde(rename = "VMAppContainer")]
+        VmAppContainer,
+        #[serde(rename = "SQLAGWorkLoadContainer")]
+        SqlagWorkLoadContainer,
+        StorageContainer,
+        GenericContainer,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProtectableContainerResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ProtectableContainer>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProtectableContainerResourceList {
+    #[serde(flatten)]
+    pub resource_list: ResourceList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ProtectableContainerResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProtectedItem {
@@ -1779,22 +3074,19 @@ pub struct ProtectedItemResourceList {
     pub value: Vec<ProtectedItemResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionPolicy {
-    #[serde(rename = "protectedItemsCount", default, skip_serializing_if = "Option::is_none")]
-    pub protected_items_count: Option<i32>,
-    #[serde(rename = "backupManagementType")]
-    pub backup_management_type: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionPolicyQueryObject {
+pub struct ProtectionContainer {
+    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub friendly_name: Option<String>,
     #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<protection_policy_query_object::BackupManagementType>,
-    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
-    pub fabric_name: Option<String>,
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
-    pub workload_type: Option<protection_policy_query_object::WorkloadType>,
+    pub backup_management_type: Option<protection_container::BackupManagementType>,
+    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub registration_status: Option<String>,
+    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
+    pub health_status: Option<String>,
+    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
+    pub container_type: Option<protection_container::ContainerType>,
 }
-pub mod protection_policy_query_object {
+pub mod protection_container {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BackupManagementType {
@@ -1812,510 +3104,43 @@ pub mod protection_policy_query_object {
         DefaultBackup,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WorkloadType {
+    pub enum ContainerType {
         Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
+        Unknown,
+        #[serde(rename = "IaasVMContainer")]
+        IaasVmContainer,
+        #[serde(rename = "IaasVMServiceContainer")]
+        IaasVmServiceContainer,
+        #[serde(rename = "DPMContainer")]
+        DpmContainer,
+        AzureBackupServerContainer,
+        #[serde(rename = "MABContainer")]
+        MabContainer,
+        Cluster,
+        AzureSqlContainer,
+        Windows,
+        VCenter,
+        #[serde(rename = "VMAppContainer")]
+        VmAppContainer,
+        #[serde(rename = "SQLAGWorkLoadContainer")]
+        SqlagWorkLoadContainer,
+        StorageContainer,
+        GenericContainer,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionPolicyResource {
+pub struct ProtectionContainerResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectionPolicy>,
+    pub properties: Option<ProtectionContainer>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionPolicyResourceList {
+pub struct ProtectionContainerResourceList {
     #[serde(flatten)]
     pub resource_list: ResourceList,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ProtectionPolicyResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPoint {
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPointResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RecoveryPoint>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPointResourceList {
-    #[serde(flatten)]
-    pub resource_list: ResourceList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RecoveryPointResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPointTierInformation {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<recovery_point_tier_information::Type>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<recovery_point_tier_information::Status>,
-}
-pub mod recovery_point_tier_information {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Invalid,
-        #[serde(rename = "InstantRP")]
-        InstantRp,
-        #[serde(rename = "HardenedRP")]
-        HardenedRp,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Invalid,
-        Valid,
-        Disabled,
-        Deleted,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestoreFileSpecs {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-    #[serde(rename = "fileSpecType", default, skip_serializing_if = "Option::is_none")]
-    pub file_spec_type: Option<String>,
-    #[serde(rename = "targetFolderPath", default, skip_serializing_if = "Option::is_none")]
-    pub target_folder_path: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestoreRequest {
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestoreRequestResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RestoreRequest>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SimpleRetentionPolicy {
-    #[serde(flatten)]
-    pub retention_policy: RetentionPolicy,
-    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
-    pub retention_duration: Option<RetentionDuration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SimpleSchedulePolicy {
-    #[serde(flatten)]
-    pub schedule_policy: SchedulePolicy,
-    #[serde(rename = "scheduleRunFrequency", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_run_frequency: Option<simple_schedule_policy::ScheduleRunFrequency>,
-    #[serde(rename = "scheduleRunDays", default, skip_serializing_if = "Vec::is_empty")]
-    pub schedule_run_days: Vec<String>,
-    #[serde(rename = "scheduleRunTimes", default, skip_serializing_if = "Vec::is_empty")]
-    pub schedule_run_times: Vec<String>,
-    #[serde(rename = "scheduleWeeklyFrequency", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_weekly_frequency: Option<i32>,
-}
-pub mod simple_schedule_policy {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ScheduleRunFrequency {
-        Invalid,
-        Daily,
-        Weekly,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubProtectionPolicy {
-    #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
-    pub policy_type: Option<sub_protection_policy::PolicyType>,
-    #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_policy: Option<SchedulePolicy>,
-    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
-}
-pub mod sub_protection_policy {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PolicyType {
-        Invalid,
-        Full,
-        Differential,
-        Log,
-        CopyOnlyFull,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDataDirectory {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<sql_data_directory::Type>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-    #[serde(rename = "logicalName", default, skip_serializing_if = "Option::is_none")]
-    pub logical_name: Option<String>,
-}
-pub mod sql_data_directory {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Invalid,
-        Data,
-        Log,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDataDirectoryMapping {
-    #[serde(rename = "mappingType", default, skip_serializing_if = "Option::is_none")]
-    pub mapping_type: Option<sql_data_directory_mapping::MappingType>,
-    #[serde(rename = "sourceLogicalName", default, skip_serializing_if = "Option::is_none")]
-    pub source_logical_name: Option<String>,
-    #[serde(rename = "sourcePath", default, skip_serializing_if = "Option::is_none")]
-    pub source_path: Option<String>,
-    #[serde(rename = "targetPath", default, skip_serializing_if = "Option::is_none")]
-    pub target_path: Option<String>,
-}
-pub mod sql_data_directory_mapping {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum MappingType {
-        Invalid,
-        Data,
-        Log,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ValidateIaasVmRestoreOperationRequest {
-    #[serde(flatten)]
-    pub validate_restore_operation_request: ValidateRestoreOperationRequest,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ValidateOperationRequest {
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ValidateOperationResponse {
-    #[serde(rename = "validationResults", default, skip_serializing_if = "Vec::is_empty")]
-    pub validation_results: Vec<ErrorDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ValidateOperationsResponse {
-    #[serde(rename = "validateOperationResponse", default, skip_serializing_if = "Option::is_none")]
-    pub validate_operation_response: Option<ValidateOperationResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ValidateRestoreOperationRequest {
-    #[serde(flatten)]
-    pub validate_operation_request: ValidateOperationRequest,
-    #[serde(rename = "restoreRequest", default, skip_serializing_if = "Option::is_none")]
-    pub restore_request: Option<RestoreRequest>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureBackupGoalFeatureSupportRequest {
-    #[serde(flatten)]
-    pub feature_support_request: FeatureSupportRequest,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureRecoveryServiceVaultProtectionIntent {
-    #[serde(flatten)]
-    pub protection_intent: ProtectionIntent,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourceProtectionIntent {
-    #[serde(flatten)]
-    pub protection_intent: ProtectionIntent,
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmResourceFeatureSupportRequest {
-    #[serde(flatten)]
-    pub feature_support_request: FeatureSupportRequest,
-    #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
-    pub vm_size: Option<String>,
-    #[serde(rename = "vmSku", default, skip_serializing_if = "Option::is_none")]
-    pub vm_sku: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmResourceFeatureSupportResponse {
-    #[serde(rename = "supportStatus", default, skip_serializing_if = "Option::is_none")]
-    pub support_status: Option<azure_vm_resource_feature_support_response::SupportStatus>,
-}
-pub mod azure_vm_resource_feature_support_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SupportStatus {
-        Invalid,
-        Supported,
-        #[serde(rename = "DefaultOFF")]
-        DefaultOff,
-        #[serde(rename = "DefaultON")]
-        DefaultOn,
-        NotSupported,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureWorkloadAutoProtectionIntent {
-    #[serde(flatten)]
-    pub azure_recovery_service_vault_protection_intent: AzureRecoveryServiceVaultProtectionIntent,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureWorkloadSqlAutoProtectionIntent {
-    #[serde(flatten)]
-    pub azure_workload_auto_protection_intent: AzureWorkloadAutoProtectionIntent,
-    #[serde(rename = "workloadItemType", default, skip_serializing_if = "Option::is_none")]
-    pub workload_item_type: Option<azure_workload_sql_auto_protection_intent::WorkloadItemType>,
-}
-pub mod azure_workload_sql_auto_protection_intent {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WorkloadItemType {
-        Invalid,
-        #[serde(rename = "SQLInstance")]
-        SqlInstance,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        #[serde(rename = "SAPHanaSystem")]
-        SapHanaSystem,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseSystem")]
-        SapAseSystem,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupManagementUsage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<backup_management_usage::Unit>,
-    #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub quota_period: Option<String>,
-    #[serde(rename = "nextResetTime", default, skip_serializing_if = "Option::is_none")]
-    pub next_reset_time: Option<String>,
-    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
-    pub current_value: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<NameInfo>,
-}
-pub mod backup_management_usage {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Unit {
-        Count,
-        Bytes,
-        Seconds,
-        Percent,
-        CountPerSecond,
-        BytesPerSecond,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NameInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
-    pub localized_value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupManagementUsageList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<BackupManagementUsage>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupStatusRequest {
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<backup_status_request::ResourceType>,
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-    #[serde(rename = "poLogicalName", default, skip_serializing_if = "Option::is_none")]
-    pub po_logical_name: Option<String>,
-}
-pub mod backup_status_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResourceType {
-        Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupStatusResponse {
-    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
-    pub protection_status: Option<backup_status_response::ProtectionStatus>,
-    #[serde(rename = "vaultId", default, skip_serializing_if = "Option::is_none")]
-    pub vault_id: Option<String>,
-    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
-    pub fabric_name: Option<backup_status_response::FabricName>,
-    #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
-    pub container_name: Option<String>,
-    #[serde(rename = "protectedItemName", default, skip_serializing_if = "Option::is_none")]
-    pub protected_item_name: Option<String>,
-    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
-    #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
-    pub policy_name: Option<String>,
-    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub registration_status: Option<String>,
-}
-pub mod backup_status_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProtectionStatus {
-        Invalid,
-        NotProtected,
-        Protecting,
-        Protected,
-        ProtectionFailed,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum FabricName {
-        Invalid,
-        Azure,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsBackupSummariesQueryObject {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<bms_backup_summaries_query_object::Type>,
-}
-pub mod bms_backup_summaries_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Invalid,
-        BackupProtectedItemCountSummary,
-        BackupProtectionContainerCountSummary,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FeatureSupportRequest {
-    #[serde(rename = "featureType", default, skip_serializing_if = "Option::is_none")]
-    pub feature_type: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PreValidateEnableBackupRequest {
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<pre_validate_enable_backup_request::ResourceType>,
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-    #[serde(rename = "vaultId", default, skip_serializing_if = "Option::is_none")]
-    pub vault_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<String>,
-}
-pub mod pre_validate_enable_backup_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResourceType {
-        Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PreValidateEnableBackupResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<pre_validate_enable_backup_response::Status>,
-    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub recommendation: Option<String>,
-    #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
-    pub container_name: Option<String>,
-    #[serde(rename = "protectedItemName", default, skip_serializing_if = "Option::is_none")]
-    pub protected_item_name: Option<String>,
-}
-pub mod pre_validate_enable_backup_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Invalid,
-        Succeeded,
-        Failed,
-    }
+    pub value: Vec<ProtectionContainerResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProtectionIntent {
@@ -2410,265 +3235,38 @@ pub struct ProtectionIntentResourceList {
     pub value: Vec<ProtectionIntentResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureBackupServerContainer {
-    #[serde(flatten)]
-    pub dpm_container: DpmContainer,
+pub struct ProtectionPolicy {
+    #[serde(rename = "protectedItemsCount", default, skip_serializing_if = "Option::is_none")]
+    pub protected_items_count: Option<i32>,
+    #[serde(rename = "backupManagementType")]
+    pub backup_management_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureBackupServerEngine {
-    #[serde(flatten)]
-    pub backup_engine_base: BackupEngineBase,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureFileShareBackupRequest {
-    #[serde(flatten)]
-    pub backup_request: BackupRequest,
-    #[serde(rename = "recoveryPointExpiryTimeInUTC", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_point_expiry_time_in_utc: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureFileShareProtectableItem {
-    #[serde(flatten)]
-    pub workload_protectable_item: WorkloadProtectableItem,
-    #[serde(rename = "parentContainerFabricId", default, skip_serializing_if = "Option::is_none")]
-    pub parent_container_fabric_id: Option<String>,
-    #[serde(rename = "parentContainerFriendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub parent_container_friendly_name: Option<String>,
-    #[serde(rename = "azureFileShareType", default, skip_serializing_if = "Option::is_none")]
-    pub azure_file_share_type: Option<azure_file_share_protectable_item::AzureFileShareType>,
-}
-pub mod azure_file_share_protectable_item {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AzureFileShareType {
-        Invalid,
-        #[serde(rename = "XSMB")]
-        Xsmb,
-        XSync,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureFileShareProvisionIlrRequest {
-    #[serde(flatten)]
-    pub ilr_request: IlrRequest,
-    #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_point_id: Option<String>,
-    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub source_resource_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureIaaSClassicComputeVmContainer {
-    #[serde(flatten)]
-    pub iaa_svm_container: IaaSvmContainer,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureIaaSClassicComputeVmProtectableItem {
-    #[serde(flatten)]
-    pub iaa_svm_protectable_item: IaaSvmProtectableItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureIaaSComputeVmContainer {
-    #[serde(flatten)]
-    pub iaa_svm_container: IaaSvmContainer,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureIaaSComputeVmProtectableItem {
-    #[serde(flatten)]
-    pub iaa_svm_protectable_item: IaaSvmProtectableItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureSqlagWorkloadContainerProtectionContainer {
-    #[serde(flatten)]
-    pub azure_workload_container: AzureWorkloadContainer,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureSqlContainer {
-    #[serde(flatten)]
-    pub protection_container: ProtectionContainer,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureStorageContainer {
-    #[serde(flatten)]
-    pub protection_container: ProtectionContainer,
-    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub source_resource_id: Option<String>,
-    #[serde(rename = "storageAccountVersion", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_version: Option<String>,
-    #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
-    pub resource_group: Option<String>,
-    #[serde(rename = "protectedItemCount", default, skip_serializing_if = "Option::is_none")]
-    pub protected_item_count: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureStorageProtectableContainer {
-    #[serde(flatten)]
-    pub protectable_container: ProtectableContainer,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmAppContainerProtectableContainer {
-    #[serde(flatten)]
-    pub protectable_container: ProtectableContainer,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmAppContainerProtectionContainer {
-    #[serde(flatten)]
-    pub azure_workload_container: AzureWorkloadContainer,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadItem {
-    #[serde(flatten)]
-    pub workload_item: WorkloadItem,
-    #[serde(rename = "parentName", default, skip_serializing_if = "Option::is_none")]
-    pub parent_name: Option<String>,
-    #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
-    pub server_name: Option<String>,
-    #[serde(rename = "isAutoProtectable", default, skip_serializing_if = "Option::is_none")]
-    pub is_auto_protectable: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subinquireditemcount: Option<i32>,
-    #[serde(rename = "subWorkloadItemCount", default, skip_serializing_if = "Option::is_none")]
-    pub sub_workload_item_count: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadProtectableItem {
-    #[serde(flatten)]
-    pub workload_protectable_item: WorkloadProtectableItem,
-    #[serde(rename = "parentName", default, skip_serializing_if = "Option::is_none")]
-    pub parent_name: Option<String>,
-    #[serde(rename = "parentUniqueName", default, skip_serializing_if = "Option::is_none")]
-    pub parent_unique_name: Option<String>,
-    #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
-    pub server_name: Option<String>,
-    #[serde(rename = "isAutoProtectable", default, skip_serializing_if = "Option::is_none")]
-    pub is_auto_protectable: Option<bool>,
-    #[serde(rename = "isAutoProtected", default, skip_serializing_if = "Option::is_none")]
-    pub is_auto_protected: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subinquireditemcount: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subprotectableitemcount: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub prebackupvalidation: Option<PreBackupValidation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PreBackupValidation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<pre_backup_validation::Status>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-pub mod pre_backup_validation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Invalid,
-        Success,
-        Failed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSapAseDatabaseWorkloadItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_item: AzureVmWorkloadItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSapAseSystemProtectableItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSapAseSystemWorkloadItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_item: AzureVmWorkloadItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSapHanaDatabaseProtectableItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSapHanaDatabaseWorkloadItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_item: AzureVmWorkloadItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSapHanaSystemProtectableItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSapHanaSystemWorkloadItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_item: AzureVmWorkloadItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSqlAvailabilityGroupProtectableItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSqlDatabaseProtectableItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSqlDatabaseWorkloadItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_item: AzureVmWorkloadItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSqlInstanceProtectableItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_protectable_item: AzureVmWorkloadProtectableItem,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureVmWorkloadSqlInstanceWorkloadItem {
-    #[serde(flatten)]
-    pub azure_vm_workload_item: AzureVmWorkloadItem,
-    #[serde(rename = "dataDirectoryPaths", default, skip_serializing_if = "Vec::is_empty")]
-    pub data_directory_paths: Vec<SqlDataDirectory>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureWorkloadBackupRequest {
-    #[serde(flatten)]
-    pub backup_request: BackupRequest,
-    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_type: Option<azure_workload_backup_request::BackupType>,
-    #[serde(rename = "enableCompression", default, skip_serializing_if = "Option::is_none")]
-    pub enable_compression: Option<bool>,
-    #[serde(rename = "recoveryPointExpiryTimeInUTC", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_point_expiry_time_in_utc: Option<String>,
-}
-pub mod azure_workload_backup_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupType {
-        Invalid,
-        Full,
-        Differential,
-        Log,
-        CopyOnlyFull,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureWorkloadContainer {
-    #[serde(flatten)]
-    pub protection_container: ProtectionContainer,
-    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub source_resource_id: Option<String>,
-    #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_updated_time: Option<String>,
-    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub extended_info: Option<AzureWorkloadContainerExtendedInfo>,
+pub struct ProtectionPolicyQueryObject {
+    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    pub backup_management_type: Option<protection_policy_query_object::BackupManagementType>,
+    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
+    pub fabric_name: Option<String>,
     #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
-    pub workload_type: Option<azure_workload_container::WorkloadType>,
-    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
-    pub operation_type: Option<azure_workload_container::OperationType>,
+    pub workload_type: Option<protection_policy_query_object::WorkloadType>,
 }
-pub mod azure_workload_container {
+pub mod protection_policy_query_object {
     use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum BackupManagementType {
+        Invalid,
+        #[serde(rename = "AzureIaasVM")]
+        AzureIaasVm,
+        #[serde(rename = "MAB")]
+        Mab,
+        #[serde(rename = "DPM")]
+        Dpm,
+        AzureBackupServer,
+        AzureSql,
+        AzureStorage,
+        AzureWorkload,
+        DefaultBackup,
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum WorkloadType {
         Invalid,
@@ -2693,666 +3291,93 @@ pub mod azure_workload_container {
         #[serde(rename = "SAPAseDatabase")]
         SapAseDatabase,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OperationType {
-        Invalid,
-        Register,
-        Reregister,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureWorkloadContainerExtendedInfo {
-    #[serde(rename = "hostServerName", default, skip_serializing_if = "Option::is_none")]
-    pub host_server_name: Option<String>,
-    #[serde(rename = "inquiryInfo", default, skip_serializing_if = "Option::is_none")]
-    pub inquiry_info: Option<InquiryInfo>,
-    #[serde(rename = "nodesList", default, skip_serializing_if = "Vec::is_empty")]
-    pub nodes_list: Vec<DistributedNodesInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InquiryInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
-    pub error_detail: Option<ErrorDetail>,
-    #[serde(rename = "inquiryDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub inquiry_details: Vec<WorkloadInquiryDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupEngineBase {
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<backup_engine_base::BackupManagementType>,
-    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub registration_status: Option<String>,
-    #[serde(rename = "backupEngineState", default, skip_serializing_if = "Option::is_none")]
-    pub backup_engine_state: Option<String>,
-    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
-    pub health_status: Option<String>,
-    #[serde(rename = "backupEngineType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_engine_type: Option<backup_engine_base::BackupEngineType>,
-    #[serde(rename = "canReRegister", default, skip_serializing_if = "Option::is_none")]
-    pub can_re_register: Option<bool>,
-    #[serde(rename = "backupEngineId", default, skip_serializing_if = "Option::is_none")]
-    pub backup_engine_id: Option<String>,
-    #[serde(rename = "dpmVersion", default, skip_serializing_if = "Option::is_none")]
-    pub dpm_version: Option<String>,
-    #[serde(rename = "azureBackupAgentVersion", default, skip_serializing_if = "Option::is_none")]
-    pub azure_backup_agent_version: Option<String>,
-    #[serde(rename = "isAzureBackupAgentUpgradeAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub is_azure_backup_agent_upgrade_available: Option<bool>,
-    #[serde(rename = "isDpmUpgradeAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub is_dpm_upgrade_available: Option<bool>,
-    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub extended_info: Option<BackupEngineExtendedInfo>,
-}
-pub mod backup_engine_base {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
-        Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureBackupServer,
-        AzureSql,
-        AzureStorage,
-        AzureWorkload,
-        DefaultBackup,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupEngineType {
-        Invalid,
-        DpmBackupEngine,
-        AzureBackupServerEngine,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupEngineExtendedInfo {
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "protectedItemsCount", default, skip_serializing_if = "Option::is_none")]
-    pub protected_items_count: Option<i32>,
-    #[serde(rename = "protectedServersCount", default, skip_serializing_if = "Option::is_none")]
-    pub protected_servers_count: Option<i32>,
-    #[serde(rename = "diskCount", default, skip_serializing_if = "Option::is_none")]
-    pub disk_count: Option<i32>,
-    #[serde(rename = "usedDiskSpace", default, skip_serializing_if = "Option::is_none")]
-    pub used_disk_space: Option<f64>,
-    #[serde(rename = "availableDiskSpace", default, skip_serializing_if = "Option::is_none")]
-    pub available_disk_space: Option<f64>,
-    #[serde(rename = "refreshedAt", default, skip_serializing_if = "Option::is_none")]
-    pub refreshed_at: Option<String>,
-    #[serde(rename = "azureProtectedInstances", default, skip_serializing_if = "Option::is_none")]
-    pub azure_protected_instances: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupEngineBaseResource {
+pub struct ProtectionPolicyResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BackupEngineBase>,
+    pub properties: Option<ProtectionPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupEngineBaseResourceList {
+pub struct ProtectionPolicyResourceList {
     #[serde(flatten)]
     pub resource_list: ResourceList,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<BackupEngineBaseResource>,
+    pub value: Vec<ProtectionPolicyResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupRequest {
+pub struct RecoveryPoint {
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupRequestResource {
+pub struct RecoveryPointDiskConfiguration {
+    #[serde(rename = "numberOfDisksIncludedInBackup", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_disks_included_in_backup: Option<i32>,
+    #[serde(rename = "numberOfDisksAttachedToVm", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_disks_attached_to_vm: Option<i32>,
+    #[serde(rename = "includedDiskList", default, skip_serializing_if = "Vec::is_empty")]
+    pub included_disk_list: Vec<DiskInformation>,
+    #[serde(rename = "excludedDiskList", default, skip_serializing_if = "Vec::is_empty")]
+    pub excluded_disk_list: Vec<DiskInformation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecoveryPointResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BackupRequest>,
+    pub properties: Option<RecoveryPoint>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupResourceConfig {
-    #[serde(rename = "storageModelType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_model_type: Option<backup_resource_config::StorageModelType>,
-    #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_type: Option<backup_resource_config::StorageType>,
-    #[serde(rename = "storageTypeState", default, skip_serializing_if = "Option::is_none")]
-    pub storage_type_state: Option<backup_resource_config::StorageTypeState>,
+pub struct RecoveryPointResourceList {
+    #[serde(flatten)]
+    pub resource_list: ResourceList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<RecoveryPointResource>,
 }
-pub mod backup_resource_config {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecoveryPointTierInformation {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<recovery_point_tier_information::Type>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<recovery_point_tier_information::Status>,
+}
+pub mod recovery_point_tier_information {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageModelType {
+    pub enum Type {
         Invalid,
-        GeoRedundant,
-        LocallyRedundant,
+        #[serde(rename = "InstantRP")]
+        InstantRp,
+        #[serde(rename = "HardenedRP")]
+        HardenedRp,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageType {
+    pub enum Status {
         Invalid,
-        GeoRedundant,
-        LocallyRedundant,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageTypeState {
-        Invalid,
-        Locked,
-        Unlocked,
+        Valid,
+        Disabled,
+        Deleted,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupResourceConfigResource {
-    #[serde(flatten)]
-    pub resource: Resource,
+pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BackupResourceConfig>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsBackupEngineQueryObject {
+    pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub expand: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsBackupEnginesQueryObject {
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<bms_backup_engines_query_object::BackupManagementType>,
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub expand: Option<String>,
-}
-pub mod bms_backup_engines_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
-        Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureBackupServer,
-        AzureSql,
-        AzureStorage,
-        AzureWorkload,
-        DefaultBackup,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsContainerQueryObject {
-    #[serde(rename = "backupManagementType")]
-    pub backup_management_type: bms_container_query_object::BackupManagementType,
-    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
-    pub container_type: Option<bms_container_query_object::ContainerType>,
-    #[serde(rename = "backupEngineName", default, skip_serializing_if = "Option::is_none")]
-    pub backup_engine_name: Option<String>,
-    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
-    pub fabric_name: Option<String>,
+    pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-}
-pub mod bms_container_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
-        Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureBackupServer,
-        AzureSql,
-        AzureStorage,
-        AzureWorkload,
-        DefaultBackup,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ContainerType {
-        Invalid,
-        Unknown,
-        #[serde(rename = "IaasVMContainer")]
-        IaasVmContainer,
-        #[serde(rename = "IaasVMServiceContainer")]
-        IaasVmServiceContainer,
-        #[serde(rename = "DPMContainer")]
-        DpmContainer,
-        AzureBackupServerContainer,
-        #[serde(rename = "MABContainer")]
-        MabContainer,
-        Cluster,
-        AzureSqlContainer,
-        Windows,
-        VCenter,
-        #[serde(rename = "VMAppContainer")]
-        VmAppContainer,
-        #[serde(rename = "SQLAGWorkLoadContainer")]
-        SqlagWorkLoadContainer,
-        StorageContainer,
-        GenericContainer,
-    }
+    pub tags: Option<serde_json::Value>,
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsContainersInquiryQueryObject {
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<bms_containers_inquiry_query_object::BackupManagementType>,
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
-    pub workload_type: Option<bms_containers_inquiry_query_object::WorkloadType>,
-}
-pub mod bms_containers_inquiry_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
-        Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureBackupServer,
-        AzureSql,
-        AzureStorage,
-        AzureWorkload,
-        DefaultBackup,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WorkloadType {
-        Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmspoQueryObject {
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<bmspo_query_object::BackupManagementType>,
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
-    pub workload_type: Option<bmspo_query_object::WorkloadType>,
-    #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
-    pub container_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-}
-pub mod bmspo_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
-        Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureSql,
-        AzureBackupServer,
-        AzureWorkload,
-        AzureStorage,
-        DefaultBackup,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WorkloadType {
-        Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsRefreshContainersQueryObject {
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<bms_refresh_containers_query_object::BackupManagementType>,
-}
-pub mod bms_refresh_containers_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
-        Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureBackupServer,
-        AzureSql,
-        AzureStorage,
-        AzureWorkload,
-        DefaultBackup,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsWorkloadItemQueryObject {
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<bms_workload_item_query_object::BackupManagementType>,
-    #[serde(rename = "workloadItemType", default, skip_serializing_if = "Option::is_none")]
-    pub workload_item_type: Option<bms_workload_item_query_object::WorkloadItemType>,
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
-    pub workload_type: Option<bms_workload_item_query_object::WorkloadType>,
-    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
-    pub protection_status: Option<bms_workload_item_query_object::ProtectionStatus>,
-}
-pub mod bms_workload_item_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
-        Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureSql,
-        AzureBackupServer,
-        AzureWorkload,
-        AzureStorage,
-        DefaultBackup,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WorkloadItemType {
-        Invalid,
-        #[serde(rename = "SQLInstance")]
-        SqlInstance,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        #[serde(rename = "SAPHanaSystem")]
-        SapHanaSystem,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseSystem")]
-        SapAseSystem,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum WorkloadType {
-        Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProtectionStatus {
-        Invalid,
-        NotProtected,
-        Protecting,
-        Protected,
-        ProtectionFailed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientScriptForConnect {
-    #[serde(rename = "scriptContent", default, skip_serializing_if = "Option::is_none")]
-    pub script_content: Option<String>,
-    #[serde(rename = "scriptExtension", default, skip_serializing_if = "Option::is_none")]
-    pub script_extension: Option<String>,
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
-    #[serde(rename = "scriptNameSuffix", default, skip_serializing_if = "Option::is_none")]
-    pub script_name_suffix: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerIdentityInfo {
-    #[serde(rename = "uniqueName", default, skip_serializing_if = "Option::is_none")]
-    pub unique_name: Option<String>,
-    #[serde(rename = "aadTenantId", default, skip_serializing_if = "Option::is_none")]
-    pub aad_tenant_id: Option<String>,
-    #[serde(rename = "servicePrincipalClientId", default, skip_serializing_if = "Option::is_none")]
-    pub service_principal_client_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub audience: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DistributedNodesInfo {
-    #[serde(rename = "nodeName", default, skip_serializing_if = "Option::is_none")]
-    pub node_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
-    pub error_detail: Option<ErrorDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DpmBackupEngine {
-    #[serde(flatten)]
-    pub backup_engine_base: BackupEngineBase,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DpmContainer {
-    #[serde(flatten)]
-    pub protection_container: ProtectionContainer,
-    #[serde(rename = "canReRegister", default, skip_serializing_if = "Option::is_none")]
-    pub can_re_register: Option<bool>,
-    #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
-    pub container_id: Option<String>,
-    #[serde(rename = "protectedItemCount", default, skip_serializing_if = "Option::is_none")]
-    pub protected_item_count: Option<i64>,
-    #[serde(rename = "dpmAgentVersion", default, skip_serializing_if = "Option::is_none")]
-    pub dpm_agent_version: Option<String>,
-    #[serde(rename = "dpmServers", default, skip_serializing_if = "Vec::is_empty")]
-    pub dpm_servers: Vec<String>,
-    #[serde(rename = "upgradeAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub upgrade_available: Option<bool>,
-    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
-    pub protection_status: Option<String>,
-    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub extended_info: Option<DpmContainerExtendedInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DpmContainerExtendedInfo {
-    #[serde(rename = "lastRefreshedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_refreshed_at: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GenericContainer {
-    #[serde(flatten)]
-    pub protection_container: ProtectionContainer,
-    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
-    pub fabric_name: Option<String>,
-    #[serde(rename = "extendedInformation", default, skip_serializing_if = "Option::is_none")]
-    pub extended_information: Option<GenericContainerExtendedInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GenericContainerExtendedInfo {
-    #[serde(rename = "rawCertData", default, skip_serializing_if = "Option::is_none")]
-    pub raw_cert_data: Option<String>,
-    #[serde(rename = "containerIdentityInfo", default, skip_serializing_if = "Option::is_none")]
-    pub container_identity_info: Option<ContainerIdentityInfo>,
-    #[serde(rename = "serviceEndpoints", default, skip_serializing_if = "Option::is_none")]
-    pub service_endpoints: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IaasVmBackupRequest {
-    #[serde(flatten)]
-    pub backup_request: BackupRequest,
-    #[serde(rename = "recoveryPointExpiryTimeInUTC", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_point_expiry_time_in_utc: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IaaSvmContainer {
-    #[serde(flatten)]
-    pub protection_container: ProtectionContainer,
-    #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_machine_id: Option<String>,
-    #[serde(rename = "virtualMachineVersion", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_machine_version: Option<String>,
-    #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
-    pub resource_group: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IaasVmilrRegistrationRequest {
-    #[serde(flatten)]
-    pub ilr_request: IlrRequest,
-    #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_point_id: Option<String>,
-    #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_machine_id: Option<String>,
-    #[serde(rename = "initiatorName", default, skip_serializing_if = "Option::is_none")]
-    pub initiator_name: Option<String>,
-    #[serde(rename = "renewExistingRegistration", default, skip_serializing_if = "Option::is_none")]
-    pub renew_existing_registration: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IaaSvmProtectableItem {
-    #[serde(flatten)]
-    pub workload_protectable_item: WorkloadProtectableItem,
-    #[serde(rename = "virtualMachineId", default, skip_serializing_if = "Option::is_none")]
-    pub virtual_machine_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IlrRequest {
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IlrRequestResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IlrRequest>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InquiryValidation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
-    pub error_detail: Option<ErrorDetail>,
-    #[serde(rename = "additionalDetail", default, skip_serializing_if = "Option::is_none")]
-    pub additional_detail: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InstantItemRecoveryTarget {
-    #[serde(rename = "clientScripts", default, skip_serializing_if = "Vec::is_empty")]
-    pub client_scripts: Vec<ClientScriptForConnect>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MabContainer {
-    #[serde(flatten)]
-    pub protection_container: ProtectionContainer,
-    #[serde(rename = "canReRegister", default, skip_serializing_if = "Option::is_none")]
-    pub can_re_register: Option<bool>,
-    #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
-    pub container_id: Option<i64>,
-    #[serde(rename = "protectedItemCount", default, skip_serializing_if = "Option::is_none")]
-    pub protected_item_count: Option<i64>,
-    #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
-    pub agent_version: Option<String>,
-    #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub extended_info: Option<MabContainerExtendedInfo>,
-    #[serde(rename = "mabContainerHealthDetails", default, skip_serializing_if = "Vec::is_empty")]
-    pub mab_container_health_details: Vec<MabContainerHealthDetails>,
-    #[serde(rename = "containerHealthState", default, skip_serializing_if = "Option::is_none")]
-    pub container_health_state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MabContainerExtendedInfo {
-    #[serde(rename = "lastRefreshedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_refreshed_at: Option<String>,
-    #[serde(rename = "backupItemType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_item_type: Option<mab_container_extended_info::BackupItemType>,
-    #[serde(rename = "backupItems", default, skip_serializing_if = "Vec::is_empty")]
-    pub backup_items: Vec<String>,
-    #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
-    pub policy_name: Option<String>,
-    #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
-    pub last_backup_status: Option<String>,
-}
-pub mod mab_container_extended_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupItemType {
-        Invalid,
-        #[serde(rename = "VM")]
-        Vm,
-        FileFolder,
-        AzureSqlDb,
-        #[serde(rename = "SQLDB")]
-        Sqldb,
-        Exchange,
-        Sharepoint,
-        #[serde(rename = "VMwareVM")]
-        VMwareVm,
-        SystemState,
-        Client,
-        GenericDataSource,
-        #[serde(rename = "SQLDataBase")]
-        SqlDataBase,
-        AzureFileShare,
-        #[serde(rename = "SAPHanaDatabase")]
-        SapHanaDatabase,
-        #[serde(rename = "SAPAseDatabase")]
-        SapAseDatabase,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MabContainerHealthDetails {
+pub struct ResourceHealthDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3363,205 +3388,181 @@ pub struct MabContainerHealthDetails {
     pub recommendations: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<operation_status::Status>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<OperationStatusError>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OperationStatusExtendedInfo>,
-}
-pub mod operation_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Invalid,
-        InProgress,
-        Succeeded,
-        Failed,
-        Canceled,
-    }
+pub struct ResourceList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatusError {
+pub struct RestoreFileSpecs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub path: Option<String>,
+    #[serde(rename = "fileSpecType", default, skip_serializing_if = "Option::is_none")]
+    pub file_spec_type: Option<String>,
+    #[serde(rename = "targetFolderPath", default, skip_serializing_if = "Option::is_none")]
+    pub target_folder_path: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatusExtendedInfo {
+pub struct RestoreRequest {
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatusJobExtendedInfo {
+pub struct RestoreRequestResource {
     #[serde(flatten)]
-    pub operation_status_extended_info: OperationStatusExtendedInfo,
-    #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
-    pub job_id: Option<String>,
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RestoreRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatusJobsExtendedInfo {
-    #[serde(flatten)]
-    pub operation_status_extended_info: OperationStatusExtendedInfo,
-    #[serde(rename = "jobIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub job_ids: Vec<String>,
-    #[serde(rename = "failedJobsError", default, skip_serializing_if = "Option::is_none")]
-    pub failed_jobs_error: Option<serde_json::Value>,
+pub struct RetentionDuration {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i32>,
+    #[serde(rename = "durationType", default, skip_serializing_if = "Option::is_none")]
+    pub duration_type: Option<retention_duration::DurationType>,
+}
+pub mod retention_duration {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DurationType {
+        Invalid,
+        Days,
+        Weeks,
+        Months,
+        Years,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatusProvisionIlrExtendedInfo {
-    #[serde(flatten)]
-    pub operation_status_extended_info: OperationStatusExtendedInfo,
-    #[serde(rename = "recoveryTarget", default, skip_serializing_if = "Option::is_none")]
-    pub recovery_target: Option<InstantItemRecoveryTarget>,
+pub struct RetentionPolicy {
+    #[serde(rename = "retentionPolicyType")]
+    pub retention_policy_type: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectableContainer {
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<protectable_container::BackupManagementType>,
-    #[serde(rename = "protectableContainerType", default, skip_serializing_if = "Option::is_none")]
-    pub protectable_container_type: Option<protectable_container::ProtectableContainerType>,
-    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
-    pub health_status: Option<String>,
+pub struct SqlDataDirectory {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<sql_data_directory::Type>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(rename = "logicalName", default, skip_serializing_if = "Option::is_none")]
+    pub logical_name: Option<String>,
+}
+pub mod sql_data_directory {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Invalid,
+        Data,
+        Log,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDataDirectoryMapping {
+    #[serde(rename = "mappingType", default, skip_serializing_if = "Option::is_none")]
+    pub mapping_type: Option<sql_data_directory_mapping::MappingType>,
+    #[serde(rename = "sourceLogicalName", default, skip_serializing_if = "Option::is_none")]
+    pub source_logical_name: Option<String>,
+    #[serde(rename = "sourcePath", default, skip_serializing_if = "Option::is_none")]
+    pub source_path: Option<String>,
+    #[serde(rename = "targetPath", default, skip_serializing_if = "Option::is_none")]
+    pub target_path: Option<String>,
+}
+pub mod sql_data_directory_mapping {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum MappingType {
+        Invalid,
+        Data,
+        Log,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SchedulePolicy {
+    #[serde(rename = "schedulePolicyType")]
+    pub schedule_policy_type: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Settings {
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub issqlcompression: Option<bool>,
+    #[serde(rename = "isCompression", default, skip_serializing_if = "Option::is_none")]
+    pub is_compression: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SimpleRetentionPolicy {
+    #[serde(flatten)]
+    pub retention_policy: RetentionPolicy,
+    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
+    pub retention_duration: Option<RetentionDuration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SimpleSchedulePolicy {
+    #[serde(flatten)]
+    pub schedule_policy: SchedulePolicy,
+    #[serde(rename = "scheduleRunFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub schedule_run_frequency: Option<simple_schedule_policy::ScheduleRunFrequency>,
+    #[serde(rename = "scheduleRunDays", default, skip_serializing_if = "Vec::is_empty")]
+    pub schedule_run_days: Vec<String>,
+    #[serde(rename = "scheduleRunTimes", default, skip_serializing_if = "Vec::is_empty")]
+    pub schedule_run_times: Vec<String>,
+    #[serde(rename = "scheduleWeeklyFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub schedule_weekly_frequency: Option<i32>,
+}
+pub mod simple_schedule_policy {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ScheduleRunFrequency {
+        Invalid,
+        Daily,
+        Weekly,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubProtectionPolicy {
+    #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
+    pub policy_type: Option<sub_protection_policy::PolicyType>,
+    #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
+    pub schedule_policy: Option<SchedulePolicy>,
+    #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub retention_policy: Option<RetentionPolicy>,
+}
+pub mod sub_protection_policy {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PolicyType {
+        Invalid,
+        Full,
+        Differential,
+        Log,
+        CopyOnlyFull,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TargetAfsRestoreInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub target_resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TargetRestoreInfo {
+    #[serde(rename = "overwriteOption", default, skip_serializing_if = "Option::is_none")]
+    pub overwrite_option: Option<target_restore_info::OverwriteOption>,
     #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
     pub container_id: Option<String>,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "targetDirectoryForFileRestore", default, skip_serializing_if = "Option::is_none")]
+    pub target_directory_for_file_restore: Option<String>,
 }
-pub mod protectable_container {
+pub mod target_restore_info {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
+    pub enum OverwriteOption {
         Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureBackupServer,
-        AzureSql,
-        AzureStorage,
-        AzureWorkload,
-        DefaultBackup,
+        FailOnConflict,
+        Overwrite,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProtectableContainerType {
-        Invalid,
-        Unknown,
-        #[serde(rename = "IaasVMContainer")]
-        IaasVmContainer,
-        #[serde(rename = "IaasVMServiceContainer")]
-        IaasVmServiceContainer,
-        #[serde(rename = "DPMContainer")]
-        DpmContainer,
-        AzureBackupServerContainer,
-        #[serde(rename = "MABContainer")]
-        MabContainer,
-        Cluster,
-        AzureSqlContainer,
-        Windows,
-        VCenter,
-        #[serde(rename = "VMAppContainer")]
-        VmAppContainer,
-        #[serde(rename = "SQLAGWorkLoadContainer")]
-        SqlagWorkLoadContainer,
-        StorageContainer,
-        GenericContainer,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectableContainerResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectableContainer>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectableContainerResourceList {
-    #[serde(flatten)]
-    pub resource_list: ResourceList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ProtectableContainerResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionContainer {
-    #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
-    pub friendly_name: Option<String>,
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
-    pub backup_management_type: Option<protection_container::BackupManagementType>,
-    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
-    pub registration_status: Option<String>,
-    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
-    pub health_status: Option<String>,
-    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
-    pub container_type: Option<protection_container::ContainerType>,
-}
-pub mod protection_container {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum BackupManagementType {
-        Invalid,
-        #[serde(rename = "AzureIaasVM")]
-        AzureIaasVm,
-        #[serde(rename = "MAB")]
-        Mab,
-        #[serde(rename = "DPM")]
-        Dpm,
-        AzureBackupServer,
-        AzureSql,
-        AzureStorage,
-        AzureWorkload,
-        DefaultBackup,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ContainerType {
-        Invalid,
-        Unknown,
-        #[serde(rename = "IaasVMContainer")]
-        IaasVmContainer,
-        #[serde(rename = "IaasVMServiceContainer")]
-        IaasVmServiceContainer,
-        #[serde(rename = "DPMContainer")]
-        DpmContainer,
-        AzureBackupServerContainer,
-        #[serde(rename = "MABContainer")]
-        MabContainer,
-        Cluster,
-        AzureSqlContainer,
-        Windows,
-        VCenter,
-        #[serde(rename = "VMAppContainer")]
-        VmAppContainer,
-        #[serde(rename = "SQLAGWorkLoadContainer")]
-        SqlagWorkLoadContainer,
-        StorageContainer,
-        GenericContainer,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionContainerResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectionContainer>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionContainerResourceList {
-    #[serde(flatten)]
-    pub resource_list: ResourceList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ProtectionContainerResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenInformation {
@@ -3571,6 +3572,49 @@ pub struct TokenInformation {
     pub expiry_time_in_utc_ticks: Option<i64>,
     #[serde(rename = "securityPIN", default, skip_serializing_if = "Option::is_none")]
     pub security_pin: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ValidateIaasVmRestoreOperationRequest {
+    #[serde(flatten)]
+    pub validate_restore_operation_request: ValidateRestoreOperationRequest,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ValidateOperationRequest {
+    #[serde(rename = "objectType")]
+    pub object_type: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ValidateOperationResponse {
+    #[serde(rename = "validationResults", default, skip_serializing_if = "Vec::is_empty")]
+    pub validation_results: Vec<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ValidateOperationsResponse {
+    #[serde(rename = "validateOperationResponse", default, skip_serializing_if = "Option::is_none")]
+    pub validate_operation_response: Option<ValidateOperationResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ValidateRestoreOperationRequest {
+    #[serde(flatten)]
+    pub validate_operation_request: ValidateOperationRequest,
+    #[serde(rename = "restoreRequest", default, skip_serializing_if = "Option::is_none")]
+    pub restore_request: Option<RestoreRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WeeklyRetentionFormat {
+    #[serde(rename = "daysOfTheWeek", default, skip_serializing_if = "Vec::is_empty")]
+    pub days_of_the_week: Vec<String>,
+    #[serde(rename = "weeksOfTheMonth", default, skip_serializing_if = "Vec::is_empty")]
+    pub weeks_of_the_month: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WeeklyRetentionSchedule {
+    #[serde(rename = "daysOfTheWeek", default, skip_serializing_if = "Vec::is_empty")]
+    pub days_of_the_week: Vec<String>,
+    #[serde(rename = "retentionTimes", default, skip_serializing_if = "Vec::is_empty")]
+    pub retention_times: Vec<String>,
+    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
+    pub retention_duration: Option<RetentionDuration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkloadInquiryDetails {
@@ -3658,70 +3702,26 @@ pub struct WorkloadProtectableItemResourceList {
     pub value: Vec<WorkloadProtectableItemResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientDiscoveryDisplay {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+pub struct YearlyRetentionSchedule {
+    #[serde(rename = "retentionScheduleFormatType", default, skip_serializing_if = "Option::is_none")]
+    pub retention_schedule_format_type: Option<yearly_retention_schedule::RetentionScheduleFormatType>,
+    #[serde(rename = "monthsOfYear", default, skip_serializing_if = "Vec::is_empty")]
+    pub months_of_year: Vec<String>,
+    #[serde(rename = "retentionScheduleDaily", default, skip_serializing_if = "Option::is_none")]
+    pub retention_schedule_daily: Option<DailyRetentionFormat>,
+    #[serde(rename = "retentionScheduleWeekly", default, skip_serializing_if = "Option::is_none")]
+    pub retention_schedule_weekly: Option<WeeklyRetentionFormat>,
+    #[serde(rename = "retentionTimes", default, skip_serializing_if = "Vec::is_empty")]
+    pub retention_times: Vec<String>,
+    #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
+    pub retention_duration: Option<RetentionDuration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientDiscoveryForLogSpecification {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
-    pub blob_duration: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientDiscoveryForProperties {
-    #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
-    pub service_specification: Option<ClientDiscoveryForServiceSpecification>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientDiscoveryForServiceSpecification {
-    #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
-    pub log_specifications: Vec<ClientDiscoveryForLogSpecification>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientDiscoveryResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ClientDiscoveryValueForSingleApi>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientDiscoveryValueForSingleApi {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<ClientDiscoveryDisplay>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub origin: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ClientDiscoveryForProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
+pub mod yearly_retention_schedule {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RetentionScheduleFormatType {
+        Invalid,
+        Daily,
+        Weekly,
+    }
 }

@@ -3,22 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiErrorBase {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InnerError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exceptiontype: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub errordetail: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ApiErrorBase>,
@@ -32,201 +16,37 @@ pub struct ApiError {
     pub target: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApiErrorBase {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InstanceSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleInstanceNetworkProfile {
-    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
-    pub network_interfaces: Vec<SubResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceInstanceViewStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
-    pub display_status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub level: Option<resource_instance_view_status::Level>,
-}
-pub mod resource_instance_view_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Level {
-        Info,
-        Warning,
-        Error,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleInstanceInstanceView {
-    #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
-    pub platform_update_domain: Option<i32>,
-    #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
-    pub platform_fault_domain: Option<i32>,
-    #[serde(rename = "privateId", default, skip_serializing_if = "Option::is_none")]
-    pub private_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses: Vec<ResourceInstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleInstanceProperties {
-    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
-    pub network_profile: Option<RoleInstanceNetworkProfile>,
-    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
-    pub instance_view: Option<RoleInstanceInstanceView>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleInstance {
+pub struct CloudService {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
+    pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<InstanceSku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RoleInstanceProperties>,
+    pub properties: Option<CloudServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleInstanceListResult {
-    pub value: Vec<RoleInstance>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceRoleSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceRoleProperties {
-    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
-    pub unique_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceRole {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<CloudServiceRoleSku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CloudServiceRoleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceRoleListResult {
-    pub value: Vec<CloudServiceRole>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum CloudServiceUpgradeMode {
-    Auto,
-    Manual,
-    Simultaneous,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceRoleProfileProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<CloudServiceRoleSku>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceRoleProfile {
+pub struct CloudServiceExtensionProfile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub roles: Vec<CloudServiceRoleProfileProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceVaultCertificate {
-    #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
-    pub certificate_url: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceVaultSecretGroup {
-    #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
-    pub source_vault: Option<SubResource>,
-    #[serde(rename = "vaultCertificates", default, skip_serializing_if = "Vec::is_empty")]
-    pub vault_certificates: Vec<CloudServiceVaultCertificate>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceOsProfile {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub secrets: Vec<CloudServiceVaultSecretGroup>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LoadBalancerFrontendIpConfigurationProperties {
-    #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_address: Option<SubResource>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subnet: Option<SubResource>,
-    #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
-    pub private_ip_address: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LoadBalancerFrontendIpConfiguration {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LoadBalancerFrontendIpConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LoadBalancerConfigurationProperties {
-    #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
-    pub frontend_ip_configurations: Vec<LoadBalancerFrontendIpConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LoadBalancerConfiguration {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LoadBalancerConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceNetworkProfile {
-    #[serde(rename = "loadBalancerConfigurations", default, skip_serializing_if = "Vec::is_empty")]
-    pub load_balancer_configurations: Vec<LoadBalancerConfiguration>,
-    #[serde(rename = "swappableCloudService", default, skip_serializing_if = "Option::is_none")]
-    pub swappable_cloud_service: Option<SubResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceVaultAndSecretReference {
-    #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
-    pub source_vault: Option<SubResource>,
-    #[serde(rename = "secretUrl", default, skip_serializing_if = "Option::is_none")]
-    pub secret_url: Option<String>,
+    pub extensions: Vec<Extension>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudServiceExtensionProperties {
@@ -252,16 +72,31 @@ pub struct CloudServiceExtensionProperties {
     pub roles_applied_to: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Extension {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CloudServiceExtensionProperties>,
+pub struct CloudServiceInstanceView {
+    #[serde(rename = "roleInstance", default, skip_serializing_if = "Option::is_none")]
+    pub role_instance: Option<InstanceViewStatusesSummary>,
+    #[serde(rename = "sdkVersion", default, skip_serializing_if = "Option::is_none")]
+    pub sdk_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<ResourceInstanceViewStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceExtensionProfile {
+pub struct CloudServiceListResult {
+    pub value: Vec<CloudService>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceNetworkProfile {
+    #[serde(rename = "loadBalancerConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    pub load_balancer_configurations: Vec<LoadBalancerConfiguration>,
+    #[serde(rename = "swappableCloudService", default, skip_serializing_if = "Option::is_none")]
+    pub swappable_cloud_service: Option<SubResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceOsProfile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub extensions: Vec<Extension>,
+    pub secrets: Vec<CloudServiceVaultSecretGroup>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudServiceProperties {
@@ -289,23 +124,208 @@ pub struct CloudServiceProperties {
     pub unique_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudService {
+pub struct CloudServiceRole {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CloudServiceProperties>,
+    pub sku: Option<CloudServiceRoleSku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CloudServiceRoleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceRoleListResult {
+    pub value: Vec<CloudServiceRole>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceRoleProfile {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub roles: Vec<CloudServiceRoleProfileProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceRoleProfileProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<CloudServiceRoleSku>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceRoleProperties {
+    #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
+    pub unique_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceRoleSku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudServiceUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum CloudServiceUpgradeMode {
+    Auto,
+    Manual,
+    Simultaneous,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceVaultAndSecretReference {
+    #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
+    pub source_vault: Option<SubResource>,
+    #[serde(rename = "secretUrl", default, skip_serializing_if = "Option::is_none")]
+    pub secret_url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceVaultCertificate {
+    #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_url: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudServiceVaultSecretGroup {
+    #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
+    pub source_vault: Option<SubResource>,
+    #[serde(rename = "vaultCertificates", default, skip_serializing_if = "Vec::is_empty")]
+    pub vault_certificates: Vec<CloudServiceVaultCertificate>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Extension {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CloudServiceExtensionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InnerError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exceptiontype: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub errordetail: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InstanceSku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InstanceViewStatusesSummary {
+    #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses_summary: Vec<StatusCodeCount>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LoadBalancerConfiguration {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LoadBalancerConfigurationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LoadBalancerConfigurationProperties {
+    #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
+    pub frontend_ip_configurations: Vec<LoadBalancerFrontendIpConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LoadBalancerFrontendIpConfiguration {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LoadBalancerFrontendIpConfigurationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LoadBalancerFrontendIpConfigurationProperties {
+    #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_address: Option<SubResource>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subnet: Option<SubResource>,
+    #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
+    pub private_ip_address: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceInstanceViewStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
+    pub display_status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level: Option<resource_instance_view_status::Level>,
+}
+pub mod resource_instance_view_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Level {
+        Info,
+        Warning,
+        Error,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleInstance {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<InstanceSku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RoleInstanceProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleInstanceInstanceView {
+    #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
+    pub platform_update_domain: Option<i32>,
+    #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
+    pub platform_fault_domain: Option<i32>,
+    #[serde(rename = "privateId", default, skip_serializing_if = "Option::is_none")]
+    pub private_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub statuses: Vec<ResourceInstanceViewStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleInstanceListResult {
+    pub value: Vec<RoleInstance>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleInstanceNetworkProfile {
+    #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
+    pub network_interfaces: Vec<SubResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleInstanceProperties {
+    #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
+    pub network_profile: Option<RoleInstanceNetworkProfile>,
+    #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
+    pub instance_view: Option<RoleInstanceInstanceView>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoleInstances {
+    #[serde(rename = "roleInstances")]
+    pub role_instances: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatusCodeCount {
@@ -315,29 +335,9 @@ pub struct StatusCodeCount {
     pub count: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InstanceViewStatusesSummary {
-    #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses_summary: Vec<StatusCodeCount>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceInstanceView {
-    #[serde(rename = "roleInstance", default, skip_serializing_if = "Option::is_none")]
-    pub role_instance: Option<InstanceViewStatusesSummary>,
-    #[serde(rename = "sdkVersion", default, skip_serializing_if = "Option::is_none")]
-    pub sdk_version: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statuses: Vec<ResourceInstanceViewStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudServiceListResult {
-    pub value: Vec<CloudService>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RoleInstances {
-    #[serde(rename = "roleInstances")]
-    pub role_instances: Vec<String>,
+pub struct SubResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateDomain {

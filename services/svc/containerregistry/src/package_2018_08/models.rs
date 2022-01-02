@@ -3,32 +3,55 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RepositoryAttributes {
+pub struct AcrErrorInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcrErrors {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<AcrErrorInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcrManifestAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
     #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
     pub image_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub manifest: Option<AcrManifestAttributesBase>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcrManifestAttributesBase {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub digest: Option<String>,
     #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
     pub created_time: Option<String>,
     #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_update_time: Option<String>,
-    #[serde(rename = "manifestCount", default, skip_serializing_if = "Option::is_none")]
-    pub manifest_count: Option<f64>,
-    #[serde(rename = "tagCount", default, skip_serializing_if = "Option::is_none")]
-    pub tag_count: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub architecture: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub os: Option<String>,
+    #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
+    pub media_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChangeableAttributes {
-    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub delete_enabled: Option<bool>,
-    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub write_enabled: Option<bool>,
-    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub list_enabled: Option<bool>,
-    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub read_enabled: Option<bool>,
+pub struct AcrManifests {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
+    pub image_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub manifests: Vec<AcrManifestAttributesBase>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcrRepositoryTags {
@@ -64,84 +87,32 @@ pub struct AcrTagAttributesBase {
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TagAttributes {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub registry: Option<String>,
-    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
-    pub image_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<TagAttributesTag>,
+pub struct ChangeableAttributes {
+    #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub delete_enabled: Option<bool>,
+    #[serde(rename = "writeEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub write_enabled: Option<bool>,
+    #[serde(rename = "listEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub list_enabled: Option<bool>,
+    #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub read_enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TagAttributesTag {
-    #[serde(rename = "signatureRecord", default, skip_serializing_if = "Option::is_none")]
-    pub signature_record: Option<String>,
+pub struct DeletedRepository {
+    #[serde(rename = "manifestsDeleted", default, skip_serializing_if = "Vec::is_empty")]
+    pub manifests_deleted: Vec<String>,
+    #[serde(rename = "tagsDeleted", default, skip_serializing_if = "Vec::is_empty")]
+    pub tags_deleted: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcrManifests {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub registry: Option<String>,
-    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
-    pub image_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manifests: Vec<AcrManifestAttributesBase>,
+pub struct ImageHistory {
+    #[serde(rename = "v1Compatibility", default, skip_serializing_if = "Option::is_none")]
+    pub v1_compatibility: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcrManifestAttributes {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub registry: Option<String>,
-    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
-    pub image_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub manifest: Option<AcrManifestAttributesBase>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcrManifestAttributesBase {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub digest: Option<String>,
-    #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
-    pub created_time: Option<String>,
-    #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_update_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub architecture: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub os: Option<String>,
-    #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
-    pub media_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
-    #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
-    pub changeable_attributes: Option<ChangeableAttributes>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcrErrors {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub errors: Vec<AcrErrorInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RepositoryTags {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Manifest {
-    #[serde(rename = "schemaVersion", default, skip_serializing_if = "Option::is_none")]
-    pub schema_version: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub architecture: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<String>,
-    #[serde(rename = "fsLayers", default, skip_serializing_if = "Vec::is_empty")]
-    pub fs_layers: Vec<ImageLayer>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub history: Vec<ImageHistory>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub signatures: Vec<ImageSignature>,
+pub struct ImageLayer {
+    #[serde(rename = "blobSum", default, skip_serializing_if = "Option::is_none")]
+    pub blob_sum: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageSignature {
@@ -173,35 +144,28 @@ pub struct JwkHeader {
     pub y: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageHistory {
-    #[serde(rename = "v1Compatibility", default, skip_serializing_if = "Option::is_none")]
-    pub v1_compatibility: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Repositories {
+pub struct Manifest {
+    #[serde(rename = "schemaVersion", default, skip_serializing_if = "Option::is_none")]
+    pub schema_version: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub architecture: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    #[serde(rename = "fsLayers", default, skip_serializing_if = "Vec::is_empty")]
+    pub fs_layers: Vec<ImageLayer>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub repositories: Vec<String>,
+    pub history: Vec<ImageHistory>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub signatures: Vec<ImageSignature>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeletedRepository {
-    #[serde(rename = "manifestsDeleted", default, skip_serializing_if = "Vec::is_empty")]
-    pub manifests_deleted: Vec<String>,
-    #[serde(rename = "tagsDeleted", default, skip_serializing_if = "Vec::is_empty")]
-    pub tags_deleted: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcrErrorInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub detail: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageLayer {
-    #[serde(rename = "blobSum", default, skip_serializing_if = "Option::is_none")]
-    pub blob_sum: Option<String>,
+pub struct ManifestAttributesManifest {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub references: Vec<ManifestAttributesManifestReferences>,
+    #[serde(rename = "quarantineTag", default, skip_serializing_if = "Option::is_none")]
+    pub quarantine_tag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManifestAttributesManifestReferences {
@@ -211,13 +175,6 @@ pub struct ManifestAttributesManifestReferences {
     pub architecture: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub os: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManifestAttributesManifest {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub references: Vec<ManifestAttributesManifestReferences>,
-    #[serde(rename = "quarantineTag", default, skip_serializing_if = "Option::is_none")]
-    pub quarantine_tag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManifestChangeableAttributes {
@@ -233,4 +190,47 @@ pub struct ManifestChangeableAttributes {
     pub quarantine_state: Option<String>,
     #[serde(rename = "quarantineDetails", default, skip_serializing_if = "Option::is_none")]
     pub quarantine_details: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Repositories {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub repositories: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RepositoryAttributes {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
+    pub image_name: Option<String>,
+    #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
+    pub created_time: Option<String>,
+    #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_update_time: Option<String>,
+    #[serde(rename = "manifestCount", default, skip_serializing_if = "Option::is_none")]
+    pub manifest_count: Option<f64>,
+    #[serde(rename = "tagCount", default, skip_serializing_if = "Option::is_none")]
+    pub tag_count: Option<f64>,
+    #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
+    pub changeable_attributes: Option<ChangeableAttributes>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RepositoryTags {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TagAttributes {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registry: Option<String>,
+    #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
+    pub image_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<TagAttributesTag>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TagAttributesTag {
+    #[serde(rename = "signatureRecord", default, skip_serializing_if = "Option::is_none")]
+    pub signature_record: Option<String>,
 }

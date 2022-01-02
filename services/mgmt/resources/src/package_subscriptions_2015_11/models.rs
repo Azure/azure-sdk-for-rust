@@ -3,6 +3,35 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckResourceNameResult {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<check_resource_name_result::Status>,
+}
+pub mod check_resource_name_result {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Allowed,
+        Reserved,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDefinition {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -23,6 +52,12 @@ pub struct LocationListResult {
     pub value: Vec<Location>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceName {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Subscription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -36,18 +71,18 @@ pub struct Subscription {
     pub subscription_policies: Option<SubscriptionPolicies>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionPolicies {
-    #[serde(rename = "locationPlacementId", default, skip_serializing_if = "Option::is_none")]
-    pub location_placement_id: Option<String>,
-    #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
-    pub quota_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Subscription>,
     #[serde(rename = "nextLink")]
     pub next_link: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionPolicies {
+    #[serde(rename = "locationPlacementId", default, skip_serializing_if = "Option::is_none")]
+    pub location_placement_id: Option<String>,
+    #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
+    pub quota_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TenantIdDescription {
@@ -62,39 +97,4 @@ pub struct TenantListResult {
     pub value: Vec<TenantIdDescription>,
     #[serde(rename = "nextLink")]
     pub next_link: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceName {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDefinition>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDefinition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckResourceNameResult {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<check_resource_name_result::Status>,
-}
-pub mod check_resource_name_result {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Allowed,
-        Reserved,
-    }
 }

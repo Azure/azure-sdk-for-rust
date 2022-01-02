@@ -3,6 +3,50 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureCliScript {
+    #[serde(flatten)]
+    pub deployment_script: DeploymentScript,
+    pub properties: AzureCliScriptProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureCliScriptProperties {
+    #[serde(flatten)]
+    pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
+    #[serde(flatten)]
+    pub script_configuration_base: ScriptConfigurationBase,
+    #[serde(rename = "azCliVersion")]
+    pub az_cli_version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzurePowerShellScript {
+    #[serde(flatten)]
+    pub deployment_script: DeploymentScript,
+    pub properties: AzurePowerShellScriptProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzurePowerShellScriptProperties {
+    #[serde(flatten)]
+    pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
+    #[serde(flatten)]
+    pub script_configuration_base: ScriptConfigurationBase,
+    #[serde(rename = "azPowerShellVersion")]
+    pub az_power_shell_version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureResourceBase {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerConfiguration {
+    #[serde(rename = "containerGroupName", default, skip_serializing_if = "Option::is_none")]
+    pub container_group_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScript {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
@@ -25,108 +69,11 @@ pub mod deployment_script {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedServiceIdentity {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<managed_service_identity::Type>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-pub mod managed_service_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        UserAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-pub mod system_data {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeploymentScriptUpdateParameter {
-    #[serde(flatten)]
-    pub azure_resource_base: AzureResourceBase,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzurePowerShellScript {
-    #[serde(flatten)]
-    pub deployment_script: DeploymentScript,
-    pub properties: AzurePowerShellScriptProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzurePowerShellScriptProperties {
-    #[serde(flatten)]
-    pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
-    #[serde(flatten)]
-    pub script_configuration_base: ScriptConfigurationBase,
-    #[serde(rename = "azPowerShellVersion")]
-    pub az_power_shell_version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureCliScript {
-    #[serde(flatten)]
-    pub deployment_script: DeploymentScript,
-    pub properties: AzureCliScriptProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureCliScriptProperties {
-    #[serde(flatten)]
-    pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
-    #[serde(flatten)]
-    pub script_configuration_base: ScriptConfigurationBase,
-    #[serde(rename = "azCliVersion")]
-    pub az_cli_version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScriptConfigurationBase {
-    #[serde(rename = "primaryScriptUri", default, skip_serializing_if = "Option::is_none")]
-    pub primary_script_uri: Option<String>,
-    #[serde(rename = "supportingScriptUris", default, skip_serializing_if = "Vec::is_empty")]
-    pub supporting_script_uris: Vec<String>,
-    #[serde(rename = "scriptContent", default, skip_serializing_if = "Option::is_none")]
-    pub script_content: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub arguments: Option<String>,
-    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
-    pub environment_variables: Vec<EnvironmentVariable>,
-    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
-    pub force_update_tag: Option<String>,
-    #[serde(rename = "retentionInterval")]
-    pub retention_interval: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timeout: Option<String>,
+pub struct DeploymentScriptListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DeploymentScript>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScriptPropertiesBase {
@@ -162,16 +109,96 @@ pub mod deployment_script_properties_base {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerConfiguration {
-    #[serde(rename = "containerGroupName", default, skip_serializing_if = "Option::is_none")]
-    pub container_group_name: Option<String>,
+pub struct DeploymentScriptUpdateParameter {
+    #[serde(flatten)]
+    pub azure_resource_base: AzureResourceBase,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageAccountConfiguration {
-    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_name: Option<String>,
-    #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_key: Option<String>,
+pub struct DeploymentScriptsError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EnvironmentVariable {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "secureValue", default, skip_serializing_if = "Option::is_none")]
+    pub secure_value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorResponse>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub log: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedServiceIdentity {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<managed_service_identity::Type>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+pub mod managed_service_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        UserAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptConfigurationBase {
+    #[serde(rename = "primaryScriptUri", default, skip_serializing_if = "Option::is_none")]
+    pub primary_script_uri: Option<String>,
+    #[serde(rename = "supportingScriptUris", default, skip_serializing_if = "Vec::is_empty")]
+    pub supporting_script_uris: Vec<String>,
+    #[serde(rename = "scriptContent", default, skip_serializing_if = "Option::is_none")]
+    pub script_content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arguments: Option<String>,
+    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
+    pub environment_variables: Vec<EnvironmentVariable>,
+    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
+    pub force_update_tag: Option<String>,
+    #[serde(rename = "retentionInterval")]
+    pub retention_interval: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptLog {
+    #[serde(flatten)]
+    pub azure_resource_base: AzureResourceBase,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LogProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptLogsList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ScriptLog>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptStatus {
@@ -189,17 +216,11 @@ pub struct ScriptStatus {
     pub error: Option<ErrorResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
+pub struct StorageAccountConfiguration {
+    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_name: Option<String>,
+    #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentity {
@@ -209,55 +230,34 @@ pub struct UserAssignedIdentity {
     pub client_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnvironmentVariable {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "secureValue", default, skip_serializing_if = "Option::is_none")]
-    pub secure_value: Option<String>,
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeploymentScriptListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DeploymentScript>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScriptLogsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ScriptLog>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScriptLog {
-    #[serde(flatten)]
-    pub azure_resource_base: AzureResourceBase,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LogProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub log: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourceBase {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeploymentScriptsError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
+pub mod system_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

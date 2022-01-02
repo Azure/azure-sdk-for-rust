@@ -3,47 +3,9 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-}
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationsList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    pub value: Vec<Operation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsManagementErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponseBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorResponseBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -60,6 +22,46 @@ pub struct Alert {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertModification {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AlertModificationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertModificationItem {
+    #[serde(rename = "modificationEvent", default, skip_serializing_if = "Option::is_none")]
+    pub modification_event: Option<alert_modification_item::ModificationEvent>,
+    #[serde(rename = "oldValue", default, skip_serializing_if = "Option::is_none")]
+    pub old_value: Option<String>,
+    #[serde(rename = "newValue", default, skip_serializing_if = "Option::is_none")]
+    pub new_value: Option<String>,
+    #[serde(rename = "modifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub modified_at: Option<String>,
+    #[serde(rename = "modifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub modified_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub comments: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+pub mod alert_modification_item {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ModificationEvent {
+        AlertCreated,
+        StateChange,
+        MonitorConditionChange,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertModificationProperties {
+    #[serde(rename = "alertId", default, skip_serializing_if = "Option::is_none")]
+    pub alert_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifications: Vec<AlertModificationItem>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertProperties {
@@ -158,149 +160,11 @@ pub struct AlertsList {
     pub value: Vec<Alert>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertModification {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AlertModificationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertModificationProperties {
-    #[serde(rename = "alertId", default, skip_serializing_if = "Option::is_none")]
-    pub alert_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub modifications: Vec<AlertModificationItem>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertModificationItem {
-    #[serde(rename = "modificationEvent", default, skip_serializing_if = "Option::is_none")]
-    pub modification_event: Option<alert_modification_item::ModificationEvent>,
-    #[serde(rename = "oldValue", default, skip_serializing_if = "Option::is_none")]
-    pub old_value: Option<String>,
-    #[serde(rename = "newValue", default, skip_serializing_if = "Option::is_none")]
-    pub new_value: Option<String>,
-    #[serde(rename = "modifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub modified_at: Option<String>,
-    #[serde(rename = "modifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub modified_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub comments: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-pub mod alert_modification_item {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ModificationEvent {
-        AlertCreated,
-        StateChange,
-        MonitorConditionChange,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SmartGroupModification {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SmartGroupModificationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SmartGroupModificationProperties {
-    #[serde(rename = "smartGroupId", default, skip_serializing_if = "Option::is_none")]
-    pub smart_group_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub modifications: Vec<SmartGroupModificationItem>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SmartGroupModificationItem {
-    #[serde(rename = "modificationEvent", default, skip_serializing_if = "Option::is_none")]
-    pub modification_event: Option<smart_group_modification_item::ModificationEvent>,
-    #[serde(rename = "oldValue", default, skip_serializing_if = "Option::is_none")]
-    pub old_value: Option<String>,
-    #[serde(rename = "newValue", default, skip_serializing_if = "Option::is_none")]
-    pub new_value: Option<String>,
-    #[serde(rename = "modifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub modified_at: Option<String>,
-    #[serde(rename = "modifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub modified_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub comments: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-pub mod smart_group_modification_item {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ModificationEvent {
-        SmartGroupCreated,
-        StateChange,
-        AlertAdded,
-        AlertRemoved,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsSummary {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertsSummaryProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertsSummaryProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub total: Option<i64>,
-    #[serde(rename = "smartGroupsCount", default, skip_serializing_if = "Option::is_none")]
-    pub smart_groups_count: Option<i64>,
-    #[serde(rename = "summaryByState", default, skip_serializing_if = "Option::is_none")]
-    pub summary_by_state: Option<serde_json::Value>,
-    #[serde(rename = "summaryBySeverity", default, skip_serializing_if = "Option::is_none")]
-    pub summary_by_severity: Option<alerts_summary_properties::SummaryBySeverity>,
-    #[serde(rename = "summaryBySeverityAndMonitorCondition", default, skip_serializing_if = "Option::is_none")]
-    pub summary_by_severity_and_monitor_condition: Option<serde_json::Value>,
-    #[serde(rename = "summaryByMonitorService", default, skip_serializing_if = "Option::is_none")]
-    pub summary_by_monitor_service: Option<serde_json::Value>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-pub mod alerts_summary_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct SummaryBySeverity {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub sev0: Option<serde_json::Value>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub sev1: Option<serde_json::Value>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub sev2: Option<serde_json::Value>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub sev3: Option<serde_json::Value>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub sev4: Option<serde_json::Value>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertsSummaryByState {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub new: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub acknowledged: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub closed: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertsSummaryBySeverityAndMonitorCondition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sev0: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sev1: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sev2: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sev3: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sev4: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsSummaryByMonitorCondition {
@@ -341,11 +205,97 @@ pub struct AlertsSummaryByMonitorService {
     pub smart_detector: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SmartGroupsList {
+pub struct AlertsSummaryBySeverityAndMonitorCondition {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sev0: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sev1: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sev2: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sev3: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sev4: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertsSummaryByState {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub new: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub acknowledged: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub closed: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertsSummaryProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+    #[serde(rename = "smartGroupsCount", default, skip_serializing_if = "Option::is_none")]
+    pub smart_groups_count: Option<i64>,
+    #[serde(rename = "summaryByState", default, skip_serializing_if = "Option::is_none")]
+    pub summary_by_state: Option<serde_json::Value>,
+    #[serde(rename = "summaryBySeverity", default, skip_serializing_if = "Option::is_none")]
+    pub summary_by_severity: Option<alerts_summary_properties::SummaryBySeverity>,
+    #[serde(rename = "summaryBySeverityAndMonitorCondition", default, skip_serializing_if = "Option::is_none")]
+    pub summary_by_severity_and_monitor_condition: Option<serde_json::Value>,
+    #[serde(rename = "summaryByMonitorService", default, skip_serializing_if = "Option::is_none")]
+    pub summary_by_monitor_service: Option<serde_json::Value>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+pub mod alerts_summary_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct SummaryBySeverity {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub sev0: Option<serde_json::Value>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub sev1: Option<serde_json::Value>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub sev2: Option<serde_json::Value>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub sev3: Option<serde_json::Value>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub sev4: Option<serde_json::Value>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponseBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SmartGroup>,
+    pub details: Vec<ErrorResponseBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationsList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmartGroup {
@@ -353,6 +303,56 @@ pub struct SmartGroup {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SmartGroupProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartGroupAggregatedProperty {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartGroupModification {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SmartGroupModificationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartGroupModificationItem {
+    #[serde(rename = "modificationEvent", default, skip_serializing_if = "Option::is_none")]
+    pub modification_event: Option<smart_group_modification_item::ModificationEvent>,
+    #[serde(rename = "oldValue", default, skip_serializing_if = "Option::is_none")]
+    pub old_value: Option<String>,
+    #[serde(rename = "newValue", default, skip_serializing_if = "Option::is_none")]
+    pub new_value: Option<String>,
+    #[serde(rename = "modifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub modified_at: Option<String>,
+    #[serde(rename = "modifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub modified_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub comments: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+pub mod smart_group_modification_item {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ModificationEvent {
+        SmartGroupCreated,
+        StateChange,
+        AlertAdded,
+        AlertRemoved,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartGroupModificationProperties {
+    #[serde(rename = "smartGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub smart_group_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifications: Vec<SmartGroupModificationItem>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmartGroupProperties {
@@ -403,9 +403,9 @@ pub mod smart_group_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SmartGroupAggregatedProperty {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i64>,
+pub struct SmartGroupsList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SmartGroup>,
 }

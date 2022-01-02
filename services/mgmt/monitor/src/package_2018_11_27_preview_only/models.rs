@@ -3,6 +3,16 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataContainer {
+    pub workspace: WorkspaceInfo,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Error {
+    pub code: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -14,30 +24,6 @@ pub struct ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResponseWithError {
     pub error: Error,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    pub code: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceInfo {
-    pub id: String,
-    pub location: String,
-    pub properties: workspace_info::Properties,
-}
-pub mod workspace_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(rename = "customerId")]
-        pub customer_id: String,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataContainer {
-    pub workspace: WorkspaceInfo,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmInsightsOnboardingStatus {
@@ -77,5 +63,19 @@ pub mod vm_insights_onboarding_status {
             #[serde(rename = "notPresent")]
             NotPresent,
         }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceInfo {
+    pub id: String,
+    pub location: String,
+    pub properties: workspace_info::Properties,
+}
+pub mod workspace_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "customerId")]
+        pub customer_id: String,
     }
 }

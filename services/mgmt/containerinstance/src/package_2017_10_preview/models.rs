@@ -3,9 +3,50 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureFileVolume {
+    #[serde(rename = "shareName")]
+    pub share_name: String,
+    #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
+    pub read_only: Option<bool>,
+    #[serde(rename = "storageAccountName")]
+    pub storage_account_name: String,
+    #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Container {
     pub name: String,
     pub properties: ContainerProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerGroup {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub serde_json_value: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerGroupListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ContainerGroup>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerPort {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<container_port::Protocol>,
+    pub port: i32,
+}
+pub mod container_port {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Protocol {
+        #[serde(rename = "TCP")]
+        Tcp,
+        #[serde(rename = "UDP")]
+        Udp,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
@@ -50,23 +91,11 @@ pub struct ContainerState {
     pub detail_status: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceRequirements {
-    pub requests: ResourceRequests,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limits: Option<ResourceLimits>,
-}
+pub struct EmptyDirVolume {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceRequests {
-    #[serde(rename = "memoryInGB")]
-    pub memory_in_gb: f64,
-    pub cpu: f64,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceLimits {
-    #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
-    pub memory_in_gb: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cpu: Option<f64>,
+pub struct EnvironmentVariable {
+    pub name: String,
+    pub value: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Event {
@@ -82,42 +111,6 @@ pub struct Event {
     pub message: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureFileVolume {
-    #[serde(rename = "shareName")]
-    pub share_name: String,
-    #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
-    pub read_only: Option<bool>,
-    #[serde(rename = "storageAccountName")]
-    pub storage_account_name: String,
-    #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EmptyDirVolume {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Volume {
-    pub name: String,
-    #[serde(rename = "azureFile", default, skip_serializing_if = "Option::is_none")]
-    pub azure_file: Option<AzureFileVolume>,
-    #[serde(rename = "emptyDir", default, skip_serializing_if = "Option::is_none")]
-    pub empty_dir: Option<EmptyDirVolume>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VolumeMount {
-    pub name: String,
-    #[serde(rename = "mountPath")]
-    pub mount_path: String,
-    #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
-    pub read_only: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerGroup {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageRegistryCredential {
@@ -142,46 +135,9 @@ pub mod ip_address {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Port {
+pub struct Logs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub protocol: Option<port::Protocol>,
-    pub port: i32,
-}
-pub mod port {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Protocol {
-        #[serde(rename = "TCP")]
-        Tcp,
-        #[serde(rename = "UDP")]
-        Udp,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerPort {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub protocol: Option<container_port::Protocol>,
-    pub port: i32,
-}
-pub mod container_port {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Protocol {
-        #[serde(rename = "TCP")]
-        Tcp,
-        #[serde(rename = "UDP")]
-        Udp,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnvironmentVariable {
-    pub name: String,
-    pub value: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
+    pub content: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -212,16 +168,25 @@ pub mod operation {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerGroupListResult {
+pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ContainerGroup>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Logs {
+pub struct Port {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub content: Option<String>,
+    pub protocol: Option<port::Protocol>,
+    pub port: i32,
+}
+pub mod port {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Protocol {
+        #[serde(rename = "TCP")]
+        Tcp,
+        #[serde(rename = "UDP")]
+        Udp,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -234,4 +199,39 @@ pub struct Resource {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceLimits {
+    #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
+    pub memory_in_gb: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cpu: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceRequests {
+    #[serde(rename = "memoryInGB")]
+    pub memory_in_gb: f64,
+    pub cpu: f64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceRequirements {
+    pub requests: ResourceRequests,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limits: Option<ResourceLimits>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Volume {
+    pub name: String,
+    #[serde(rename = "azureFile", default, skip_serializing_if = "Option::is_none")]
+    pub azure_file: Option<AzureFileVolume>,
+    #[serde(rename = "emptyDir", default, skip_serializing_if = "Option::is_none")]
+    pub empty_dir: Option<EmptyDirVolume>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VolumeMount {
+    pub name: String,
+    #[serde(rename = "mountPath")]
+    pub mount_path: String,
+    #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
+    pub read_only: Option<bool>,
 }

@@ -3,98 +3,20 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Workspace {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    pub properties: WorkspaceProperties,
+pub struct AddressSpace {
+    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
+    pub address_prefixes: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreatedBy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceProperties {
-    #[serde(rename = "managedResourceGroupId")]
-    pub managed_resource_group_id: String,
+    pub oid: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<WorkspaceCustomParameters>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
-    pub ui_definition_uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub authorizations: Vec<WorkspaceProviderAuthorization>,
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<CreatedBy>,
-    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
-    pub updated_by: Option<CreatedBy>,
-    #[serde(rename = "createdDateTime", default, skip_serializing_if = "Option::is_none")]
-    pub created_date_time: Option<CreatedDateTime>,
-    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_id: Option<String>,
-    #[serde(rename = "workspaceUrl", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_url: Option<String>,
-    #[serde(rename = "storageAccountIdentity", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_identity: Option<ManagedIdentityConfiguration>,
+    pub puid: Option<String>,
+    #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
+    pub application_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceCustomParameters {
-    #[serde(rename = "amlWorkspaceId", default, skip_serializing_if = "Option::is_none")]
-    pub aml_workspace_id: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "customVirtualNetworkId", default, skip_serializing_if = "Option::is_none")]
-    pub custom_virtual_network_id: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "customPublicSubnetName", default, skip_serializing_if = "Option::is_none")]
-    pub custom_public_subnet_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "customPrivateSubnetName", default, skip_serializing_if = "Option::is_none")]
-    pub custom_private_subnet_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "enableNoPublicIp", default, skip_serializing_if = "Option::is_none")]
-    pub enable_no_public_ip: Option<WorkspaceCustomBooleanParameter>,
-    #[serde(rename = "loadBalancerBackendPoolName", default, skip_serializing_if = "Option::is_none")]
-    pub load_balancer_backend_pool_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "loadBalancerId", default, skip_serializing_if = "Option::is_none")]
-    pub load_balancer_id: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "natGatewayName", default, skip_serializing_if = "Option::is_none")]
-    pub nat_gateway_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "publicIpName", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "prepareEncryption", default, skip_serializing_if = "Option::is_none")]
-    pub prepare_encryption: Option<WorkspaceCustomBooleanParameter>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encryption: Option<WorkspaceEncryptionParameter>,
-    #[serde(rename = "requireInfrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
-    pub require_infrastructure_encryption: Option<WorkspaceCustomBooleanParameter>,
-    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "storageAccountSkuName", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_sku_name: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "vnetAddressPrefix", default, skip_serializing_if = "Option::is_none")]
-    pub vnet_address_prefix: Option<WorkspaceCustomStringParameter>,
-    #[serde(rename = "resourceTags", default, skip_serializing_if = "Option::is_none")]
-    pub resource_tags: Option<WorkspaceCustomObjectParameter>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceCustomStringParameter {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<WorkspaceCustomParameterType>,
-    pub value: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum WorkspaceCustomParameterType {
-    Bool,
-    Object,
-    String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceCustomBooleanParameter {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<WorkspaceCustomParameterType>,
-    pub value: bool,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceEncryptionParameter {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<WorkspaceCustomParameterType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<Encryption>,
-}
+pub type CreatedDateTime = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Encryption {
     #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
@@ -114,80 +36,6 @@ pub mod encryption {
         #[serde(rename = "Microsoft.Keyvault")]
         MicrosoftKeyvault,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceCustomObjectParameter {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<WorkspaceCustomParameterType>,
-    pub value: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProvisioningState {
-    Accepted,
-    Running,
-    Ready,
-    Creating,
-    Created,
-    Deleting,
-    Deleted,
-    Canceled,
-    Failed,
-    Succeeded,
-    Updating,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreatedBy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub oid: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub puid: Option<String>,
-    #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
-    pub application_id: Option<String>,
-}
-pub type CreatedDateTime = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedIdentityConfiguration {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    pub location: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceProviderAuthorization {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "roleDefinitionId")]
-    pub role_definition_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceUpdate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
@@ -210,11 +58,13 @@ pub struct ErrorResponse {
     pub error: ErrorInfo,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WorkspaceListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Workspace>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct ManagedIdentityConfiguration {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -243,11 +93,48 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualNetworkPeeringList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<VirtualNetworkPeering>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub enum PeeringProvisioningState {
+    Succeeded,
+    Updating,
+    Deleting,
+    Failed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProvisioningState {
+    Accepted,
+    Running,
+    Ready,
+    Creating,
+    Created,
+    Deleting,
+    Deleted,
+    Canceled,
+    Failed,
+    Succeeded,
+    Updating,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    pub location: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkPeering {
@@ -258,6 +145,13 @@ pub struct VirtualNetworkPeering {
     pub id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualNetworkPeeringList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<VirtualNetworkPeering>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkPeeringPropertiesFormat {
@@ -302,14 +196,120 @@ pub mod virtual_network_peering_properties_format {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AddressSpace {
-    #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
-    pub address_prefixes: Vec<String>,
+pub struct Workspace {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    pub properties: WorkspaceProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum PeeringProvisioningState {
-    Succeeded,
-    Updating,
-    Deleting,
-    Failed,
+pub struct WorkspaceCustomBooleanParameter {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<WorkspaceCustomParameterType>,
+    pub value: bool,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceCustomObjectParameter {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<WorkspaceCustomParameterType>,
+    pub value: serde_json::Value,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum WorkspaceCustomParameterType {
+    Bool,
+    Object,
+    String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceCustomParameters {
+    #[serde(rename = "amlWorkspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub aml_workspace_id: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "customVirtualNetworkId", default, skip_serializing_if = "Option::is_none")]
+    pub custom_virtual_network_id: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "customPublicSubnetName", default, skip_serializing_if = "Option::is_none")]
+    pub custom_public_subnet_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "customPrivateSubnetName", default, skip_serializing_if = "Option::is_none")]
+    pub custom_private_subnet_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "enableNoPublicIp", default, skip_serializing_if = "Option::is_none")]
+    pub enable_no_public_ip: Option<WorkspaceCustomBooleanParameter>,
+    #[serde(rename = "loadBalancerBackendPoolName", default, skip_serializing_if = "Option::is_none")]
+    pub load_balancer_backend_pool_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "loadBalancerId", default, skip_serializing_if = "Option::is_none")]
+    pub load_balancer_id: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "natGatewayName", default, skip_serializing_if = "Option::is_none")]
+    pub nat_gateway_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "publicIpName", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "prepareEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub prepare_encryption: Option<WorkspaceCustomBooleanParameter>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryption: Option<WorkspaceEncryptionParameter>,
+    #[serde(rename = "requireInfrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub require_infrastructure_encryption: Option<WorkspaceCustomBooleanParameter>,
+    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "storageAccountSkuName", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_sku_name: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "vnetAddressPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub vnet_address_prefix: Option<WorkspaceCustomStringParameter>,
+    #[serde(rename = "resourceTags", default, skip_serializing_if = "Option::is_none")]
+    pub resource_tags: Option<WorkspaceCustomObjectParameter>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceCustomStringParameter {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<WorkspaceCustomParameterType>,
+    pub value: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceEncryptionParameter {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<WorkspaceCustomParameterType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<Encryption>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Workspace>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceProperties {
+    #[serde(rename = "managedResourceGroupId")]
+    pub managed_resource_group_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<WorkspaceCustomParameters>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
+    pub ui_definition_uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub authorizations: Vec<WorkspaceProviderAuthorization>,
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<CreatedBy>,
+    #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
+    pub updated_by: Option<CreatedBy>,
+    #[serde(rename = "createdDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub created_date_time: Option<CreatedDateTime>,
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+    #[serde(rename = "workspaceUrl", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_url: Option<String>,
+    #[serde(rename = "storageAccountIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_identity: Option<ManagedIdentityConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceProviderAuthorization {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "roleDefinitionId")]
+    pub role_definition_id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WorkspaceUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }

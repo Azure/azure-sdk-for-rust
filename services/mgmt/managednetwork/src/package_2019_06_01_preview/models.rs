@@ -3,33 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedNetwork {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ManagedNetworkProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedNetworkProperties {
-    #[serde(flatten)]
-    pub resource_properties: ResourceProperties,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<Scope>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub connectivity: Option<ConnectivityCollection>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Scope {
-    #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
-    pub management_groups: Vec<ResourceId>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subscriptions: Vec<ResourceId>,
-    #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
-    pub virtual_networks: Vec<ResourceId>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subnets: Vec<ResourceId>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectivityCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<ManagedNetworkGroup>,
@@ -37,37 +10,27 @@ pub struct ConnectivityCollection {
     pub peerings: Vec<ManagedNetworkPeeringPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedNetworkUpdate {
+pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedNetworkListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ManagedNetwork>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScopeAssignment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ScopeAssignmentProperties>,
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScopeAssignmentProperties {
+pub struct HubAndSpokePeeringPolicyProperties {
     #[serde(flatten)]
-    pub resource_properties: ResourceProperties,
-    #[serde(rename = "assignedManagedNetwork", default, skip_serializing_if = "Option::is_none")]
-    pub assigned_managed_network: Option<String>,
+    pub managed_network_peering_policy_properties: ManagedNetworkPeeringPolicyProperties,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hub: Option<ResourceId>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub spokes: Vec<ResourceId>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScopeAssignmentListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ScopeAssignment>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct ManagedNetwork {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedNetworkProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedNetworkGroup {
@@ -86,6 +49,13 @@ pub mod managed_network_group {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedNetworkGroupListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ManagedNetworkGroup>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedNetworkGroupProperties {
     #[serde(flatten)]
     pub resource_properties: ResourceProperties,
@@ -99,9 +69,9 @@ pub struct ManagedNetworkGroupProperties {
     pub subnets: Vec<ResourceId>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedNetworkGroupListResult {
+pub struct ManagedNetworkListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ManagedNetworkGroup>,
+    pub value: Vec<ManagedNetwork>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -111,6 +81,13 @@ pub struct ManagedNetworkPeeringPolicy {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedNetworkPeeringPolicyProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedNetworkPeeringPolicyListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ManagedNetworkPeeringPolicy>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedNetworkPeeringPolicyProperties {
@@ -134,18 +111,18 @@ pub mod managed_network_peering_policy_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceId {
+pub struct ManagedNetworkProperties {
+    #[serde(flatten)]
+    pub resource_properties: ResourceProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub scope: Option<Scope>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connectivity: Option<ConnectivityCollection>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HubAndSpokePeeringPolicyProperties {
-    #[serde(flatten)]
-    pub managed_network_peering_policy_properties: ManagedNetworkPeeringPolicyProperties,
+pub struct ManagedNetworkUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub hub: Option<ResourceId>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub spokes: Vec<ResourceId>,
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MeshPeeringPolicyProperties {
@@ -153,20 +130,6 @@ pub struct MeshPeeringPolicyProperties {
     pub managed_network_peering_policy_properties: ManagedNetworkPeeringPolicyProperties,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mesh: Vec<ResourceId>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedNetworkPeeringPolicyListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ManagedNetworkPeeringPolicy>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -195,6 +158,11 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -206,16 +174,9 @@ pub struct Resource {
     pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
+pub struct ResourceId {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
-    #[serde(flatten)]
-    pub resource: Resource,
+    pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProperties {
@@ -233,4 +194,43 @@ pub mod resource_properties {
         Failed,
         Succeeded,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Scope {
+    #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
+    pub management_groups: Vec<ResourceId>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub subscriptions: Vec<ResourceId>,
+    #[serde(rename = "virtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
+    pub virtual_networks: Vec<ResourceId>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub subnets: Vec<ResourceId>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScopeAssignment {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ScopeAssignmentProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScopeAssignmentListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ScopeAssignment>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScopeAssignmentProperties {
+    #[serde(flatten)]
+    pub resource_properties: ResourceProperties,
+    #[serde(rename = "assignedManagedNetwork", default, skip_serializing_if = "Option::is_none")]
+    pub assigned_managed_network: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }

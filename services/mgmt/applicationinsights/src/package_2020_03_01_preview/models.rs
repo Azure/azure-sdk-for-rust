@@ -3,6 +3,18 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComponentLinkedStorageAccounts {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LinkedStorageAccountsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComponentLinkedStorageAccountsPatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<LinkedStorageAccountsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponseLinkedStorage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response_linked_storage::Error>,
@@ -18,21 +30,9 @@ pub mod error_response_linked_storage {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComponentLinkedStorageAccounts {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LinkedStorageAccountsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedStorageAccountsProperties {
     #[serde(rename = "linkedStorageAccount", default, skip_serializing_if = "Option::is_none")]
     pub linked_storage_account: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComponentLinkedStorageAccountsPatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LinkedStorageAccountsProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {

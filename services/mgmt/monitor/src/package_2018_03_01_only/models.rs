@@ -3,25 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroupResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ActionGroup>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroup {
     #[serde(rename = "groupShortName")]
     pub group_short_name: String,
@@ -53,51 +34,23 @@ pub struct ActionGroupList {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EmailReceiver {
-    pub name: String,
-    #[serde(rename = "emailAddress")]
-    pub email_address: String,
+pub struct ActionGroupPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<ReceiverStatus>,
+    pub enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReceiverStatus {
-    NotSpecified,
-    Enabled,
-    Disabled,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SmsReceiver {
-    pub name: String,
-    #[serde(rename = "countryCode")]
-    pub country_code: String,
-    #[serde(rename = "phoneNumber")]
-    pub phone_number: String,
+pub struct ActionGroupPatchBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<ReceiverStatus>,
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActionGroupPatch>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WebhookReceiver {
-    pub name: String,
-    #[serde(rename = "serviceUri")]
-    pub service_uri: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ItsmReceiver {
-    pub name: String,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: String,
-    #[serde(rename = "connectionId")]
-    pub connection_id: String,
-    #[serde(rename = "ticketConfiguration")]
-    pub ticket_configuration: String,
-    pub region: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureAppPushReceiver {
-    pub name: String,
-    #[serde(rename = "emailAddress")]
-    pub email_address: String,
+pub struct ActionGroupResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ActionGroup>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRunbookReceiver {
@@ -115,20 +68,10 @@ pub struct AutomationRunbookReceiver {
     pub service_uri: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VoiceReceiver {
+pub struct AzureAppPushReceiver {
     pub name: String,
-    #[serde(rename = "countryCode")]
-    pub country_code: String,
-    #[serde(rename = "phoneNumber")]
-    pub phone_number: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogicAppReceiver {
-    pub name: String,
-    #[serde(rename = "resourceId")]
-    pub resource_id: String,
-    #[serde(rename = "callbackUrl")]
-    pub callback_url: String,
+    #[serde(rename = "emailAddress")]
+    pub email_address: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
@@ -139,6 +82,48 @@ pub struct AzureFunctionReceiver {
     pub function_name: String,
     #[serde(rename = "httpTriggerUrl")]
     pub http_trigger_url: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DynamicMetricCriteria {
+    #[serde(flatten)]
+    pub multi_metric_criteria: MultiMetricCriteria,
+    pub operator: dynamic_metric_criteria::Operator,
+    #[serde(rename = "alertSensitivity")]
+    pub alert_sensitivity: dynamic_metric_criteria::AlertSensitivity,
+    #[serde(rename = "failingPeriods")]
+    pub failing_periods: DynamicThresholdFailingPeriods,
+    #[serde(rename = "ignoreDataBefore", default, skip_serializing_if = "Option::is_none")]
+    pub ignore_data_before: Option<String>,
+}
+pub mod dynamic_metric_criteria {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Operator {
+        GreaterThan,
+        LessThan,
+        GreaterOrLessThan,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AlertSensitivity {
+        Low,
+        Medium,
+        High,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DynamicThresholdFailingPeriods {
+    #[serde(rename = "numberOfEvaluationPeriods")]
+    pub number_of_evaluation_periods: f64,
+    #[serde(rename = "minFailingPeriodsToAlert")]
+    pub min_failing_periods_to_alert: f64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EmailReceiver {
+    pub name: String,
+    #[serde(rename = "emailAddress")]
+    pub email_address: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<ReceiverStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {
@@ -153,16 +138,23 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroupPatchBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ActionGroupPatch>,
+pub struct ItsmReceiver {
+    pub name: String,
+    #[serde(rename = "workspaceId")]
+    pub workspace_id: String,
+    #[serde(rename = "connectionId")]
+    pub connection_id: String,
+    #[serde(rename = "ticketConfiguration")]
+    pub ticket_configuration: String,
+    pub region: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActionGroupPatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
+pub struct LogicAppReceiver {
+    pub name: String,
+    #[serde(rename = "resourceId")]
+    pub resource_id: String,
+    #[serde(rename = "callbackUrl")]
+    pub callback_url: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertAction {
@@ -170,6 +162,30 @@ pub struct MetricAlertAction {
     pub action_group_id: Option<String>,
     #[serde(rename = "webHookProperties", default, skip_serializing_if = "Option::is_none")]
     pub web_hook_properties: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricAlertCriteria {
+    #[serde(rename = "odata.type")]
+    pub odata_type: metric_alert_criteria::OdataType,
+}
+pub mod metric_alert_criteria {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OdataType {
+        #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
+        MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria,
+        #[serde(rename = "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")]
+        MicrosoftAzureMonitorMultipleResourceMultipleMetricCriteria,
+        #[serde(rename = "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria")]
+        MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
+    #[serde(flatten)]
+    pub metric_alert_criteria: MetricAlertCriteria,
+    #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
+    pub all_of: Vec<MultiMetricCriteria>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertProperties {
@@ -195,23 +211,6 @@ pub struct MetricAlertProperties {
     pub last_updated_time: Option<String>,
     #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertCriteria {
-    #[serde(rename = "odata.type")]
-    pub odata_type: metric_alert_criteria::OdataType,
-}
-pub mod metric_alert_criteria {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OdataType {
-        #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
-        MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria,
-        #[serde(rename = "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")]
-        MicrosoftAzureMonitorMultipleResourceMultipleMetricCriteria,
-        #[serde(rename = "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria")]
-        MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertPropertiesPatch {
@@ -249,6 +248,11 @@ pub struct MetricAlertResource {
     pub properties: MetricAlertProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricAlertResourceCollection {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MetricAlertResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertResourcePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -256,9 +260,22 @@ pub struct MetricAlertResourcePatch {
     pub properties: Option<MetricAlertPropertiesPatch>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertResourceCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MetricAlertResource>,
+pub struct MetricAlertSingleResourceMultipleMetricCriteria {
+    #[serde(flatten)]
+    pub metric_alert_criteria: MetricAlertCriteria,
+    #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
+    pub all_of: Vec<MetricCriteria>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricAlertStatus {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MetricAlertStatusProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertStatusCollection {
@@ -273,35 +290,6 @@ pub struct MetricAlertStatusProperties {
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertStatus {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MetricAlertStatusProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertSingleResourceMultipleMetricCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
-    #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
-    pub all_of: Vec<MetricCriteria>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WebtestLocationAvailabilityCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
-    #[serde(rename = "webTestId")]
-    pub web_test_id: String,
-    #[serde(rename = "componentId")]
-    pub component_id: String,
-    #[serde(rename = "failedLocationCount")]
-    pub failed_location_count: f64,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricCriteria {
@@ -326,13 +314,6 @@ pub struct MetricDimension {
     pub name: String,
     pub operator: String,
     pub values: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
-    #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
-    pub all_of: Vec<MultiMetricCriteria>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiMetricCriteria {
@@ -367,36 +348,55 @@ pub mod multi_metric_criteria {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DynamicMetricCriteria {
-    #[serde(flatten)]
-    pub multi_metric_criteria: MultiMetricCriteria,
-    pub operator: dynamic_metric_criteria::Operator,
-    #[serde(rename = "alertSensitivity")]
-    pub alert_sensitivity: dynamic_metric_criteria::AlertSensitivity,
-    #[serde(rename = "failingPeriods")]
-    pub failing_periods: DynamicThresholdFailingPeriods,
-    #[serde(rename = "ignoreDataBefore", default, skip_serializing_if = "Option::is_none")]
-    pub ignore_data_before: Option<String>,
-}
-pub mod dynamic_metric_criteria {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Operator {
-        GreaterThan,
-        LessThan,
-        GreaterOrLessThan,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AlertSensitivity {
-        Low,
-        Medium,
-        High,
-    }
+pub enum ReceiverStatus {
+    NotSpecified,
+    Enabled,
+    Disabled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DynamicThresholdFailingPeriods {
-    #[serde(rename = "numberOfEvaluationPeriods")]
-    pub number_of_evaluation_periods: f64,
-    #[serde(rename = "minFailingPeriodsToAlert")]
-    pub min_failing_periods_to_alert: f64,
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmsReceiver {
+    pub name: String,
+    #[serde(rename = "countryCode")]
+    pub country_code: String,
+    #[serde(rename = "phoneNumber")]
+    pub phone_number: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<ReceiverStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VoiceReceiver {
+    pub name: String,
+    #[serde(rename = "countryCode")]
+    pub country_code: String,
+    #[serde(rename = "phoneNumber")]
+    pub phone_number: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebhookReceiver {
+    pub name: String,
+    #[serde(rename = "serviceUri")]
+    pub service_uri: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WebtestLocationAvailabilityCriteria {
+    #[serde(flatten)]
+    pub metric_alert_criteria: MetricAlertCriteria,
+    #[serde(rename = "webTestId")]
+    pub web_test_id: String,
+    #[serde(rename = "componentId")]
+    pub component_id: String,
+    #[serde(rename = "failedLocationCount")]
+    pub failed_location_count: f64,
 }

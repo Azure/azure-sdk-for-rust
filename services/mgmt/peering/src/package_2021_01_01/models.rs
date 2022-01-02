@@ -3,196 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CdnPeeringPrefixListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<CdnPeeringPrefix>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CdnPeeringPrefix {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CdnPeeringPrefixProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CdnPeeringPrefixProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub prefix: Option<String>,
-    #[serde(rename = "azureRegion", default, skip_serializing_if = "Option::is_none")]
-    pub azure_region: Option<String>,
-    #[serde(rename = "azureService", default, skip_serializing_if = "Option::is_none")]
-    pub azure_service: Option<String>,
-    #[serde(rename = "isPrimaryRegion", default, skip_serializing_if = "Option::is_none")]
-    pub is_primary_region: Option<bool>,
-    #[serde(rename = "bgpCommunity", default, skip_serializing_if = "Option::is_none")]
-    pub bgp_community: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckServiceProviderAvailabilityInput {
-    #[serde(rename = "peeringServiceLocation", default, skip_serializing_if = "Option::is_none")]
-    pub peering_service_location: Option<String>,
-    #[serde(rename = "peeringServiceProvider", default, skip_serializing_if = "Option::is_none")]
-    pub peering_service_provider: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Peering>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Peering {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub sku: PeeringSku,
-    pub kind: peering::Kind,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PeeringProperties>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-pub mod peering {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        Direct,
-        Exchange,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<peering_sku::Tier>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub family: Option<peering_sku::Family>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub size: Option<peering_sku::Size>,
-}
-pub mod peering_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        Basic,
-        Premium,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Family {
-        Direct,
-        Exchange,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Size {
-        Free,
-        Metered,
-        Unlimited,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub direct: Option<PeeringPropertiesDirect>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exchange: Option<PeeringPropertiesExchange>,
-    #[serde(rename = "peeringLocation", default, skip_serializing_if = "Option::is_none")]
-    pub peering_location: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<peering_properties::ProvisioningState>,
-}
-pub mod peering_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Succeeded,
-        Updating,
-        Deleting,
-        Failed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringPropertiesDirect {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub connections: Vec<DirectConnection>,
-    #[serde(rename = "useForPeeringService", default, skip_serializing_if = "Option::is_none")]
-    pub use_for_peering_service: Option<bool>,
-    #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
-    pub peer_asn: Option<SubResource>,
-    #[serde(rename = "directPeeringType", default, skip_serializing_if = "Option::is_none")]
-    pub direct_peering_type: Option<peering_properties_direct::DirectPeeringType>,
-}
-pub mod peering_properties_direct {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DirectPeeringType {
-        Edge,
-        Transit,
-        Cdn,
-        Internal,
-        Ix,
-        IxRs,
-        Voice,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringPropertiesExchange {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub connections: Vec<ExchangeConnection>,
-    #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
-    pub peer_asn: Option<SubResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DirectConnection {
-    #[serde(rename = "bandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
-    pub bandwidth_in_mbps: Option<i32>,
-    #[serde(rename = "provisionedBandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
-    pub provisioned_bandwidth_in_mbps: Option<i32>,
-    #[serde(rename = "sessionAddressProvider", default, skip_serializing_if = "Option::is_none")]
-    pub session_address_provider: Option<direct_connection::SessionAddressProvider>,
-    #[serde(rename = "useForPeeringService", default, skip_serializing_if = "Option::is_none")]
-    pub use_for_peering_service: Option<bool>,
-    #[serde(rename = "microsoftTrackingId", default, skip_serializing_if = "Option::is_none")]
-    pub microsoft_tracking_id: Option<String>,
-    #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
-    pub peering_db_facility_id: Option<i32>,
-    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
-    pub connection_state: Option<direct_connection::ConnectionState>,
-    #[serde(rename = "bgpSession", default, skip_serializing_if = "Option::is_none")]
-    pub bgp_session: Option<BgpSession>,
-    #[serde(rename = "connectionIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub connection_identifier: Option<String>,
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
-}
-pub mod direct_connection {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SessionAddressProvider {
-        Microsoft,
-        Peer,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ConnectionState {
-        None,
-        PendingApproval,
-        Approved,
-        ProvisioningStarted,
-        ProvisioningFailed,
-        ProvisioningCompleted,
-        Validating,
-        Active,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BgpSession {
     #[serde(rename = "sessionPrefixV4", default, skip_serializing_if = "Option::is_none")]
     pub session_prefix_v4: Option<String>,
@@ -249,6 +59,139 @@ pub mod bgp_session {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CdnPeeringPrefix {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CdnPeeringPrefixProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CdnPeeringPrefixListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<CdnPeeringPrefix>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CdnPeeringPrefixProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    #[serde(rename = "azureRegion", default, skip_serializing_if = "Option::is_none")]
+    pub azure_region: Option<String>,
+    #[serde(rename = "azureService", default, skip_serializing_if = "Option::is_none")]
+    pub azure_service: Option<String>,
+    #[serde(rename = "isPrimaryRegion", default, skip_serializing_if = "Option::is_none")]
+    pub is_primary_region: Option<bool>,
+    #[serde(rename = "bgpCommunity", default, skip_serializing_if = "Option::is_none")]
+    pub bgp_community: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckServiceProviderAvailabilityInput {
+    #[serde(rename = "peeringServiceLocation", default, skip_serializing_if = "Option::is_none")]
+    pub peering_service_location: Option<String>,
+    #[serde(rename = "peeringServiceProvider", default, skip_serializing_if = "Option::is_none")]
+    pub peering_service_provider: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContactDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<contact_detail::Role>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+}
+pub mod contact_detail {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Role {
+        Noc,
+        Policy,
+        Technical,
+        Service,
+        Escalation,
+        Other,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DirectConnection {
+    #[serde(rename = "bandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
+    pub bandwidth_in_mbps: Option<i32>,
+    #[serde(rename = "provisionedBandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
+    pub provisioned_bandwidth_in_mbps: Option<i32>,
+    #[serde(rename = "sessionAddressProvider", default, skip_serializing_if = "Option::is_none")]
+    pub session_address_provider: Option<direct_connection::SessionAddressProvider>,
+    #[serde(rename = "useForPeeringService", default, skip_serializing_if = "Option::is_none")]
+    pub use_for_peering_service: Option<bool>,
+    #[serde(rename = "microsoftTrackingId", default, skip_serializing_if = "Option::is_none")]
+    pub microsoft_tracking_id: Option<String>,
+    #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
+    pub peering_db_facility_id: Option<i32>,
+    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
+    pub connection_state: Option<direct_connection::ConnectionState>,
+    #[serde(rename = "bgpSession", default, skip_serializing_if = "Option::is_none")]
+    pub bgp_session: Option<BgpSession>,
+    #[serde(rename = "connectionIdentifier", default, skip_serializing_if = "Option::is_none")]
+    pub connection_identifier: Option<String>,
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+}
+pub mod direct_connection {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SessionAddressProvider {
+        Microsoft,
+        Peer,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConnectionState {
+        None,
+        PendingApproval,
+        Approved,
+        ProvisioningStarted,
+        ProvisioningFailed,
+        ProvisioningCompleted,
+        Validating,
+        Active,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DirectPeeringFacility {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+    #[serde(rename = "directPeeringType", default, skip_serializing_if = "Option::is_none")]
+    pub direct_peering_type: Option<direct_peering_facility::DirectPeeringType>,
+    #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
+    pub peering_db_facility_id: Option<i32>,
+    #[serde(rename = "peeringDBFacilityLink", default, skip_serializing_if = "Option::is_none")]
+    pub peering_db_facility_link: Option<String>,
+}
+pub mod direct_peering_facility {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DirectPeeringType {
+        Edge,
+        Transit,
+        Cdn,
+        Internal,
+        Ix,
+        IxRs,
+        Voice,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExchangeConnection {
     #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
     pub peering_db_facility_id: Option<i32>,
@@ -276,11 +219,23 @@ pub mod exchange_connection {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct ExchangePeeringFacility {
+    #[serde(rename = "exchangeName", default, skip_serializing_if = "Option::is_none")]
+    pub exchange_name: Option<String>,
+    #[serde(rename = "bandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
+    pub bandwidth_in_mbps: Option<i32>,
+    #[serde(rename = "microsoftIPv4Address", default, skip_serializing_if = "Option::is_none")]
+    pub microsoft_i_pv4_address: Option<String>,
+    #[serde(rename = "microsoftIPv6Address", default, skip_serializing_if = "Option::is_none")]
+    pub microsoft_i_pv6_address: Option<String>,
+    #[serde(rename = "facilityIPv4Prefix", default, skip_serializing_if = "Option::is_none")]
+    pub facility_i_pv4_prefix: Option<String>,
+    #[serde(rename = "facilityIPv6Prefix", default, skip_serializing_if = "Option::is_none")]
+    pub facility_i_pv6_prefix: Option<String>,
+    #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
+    pub peering_db_facility_id: Option<i32>,
+    #[serde(rename = "peeringDBFacilityLink", default, skip_serializing_if = "Option::is_none")]
+    pub peering_db_facility_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -303,11 +258,25 @@ pub struct OperationDisplayInfo {
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeerAsn {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PeerAsnProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeerAsnListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PeerAsn>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeerAsnProperties {
@@ -333,37 +302,36 @@ pub mod peer_asn_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContactDetail {
+pub struct Peering {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub sku: PeeringSku,
+    pub kind: peering::Kind,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<contact_detail::Role>,
+    pub properties: Option<PeeringProperties>,
+    pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub phone: Option<String>,
+    pub tags: Option<serde_json::Value>,
 }
-pub mod contact_detail {
+pub mod peering {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Role {
-        Noc,
-        Policy,
-        Technical,
-        Service,
-        Escalation,
-        Other,
+    pub enum Kind {
+        Direct,
+        Exchange,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeerAsnListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeerAsn>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct PeeringBandwidthOffer {
+    #[serde(rename = "offerName", default, skip_serializing_if = "Option::is_none")]
+    pub offer_name: Option<String>,
+    #[serde(rename = "valueInMbps", default, skip_serializing_if = "Option::is_none")]
+    pub value_in_mbps: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringLocationListResult {
+pub struct PeeringListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeeringLocation>,
+    pub value: Vec<Peering>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -383,6 +351,13 @@ pub mod peering_location {
         Direct,
         Exchange,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringLocationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PeeringLocation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringLocationProperties {
@@ -410,17 +385,38 @@ pub struct PeeringLocationPropertiesExchange {
     pub peering_facilities: Vec<ExchangePeeringFacility>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DirectPeeringFacility {
+pub struct PeeringProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub address: Option<String>,
-    #[serde(rename = "directPeeringType", default, skip_serializing_if = "Option::is_none")]
-    pub direct_peering_type: Option<direct_peering_facility::DirectPeeringType>,
-    #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
-    pub peering_db_facility_id: Option<i32>,
-    #[serde(rename = "peeringDBFacilityLink", default, skip_serializing_if = "Option::is_none")]
-    pub peering_db_facility_link: Option<String>,
+    pub direct: Option<PeeringPropertiesDirect>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exchange: Option<PeeringPropertiesExchange>,
+    #[serde(rename = "peeringLocation", default, skip_serializing_if = "Option::is_none")]
+    pub peering_location: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<peering_properties::ProvisioningState>,
 }
-pub mod direct_peering_facility {
+pub mod peering_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Succeeded,
+        Updating,
+        Deleting,
+        Failed,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringPropertiesDirect {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub connections: Vec<DirectConnection>,
+    #[serde(rename = "useForPeeringService", default, skip_serializing_if = "Option::is_none")]
+    pub use_for_peering_service: Option<bool>,
+    #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
+    pub peer_asn: Option<SubResource>,
+    #[serde(rename = "directPeeringType", default, skip_serializing_if = "Option::is_none")]
+    pub direct_peering_type: Option<peering_properties_direct::DirectPeeringType>,
+}
+pub mod peering_properties_direct {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DirectPeeringType {
@@ -434,30 +430,35 @@ pub mod direct_peering_facility {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringBandwidthOffer {
-    #[serde(rename = "offerName", default, skip_serializing_if = "Option::is_none")]
-    pub offer_name: Option<String>,
-    #[serde(rename = "valueInMbps", default, skip_serializing_if = "Option::is_none")]
-    pub value_in_mbps: Option<i32>,
+pub struct PeeringPropertiesExchange {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub connections: Vec<ExchangeConnection>,
+    #[serde(rename = "peerAsn", default, skip_serializing_if = "Option::is_none")]
+    pub peer_asn: Option<SubResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExchangePeeringFacility {
-    #[serde(rename = "exchangeName", default, skip_serializing_if = "Option::is_none")]
-    pub exchange_name: Option<String>,
-    #[serde(rename = "bandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
-    pub bandwidth_in_mbps: Option<i32>,
-    #[serde(rename = "microsoftIPv4Address", default, skip_serializing_if = "Option::is_none")]
-    pub microsoft_i_pv4_address: Option<String>,
-    #[serde(rename = "microsoftIPv6Address", default, skip_serializing_if = "Option::is_none")]
-    pub microsoft_i_pv6_address: Option<String>,
-    #[serde(rename = "facilityIPv4Prefix", default, skip_serializing_if = "Option::is_none")]
-    pub facility_i_pv4_prefix: Option<String>,
-    #[serde(rename = "facilityIPv6Prefix", default, skip_serializing_if = "Option::is_none")]
-    pub facility_i_pv6_prefix: Option<String>,
-    #[serde(rename = "peeringDBFacilityId", default, skip_serializing_if = "Option::is_none")]
-    pub peering_db_facility_id: Option<i32>,
-    #[serde(rename = "peeringDBFacilityLink", default, skip_serializing_if = "Option::is_none")]
-    pub peering_db_facility_link: Option<String>,
+pub struct PeeringReceivedRoute {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    #[serde(rename = "nextHop", default, skip_serializing_if = "Option::is_none")]
+    pub next_hop: Option<String>,
+    #[serde(rename = "asPath", default, skip_serializing_if = "Option::is_none")]
+    pub as_path: Option<String>,
+    #[serde(rename = "originAsValidationState", default, skip_serializing_if = "Option::is_none")]
+    pub origin_as_validation_state: Option<String>,
+    #[serde(rename = "rpkiValidationState", default, skip_serializing_if = "Option::is_none")]
+    pub rpki_validation_state: Option<String>,
+    #[serde(rename = "trustAnchor", default, skip_serializing_if = "Option::is_none")]
+    pub trust_anchor: Option<String>,
+    #[serde(rename = "receivedTimestamp", default, skip_serializing_if = "Option::is_none")]
+    pub received_timestamp: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringReceivedRouteListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PeeringReceivedRoute>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringRegisteredAsn {
@@ -465,6 +466,13 @@ pub struct PeeringRegisteredAsn {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PeeringRegisteredAsnProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringRegisteredAsnListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PeeringRegisteredAsn>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringRegisteredAsnProperties {
@@ -486,18 +494,18 @@ pub mod peering_registered_asn_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringRegisteredAsnListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeeringRegisteredAsn>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringRegisteredPrefix {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PeeringRegisteredPrefixProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringRegisteredPrefixListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PeeringRegisteredPrefix>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringRegisteredPrefixProperties {
@@ -533,40 +541,21 @@ pub mod peering_registered_prefix_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringRegisteredPrefixListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeeringRegisteredPrefix>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceTags {
+pub struct PeeringService {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<PeeringServiceSku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PeeringServiceProperties>,
+    pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringReceivedRouteListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeeringReceivedRoute>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringReceivedRoute {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub prefix: Option<String>,
-    #[serde(rename = "nextHop", default, skip_serializing_if = "Option::is_none")]
-    pub next_hop: Option<String>,
-    #[serde(rename = "asPath", default, skip_serializing_if = "Option::is_none")]
-    pub as_path: Option<String>,
-    #[serde(rename = "originAsValidationState", default, skip_serializing_if = "Option::is_none")]
-    pub origin_as_validation_state: Option<String>,
-    #[serde(rename = "rpkiValidationState", default, skip_serializing_if = "Option::is_none")]
-    pub rpki_validation_state: Option<String>,
-    #[serde(rename = "trustAnchor", default, skip_serializing_if = "Option::is_none")]
-    pub trust_anchor: Option<String>,
-    #[serde(rename = "receivedTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub received_timestamp: Option<String>,
+pub struct PeeringServiceCountry {
+    #[serde(flatten)]
+    pub resource: Resource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringServiceCountryListResult {
@@ -576,14 +565,9 @@ pub struct PeeringServiceCountryListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServiceCountry {
-    #[serde(flatten)]
-    pub resource: Resource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServiceLocationListResult {
+pub struct PeeringServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeeringServiceLocation>,
+    pub value: Vec<PeeringService>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -593,6 +577,13 @@ pub struct PeeringServiceLocation {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PeeringServiceLocationProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringServiceLocationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PeeringServiceLocation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringServiceLocationProperties {
@@ -609,6 +600,26 @@ pub struct PeeringServicePrefix {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PeeringServicePrefixProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringServicePrefixEvent {
+    #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
+    pub event_timestamp: Option<String>,
+    #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
+    pub event_type: Option<String>,
+    #[serde(rename = "eventSummary", default, skip_serializing_if = "Option::is_none")]
+    pub event_summary: Option<String>,
+    #[serde(rename = "eventLevel", default, skip_serializing_if = "Option::is_none")]
+    pub event_level: Option<String>,
+    #[serde(rename = "eventDescription", default, skip_serializing_if = "Option::is_none")]
+    pub event_description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringServicePrefixListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PeeringServicePrefix>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringServicePrefixProperties {
@@ -654,64 +665,6 @@ pub mod peering_service_prefix_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServicePrefixEvent {
-    #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub event_timestamp: Option<String>,
-    #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
-    pub event_type: Option<String>,
-    #[serde(rename = "eventSummary", default, skip_serializing_if = "Option::is_none")]
-    pub event_summary: Option<String>,
-    #[serde(rename = "eventLevel", default, skip_serializing_if = "Option::is_none")]
-    pub event_level: Option<String>,
-    #[serde(rename = "eventDescription", default, skip_serializing_if = "Option::is_none")]
-    pub event_description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServicePrefixListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeeringServicePrefix>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServiceProviderListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeeringServiceProvider>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServiceProvider {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PeeringServiceProviderProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServiceProviderProperties {
-    #[serde(rename = "serviceProviderName", default, skip_serializing_if = "Option::is_none")]
-    pub service_provider_name: Option<String>,
-    #[serde(rename = "peeringLocations", default, skip_serializing_if = "Vec::is_empty")]
-    pub peering_locations: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringService {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<PeeringServiceSku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PeeringServiceProperties>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServiceSku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeeringServiceProperties {
     #[serde(rename = "peeringServiceLocation", default, skip_serializing_if = "Option::is_none")]
     pub peering_service_location: Option<String>,
@@ -735,23 +688,60 @@ pub mod peering_service_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PeeringServiceListResult {
+pub struct PeeringServiceProvider {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PeeringServiceProviderProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringServiceProviderListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PeeringService>,
+    pub value: Vec<PeeringServiceProvider>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
+pub struct PeeringServiceProviderProperties {
+    #[serde(rename = "serviceProviderName", default, skip_serializing_if = "Option::is_none")]
+    pub service_provider_name: Option<String>,
+    #[serde(rename = "peeringLocations", default, skip_serializing_if = "Vec::is_empty")]
+    pub peering_locations: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
+pub struct PeeringServiceSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PeeringSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<peering_sku::Tier>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub family: Option<peering_sku::Family>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<peering_sku::Size>,
+}
+pub mod peering_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        Basic,
+        Premium,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Family {
+        Direct,
+        Exchange,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Size {
+        Free,
+        Metered,
+        Unlimited,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -761,4 +751,14 @@ pub struct Resource {
     pub id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceTags {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }

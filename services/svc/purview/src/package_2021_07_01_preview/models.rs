@@ -15,8 +15,33 @@ pub struct AttributeMatcher {
     #[serde(rename = "attributeValueExcludedIn", default, skip_serializing_if = "Vec::is_empty")]
     pub attribute_value_excluded_in: Vec<String>,
 }
-pub type DnfCondition = Vec<Vec<AttributeMatcher>>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AttributeRule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<attribute_rule::Kind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "dnfCondition", default, skip_serializing_if = "Option::is_none")]
+    pub dnf_condition: Option<DnfCondition>,
+}
+pub mod attribute_rule {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        #[serde(rename = "attributerule")]
+        Attributerule,
+    }
+}
 pub type CnfCondition = Vec<Vec<AttributeMatcher>>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CollectionReference {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
+    pub reference_name: Option<String>,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DecisionRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -39,31 +64,36 @@ pub mod decision_rule {
         Permit,
     }
 }
+pub type DnfCondition = Vec<Vec<AttributeMatcher>>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AttributeRule {
+pub struct ErrorModel {
+    pub code: String,
+    pub message: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<attribute_rule::Kind>,
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorModel>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponseModel {
+    pub error: ErrorModel,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetadataPolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "dnfCondition", default, skip_serializing_if = "Option::is_none")]
-    pub dnf_condition: Option<DnfCondition>,
-}
-pub mod attribute_rule {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "attributerule")]
-        Attributerule,
-    }
+    pub version: Option<i32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MetadataPolicyProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CollectionReference {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
-    pub reference_name: Option<String>,
+pub struct MetadataPolicyList {
+    pub values: Vec<MetadataPolicy>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataPolicyProperties {
@@ -79,32 +109,19 @@ pub struct MetadataPolicyProperties {
     pub parent_collection_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataPolicy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+pub struct MetadataRole {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<i32>,
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MetadataPolicyProperties>,
+    pub properties: Option<MetadataRoleProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorModel {
-    pub code: String,
-    pub message: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorModel>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponseModel {
-    pub error: ErrorModel,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataPolicyList {
-    pub values: Vec<MetadataPolicy>,
+pub struct MetadataRoleList {
+    pub values: Vec<MetadataRole>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -124,21 +141,4 @@ pub struct MetadataRoleProperties {
     pub dnf_condition: Option<DnfCondition>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataRole {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MetadataRoleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetadataRoleList {
-    pub values: Vec<MetadataRole>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }

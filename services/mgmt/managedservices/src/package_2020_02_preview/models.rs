@@ -3,9 +3,67 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationDefinition {
+pub struct Authorization {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id_display_name: Option<String>,
+    #[serde(rename = "roleDefinitionId")]
+    pub role_definition_id: String,
+    #[serde(rename = "delegatedRoleDefinitionIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub delegated_role_definition_ids: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EligibleApprover {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id_display_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EligibleAuthorization {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id_display_name: Option<String>,
+    #[serde(rename = "roleDefinitionId")]
+    pub role_definition_id: String,
+    #[serde(rename = "justInTimeAccessPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub just_in_time_access_policy: Option<JustInTimeAccessPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDefinition {
+    pub code: String,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RegistrationDefinitionProperties>,
+    pub error: Option<ErrorDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JustInTimeAccessPolicy {
+    #[serde(rename = "multiFactorAuthProvider")]
+    pub multi_factor_auth_provider: just_in_time_access_policy::MultiFactorAuthProvider,
+    #[serde(rename = "maximumActivationDuration", default, skip_serializing_if = "Option::is_none")]
+    pub maximum_activation_duration: Option<String>,
+    #[serde(rename = "managedByTenantApprovers", default, skip_serializing_if = "Vec::is_empty")]
+    pub managed_by_tenant_approvers: Vec<EligibleApprover>,
+}
+pub mod just_in_time_access_policy {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum MultiFactorAuthProvider {
+        Azure,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MarketplaceRegistrationDefinition {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MarketplaceRegistrationDefinitionProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<Plan>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16,42 +74,51 @@ pub struct RegistrationDefinition {
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationDefinitionProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+pub struct MarketplaceRegistrationDefinitionList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MarketplaceRegistrationDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MarketplaceRegistrationDefinitionProperties {
+    #[serde(rename = "managedByTenantId")]
+    pub managed_by_tenant_id: String,
     pub authorizations: Vec<Authorization>,
     #[serde(rename = "eligibleAuthorizations", default, skip_serializing_if = "Vec::is_empty")]
     pub eligible_authorizations: Vec<EligibleAuthorization>,
-    #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
-    pub registration_definition_name: Option<String>,
-    #[serde(rename = "managedByTenantId")]
-    pub managed_by_tenant_id: String,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
-    #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]
-    pub managee_tenant_id: Option<String>,
-    #[serde(rename = "manageeTenantName", default, skip_serializing_if = "Option::is_none")]
-    pub managee_tenant_name: Option<String>,
-    #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
-    pub managed_by_tenant_name: Option<String>,
+    #[serde(rename = "offerDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub offer_display_name: Option<String>,
+    #[serde(rename = "publisherDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub publisher_display_name: Option<String>,
+    #[serde(rename = "planDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub plan_display_name: Option<String>,
 }
-pub mod registration_definition_properties {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        NotSpecified,
-        Accepted,
-        Running,
-        Ready,
-        Creating,
-        Created,
-        Deleting,
-        Deleted,
-        Canceled,
-        Failed,
-        Succeeded,
-        Updating,
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
@@ -59,13 +126,6 @@ pub struct Plan {
     pub publisher: String,
     pub product: String,
     pub version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationDefinitionList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RegistrationDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationAssignment {
@@ -77,6 +137,13 @@ pub struct RegistrationAssignment {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistrationAssignmentList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<RegistrationAssignment>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationAssignmentProperties {
@@ -161,16 +228,9 @@ pub mod registration_assignment_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationAssignmentList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RegistrationAssignment>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MarketplaceRegistrationDefinition {
+pub struct RegistrationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MarketplaceRegistrationDefinitionProperties>,
+    pub properties: Option<RegistrationDefinitionProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<Plan>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -181,107 +241,47 @@ pub struct MarketplaceRegistrationDefinition {
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MarketplaceRegistrationDefinitionProperties {
-    #[serde(rename = "managedByTenantId")]
-    pub managed_by_tenant_id: String,
-    pub authorizations: Vec<Authorization>,
-    #[serde(rename = "eligibleAuthorizations", default, skip_serializing_if = "Vec::is_empty")]
-    pub eligible_authorizations: Vec<EligibleAuthorization>,
-    #[serde(rename = "offerDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub offer_display_name: Option<String>,
-    #[serde(rename = "publisherDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub publisher_display_name: Option<String>,
-    #[serde(rename = "planDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub plan_display_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MarketplaceRegistrationDefinitionList {
+pub struct RegistrationDefinitionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MarketplaceRegistrationDefinition>,
+    pub value: Vec<RegistrationDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
+pub struct RegistrationDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
+    pub description: Option<String>,
+    pub authorizations: Vec<Authorization>,
+    #[serde(rename = "eligibleAuthorizations", default, skip_serializing_if = "Vec::is_empty")]
+    pub eligible_authorizations: Vec<EligibleAuthorization>,
+    #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
+    pub registration_definition_name: Option<String>,
+    #[serde(rename = "managedByTenantId")]
+    pub managed_by_tenant_id: String,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
+    #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub managee_tenant_id: Option<String>,
+    #[serde(rename = "manageeTenantName", default, skip_serializing_if = "Option::is_none")]
+    pub managee_tenant_name: Option<String>,
+    #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
+    pub managed_by_tenant_name: Option<String>,
 }
-pub mod operation {
+pub mod registration_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
+    pub enum ProvisioningState {
+        NotSpecified,
+        Accepted,
+        Running,
+        Ready,
+        Creating,
+        Created,
+        Deleting,
+        Deleted,
+        Canceled,
+        Failed,
+        Succeeded,
+        Updating,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Authorization {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id_display_name: Option<String>,
-    #[serde(rename = "roleDefinitionId")]
-    pub role_definition_id: String,
-    #[serde(rename = "delegatedRoleDefinitionIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub delegated_role_definition_ids: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EligibleAuthorization {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id_display_name: Option<String>,
-    #[serde(rename = "roleDefinitionId")]
-    pub role_definition_id: String,
-    #[serde(rename = "justInTimeAccessPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub just_in_time_access_policy: Option<JustInTimeAccessPolicy>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JustInTimeAccessPolicy {
-    #[serde(rename = "multiFactorAuthProvider")]
-    pub multi_factor_auth_provider: just_in_time_access_policy::MultiFactorAuthProvider,
-    #[serde(rename = "maximumActivationDuration", default, skip_serializing_if = "Option::is_none")]
-    pub maximum_activation_duration: Option<String>,
-    #[serde(rename = "managedByTenantApprovers", default, skip_serializing_if = "Vec::is_empty")]
-    pub managed_by_tenant_approvers: Vec<EligibleApprover>,
-}
-pub mod just_in_time_access_policy {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum MultiFactorAuthProvider {
-        Azure,
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EligibleApprover {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id_display_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDefinition {
-    pub code: String,
-    pub message: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDefinition>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDefinition>,
 }
