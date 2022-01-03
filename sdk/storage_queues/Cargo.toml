@@ -32,3 +32,5 @@ tokio = { version = "1.0", features = ["full"] }
 
 [features]
 test_e2e = []
+enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls", "azure_storage/enable_reqwest_rustls"]
