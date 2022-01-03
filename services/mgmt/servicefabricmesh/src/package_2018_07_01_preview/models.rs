@@ -369,8 +369,8 @@ pub struct ServiceList {
 pub struct ServiceReplicaDescription {
     #[serde(flatten)]
     pub service_replica_properties: ServiceReplicaProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "replicaName", default, skip_serializing_if = "Option::is_none")]
+    pub replica_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceReplicaList {
@@ -408,8 +408,26 @@ pub struct ServiceResourceDescription {
 pub struct ServiceResourceProperties {
     #[serde(flatten)]
     pub service_replica_properties: ServiceReplicaProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
+    pub replica_count: Option<i64>,
+    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
+    pub health_state: Option<HealthState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<service_resource_properties::Status>,
+}
+pub mod service_resource_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Unknown,
+        Active,
+        Upgrading,
+        Deleting,
+        Creating,
+        Failed,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Setting {

@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 pub struct ActionGroup {
     #[serde(flatten)]
     pub action_rule_properties: ActionRuleProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "actionGroupId")]
+    pub action_group_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionRule {
@@ -96,8 +96,6 @@ pub struct Conditions {
 pub struct Diagnostics {
     #[serde(flatten)]
     pub action_rule_properties: ActionRuleProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedResource {
@@ -118,8 +116,6 @@ pub struct MonitorServiceDetails {
 pub struct MonitorServiceList {
     #[serde(flatten)]
     pub alerts_meta_data_properties: AlertsMetaDataProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
     pub data: Vec<MonitorServiceDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -171,8 +167,8 @@ pub mod scope {
 pub struct Suppression {
     #[serde(flatten)]
     pub action_rule_properties: ActionRuleProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "suppressionConfig")]
+    pub suppression_config: SuppressionConfig,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuppressionConfig {

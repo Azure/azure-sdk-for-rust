@@ -678,15 +678,17 @@ pub enum RuleStatus {
 pub struct SourceCostAllocationResource {
     #[serde(flatten)]
     pub cost_allocation_resource: CostAllocationResource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetCostAllocationResource {
     #[serde(flatten)]
     pub cost_allocation_resource: CostAllocationResource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<CostAllocationProportion>,
+    #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
+    pub policy_type: Option<CostAllocationPolicyType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct View {

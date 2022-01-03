@@ -115,8 +115,64 @@ pub struct ContainerExecResponse {
 pub struct ContainerGroup {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ContainerGroupIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<container_group::Properties>,
+}
+pub mod container_group {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        pub provisioning_state: Option<String>,
+        pub containers: Vec<Container>,
+        #[serde(rename = "imageRegistryCredentials", default, skip_serializing_if = "Vec::is_empty")]
+        pub image_registry_credentials: Vec<ImageRegistryCredential>,
+        #[serde(rename = "restartPolicy", default, skip_serializing_if = "Option::is_none")]
+        pub restart_policy: Option<properties::RestartPolicy>,
+        #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
+        pub ip_address: Option<IpAddress>,
+        #[serde(rename = "osType")]
+        pub os_type: properties::OsType,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub volumes: Vec<Volume>,
+        #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
+        pub instance_view: Option<properties::InstanceView>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub diagnostics: Option<ContainerGroupDiagnostics>,
+        #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
+        pub network_profile: Option<ContainerGroupNetworkProfile>,
+        #[serde(rename = "dnsConfig", default, skip_serializing_if = "Option::is_none")]
+        pub dns_config: Option<DnsConfiguration>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub sku: Option<ContainerGroupSku>,
+        #[serde(rename = "encryptionProperties", default, skip_serializing_if = "Option::is_none")]
+        pub encryption_properties: Option<EncryptionProperties>,
+        #[serde(rename = "initContainers", default, skip_serializing_if = "Vec::is_empty")]
+        pub init_containers: Vec<InitContainerDefinition>,
+    }
+    pub mod properties {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum RestartPolicy {
+            Always,
+            OnFailure,
+            Never,
+        }
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum OsType {
+            Windows,
+            Linux,
+        }
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub struct InstanceView {
+            #[serde(default, skip_serializing_if = "Vec::is_empty")]
+            pub events: Vec<Event>,
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub state: Option<String>,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerGroupDiagnostics {

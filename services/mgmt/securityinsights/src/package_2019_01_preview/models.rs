@@ -1496,8 +1496,6 @@ pub mod fusion_alert_rule_template {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(flatten)]
-        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
         pub severity: AlertSeverity,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tactics: Vec<AttackTactic>,
@@ -2056,8 +2054,6 @@ pub mod ml_behavior_analytics_alert_rule_template {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(flatten)]
-        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
         pub severity: AlertSeverity,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tactics: Vec<AttackTactic>,
@@ -2093,15 +2089,11 @@ pub mod msti_data_connector_data_types {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct BingSafetyPhishingUrl {
-        #[serde(flatten)]
-        pub data_connector_data_type_common: DataConnectorDataTypeCommon,
         #[serde(rename = "lookbackPeriod")]
         pub lookback_period: String,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct MicrosoftEmergingThreatFeed {
-        #[serde(flatten)]
-        pub data_connector_data_type_common: DataConnectorDataTypeCommon,
         #[serde(rename = "lookbackPeriod")]
         pub lookback_period: String,
     }
@@ -2598,8 +2590,17 @@ pub struct Relation {
 pub struct RelationBase {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<relation_base::Kind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+}
+pub mod relation_base {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        CasesToBookmarks,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelationList {
@@ -2730,10 +2731,6 @@ pub mod scheduled_alert_rule_template {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(flatten)]
-        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
-        #[serde(flatten)]
-        pub scheduled_alert_rule_common_properties: ScheduledAlertRuleCommonProperties,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tactics: Vec<AttackTactic>,
     }
@@ -3019,8 +3016,6 @@ pub mod threat_intelligence_alert_rule_template {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
-        #[serde(flatten)]
-        pub alert_rule_template_properties_base: AlertRuleTemplatePropertiesBase,
         pub severity: AlertSeverity,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tactics: Vec<AttackTactic>,

@@ -39,8 +39,6 @@ pub struct AddRemoveIncrementalNamedPartitionScalingMechanism {
 pub struct AddRemoveReplicaScalingMechanism {
     #[serde(flatten)]
     pub auto_scaling_mechanism: AutoScalingMechanism,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
     #[serde(rename = "minCount")]
     pub min_count: i64,
     #[serde(rename = "maxCount")]
@@ -762,8 +760,6 @@ pub struct AutoScalingPolicy {
 pub struct AutoScalingResourceMetric {
     #[serde(flatten)]
     pub auto_scaling_metric: AutoScalingMetric,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
     pub name: AutoScalingResourceMetricName,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -785,8 +781,6 @@ pub enum AutoScalingTriggerKind {
 pub struct AverageLoadScalingTrigger {
     #[serde(flatten)]
     pub auto_scaling_trigger: AutoScalingTrigger,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
     pub metric: AutoScalingMetric,
     #[serde(rename = "lowerLoadThreshold")]
     pub lower_load_threshold: f64,
@@ -1917,8 +1911,6 @@ pub mod deactivation_intent_description {
 pub struct DefaultExecutionPolicy {
     #[serde(flatten)]
     pub execution_policy: ExecutionPolicy,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeletePropertyBatchOperation {
@@ -5161,8 +5153,6 @@ pub struct RollingUpgradeUpdateDescription {
 pub struct RunToCompletionExecutionPolicy {
     #[serde(flatten)]
     pub execution_policy: ExecutionPolicy,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
     pub restart: RestartPolicy,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

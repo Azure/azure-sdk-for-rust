@@ -11,8 +11,8 @@ pub struct AccessProfile {
 pub struct AgentPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedClusterAgentPoolProfileProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPoolAvailableVersions {
@@ -92,8 +92,8 @@ pub struct CloudErrorBody {
 pub struct ContainerService {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ContainerServiceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceAgentPoolProfile {
@@ -680,8 +680,10 @@ pub struct KeyVaultSecretRef {
 pub struct ManagedCluster {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedClusterProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ManagedClusterIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ManagedClusterSku>,
 }
@@ -713,8 +715,8 @@ pub struct ManagedClusterApiServerAccessProfile {
 pub struct ManagedClusterAccessProfile {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AccessProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAddonProfile {
@@ -728,8 +730,7 @@ pub struct ManagedClusterAddonProfile {
 pub struct ManagedClusterAgentPoolProfile {
     #[serde(flatten)]
     pub managed_cluster_agent_pool_profile_properties: ManagedClusterAgentPoolProfileProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAgentPoolProfileProperties {
@@ -1075,15 +1076,23 @@ pub enum OpenShiftContainerServiceVmSize {
 pub struct OpenShiftManagedCluster {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<PurchasePlan>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<OpenShiftManagedClusterProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAadIdentityProvider {
     #[serde(flatten)]
     pub open_shift_managed_cluster_base_identity_provider: OpenShiftManagedClusterBaseIdentityProvider,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "customerAdminGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub customer_admin_group_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAgentPoolProfile {

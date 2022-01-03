@@ -344,8 +344,6 @@ pub struct ImageGroup {
 pub struct IncludedQuantityProperty {
     #[serde(flatten)]
     pub included_quantity_property2: IncludedQuantityProperty2,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncludedQuantityProperty2 {

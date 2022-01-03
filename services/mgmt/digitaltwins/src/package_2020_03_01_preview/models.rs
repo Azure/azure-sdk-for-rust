@@ -161,15 +161,21 @@ pub struct ErrorResponse {
 pub struct EventGrid {
     #[serde(flatten)]
     pub digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "TopicEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub topic_endpoint: Option<String>,
+    #[serde(rename = "accessKey1")]
+    pub access_key1: String,
+    #[serde(rename = "accessKey2")]
+    pub access_key2: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHub {
     #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
-    #[serde(flatten)]
     pub digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties,
+    #[serde(rename = "connectionString-PrimaryKey")]
+    pub connection_string_primary_key: String,
+    #[serde(rename = "connectionString-SecondaryKey")]
+    pub connection_string_secondary_key: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalResource {
@@ -209,6 +215,8 @@ pub struct OperationListResult {
 pub struct ServiceBus {
     #[serde(flatten)]
     pub digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "primaryConnectionString")]
+    pub primary_connection_string: String,
+    #[serde(rename = "secondaryConnectionString")]
+    pub secondary_connection_string: String,
 }

@@ -1351,10 +1351,6 @@ pub mod restorable_sql_container_properties {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub struct Container {
-            #[serde(flatten)]
-            pub sql_container_resource: SqlContainerResource,
-            #[serde(flatten)]
-            pub extended_resource_properties: ExtendedResourceProperties,
             #[serde(rename = "_self", default, skip_serializing_if = "Option::is_none")]
             pub self_: Option<String>,
         }
@@ -1402,10 +1398,6 @@ pub mod restorable_sql_database_properties {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub struct Database {
-            #[serde(flatten)]
-            pub sql_database_resource: SqlDatabaseResource,
-            #[serde(flatten)]
-            pub extended_resource_properties: ExtendedResourceProperties,
             #[serde(rename = "_colls", default, skip_serializing_if = "Option::is_none")]
             pub colls: Option<String>,
             #[serde(rename = "_users", default, skip_serializing_if = "Option::is_none")]
@@ -1532,10 +1524,6 @@ pub mod sql_database_get_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Resource {
-        #[serde(flatten)]
-        pub sql_database_resource: SqlDatabaseResource,
-        #[serde(flatten)]
-        pub extended_resource_properties: ExtendedResourceProperties,
         #[serde(rename = "_colls", default, skip_serializing_if = "Option::is_none")]
         pub colls: Option<String>,
         #[serde(rename = "_users", default, skip_serializing_if = "Option::is_none")]

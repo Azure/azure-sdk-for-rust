@@ -11,8 +11,8 @@ pub struct AccessProfile {
 pub struct AgentPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedClusterAgentPoolProfileProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPoolAvailableVersions {
@@ -567,8 +567,10 @@ pub struct CredentialResults {
 pub struct ManagedCluster {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ManagedClusterProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<ManagedClusterIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ManagedClusterSku>,
 }
@@ -598,8 +600,8 @@ pub struct ManagedClusterApiServerAccessProfile {
 pub struct ManagedClusterAccessProfile {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AccessProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAddonProfile {
@@ -613,8 +615,7 @@ pub struct ManagedClusterAddonProfile {
 pub struct ManagedClusterAgentPoolProfile {
     #[serde(flatten)]
     pub managed_cluster_agent_pool_profile_properties: ManagedClusterAgentPoolProfileProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAgentPoolProfileProperties {
