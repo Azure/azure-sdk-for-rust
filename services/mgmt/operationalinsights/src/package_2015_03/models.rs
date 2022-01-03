@@ -3,9 +3,53 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
+pub struct AvailableServiceTier {
+    #[serde(rename = "ServiceTier", default, skip_serializing_if = "Option::is_none")]
+    pub service_tier: Option<available_service_tier::ServiceTier>,
+    #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(rename = "MinimumRetention", default, skip_serializing_if = "Option::is_none")]
+    pub minimum_retention: Option<i64>,
+    #[serde(rename = "MaximumRetention", default, skip_serializing_if = "Option::is_none")]
+    pub maximum_retention: Option<i64>,
+    #[serde(rename = "DefaultRetention", default, skip_serializing_if = "Option::is_none")]
+    pub default_retention: Option<i64>,
+    #[serde(rename = "CapacityReservationLevel", default, skip_serializing_if = "Option::is_none")]
+    pub capacity_reservation_level: Option<i64>,
+    #[serde(rename = "LastSkuUpdate", default, skip_serializing_if = "Option::is_none")]
+    pub last_sku_update: Option<String>,
+}
+pub mod available_service_tier {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ServiceTier {
+        Free,
+        Standard,
+        Premium,
+        PerNode,
+        #[serde(rename = "PerGB2018")]
+        PerGb2018,
+        Standalone,
+        CapacityReservation,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CoreSummary {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "numberOfDocuments")]
+    pub number_of_documents: i64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinkTarget {
+    #[serde(rename = "customerId", default, skip_serializing_if = "Option::is_none")]
+    pub customer_id: Option<String>,
+    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
+    pub account_name: Option<String>,
+    #[serde(rename = "workspaceName", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -27,20 +71,44 @@ pub mod operation {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkTarget {
-    #[serde(rename = "customerId", default, skip_serializing_if = "Option::is_none")]
-    pub customer_id: Option<String>,
-    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
-    pub account_name: Option<String>,
-    #[serde(rename = "workspaceName", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tag {
-    pub name: String,
-    pub value: String,
+pub struct ProxyResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SavedSearch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    pub properties: SavedSearchProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SavedSearchProperties {
@@ -54,35 +122,18 @@ pub struct SavedSearchProperties {
     pub tags: Vec<Tag>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CoreSummary {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "numberOfDocuments")]
-    pub number_of_documents: i64,
+pub struct SavedSearchesListResult {
+    #[serde(rename = "__metadata", default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<SearchMetadata>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SavedSearch>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SearchSort {
+pub struct SearchGetSchemaResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub order: Option<search_sort::Order>,
-}
-pub mod search_sort {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Order {
-        #[serde(rename = "asc")]
-        Asc,
-        #[serde(rename = "desc")]
-        Desc,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SearchMetadataSchema {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<i32>,
+    pub metadata: Option<SearchMetadata>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SearchSchemaValue>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SearchMetadata {
@@ -122,23 +173,11 @@ pub struct SearchMetadata {
     pub schema: Option<SearchMetadataSchema>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SavedSearch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+pub struct SearchMetadataSchema {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
-    pub properties: SavedSearchProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SavedSearchesListResult {
-    #[serde(rename = "__metadata", default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<SearchMetadata>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SavedSearch>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SearchSchemaValue {
@@ -155,43 +194,33 @@ pub struct SearchSchemaValue {
     pub owner_type: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SearchGetSchemaResponse {
+pub struct SearchSort {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<SearchMetadata>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SearchSchemaValue>,
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub order: Option<search_sort::Order>,
+}
+pub mod search_sort {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Order {
+        #[serde(rename = "asc")]
+        Asc,
+        #[serde(rename = "desc")]
+        Desc,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SharedKeys {
+    #[serde(rename = "primarySharedKey", default, skip_serializing_if = "Option::is_none")]
+    pub primary_shared_key: Option<String>,
+    #[serde(rename = "secondarySharedKey", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_shared_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
     pub id: String,
     pub key: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageInsightStatus {
-    pub state: storage_insight_status::State,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-pub mod storage_insight_status {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        #[serde(rename = "OK")]
-        Ok,
-        #[serde(rename = "ERROR")]
-        Error,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageInsightProperties {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub containers: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tables: Vec<String>,
-    #[serde(rename = "storageAccount")]
-    pub storage_account: StorageAccount,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<StorageInsightStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageInsight {
@@ -210,27 +239,36 @@ pub struct StorageInsightListResult {
     pub odata_next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
+pub struct StorageInsightProperties {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub containers: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tables: Vec<String>,
+    #[serde(rename = "storageAccount")]
+    pub storage_account: StorageAccount,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub status: Option<StorageInsightStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
+pub struct StorageInsightStatus {
+    pub state: storage_insight_status::State,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub description: Option<String>,
+}
+pub mod storage_insight_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        #[serde(rename = "OK")]
+        Ok,
+        #[serde(rename = "ERROR")]
+        Error,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tag {
+    pub name: String,
+    pub value: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspacePurgeBody {
@@ -265,43 +303,5 @@ pub mod workspace_purge_status_response {
         Pending,
         #[serde(rename = "completed")]
         Completed,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SharedKeys {
-    #[serde(rename = "primarySharedKey", default, skip_serializing_if = "Option::is_none")]
-    pub primary_shared_key: Option<String>,
-    #[serde(rename = "secondarySharedKey", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_shared_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailableServiceTier {
-    #[serde(rename = "ServiceTier", default, skip_serializing_if = "Option::is_none")]
-    pub service_tier: Option<available_service_tier::ServiceTier>,
-    #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(rename = "MinimumRetention", default, skip_serializing_if = "Option::is_none")]
-    pub minimum_retention: Option<i64>,
-    #[serde(rename = "MaximumRetention", default, skip_serializing_if = "Option::is_none")]
-    pub maximum_retention: Option<i64>,
-    #[serde(rename = "DefaultRetention", default, skip_serializing_if = "Option::is_none")]
-    pub default_retention: Option<i64>,
-    #[serde(rename = "CapacityReservationLevel", default, skip_serializing_if = "Option::is_none")]
-    pub capacity_reservation_level: Option<i64>,
-    #[serde(rename = "LastSkuUpdate", default, skip_serializing_if = "Option::is_none")]
-    pub last_sku_update: Option<String>,
-}
-pub mod available_service_tier {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ServiceTier {
-        Free,
-        Standard,
-        Premium,
-        PerNode,
-        #[serde(rename = "PerGB2018")]
-        PerGb2018,
-        Standalone,
-        CapacityReservation,
     }
 }

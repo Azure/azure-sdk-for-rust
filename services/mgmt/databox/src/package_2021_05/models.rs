@@ -380,13 +380,6 @@ pub struct DataBoxJobDetails {
     pub device_password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataboxJobSecrets {
-    #[serde(flatten)]
-    pub job_secrets: JobSecrets,
-    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
-    pub pod_secrets: Vec<DataBoxSecret>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxScheduleAvailabilityRequest {
     #[serde(flatten)]
     pub schedule_availability_request: ScheduleAvailabilityRequest,
@@ -475,6 +468,13 @@ pub mod data_transfer_details_validation_response_properties {
         Invalid,
         Skipped,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataboxJobSecrets {
+    #[serde(flatten)]
+    pub job_secrets: JobSecrets,
+    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    pub pod_secrets: Vec<DataBoxSecret>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DcAccessSecurityCode {
@@ -789,15 +789,6 @@ pub mod key_encryption_key {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedDiskDetails {
-    #[serde(flatten)]
-    pub data_account_details: DataAccountDetails,
-    #[serde(rename = "resourceGroupId")]
-    pub resource_group_id: String,
-    #[serde(rename = "stagingStorageAccountId")]
-    pub staging_storage_account_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LastMitigationActionOnJob {
     #[serde(rename = "actionDateTimeInUtc", default, skip_serializing_if = "Option::is_none")]
     pub action_date_time_in_utc: Option<String>,
@@ -814,6 +805,15 @@ pub mod last_mitigation_action_on_job {
         MoveToCleanUpDevice,
         Resume,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedDiskDetails {
+    #[serde(flatten)]
+    pub data_account_details: DataAccountDetails,
+    #[serde(rename = "resourceGroupId")]
+    pub resource_group_id: String,
+    #[serde(rename = "stagingStorageAccountId")]
+    pub staging_storage_account_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MitigateJobRequest {
@@ -1205,21 +1205,6 @@ pub mod subscription_is_allowed_to_create_job_validation_response_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemData {
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<String>,
-    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<String>,
-    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_at: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransferAllDetails {
     #[serde(rename = "dataAccountType")]
     pub data_account_type: transfer_all_details::DataAccountType,
@@ -1457,4 +1442,19 @@ pub mod validation_response_properties {
         InputsRevisitRequired,
         CertainInputValidationsSkipped,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemData {
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<String>,
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<String>,
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
 }

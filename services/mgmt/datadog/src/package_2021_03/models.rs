@@ -59,29 +59,6 @@ pub struct DatadogApiKeyListResponse {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatadogInstallMethod {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tool: Option<String>,
-    #[serde(rename = "toolVersion", default, skip_serializing_if = "Option::is_none")]
-    pub tool_version: Option<String>,
-    #[serde(rename = "installerVersion", default, skip_serializing_if = "Option::is_none")]
-    pub installer_version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatadogLogsAgent {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub transport: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatadogHostMetadata {
-    #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
-    pub agent_version: Option<String>,
-    #[serde(rename = "installMethod", default, skip_serializing_if = "Option::is_none")]
-    pub install_method: Option<DatadogInstallMethod>,
-    #[serde(rename = "logsAgent", default, skip_serializing_if = "Option::is_none")]
-    pub logs_agent: Option<DatadogLogsAgent>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatadogHost {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -100,155 +77,27 @@ pub struct DatadogHostListResponse {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedResource {
+pub struct DatadogHostMetadata {
+    #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
+    pub agent_version: Option<String>,
+    #[serde(rename = "installMethod", default, skip_serializing_if = "Option::is_none")]
+    pub install_method: Option<DatadogInstallMethod>,
+    #[serde(rename = "logsAgent", default, skip_serializing_if = "Option::is_none")]
+    pub logs_agent: Option<DatadogLogsAgent>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatadogInstallMethod {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub tool: Option<String>,
+    #[serde(rename = "toolVersion", default, skip_serializing_if = "Option::is_none")]
+    pub tool_version: Option<String>,
+    #[serde(rename = "installerVersion", default, skip_serializing_if = "Option::is_none")]
+    pub installer_version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedResourceListResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<LinkedResource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitoredResource {
+pub struct DatadogLogsAgent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "sendingMetrics", default, skip_serializing_if = "Option::is_none")]
-    pub sending_metrics: Option<bool>,
-    #[serde(rename = "reasonForMetricsStatus", default, skip_serializing_if = "Option::is_none")]
-    pub reason_for_metrics_status: Option<String>,
-    #[serde(rename = "sendingLogs", default, skip_serializing_if = "Option::is_none")]
-    pub sending_logs: Option<bool>,
-    #[serde(rename = "reasonForLogsStatus", default, skip_serializing_if = "Option::is_none")]
-    pub reason_for_logs_status: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitoredResourceListResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MonitoredResource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationDisplay {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationResult {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<OperationDisplay>,
-    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
-    pub is_data_action: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<OperationResult>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceSku {
-    pub name: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProvisioningState {
-    Accepted,
-    Creating,
-    Updating,
-    Deleting,
-    Succeeded,
-    Failed,
-    Canceled,
-    Deleted,
-    NotSpecified,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MonitoringStatus {
-    Enabled,
-    Disabled,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MarketplaceSubscriptionStatus {
-    Provisioning,
-    Active,
-    Suspended,
-    Unsubscribed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatadogOrganizationProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "linkingAuthCode", default, skip_serializing_if = "Option::is_none")]
-    pub linking_auth_code: Option<String>,
-    #[serde(rename = "linkingClientId", default, skip_serializing_if = "Option::is_none")]
-    pub linking_client_id: Option<String>,
-    #[serde(rename = "redirectUri", default, skip_serializing_if = "Option::is_none")]
-    pub redirect_uri: Option<String>,
-    #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
-    pub api_key: Option<String>,
-    #[serde(rename = "applicationKey", default, skip_serializing_if = "Option::is_none")]
-    pub application_key: Option<String>,
-    #[serde(rename = "enterpriseAppId", default, skip_serializing_if = "Option::is_none")]
-    pub enterprise_app_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserInfo {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
-    pub email_address: Option<String>,
-    #[serde(rename = "phoneNumber", default, skip_serializing_if = "Option::is_none")]
-    pub phone_number: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum LiftrResourceCategories {
-    Unknown,
-    MonitorLogs,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitorProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
-    pub monitoring_status: Option<MonitoringStatus>,
-    #[serde(rename = "marketplaceSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
-    pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
-    #[serde(rename = "datadogOrganizationProperties", default, skip_serializing_if = "Option::is_none")]
-    pub datadog_organization_properties: Option<DatadogOrganizationProperties>,
-    #[serde(rename = "userInfo", default, skip_serializing_if = "Option::is_none")]
-    pub user_info: Option<UserInfo>,
-    #[serde(rename = "liftrResourceCategory", default, skip_serializing_if = "Option::is_none")]
-    pub liftr_resource_category: Option<LiftrResourceCategories>,
-    #[serde(rename = "liftrResourcePreference", default, skip_serializing_if = "Option::is_none")]
-    pub liftr_resource_preference: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ManagedIdentityTypes {
-    SystemAssigned,
-    UserAssigned,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IdentityProperties {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<ManagedIdentityTypes>,
+    pub transport: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatadogMonitorResource {
@@ -278,11 +127,6 @@ pub struct DatadogMonitorResourceListResponse {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitorUpdateProperties {
-    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
-    pub monitoring_status: Option<MonitoringStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatadogMonitorResourceUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MonitorUpdateProperties>,
@@ -292,75 +136,28 @@ pub struct DatadogMonitorResourceUpdateParameters {
     pub sku: Option<ResourceSku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatadogSetPasswordLink {
-    #[serde(rename = "setPasswordLink", default, skip_serializing_if = "Option::is_none")]
-    pub set_password_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum TagAction {
-    Include,
-    Exclude,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FilteringTag {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<TagAction>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogRules {
-    #[serde(rename = "sendAadLogs", default, skip_serializing_if = "Option::is_none")]
-    pub send_aad_logs: Option<bool>,
-    #[serde(rename = "sendSubscriptionLogs", default, skip_serializing_if = "Option::is_none")]
-    pub send_subscription_logs: Option<bool>,
-    #[serde(rename = "sendResourceLogs", default, skip_serializing_if = "Option::is_none")]
-    pub send_resource_logs: Option<bool>,
-    #[serde(rename = "filteringTags", default, skip_serializing_if = "Vec::is_empty")]
-    pub filtering_tags: Vec<FilteringTag>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricRules {
-    #[serde(rename = "filteringTags", default, skip_serializing_if = "Vec::is_empty")]
-    pub filtering_tags: Vec<FilteringTag>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitoringTagRulesProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "logRules", default, skip_serializing_if = "Option::is_none")]
-    pub log_rules: Option<LogRules>,
-    #[serde(rename = "metricRules", default, skip_serializing_if = "Option::is_none")]
-    pub metric_rules: Option<MetricRules>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitoringTagRules {
+pub struct DatadogOrganizationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MonitoringTagRulesProperties>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
+    #[serde(rename = "linkingAuthCode", default, skip_serializing_if = "Option::is_none")]
+    pub linking_auth_code: Option<String>,
+    #[serde(rename = "linkingClientId", default, skip_serializing_if = "Option::is_none")]
+    pub linking_client_id: Option<String>,
+    #[serde(rename = "redirectUri", default, skip_serializing_if = "Option::is_none")]
+    pub redirect_uri: Option<String>,
+    #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    #[serde(rename = "applicationKey", default, skip_serializing_if = "Option::is_none")]
+    pub application_key: Option<String>,
+    #[serde(rename = "enterpriseAppId", default, skip_serializing_if = "Option::is_none")]
+    pub enterprise_app_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MonitoringTagRulesListResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MonitoringTagRules>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SingleSignOnStates {
-    Initial,
-    Enable,
-    Disable,
-    Existing,
+pub struct DatadogSetPasswordLink {
+    #[serde(rename = "setPasswordLink", default, skip_serializing_if = "Option::is_none")]
+    pub set_password_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatadogSingleSignOnProperties {
@@ -394,9 +191,11 @@ pub struct DatadogSingleSignOnResourceListResponse {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
+    pub info: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
@@ -412,11 +211,212 @@ pub struct ErrorDetail {
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FilteringTag {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<TagAction>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IdentityProperties {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<ManagedIdentityTypes>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum LiftrResourceCategories {
+    Unknown,
+    MonitorLogs,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinkedResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LinkedResourceListResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<LinkedResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogRules {
+    #[serde(rename = "sendAadLogs", default, skip_serializing_if = "Option::is_none")]
+    pub send_aad_logs: Option<bool>,
+    #[serde(rename = "sendSubscriptionLogs", default, skip_serializing_if = "Option::is_none")]
+    pub send_subscription_logs: Option<bool>,
+    #[serde(rename = "sendResourceLogs", default, skip_serializing_if = "Option::is_none")]
+    pub send_resource_logs: Option<bool>,
+    #[serde(rename = "filteringTags", default, skip_serializing_if = "Vec::is_empty")]
+    pub filtering_tags: Vec<FilteringTag>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ManagedIdentityTypes {
+    SystemAssigned,
+    UserAssigned,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MarketplaceSubscriptionStatus {
+    Provisioning,
+    Active,
+    Suspended,
+    Unsubscribed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricRules {
+    #[serde(rename = "filteringTags", default, skip_serializing_if = "Vec::is_empty")]
+    pub filtering_tags: Vec<FilteringTag>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitorProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
+    pub monitoring_status: Option<MonitoringStatus>,
+    #[serde(rename = "marketplaceSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
+    #[serde(rename = "datadogOrganizationProperties", default, skip_serializing_if = "Option::is_none")]
+    pub datadog_organization_properties: Option<DatadogOrganizationProperties>,
+    #[serde(rename = "userInfo", default, skip_serializing_if = "Option::is_none")]
+    pub user_info: Option<UserInfo>,
+    #[serde(rename = "liftrResourceCategory", default, skip_serializing_if = "Option::is_none")]
+    pub liftr_resource_category: Option<LiftrResourceCategories>,
+    #[serde(rename = "liftrResourcePreference", default, skip_serializing_if = "Option::is_none")]
+    pub liftr_resource_preference: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitorUpdateProperties {
+    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
+    pub monitoring_status: Option<MonitoringStatus>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitoredResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "sendingMetrics", default, skip_serializing_if = "Option::is_none")]
+    pub sending_metrics: Option<bool>,
+    #[serde(rename = "reasonForMetricsStatus", default, skip_serializing_if = "Option::is_none")]
+    pub reason_for_metrics_status: Option<String>,
+    #[serde(rename = "sendingLogs", default, skip_serializing_if = "Option::is_none")]
+    pub sending_logs: Option<bool>,
+    #[serde(rename = "reasonForLogsStatus", default, skip_serializing_if = "Option::is_none")]
+    pub reason_for_logs_status: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitoredResourceListResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MonitoredResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MonitoringStatus {
+    Enabled,
+    Disabled,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitoringTagRules {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
+    pub properties: Option<MonitoringTagRulesProperties>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitoringTagRulesListResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MonitoringTagRules>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MonitoringTagRulesProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "logRules", default, skip_serializing_if = "Option::is_none")]
+    pub log_rules: Option<LogRules>,
+    #[serde(rename = "metricRules", default, skip_serializing_if = "Option::is_none")]
+    pub metric_rules: Option<MetricRules>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationDisplay {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<OperationResult>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationResult {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<OperationDisplay>,
+    #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
+    pub is_data_action: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ProvisioningState {
+    Accepted,
+    Creating,
+    Updating,
+    Deleting,
+    Succeeded,
+    Failed,
+    Canceled,
+    Deleted,
+    NotSpecified,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceSku {
+    pub name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum SingleSignOnStates {
+    Initial,
+    Enable,
+    Disable,
+    Existing,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum TagAction {
+    Include,
+    Exclude,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
+    pub email_address: Option<String>,
+    #[serde(rename = "phoneNumber", default, skip_serializing_if = "Option::is_none")]
+    pub phone_number: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {

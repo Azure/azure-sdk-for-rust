@@ -10,6 +10,20 @@ pub struct ConfidentialLedgerEnclaves {
     pub enclave_quotes: EnclaveQuotes,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfidentialLedgerError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ConfidentialLedgerErrorBody>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfidentialLedgerErrorBody {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Box<Option<ConfidentialLedgerErrorBody>>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Consortium {
     pub members: Vec<ConsortiumMember>,
 }
@@ -127,17 +141,3 @@ pub struct TransactionStatus {
     pub transaction_id: TransactionId,
 }
 pub type UserId = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfidentialLedgerError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ConfidentialLedgerErrorBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfidentialLedgerErrorBody {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<ConfidentialLedgerErrorBody>>,
-}

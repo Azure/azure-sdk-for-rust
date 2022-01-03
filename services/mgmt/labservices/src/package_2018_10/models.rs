@@ -716,16 +716,16 @@ pub mod resource_settings_fragment {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationEnvironment {
+pub struct ResponseWithContinuationEnvironmentSetting {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Environment>,
+    pub value: Vec<EnvironmentSetting>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationEnvironmentSetting {
+pub struct ResponseWithContinuationEnvironment {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<EnvironmentSetting>,
+    pub value: Vec<Environment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -737,16 +737,16 @@ pub struct ResponseWithContinuationGalleryImage {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationLab {
+pub struct ResponseWithContinuationLabAccount {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Lab>,
+    pub value: Vec<LabAccount>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationLabAccount {
+pub struct ResponseWithContinuationLab {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<LabAccount>,
+    pub value: Vec<Lab>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

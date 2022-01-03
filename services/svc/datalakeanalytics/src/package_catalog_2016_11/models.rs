@@ -3,6 +3,36 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Acl {
+    #[serde(rename = "aceType", default, skip_serializing_if = "Option::is_none")]
+    pub ace_type: Option<acl::AceType>,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub permission: Option<acl::Permission>,
+}
+pub mod acl {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AceType {
+        UserObj,
+        GroupObj,
+        Other,
+        User,
+        Group,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Permission {
+        None,
+        Use,
+        Create,
+        Drop,
+        Alter,
+        Write,
+        All,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AclCreateOrUpdateParameters {
     #[serde(rename = "aceType")]
     pub ace_type: acl_create_or_update_parameters::AceType,
@@ -50,36 +80,6 @@ pub mod acl_delete_parameters {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Acl {
-    #[serde(rename = "aceType", default, skip_serializing_if = "Option::is_none")]
-    pub ace_type: Option<acl::AceType>,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub permission: Option<acl::Permission>,
-}
-pub mod acl {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AceType {
-        UserObj,
-        GroupObj,
-        Other,
-        User,
-        Group,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Permission {
-        None,
-        Use,
-        Create,
-        Drop,
-        Alter,
-        Write,
-        All,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AclList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
@@ -87,10 +87,16 @@ pub struct AclList {
     pub value: Vec<Acl>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters {
-    pub password: String,
+pub struct CatalogItem {
+    #[serde(rename = "computeAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub compute_account_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
+    pub version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CatalogItemList {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeAnalyticsCatalogCredentialCreateParameters {
@@ -116,123 +122,10 @@ pub struct DataLakeAnalyticsCatalogCredentialUpdateParameters {
     pub user_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlSecret {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "secretName", default, skip_serializing_if = "Option::is_none")]
-    pub secret_name: Option<String>,
-    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
-    pub creation_time: Option<String>,
+pub struct DataLakeAnalyticsCatalogSecretCreateOrUpdateParameters {
+    pub password: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlExternalDataSource {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "externalDataSourceName", default, skip_serializing_if = "Option::is_none")]
-    pub external_data_source_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider: Option<String>,
-    #[serde(rename = "providerString", default, skip_serializing_if = "Option::is_none")]
-    pub provider_string: Option<String>,
-    #[serde(rename = "pushdownTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub pushdown_types: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlExternalDataSourceList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlExternalDataSource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlCredentialList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlCredential>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlCredential {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "credentialName", default, skip_serializing_if = "Option::is_none")]
-    pub credential_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlProcedure {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
-    pub schema_name: Option<String>,
-    #[serde(rename = "procName", default, skip_serializing_if = "Option::is_none")]
-    pub proc_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub definition: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlProcedureList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlProcedure>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlTableColumn {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlDirectedColumn {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub descending: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlDistributionInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<i32>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub keys: Vec<USqlDirectedColumn>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i32>,
-    #[serde(rename = "dynamicCount", default, skip_serializing_if = "Option::is_none")]
-    pub dynamic_count: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlIndex {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "indexKeys", default, skip_serializing_if = "Vec::is_empty")]
-    pub index_keys: Vec<USqlDirectedColumn>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub columns: Vec<String>,
-    #[serde(rename = "distributionInfo", default, skip_serializing_if = "Option::is_none")]
-    pub distribution_info: Option<USqlDistributionInfo>,
-    #[serde(rename = "partitionFunction", default, skip_serializing_if = "Option::is_none")]
-    pub partition_function: Option<String>,
-    #[serde(rename = "partitionKeyList", default, skip_serializing_if = "Vec::is_empty")]
-    pub partition_key_list: Vec<String>,
-    #[serde(rename = "streamNames", default, skip_serializing_if = "Vec::is_empty")]
-    pub stream_names: Vec<String>,
-    #[serde(rename = "isColumnstore", default, skip_serializing_if = "Option::is_none")]
-    pub is_columnstore: Option<bool>,
-    #[serde(rename = "indexId", default, skip_serializing_if = "Option::is_none")]
-    pub index_id: Option<i32>,
-    #[serde(rename = "isUnique", default, skip_serializing_if = "Option::is_none")]
-    pub is_unique: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DdlName {
@@ -267,17 +160,226 @@ pub struct TypeFieldInfo {
     pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlTablePreview {
-    #[serde(rename = "totalRowCount", default, skip_serializing_if = "Option::is_none")]
-    pub total_row_count: Option<i64>,
-    #[serde(rename = "totalColumnCount", default, skip_serializing_if = "Option::is_none")]
-    pub total_column_count: Option<i64>,
+pub struct USqlAssembly {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "assemblyName", default, skip_serializing_if = "Option::is_none")]
+    pub assembly_name: Option<String>,
+    #[serde(rename = "clrName", default, skip_serializing_if = "Option::is_none")]
+    pub clr_name: Option<String>,
+    #[serde(rename = "isVisible", default, skip_serializing_if = "Option::is_none")]
+    pub is_visible: Option<bool>,
+    #[serde(rename = "isUserDefined", default, skip_serializing_if = "Option::is_none")]
+    pub is_user_defined: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rows: Vec<Vec<String>>,
+    pub files: Vec<USqlAssemblyFileInfo>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub dependencies: Vec<USqlAssemblyDependencyInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlAssemblyClr {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "assemblyClrName", default, skip_serializing_if = "Option::is_none")]
+    pub assembly_clr_name: Option<String>,
+    #[serde(rename = "clrName", default, skip_serializing_if = "Option::is_none")]
+    pub clr_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlAssemblyDependencyInfo {
+    #[serde(rename = "entityId", default, skip_serializing_if = "Option::is_none")]
+    pub entity_id: Option<EntityId>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlAssemblyFileInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<u_sql_assembly_file_info::Type>,
+    #[serde(rename = "originalPath", default, skip_serializing_if = "Option::is_none")]
+    pub original_path: Option<String>,
+    #[serde(rename = "contentPath", default, skip_serializing_if = "Option::is_none")]
+    pub content_path: Option<String>,
+}
+pub mod u_sql_assembly_file_info {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Assembly,
+        Resource,
+        Nodeploy,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlAssemblyList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlAssemblyClr>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlCredential {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "credentialName", default, skip_serializing_if = "Option::is_none")]
+    pub credential_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlCredentialList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlCredential>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlDatabase {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlDatabaseList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlDatabase>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlDirectedColumn {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub truncated: Option<bool>,
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub descending: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlDistributionInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<i32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub schema: Vec<USqlTableColumn>,
+    pub keys: Vec<USqlDirectedColumn>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i32>,
+    #[serde(rename = "dynamicCount", default, skip_serializing_if = "Option::is_none")]
+    pub dynamic_count: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlExternalDataSource {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "externalDataSourceName", default, skip_serializing_if = "Option::is_none")]
+    pub external_data_source_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(rename = "providerString", default, skip_serializing_if = "Option::is_none")]
+    pub provider_string: Option<String>,
+    #[serde(rename = "pushdownTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub pushdown_types: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlExternalDataSourceList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlExternalDataSource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlIndex {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "indexKeys", default, skip_serializing_if = "Vec::is_empty")]
+    pub index_keys: Vec<USqlDirectedColumn>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub columns: Vec<String>,
+    #[serde(rename = "distributionInfo", default, skip_serializing_if = "Option::is_none")]
+    pub distribution_info: Option<USqlDistributionInfo>,
+    #[serde(rename = "partitionFunction", default, skip_serializing_if = "Option::is_none")]
+    pub partition_function: Option<String>,
+    #[serde(rename = "partitionKeyList", default, skip_serializing_if = "Vec::is_empty")]
+    pub partition_key_list: Vec<String>,
+    #[serde(rename = "streamNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub stream_names: Vec<String>,
+    #[serde(rename = "isColumnstore", default, skip_serializing_if = "Option::is_none")]
+    pub is_columnstore: Option<bool>,
+    #[serde(rename = "indexId", default, skip_serializing_if = "Option::is_none")]
+    pub index_id: Option<i32>,
+    #[serde(rename = "isUnique", default, skip_serializing_if = "Option::is_none")]
+    pub is_unique: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlPackage {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
+    pub schema_name: Option<String>,
+    #[serde(rename = "packageName", default, skip_serializing_if = "Option::is_none")]
+    pub package_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definition: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlPackageList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlPackage>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlProcedure {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
+    pub schema_name: Option<String>,
+    #[serde(rename = "procName", default, skip_serializing_if = "Option::is_none")]
+    pub proc_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definition: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlProcedureList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlProcedure>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlSchema {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
+    pub schema_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlSchemaList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlSchema>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlSecret {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "secretName", default, skip_serializing_if = "Option::is_none")]
+    pub secret_name: Option<String>,
+    #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
+    pub creation_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct USqlTable {
@@ -301,11 +403,11 @@ pub struct USqlTable {
     pub distribution_info: Option<USqlDistributionInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlTableList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlTable>,
+pub struct USqlTableColumn {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct USqlTableFragment {
@@ -332,58 +434,11 @@ pub struct USqlTableFragmentList {
     pub value: Vec<USqlTableFragment>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlTableType {
-    #[serde(flatten)]
-    pub u_sql_type: USqlType,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub columns: Vec<TypeFieldInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlTableTypeList {
+pub struct USqlTableList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlTableType>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlView {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
-    pub schema_name: Option<String>,
-    #[serde(rename = "viewName", default, skip_serializing_if = "Option::is_none")]
-    pub view_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub definition: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlViewList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlView>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlPackage {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
-    pub schema_name: Option<String>,
-    #[serde(rename = "packageName", default, skip_serializing_if = "Option::is_none")]
-    pub package_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub definition: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlPackageList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlPackage>,
+    pub value: Vec<USqlTable>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct USqlTablePartition {
@@ -410,6 +465,19 @@ pub struct USqlTablePartitionList {
     pub catalog_item_list: CatalogItemList,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlTablePartition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlTablePreview {
+    #[serde(rename = "totalRowCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_row_count: Option<i64>,
+    #[serde(rename = "totalColumnCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_column_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub rows: Vec<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub schema: Vec<USqlTableColumn>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct USqlTableStatistics {
@@ -448,6 +516,40 @@ pub struct USqlTableStatisticsList {
     pub catalog_item_list: CatalogItemList,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<USqlTableStatistics>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlTableType {
+    #[serde(flatten)]
+    pub u_sql_type: USqlType,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub columns: Vec<TypeFieldInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlTableTypeList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlTableType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlTableValuedFunction {
+    #[serde(flatten)]
+    pub catalog_item: CatalogItem,
+    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
+    pub database_name: Option<String>,
+    #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
+    pub schema_name: Option<String>,
+    #[serde(rename = "tvfName", default, skip_serializing_if = "Option::is_none")]
+    pub tvf_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub definition: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct USqlTableValuedFunctionList {
+    #[serde(flatten)]
+    pub catalog_item_list: CatalogItemList,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<USqlTableValuedFunction>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct USqlType {
@@ -492,124 +594,22 @@ pub struct USqlTypeList {
     pub value: Vec<USqlType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlTableValuedFunction {
+pub struct USqlView {
     #[serde(flatten)]
     pub catalog_item: CatalogItem,
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
     pub schema_name: Option<String>,
-    #[serde(rename = "tvfName", default, skip_serializing_if = "Option::is_none")]
-    pub tvf_name: Option<String>,
+    #[serde(rename = "viewName", default, skip_serializing_if = "Option::is_none")]
+    pub view_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub definition: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlTableValuedFunctionList {
+pub struct USqlViewList {
     #[serde(flatten)]
     pub catalog_item_list: CatalogItemList,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlTableValuedFunction>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlAssemblyFileInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<u_sql_assembly_file_info::Type>,
-    #[serde(rename = "originalPath", default, skip_serializing_if = "Option::is_none")]
-    pub original_path: Option<String>,
-    #[serde(rename = "contentPath", default, skip_serializing_if = "Option::is_none")]
-    pub content_path: Option<String>,
-}
-pub mod u_sql_assembly_file_info {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Assembly,
-        Resource,
-        Nodeploy,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlAssemblyDependencyInfo {
-    #[serde(rename = "entityId", default, skip_serializing_if = "Option::is_none")]
-    pub entity_id: Option<EntityId>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlAssembly {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "assemblyName", default, skip_serializing_if = "Option::is_none")]
-    pub assembly_name: Option<String>,
-    #[serde(rename = "clrName", default, skip_serializing_if = "Option::is_none")]
-    pub clr_name: Option<String>,
-    #[serde(rename = "isVisible", default, skip_serializing_if = "Option::is_none")]
-    pub is_visible: Option<bool>,
-    #[serde(rename = "isUserDefined", default, skip_serializing_if = "Option::is_none")]
-    pub is_user_defined: Option<bool>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub files: Vec<USqlAssemblyFileInfo>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub dependencies: Vec<USqlAssemblyDependencyInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlAssemblyClr {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "assemblyClrName", default, skip_serializing_if = "Option::is_none")]
-    pub assembly_clr_name: Option<String>,
-    #[serde(rename = "clrName", default, skip_serializing_if = "Option::is_none")]
-    pub clr_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlAssemblyList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlAssemblyClr>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlSchema {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-    #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
-    pub schema_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlSchemaList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlSchema>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlDatabase {
-    #[serde(flatten)]
-    pub catalog_item: CatalogItem,
-    #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
-    pub database_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct USqlDatabaseList {
-    #[serde(flatten)]
-    pub catalog_item_list: CatalogItemList,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<USqlDatabase>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CatalogItem {
-    #[serde(rename = "computeAccountName", default, skip_serializing_if = "Option::is_none")]
-    pub compute_account_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CatalogItemList {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub value: Vec<USqlView>,
 }

@@ -12,79 +12,11 @@ pub struct AclFailedEntry {
     pub error_message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SetAccessControlRecursiveResponse {
-    #[serde(rename = "directoriesSuccessful", default, skip_serializing_if = "Option::is_none")]
-    pub directories_successful: Option<i32>,
-    #[serde(rename = "filesSuccessful", default, skip_serializing_if = "Option::is_none")]
-    pub files_successful: Option<i32>,
-    #[serde(rename = "failureCount", default, skip_serializing_if = "Option::is_none")]
-    pub failure_count: Option<i32>,
-    #[serde(rename = "failedEntries", default, skip_serializing_if = "Vec::is_empty")]
-    pub failed_entries: Vec<AclFailedEntry>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Path {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "isDirectory", default, skip_serializing_if = "Option::is_none")]
-    pub is_directory: Option<bool>,
-    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified: Option<String>,
-    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
-    #[serde(rename = "contentLength", default, skip_serializing_if = "Option::is_none")]
-    pub content_length: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub owner: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PathList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub paths: Vec<Path>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileSystem {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified: Option<String>,
-    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
-    pub e_tag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListBlobsHierarchySegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
-    pub service_endpoint: String,
-    #[serde(rename = "ContainerName")]
-    pub container_name: String,
-    #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
-    pub prefix: Option<String>,
-    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
-    pub marker: Option<String>,
-    #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
-    pub max_results: Option<i64>,
-    #[serde(rename = "Delimiter", default, skip_serializing_if = "Option::is_none")]
-    pub delimiter: Option<String>,
-    #[serde(rename = "Segment")]
-    pub segment: BlobHierarchyListSegment,
-    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
-    pub next_marker: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobHierarchyListSegment {
     #[serde(rename = "BlobPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub blob_prefixes: Vec<BlobPrefix>,
     #[serde(rename = "BlobItems")]
     pub blob_items: Vec<BlobItemInternal>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobPrefix {
-    #[serde(rename = "Name")]
-    pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobItemInternal {
@@ -102,6 +34,11 @@ pub struct BlobItemInternal {
     pub properties: BlobPropertiesInternal,
     #[serde(rename = "DeletionId", default, skip_serializing_if = "Option::is_none")]
     pub deletion_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BlobPrefix {
+    #[serde(rename = "Name")]
+    pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
@@ -167,9 +104,72 @@ pub struct BlobPropertiesInternal {
     pub delete_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FileSystem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified: Option<String>,
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileSystemList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filesystems: Vec<FileSystem>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListBlobsHierarchySegmentResponse {
+    #[serde(rename = "ServiceEndpoint")]
+    pub service_endpoint: String,
+    #[serde(rename = "ContainerName")]
+    pub container_name: String,
+    #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
+    pub marker: Option<String>,
+    #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
+    pub max_results: Option<i64>,
+    #[serde(rename = "Delimiter", default, skip_serializing_if = "Option::is_none")]
+    pub delimiter: Option<String>,
+    #[serde(rename = "Segment")]
+    pub segment: BlobHierarchyListSegment,
+    #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
+    pub next_marker: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Path {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "isDirectory", default, skip_serializing_if = "Option::is_none")]
+    pub is_directory: Option<bool>,
+    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified: Option<String>,
+    #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
+    pub e_tag: Option<String>,
+    #[serde(rename = "contentLength", default, skip_serializing_if = "Option::is_none")]
+    pub content_length: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub owner: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub group: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub permissions: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PathList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub paths: Vec<Path>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SetAccessControlRecursiveResponse {
+    #[serde(rename = "directoriesSuccessful", default, skip_serializing_if = "Option::is_none")]
+    pub directories_successful: Option<i32>,
+    #[serde(rename = "filesSuccessful", default, skip_serializing_if = "Option::is_none")]
+    pub files_successful: Option<i32>,
+    #[serde(rename = "failureCount", default, skip_serializing_if = "Option::is_none")]
+    pub failure_count: Option<i32>,
+    #[serde(rename = "failedEntries", default, skip_serializing_if = "Vec::is_empty")]
+    pub failed_entries: Vec<AclFailedEntry>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageError {

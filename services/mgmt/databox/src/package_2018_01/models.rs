@@ -229,13 +229,6 @@ pub struct DataBoxJobDetails {
     pub copy_progress: Vec<CopyProgress>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataboxJobSecrets {
-    #[serde(flatten)]
-    pub job_secrets: JobSecrets,
-    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
-    pub pod_secrets: Vec<DataBoxSecret>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxSecret {
     #[serde(rename = "deviceSerialNumber", default, skip_serializing_if = "Option::is_none")]
     pub device_serial_number: Option<String>,
@@ -247,6 +240,13 @@ pub struct DataBoxSecret {
     pub encoded_validation_cert_pub_key: Option<String>,
     #[serde(rename = "accountCredentialDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub account_credential_details: Vec<AccountCredentialDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataboxJobSecrets {
+    #[serde(flatten)]
+    pub job_secrets: JobSecrets,
+    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    pub pod_secrets: Vec<DataBoxSecret>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DestinationAccountDetails {

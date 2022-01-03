@@ -3,11 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ArmErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ArmErrorResponseBody>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArmErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -15,18 +10,9 @@ pub struct ArmErrorResponseBody {
     pub code: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationEntityListResult {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<OperationEntity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationEntity {
+pub struct ArmErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<OperationDisplayInfo>,
+    pub error: Option<ArmErrorResponseBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplayInfo {
@@ -40,21 +26,19 @@ pub struct OperationDisplayInfo {
     pub resource: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScoreEntity {
+pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub date: Option<String>,
+    pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub score: Option<f64>,
-    #[serde(rename = "consumptionUnits", default, skip_serializing_if = "Option::is_none")]
-    pub consumption_units: Option<f64>,
-    #[serde(rename = "impactedResourceCount", default, skip_serializing_if = "Option::is_none")]
-    pub impacted_resource_count: Option<f64>,
-    #[serde(rename = "potentialScoreIncrease", default, skip_serializing_if = "Option::is_none")]
-    pub potential_score_increase: Option<f64>,
-    #[serde(rename = "categoryCount", default, skip_serializing_if = "Option::is_none")]
-    pub category_count: Option<f64>,
+    pub display: Option<OperationDisplayInfo>,
 }
-pub type TimeSeriesEntity = Vec<serde_json::Value>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationEntityListResult {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<OperationEntity>,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdvisorScoreEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -76,3 +60,19 @@ pub mod advisor_score_entity {
         pub time_series: Option<TimeSeriesEntity>,
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScoreEntity {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub score: Option<f64>,
+    #[serde(rename = "consumptionUnits", default, skip_serializing_if = "Option::is_none")]
+    pub consumption_units: Option<f64>,
+    #[serde(rename = "impactedResourceCount", default, skip_serializing_if = "Option::is_none")]
+    pub impacted_resource_count: Option<f64>,
+    #[serde(rename = "potentialScoreIncrease", default, skip_serializing_if = "Option::is_none")]
+    pub potential_score_increase: Option<f64>,
+    #[serde(rename = "categoryCount", default, skip_serializing_if = "Option::is_none")]
+    pub category_count: Option<f64>,
+}
+pub type TimeSeriesEntity = Vec<serde_json::Value>;

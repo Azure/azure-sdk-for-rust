@@ -3,24 +3,98 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
+pub struct AccessProfile {
+    #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
+    pub kube_config: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceAgentPoolProfile {
+    pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub count: Option<i32>,
+    #[serde(rename = "vmSize")]
+    pub vm_size: ContainerServiceVmSize,
+    #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
+    #[serde(rename = "dnsPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub dns_prefix: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
+    pub fqdn: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ports: Vec<i64>,
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<ContainerServiceStorageProfile>,
+    #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
+    pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<OsType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceDiagnosticsProfile {
+    #[serde(rename = "vmDiagnostics")]
+    pub vm_diagnostics: ContainerServiceVmDiagnostics,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceLinuxProfile {
+    #[serde(rename = "adminUsername")]
+    pub admin_username: String,
+    pub ssh: ContainerServiceSshConfiguration,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceMasterProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub count: Option<container_service_master_profile::Count>,
+    #[serde(rename = "dnsPrefix")]
+    pub dns_prefix: String,
+    #[serde(rename = "vmSize")]
+    pub vm_size: ContainerServiceVmSize,
+    #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
+    #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
+    pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
+    #[serde(rename = "firstConsecutiveStaticIP", default, skip_serializing_if = "Option::is_none")]
+    pub first_consecutive_static_ip: Option<String>,
+    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
+    pub storage_profile: Option<ContainerServiceStorageProfile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fqdn: Option<String>,
+}
+pub mod container_service_master_profile {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Count {}
 }
 pub type ContainerServiceOsDisk = i32;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceServicePrincipalProfile {
+    #[serde(rename = "clientId")]
+    pub client_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret: Option<String>,
+    #[serde(rename = "keyVaultSecretRef", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_secret_ref: Option<KeyVaultSecretRef>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceSshConfiguration {
+    #[serde(rename = "publicKeys")]
+    pub public_keys: Vec<ContainerServiceSshPublicKey>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceSshPublicKey {
+    #[serde(rename = "keyData")]
+    pub key_data: String,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceStorageProfile {
     StorageAccount,
     ManagedDisks,
 }
-pub type ContainerServiceVnetSubnetId = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceVmDiagnostics {
+    pub enabled: bool,
+    #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
+    pub storage_uri: Option<String>,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceVmSize {
     #[serde(rename = "Standard_A1")]
@@ -372,6 +446,14 @@ pub enum ContainerServiceVmSize {
     #[serde(rename = "Standard_NV6")]
     StandardNv6,
 }
+pub type ContainerServiceVnetSubnetId = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerServiceWindowsProfile {
+    #[serde(rename = "adminUsername")]
+    pub admin_username: String,
+    #[serde(rename = "adminPassword")]
+    pub admin_password: String,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSecretRef {
     #[serde(rename = "vaultID")]
@@ -382,93 +464,18 @@ pub struct KeyVaultSecretRef {
     pub version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceServicePrincipalProfile {
-    #[serde(rename = "clientId")]
-    pub client_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub secret: Option<String>,
-    #[serde(rename = "keyVaultSecretRef", default, skip_serializing_if = "Option::is_none")]
-    pub key_vault_secret_ref: Option<KeyVaultSecretRef>,
+pub struct ManagedCluster {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub serde_json_value: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceMasterProfile {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<container_service_master_profile::Count>,
-    #[serde(rename = "dnsPrefix")]
-    pub dns_prefix: String,
-    #[serde(rename = "vmSize")]
-    pub vm_size: ContainerServiceVmSize,
-    #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
-    #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
-    pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
-    #[serde(rename = "firstConsecutiveStaticIP", default, skip_serializing_if = "Option::is_none")]
-    pub first_consecutive_static_ip: Option<String>,
-    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
-    pub storage_profile: Option<ContainerServiceStorageProfile>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fqdn: Option<String>,
-}
-pub mod container_service_master_profile {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Count {}
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceAgentPoolProfile {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i32>,
-    #[serde(rename = "vmSize")]
-    pub vm_size: ContainerServiceVmSize,
-    #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
-    pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
-    #[serde(rename = "dnsPrefix", default, skip_serializing_if = "Option::is_none")]
-    pub dns_prefix: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fqdn: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub ports: Vec<i64>,
-    #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
-    pub storage_profile: Option<ContainerServiceStorageProfile>,
-    #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
-    pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<OsType>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceWindowsProfile {
-    #[serde(rename = "adminUsername")]
-    pub admin_username: String,
-    #[serde(rename = "adminPassword")]
-    pub admin_password: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceLinuxProfile {
-    #[serde(rename = "adminUsername")]
-    pub admin_username: String,
-    pub ssh: ContainerServiceSshConfiguration,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceSshConfiguration {
-    #[serde(rename = "publicKeys")]
-    pub public_keys: Vec<ContainerServiceSshPublicKey>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceSshPublicKey {
-    #[serde(rename = "keyData")]
-    pub key_data: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceDiagnosticsProfile {
-    #[serde(rename = "vmDiagnostics")]
-    pub vm_diagnostics: ContainerServiceVmDiagnostics,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerServiceVmDiagnostics {
-    pub enabled: bool,
-    #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
-    pub storage_uri: Option<String>,
+pub struct ManagedClusterAccessProfile {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub serde_json_value: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterListResult {
@@ -478,11 +485,15 @@ pub struct ManagedClusterListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedCluster {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+pub struct ManagedClusterPoolUpgradeProfile {
+    #[serde(rename = "kubernetesVersion")]
+    pub kubernetes_version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "osType")]
+    pub os_type: OsType,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub upgrades: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterProperties {
@@ -502,43 +513,6 @@ pub struct ManagedClusterProperties {
     pub service_principal_profile: Option<ContainerServiceServicePrincipalProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OrchestratorProfile {
-    #[serde(rename = "orchestratorType")]
-    pub orchestrator_type: String,
-    #[serde(rename = "orchestratorVersion")]
-    pub orchestrator_version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterAccessProfile {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccessProfile {
-    #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
-    pub kube_config: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterPoolUpgradeProfile {
-    #[serde(rename = "kubernetesVersion")]
-    pub kubernetes_version: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "osType")]
-    pub os_type: OsType,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub upgrades: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ManagedClusterUpgradeProfileProperties {
-    #[serde(rename = "controlPlaneProfile")]
-    pub control_plane_profile: ManagedClusterPoolUpgradeProfile,
-    #[serde(rename = "agentPoolProfiles")]
-    pub agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterUpgradeProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -549,7 +523,33 @@ pub struct ManagedClusterUpgradeProfile {
     pub properties: ManagedClusterUpgradeProfileProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedClusterUpgradeProfileProperties {
+    #[serde(rename = "controlPlaneProfile")]
+    pub control_plane_profile: ManagedClusterPoolUpgradeProfile,
+    #[serde(rename = "agentPoolProfiles")]
+    pub agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OsType {
     Linux,
     Windows,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OrchestratorProfile {
+    #[serde(rename = "orchestratorType")]
+    pub orchestrator_type: String,
+    #[serde(rename = "orchestratorVersion")]
+    pub orchestrator_version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }

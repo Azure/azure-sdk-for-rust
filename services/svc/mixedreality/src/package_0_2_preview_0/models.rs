@@ -3,39 +3,16 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum JobStatus {
-    NotStarted,
-    Running,
-    Succeeded,
-    Failed,
-    Cancelled,
+pub struct Error {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Vector3 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Quaternion {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
-    #[serde(rename = "isIdentity", default, skip_serializing_if = "Option::is_none")]
-    pub is_identity: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Pose {
-    pub rotation: Quaternion,
-    pub translation: Vector3,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Vector4 {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-    pub w: f32,
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<Error>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IngestionConfiguration {
@@ -78,19 +55,42 @@ pub struct IngestionProperties {
     pub ingestion_configuration: Option<IngestionConfiguration>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+pub enum JobStatus {
+    NotStarted,
+    Running,
+    Succeeded,
+    Failed,
+    Cancelled,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<Error>,
+pub struct Pose {
+    pub rotation: Quaternion,
+    pub translation: Vector3,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Quaternion {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
+    #[serde(rename = "isIdentity", default, skip_serializing_if = "Option::is_none")]
+    pub is_identity: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UploadLocation {
     #[serde(rename = "inputAssetUri")]
     pub input_asset_uri: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Vector3 {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Vector4 {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
 }

@@ -88,6 +88,17 @@ pub struct CancellationReason {
     pub reason: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CloudError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<CloudError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContactDetails {
     #[serde(rename = "contactName")]
     pub contact_name: String,
@@ -147,6 +158,11 @@ pub mod copy_progress {
         StorageAccount,
         ManagedDisk,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateJobValidations {
+    #[serde(flatten)]
+    pub validation_request: ValidationRequest,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateOrderLimitForSubscriptionValidationRequest {
@@ -300,13 +316,6 @@ pub struct DataBoxJobDetails {
     pub device_password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataboxJobSecrets {
-    #[serde(flatten)]
-    pub job_secrets: JobSecrets,
-    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
-    pub pod_secrets: Vec<DataBoxSecret>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxScheduleAvailabilityRequest {
     #[serde(flatten)]
     pub schedule_availability_request: ScheduleAvailabilityRequest,
@@ -347,6 +356,13 @@ pub mod data_destination_details_validation_response_properties {
         Invalid,
         Skipped,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataboxJobSecrets {
+    #[serde(flatten)]
+    pub job_secrets: JobSecrets,
+    #[serde(rename = "podSecrets", default, skip_serializing_if = "Vec::is_empty")]
+    pub pod_secrets: Vec<DataBoxSecret>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DcAccessSecurityCode {
@@ -973,6 +989,19 @@ pub mod subscription_is_allowed_to_create_job_validation_response_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransportAvailabilityDetails {
+    #[serde(rename = "shipmentType", default, skip_serializing_if = "Option::is_none")]
+    pub shipment_type: Option<transport_availability_details::ShipmentType>,
+}
+pub mod transport_availability_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ShipmentType {
+        CustomerManaged,
+        MicrosoftManaged,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransportAvailabilityRequest {
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<transport_availability_request::SkuName>,
@@ -990,19 +1019,6 @@ pub mod transport_availability_request {
 pub struct TransportAvailabilityResponse {
     #[serde(rename = "transportAvailabilityDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub transport_availability_details: Vec<TransportAvailabilityDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransportAvailabilityDetails {
-    #[serde(rename = "shipmentType", default, skip_serializing_if = "Option::is_none")]
-    pub shipment_type: Option<transport_availability_details::ShipmentType>,
-}
-pub mod transport_availability_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ShipmentType {
-        CustomerManaged,
-        MicrosoftManaged,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransportPreferences {
@@ -1116,11 +1132,6 @@ pub mod validation_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateJobValidations {
-    #[serde(flatten)]
-    pub validation_request: ValidationRequest,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ValidationResponseProperties>,
@@ -1140,15 +1151,4 @@ pub mod validation_response_properties {
         InputsRevisitRequired,
         CertainInputValidationsSkipped,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CloudError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<CloudError>,
 }

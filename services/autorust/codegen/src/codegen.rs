@@ -1,15 +1,13 @@
 use crate::{
     identifier::ident,
-    spec::{self, TypeName},
-    Config, PropertyName, ResolvedSchema, Spec,
+    spec::{self, RefKey, TypeName},
+    Config, PropertyName, Spec,
 };
-use autorust_openapi::DataType;
 use heck::CamelCase;
 use once_cell::sync::Lazy;
 use proc_macro2::TokenStream;
 use quote::quote;
 use regex::Regex;
-use serde_json::Value;
 use std::path::{Path, PathBuf};
 
 /// code generation context
@@ -117,6 +115,14 @@ pub enum Error {
     ExamplesName(#[source] crate::identifier::Error),
     #[error("status code: {0}")]
     StatusCode(#[from] crate::status_codes::Error),
+    #[error("creating type name for schema: {0}")]
+    TypeNameForSchema(#[source] crate::spec::Error),
+    #[error("array items: {0}")]
+    ArrayItems(#[source] crate::spec::Error),
+    #[error("no ref key")]
+    NoRefKey,
+    #[error("RefKey not found {0:?}", ref_key)]
+    RefKeyNotFound { ref_key: RefKey },
 }
 
 pub fn is_vec(ts: &TokenStream) -> bool {
@@ -130,21 +136,6 @@ pub fn create_generated_by_header() -> TokenStream {
     quote! { #![doc = #comment] }
 }
 
-pub fn is_local_enum(property: &ResolvedSchema) -> bool {
-    !property.schema.common.enum_.is_empty()
-}
-
-pub fn is_local_struct(property: &ResolvedSchema) -> bool {
-    !property.schema.properties.is_empty()
-}
-
-pub fn is_basic_type(property: &ResolvedSchema) -> bool {
-    matches!(
-        property.schema.common.type_,
-        Some(DataType::Integer | DataType::String | DataType::Number | DataType::Boolean)
-    )
-}
-
 /// Wraps a type in an Option
 pub fn add_option(is_option: bool, tp: TokenStream) -> TokenStream {
     if is_option {
@@ -152,16 +143,6 @@ pub fn add_option(is_option: bool, tp: TokenStream) -> TokenStream {
     } else {
         tp
     }
-}
-
-pub fn enum_values_as_strings(values: &[Value]) -> Vec<&str> {
-    values
-        .iter()
-        .filter_map(|v| match v {
-            Value::String(s) => Some(s.as_str()),
-            _ => None,
-        })
-        .collect()
 }
 
 pub fn type_name_gen(type_name: &TypeName, as_ref: bool, qualify_models: bool) -> Result<TokenStream, Error> {
@@ -225,13 +206,6 @@ pub fn parse_params(path: &str) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn test_enum_values_as_strings() {
-        let values = vec![json!("/"), json!("/keys")];
-        assert_eq!(enum_values_as_strings(&values), vec!["/", "/keys"]);
-    }
 
     #[test]
     fn test_parse_params_keyvault() -> Result<(), Error> {

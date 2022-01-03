@@ -3,6 +3,31 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataSource {
+    pub kind: data_source::Kind,
+    pub configuration: DataSourceConfiguration,
+    pub sinks: Vec<SinkConfiguration>,
+}
+pub mod data_source {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        PerformanceCounter,
+        #[serde(rename = "ETWProviders")]
+        EtwProviders,
+        WindowsEventLogs,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataSourceConfiguration {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub providers: Vec<EtwProviderConfiguration>,
+    #[serde(rename = "perfCounters", default, skip_serializing_if = "Vec::is_empty")]
+    pub perf_counters: Vec<PerformanceCounterConfiguration>,
+    #[serde(rename = "eventLogs", default, skip_serializing_if = "Vec::is_empty")]
+    pub event_logs: Vec<EventLogConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -10,54 +35,23 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestDiagnosticSettingsAssociationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<GuestDiagnosticSettingsAssociationResource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestDiagnosticSettingsAssociationResourcePatch {
+pub struct EtwEventConfiguration {
+    pub name: String,
+    pub id: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub filter: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EtwProviderConfiguration {
+    pub id: String,
+    pub events: Vec<EtwEventConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventLogConfiguration {
+    #[serde(rename = "logName")]
+    pub log_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GuestDiagnosticSettingsAssociation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestDiagnosticSettingsAssociation {
-    #[serde(rename = "guestDiagnosticSettingsName")]
-    pub guest_diagnostic_settings_name: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestDiagnosticSettingsAssociationResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub properties: GuestDiagnosticSettingsAssociation,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestDiagnosticSettingsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<GuestDiagnosticSettingsResource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GuestDiagnosticSettingsResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub properties: GuestDiagnosticSettings,
+    pub filter: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestDiagnosticSettings {
@@ -77,6 +71,38 @@ pub mod guest_diagnostic_settings {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestDiagnosticSettingsAssociation {
+    #[serde(rename = "guestDiagnosticSettingsName")]
+    pub guest_diagnostic_settings_name: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestDiagnosticSettingsAssociationList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GuestDiagnosticSettingsAssociationResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestDiagnosticSettingsAssociationResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub properties: GuestDiagnosticSettingsAssociation,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestDiagnosticSettingsAssociationResourcePatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GuestDiagnosticSettingsAssociation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GuestDiagnosticSettingsList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GuestDiagnosticSettingsResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestDiagnosticSettingsPatchResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -84,20 +110,30 @@ pub struct GuestDiagnosticSettingsPatchResource {
     pub properties: Option<GuestDiagnosticSettings>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataSource {
-    pub kind: data_source::Kind,
-    pub configuration: DataSourceConfiguration,
-    pub sinks: Vec<SinkConfiguration>,
+pub struct GuestDiagnosticSettingsResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub properties: GuestDiagnosticSettings,
 }
-pub mod data_source {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        PerformanceCounter,
-        #[serde(rename = "ETWProviders")]
-        EtwProviders,
-        WindowsEventLogs,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PerformanceCounterConfiguration {
+    pub name: String,
+    #[serde(rename = "samplingPeriod")]
+    pub sampling_period: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub instance: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SinkConfiguration {
@@ -111,40 +147,4 @@ pub mod sink_configuration {
         ApplicationInsights,
         LogAnalytics,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataSourceConfiguration {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub providers: Vec<EtwProviderConfiguration>,
-    #[serde(rename = "perfCounters", default, skip_serializing_if = "Vec::is_empty")]
-    pub perf_counters: Vec<PerformanceCounterConfiguration>,
-    #[serde(rename = "eventLogs", default, skip_serializing_if = "Vec::is_empty")]
-    pub event_logs: Vec<EventLogConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EtwEventConfiguration {
-    pub name: String,
-    pub id: i64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EtwProviderConfiguration {
-    pub id: String,
-    pub events: Vec<EtwEventConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PerformanceCounterConfiguration {
-    pub name: String,
-    #[serde(rename = "samplingPeriod")]
-    pub sampling_period: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub instance: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventLogConfiguration {
-    #[serde(rename = "logName")]
-    pub log_name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<String>,
 }

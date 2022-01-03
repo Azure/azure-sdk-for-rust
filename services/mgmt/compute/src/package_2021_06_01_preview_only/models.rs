@@ -3,13 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComputeDiagnosticsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ComputeDiagnosticBase>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeDiagnosticBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -21,17 +14,41 @@ pub struct ComputeDiagnosticBase {
     pub properties: Option<DiagnosticProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ComputeDiagnosticsList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ComputeDiagnosticBase>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticProperties {
     #[serde(rename = "supportedResourceTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_resource_types: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunDiskInspectionInput {
-    #[serde(rename = "resourceId")]
-    pub resource_id: String,
-    pub manifest: String,
-    #[serde(rename = "uploadSasUri")]
-    pub upload_sas_uri: String,
+pub struct ErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
+    pub inner_error: Option<InnerError>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InnerError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exceptiontype: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub errordetail: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunDiskInspectionAsyncOperationResult {
@@ -53,27 +70,10 @@ pub mod run_disk_inspection_async_operation_result {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetail>,
-    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Option<InnerError>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InnerError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exceptiontype: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub errordetail: Option<String>,
+pub struct RunDiskInspectionInput {
+    #[serde(rename = "resourceId")]
+    pub resource_id: String,
+    pub manifest: String,
+    #[serde(rename = "uploadSasUri")]
+    pub upload_sas_uri: String,
 }

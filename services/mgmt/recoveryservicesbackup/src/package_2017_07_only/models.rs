@@ -224,6 +224,20 @@ pub mod azure_workload_sql_auto_protection_intent {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BmsBackupSummariesQueryObject {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<bms_backup_summaries_query_object::Type>,
+}
+pub mod bms_backup_summaries_query_object {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Invalid,
+        BackupProtectedItemCountSummary,
+        BackupProtectionContainerCountSummary,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupManagementUsage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<backup_management_usage::Unit>,
@@ -326,20 +340,6 @@ pub mod backup_status_response {
     pub enum FabricName {
         Invalid,
         Azure,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BmsBackupSummariesQueryObject {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<bms_backup_summaries_query_object::Type>,
-}
-pub mod bms_backup_summaries_query_object {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Invalid,
-        BackupProtectedItemCountSummary,
-        BackupProtectionContainerCountSummary,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

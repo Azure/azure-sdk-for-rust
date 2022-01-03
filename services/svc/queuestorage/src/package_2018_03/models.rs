@@ -12,21 +12,6 @@ pub struct AccessPolicy {
     pub permission: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListQueuesSegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
-    pub service_endpoint: String,
-    #[serde(rename = "Prefix")]
-    pub prefix: String,
-    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
-    pub marker: Option<String>,
-    #[serde(rename = "MaxResults")]
-    pub max_results: i64,
-    #[serde(rename = "QueueItems", default, skip_serializing_if = "Vec::is_empty")]
-    pub queue_items: Vec<QueueItem>,
-    #[serde(rename = "NextMarker")]
-    pub next_marker: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
     #[serde(rename = "AllowedOrigins")]
     pub allowed_origins: String,
@@ -39,6 +24,38 @@ pub struct CorsRule {
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DequeuedMessageItem {
+    #[serde(rename = "MessageId")]
+    pub message_id: String,
+    #[serde(rename = "InsertionTime")]
+    pub insertion_time: String,
+    #[serde(rename = "ExpirationTime")]
+    pub expiration_time: String,
+    #[serde(rename = "PopReceipt")]
+    pub pop_receipt: String,
+    #[serde(rename = "TimeNextVisible")]
+    pub time_next_visible: String,
+    #[serde(rename = "DequeueCount")]
+    pub dequeue_count: i64,
+    #[serde(rename = "MessageText")]
+    pub message_text: String,
+}
+pub type DequeuedMessagesList = Vec<DequeuedMessageItem>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EnqueuedMessage {
+    #[serde(rename = "MessageId")]
+    pub message_id: String,
+    #[serde(rename = "InsertionTime")]
+    pub insertion_time: String,
+    #[serde(rename = "ExpirationTime")]
+    pub expiration_time: String,
+    #[serde(rename = "PopReceipt")]
+    pub pop_receipt: String,
+    #[serde(rename = "TimeNextVisible")]
+    pub time_next_visible: String,
+}
+pub type EnqueuedMessageList = Vec<EnqueuedMessage>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorCode {
     AccountAlreadyExists,
@@ -120,6 +137,21 @@ pub mod geo_replication {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListQueuesSegmentResponse {
+    #[serde(rename = "ServiceEndpoint")]
+    pub service_endpoint: String,
+    #[serde(rename = "Prefix")]
+    pub prefix: String,
+    #[serde(rename = "Marker", default, skip_serializing_if = "Option::is_none")]
+    pub marker: Option<String>,
+    #[serde(rename = "MaxResults")]
+    pub max_results: i64,
+    #[serde(rename = "QueueItems", default, skip_serializing_if = "Vec::is_empty")]
+    pub queue_items: Vec<QueueItem>,
+    #[serde(rename = "NextMarker")]
+    pub next_marker: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Logging {
     #[serde(rename = "Version")]
     pub version: String,
@@ -135,11 +167,6 @@ pub struct Logging {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metadata {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageError {
-    #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
@@ -149,35 +176,6 @@ pub struct Metrics {
     pub include_ap_is: Option<bool>,
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueueItem {
-    #[serde(rename = "Name")]
-    pub name: String,
-    #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<Metadata>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueueMessage {
-    #[serde(rename = "MessageText")]
-    pub message_text: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DequeuedMessageItem {
-    #[serde(rename = "MessageId")]
-    pub message_id: String,
-    #[serde(rename = "InsertionTime")]
-    pub insertion_time: String,
-    #[serde(rename = "ExpirationTime")]
-    pub expiration_time: String,
-    #[serde(rename = "PopReceipt")]
-    pub pop_receipt: String,
-    #[serde(rename = "TimeNextVisible")]
-    pub time_next_visible: String,
-    #[serde(rename = "DequeueCount")]
-    pub dequeue_count: i64,
-    #[serde(rename = "MessageText")]
-    pub message_text: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PeekedMessageItem {
@@ -192,22 +190,19 @@ pub struct PeekedMessageItem {
     #[serde(rename = "MessageText")]
     pub message_text: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnqueuedMessage {
-    #[serde(rename = "MessageId")]
-    pub message_id: String,
-    #[serde(rename = "InsertionTime")]
-    pub insertion_time: String,
-    #[serde(rename = "ExpirationTime")]
-    pub expiration_time: String,
-    #[serde(rename = "PopReceipt")]
-    pub pop_receipt: String,
-    #[serde(rename = "TimeNextVisible")]
-    pub time_next_visible: String,
-}
-pub type DequeuedMessagesList = Vec<DequeuedMessageItem>;
 pub type PeekedMessagesList = Vec<PeekedMessageItem>;
-pub type EnqueuedMessageList = Vec<EnqueuedMessage>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueueItem {
+    #[serde(rename = "Name")]
+    pub name: String,
+    #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Metadata>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QueueMessage {
+    #[serde(rename = "MessageText")]
+    pub message_text: String,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
     #[serde(rename = "Enabled")]
@@ -223,6 +218,11 @@ pub struct SignedIdentifier {
     pub access_policy: AccessPolicy,
 }
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageError {
+    #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageServiceProperties {
     #[serde(rename = "Logging", default, skip_serializing_if = "Option::is_none")]

@@ -3,6 +3,50 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureCliScript {
+    #[serde(flatten)]
+    pub deployment_script: DeploymentScript,
+    pub properties: AzureCliScriptProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureCliScriptProperties {
+    #[serde(flatten)]
+    pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
+    #[serde(flatten)]
+    pub script_configuration_base: ScriptConfigurationBase,
+    #[serde(rename = "azCliVersion")]
+    pub az_cli_version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzurePowerShellScript {
+    #[serde(flatten)]
+    pub deployment_script: DeploymentScript,
+    pub properties: AzurePowerShellScriptProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzurePowerShellScriptProperties {
+    #[serde(flatten)]
+    pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
+    #[serde(flatten)]
+    pub script_configuration_base: ScriptConfigurationBase,
+    #[serde(rename = "azPowerShellVersion")]
+    pub az_power_shell_version: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureResourceBase {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerConfiguration {
+    #[serde(rename = "containerGroupName", default, skip_serializing_if = "Option::is_none")]
+    pub container_group_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScript {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
@@ -25,60 +69,11 @@ pub mod deployment_script {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeploymentScriptUpdateParameter {
-    #[serde(flatten)]
-    pub azure_resource_base: AzureResourceBase,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzurePowerShellScript {
-    #[serde(flatten)]
-    pub deployment_script: DeploymentScript,
-    pub properties: AzurePowerShellScriptProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzurePowerShellScriptProperties {
-    #[serde(flatten)]
-    pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
-    #[serde(flatten)]
-    pub script_configuration_base: ScriptConfigurationBase,
-    #[serde(rename = "azPowerShellVersion")]
-    pub az_power_shell_version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureCliScript {
-    #[serde(flatten)]
-    pub deployment_script: DeploymentScript,
-    pub properties: AzureCliScriptProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureCliScriptProperties {
-    #[serde(flatten)]
-    pub deployment_script_properties_base: DeploymentScriptPropertiesBase,
-    #[serde(flatten)]
-    pub script_configuration_base: ScriptConfigurationBase,
-    #[serde(rename = "azCliVersion")]
-    pub az_cli_version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScriptConfigurationBase {
-    #[serde(rename = "primaryScriptUri", default, skip_serializing_if = "Option::is_none")]
-    pub primary_script_uri: Option<String>,
-    #[serde(rename = "supportingScriptUris", default, skip_serializing_if = "Vec::is_empty")]
-    pub supporting_script_uris: Vec<String>,
-    #[serde(rename = "scriptContent", default, skip_serializing_if = "Option::is_none")]
-    pub script_content: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub arguments: Option<String>,
-    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
-    pub environment_variables: Vec<EnvironmentVariable>,
-    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
-    pub force_update_tag: Option<String>,
-    #[serde(rename = "retentionInterval")]
-    pub retention_interval: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timeout: Option<String>,
+pub struct DeploymentScriptListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DeploymentScript>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScriptPropertiesBase {
@@ -114,31 +109,49 @@ pub mod deployment_script_properties_base {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerConfiguration {
-    #[serde(rename = "containerGroupName", default, skip_serializing_if = "Option::is_none")]
-    pub container_group_name: Option<String>,
+pub struct DeploymentScriptUpdateParameter {
+    #[serde(flatten)]
+    pub azure_resource_base: AzureResourceBase,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageAccountConfiguration {
-    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_name: Option<String>,
-    #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScriptStatus {
-    #[serde(rename = "containerInstanceId", default, skip_serializing_if = "Option::is_none")]
-    pub container_instance_id: Option<String>,
-    #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_id: Option<String>,
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
-    pub expiration_time: Option<String>,
+pub struct DeploymentScriptsError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EnvironmentVariable {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "secureValue", default, skip_serializing_if = "Option::is_none")]
+    pub secure_value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorResponse>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub log: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedServiceIdentity {
@@ -157,31 +170,23 @@ pub mod managed_service_identity {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UserAssignedIdentity {
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnvironmentVariable {
-    pub name: String,
+pub struct ScriptConfigurationBase {
+    #[serde(rename = "primaryScriptUri", default, skip_serializing_if = "Option::is_none")]
+    pub primary_script_uri: Option<String>,
+    #[serde(rename = "supportingScriptUris", default, skip_serializing_if = "Vec::is_empty")]
+    pub supporting_script_uris: Vec<String>,
+    #[serde(rename = "scriptContent", default, skip_serializing_if = "Option::is_none")]
+    pub script_content: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "secureValue", default, skip_serializing_if = "Option::is_none")]
-    pub secure_value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeploymentScriptListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DeploymentScript>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScriptLogsList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ScriptLog>,
+    pub arguments: Option<String>,
+    #[serde(rename = "environmentVariables", default, skip_serializing_if = "Vec::is_empty")]
+    pub environment_variables: Vec<EnvironmentVariable>,
+    #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
+    pub force_update_tag: Option<String>,
+    #[serde(rename = "retentionInterval")]
+    pub retention_interval: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptLog {
@@ -191,23 +196,38 @@ pub struct ScriptLog {
     pub properties: Option<LogProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub log: Option<String>,
+pub struct ScriptLogsList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ScriptLog>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourceBase {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeploymentScriptsError {
+pub struct ScriptStatus {
+    #[serde(rename = "containerInstanceId", default, skip_serializing_if = "Option::is_none")]
+    pub container_instance_id: Option<String>,
+    #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_id: Option<String>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
+    pub expiration_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StorageAccountConfiguration {
+    #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_name: Option<String>,
+    #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UserAssignedIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
@@ -240,24 +260,4 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorResponse>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
 }

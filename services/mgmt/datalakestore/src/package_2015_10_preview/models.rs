@@ -3,14 +3,25 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FirewallRuleProperties {
-    #[serde(rename = "startIpAddress", default, skip_serializing_if = "Option::is_none")]
-    pub start_ip_address: Option<String>,
-    #[serde(rename = "endIpAddress", default, skip_serializing_if = "Option::is_none")]
-    pub end_ip_address: Option<String>,
+pub struct AzureAsyncOperationResult {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<azure_async_operation_result::Status>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<Error>,
+}
+pub mod azure_async_operation_result {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        InProgress,
+        Succeeded,
+        Failed,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FirewallRule {
+pub struct DataLakeStoreAccount {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -18,58 +29,20 @@ pub struct FirewallRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
+    pub identity: Option<EncryptionIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<FirewallRuleProperties>,
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DataLakeStoreAccountProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataLakeStoreFirewallRuleListResult {
+pub struct DataLakeStoreAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<FirewallRule>,
+    pub value: Vec<DataLakeStoreAccount>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionIdentity {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<encryption_identity::Type>,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-pub mod encryption_identity {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionConfig {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<encryption_config::Type>,
-    #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
-    pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
-}
-pub mod encryption_config {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        UserManaged,
-        ServiceManaged,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyVaultMetaInfo {
-    #[serde(rename = "keyVaultResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub key_vault_resource_id: Option<String>,
-    #[serde(rename = "encryptionKeyName", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_key_name: Option<String>,
-    #[serde(rename = "encryptionKeyVersion", default, skip_serializing_if = "Option::is_none")]
-    pub encryption_key_version: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeStoreAccountProperties {
@@ -125,46 +98,44 @@ pub mod data_lake_store_account_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataLakeStoreAccount {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<EncryptionIdentity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DataLakeStoreAccountProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataLakeStoreAccountListResult {
+pub struct DataLakeStoreFirewallRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DataLakeStoreAccount>,
+    pub value: Vec<FirewallRule>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
+pub struct EncryptionConfig {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<encryption_config::Type>,
+    #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
+}
+pub mod encryption_config {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        UserManaged,
+        ServiceManaged,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InnerError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub trace: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub context: Option<String>,
+pub struct EncryptionIdentity {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<encryption_identity::Type>,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+pub mod encryption_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
@@ -180,18 +151,47 @@ pub struct Error {
     pub inner_error: Option<InnerError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureAsyncOperationResult {
+pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<azure_async_operation_result::Status>,
+    pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<Error>,
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
 }
-pub mod azure_async_operation_result {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        InProgress,
-        Succeeded,
-        Failed,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FirewallRule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FirewallRuleProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FirewallRuleProperties {
+    #[serde(rename = "startIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub start_ip_address: Option<String>,
+    #[serde(rename = "endIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub end_ip_address: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InnerError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trace: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct KeyVaultMetaInfo {
+    #[serde(rename = "keyVaultResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_resource_id: Option<String>,
+    #[serde(rename = "encryptionKeyName", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_key_name: Option<String>,
+    #[serde(rename = "encryptionKeyVersion", default, skip_serializing_if = "Option::is_none")]
+    pub encryption_key_version: Option<String>,
 }

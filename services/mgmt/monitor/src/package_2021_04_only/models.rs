@@ -3,27 +3,14 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMonitorMetricsDestination {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationAccessEndpointSpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogsIngestionEndpointSpec {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub endpoint: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkRuleSet {
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<network_rule_set::PublicNetworkAccess>,
-}
-pub mod network_rule_set {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PublicNetworkAccess {
-        Enabled,
-        Disabled,
-    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataCollectionEndpoint {
@@ -86,94 +73,6 @@ pub struct DataCollectionEndpointResourceListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceForUpdate {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PerfCounterDataSource {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub streams: Vec<String>,
-    #[serde(rename = "samplingFrequencyInSeconds", default, skip_serializing_if = "Option::is_none")]
-    pub sampling_frequency_in_seconds: Option<i32>,
-    #[serde(rename = "counterSpecifiers", default, skip_serializing_if = "Vec::is_empty")]
-    pub counter_specifiers: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WindowsEventLogDataSource {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub streams: Vec<String>,
-    #[serde(rename = "xPathQueries", default, skip_serializing_if = "Vec::is_empty")]
-    pub x_path_queries: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SyslogDataSource {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub streams: Vec<String>,
-    #[serde(rename = "facilityNames", default, skip_serializing_if = "Vec::is_empty")]
-    pub facility_names: Vec<String>,
-    #[serde(rename = "logLevels", default, skip_serializing_if = "Vec::is_empty")]
-    pub log_levels: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtensionDataSource {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub streams: Vec<String>,
-    #[serde(rename = "extensionName")]
-    pub extension_name: String,
-    #[serde(rename = "extensionSettings", default, skip_serializing_if = "Option::is_none")]
-    pub extension_settings: Option<serde_json::Value>,
-    #[serde(rename = "inputDataSources", default, skip_serializing_if = "Vec::is_empty")]
-    pub input_data_sources: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataSourcesSpec {
-    #[serde(rename = "performanceCounters", default, skip_serializing_if = "Vec::is_empty")]
-    pub performance_counters: Vec<PerfCounterDataSource>,
-    #[serde(rename = "windowsEventLogs", default, skip_serializing_if = "Vec::is_empty")]
-    pub windows_event_logs: Vec<WindowsEventLogDataSource>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub syslog: Vec<SyslogDataSource>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub extensions: Vec<ExtensionDataSource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogAnalyticsDestination {
-    #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_resource_id: Option<String>,
-    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
-    pub workspace_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureMonitorMetricsDestination {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DestinationsSpec {
-    #[serde(rename = "logAnalytics", default, skip_serializing_if = "Vec::is_empty")]
-    pub log_analytics: Vec<LogAnalyticsDestination>,
-    #[serde(rename = "azureMonitorMetrics", default, skip_serializing_if = "Option::is_none")]
-    pub azure_monitor_metrics: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataFlow {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub streams: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub destinations: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataCollectionRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -198,45 +97,6 @@ pub mod data_collection_rule {
         Succeeded,
         Failed,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataCollectionRuleResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<serde_json::Value>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<data_collection_rule_resource::Kind>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<serde_json::Value>,
-}
-pub mod data_collection_rule_resource {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        Linux,
-        Windows,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataCollectionRuleResourceListResult {
-    pub value: Vec<DataCollectionRuleResource>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponseCommonV2 {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetail>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataCollectionRuleAssociation {
@@ -282,6 +142,166 @@ pub struct DataCollectionRuleAssociationProxyOnlyResourceListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataCollectionRuleResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<data_collection_rule_resource::Kind>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<serde_json::Value>,
+}
+pub mod data_collection_rule_resource {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        Linux,
+        Windows,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataCollectionRuleResourceListResult {
+    pub value: Vec<DataCollectionRuleResource>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataFlow {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub streams: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub destinations: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataSourcesSpec {
+    #[serde(rename = "performanceCounters", default, skip_serializing_if = "Vec::is_empty")]
+    pub performance_counters: Vec<PerfCounterDataSource>,
+    #[serde(rename = "windowsEventLogs", default, skip_serializing_if = "Vec::is_empty")]
+    pub windows_event_logs: Vec<WindowsEventLogDataSource>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub syslog: Vec<SyslogDataSource>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extensions: Vec<ExtensionDataSource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DestinationsSpec {
+    #[serde(rename = "logAnalytics", default, skip_serializing_if = "Vec::is_empty")]
+    pub log_analytics: Vec<LogAnalyticsDestination>,
+    #[serde(rename = "azureMonitorMetrics", default, skip_serializing_if = "Option::is_none")]
+    pub azure_monitor_metrics: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponseCommonV2 {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExtensionDataSource {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub streams: Vec<String>,
+    #[serde(rename = "extensionName")]
+    pub extension_name: String,
+    #[serde(rename = "extensionSettings", default, skip_serializing_if = "Option::is_none")]
+    pub extension_settings: Option<serde_json::Value>,
+    #[serde(rename = "inputDataSources", default, skip_serializing_if = "Vec::is_empty")]
+    pub input_data_sources: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogAnalyticsDestination {
+    #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_resource_id: Option<String>,
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogsIngestionEndpointSpec {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub endpoint: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkRuleSet {
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<network_rule_set::PublicNetworkAccess>,
+}
+pub mod network_rule_set {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PublicNetworkAccess {
+        Enabled,
+        Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PerfCounterDataSource {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub streams: Vec<String>,
+    #[serde(rename = "samplingFrequencyInSeconds", default, skip_serializing_if = "Option::is_none")]
+    pub sampling_frequency_in_seconds: Option<i32>,
+    #[serde(rename = "counterSpecifiers", default, skip_serializing_if = "Vec::is_empty")]
+    pub counter_specifiers: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceForUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SyslogDataSource {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub streams: Vec<String>,
+    #[serde(rename = "facilityNames", default, skip_serializing_if = "Vec::is_empty")]
+    pub facility_names: Vec<String>,
+    #[serde(rename = "logLevels", default, skip_serializing_if = "Vec::is_empty")]
+    pub log_levels: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WindowsEventLogDataSource {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub streams: Vec<String>,
+    #[serde(rename = "xPathQueries", default, skip_serializing_if = "Vec::is_empty")]
+    pub x_path_queries: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -312,24 +332,4 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDetail>,
-    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorAdditionalInfo {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<serde_json::Value>,
 }

@@ -19,10 +19,6 @@ pub struct OrchestratorVersionProfile {
     pub upgrades: Vec<OrchestratorProfile>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OrchestratorVersionProfileProperties {
-    pub orchestrators: Vec<OrchestratorVersionProfile>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -31,4 +27,8 @@ pub struct OrchestratorVersionProfileListResult {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     pub properties: OrchestratorVersionProfileProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OrchestratorVersionProfileProperties {
+    pub orchestrators: Vec<OrchestratorVersionProfile>,
 }

@@ -3,11 +3,11 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EaSubscriptionMigrationDate {
-    #[serde(rename = "isGrandFatherableSubscription", default, skip_serializing_if = "Option::is_none")]
-    pub is_grand_fatherable_subscription: Option<bool>,
-    #[serde(rename = "optedInDate", default, skip_serializing_if = "Option::is_none")]
-    pub opted_in_date: Option<String>,
+pub struct ApplicationInsightsComponentPricingPlan {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PricingPlanProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
@@ -26,20 +26,11 @@ pub struct CloudErrorBody {
     pub details: Vec<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplicationInsightsComponentPricingPlan {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PricingPlanProperties>,
+pub struct EaSubscriptionMigrationDate {
+    #[serde(rename = "isGrandFatherableSubscription", default, skip_serializing_if = "Option::is_none")]
+    pub is_grand_fatherable_subscription: Option<bool>,
+    #[serde(rename = "optedInDate", default, skip_serializing_if = "Option::is_none")]
+    pub opted_in_date: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PricingPlanProperties {
@@ -57,4 +48,13 @@ pub struct PricingPlanProperties {
     pub stop_send_notification_when_hit_cap: Option<bool>,
     #[serde(rename = "maxHistoryCap", default, skip_serializing_if = "Option::is_none")]
     pub max_history_cap: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }

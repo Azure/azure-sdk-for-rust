@@ -3,30 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlertResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ActivityLogAlert>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlertList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ActivityLogAlertResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlert {
     pub scopes: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -35,6 +11,18 @@ pub struct ActivityLogAlert {
     pub actions: ActivityLogAlertActionList,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityLogAlertActionGroup {
+    #[serde(rename = "actionGroupId")]
+    pub action_group_id: String,
+    #[serde(rename = "webhookProperties", default, skip_serializing_if = "Option::is_none")]
+    pub webhook_properties: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ActivityLogAlertActionList {
+    #[serde(rename = "actionGroups", default, skip_serializing_if = "Vec::is_empty")]
+    pub action_groups: Vec<ActivityLogAlertActionGroup>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlertAllOfCondition {
@@ -47,23 +35,21 @@ pub struct ActivityLogAlertLeafCondition {
     pub equals: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlertActionList {
-    #[serde(rename = "actionGroups", default, skip_serializing_if = "Vec::is_empty")]
-    pub action_groups: Vec<ActivityLogAlertActionGroup>,
+pub struct ActivityLogAlertList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ActivityLogAlertResource>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlertActionGroup {
-    #[serde(rename = "actionGroupId")]
-    pub action_group_id: String,
-    #[serde(rename = "webhookProperties", default, skip_serializing_if = "Option::is_none")]
-    pub webhook_properties: Option<serde_json::Value>,
+pub struct ActivityLogAlertPatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct ActivityLogAlertResource {
+    #[serde(flatten)]
+    pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub properties: Option<ActivityLogAlert>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlertResourcePatch {
@@ -73,7 +59,21 @@ pub struct ActivityLogAlertResourcePatch {
     pub properties: Option<ActivityLogAlertPatch>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlertPatch {
+pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }

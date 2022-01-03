@@ -3,6 +3,13 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ApplyUpdate {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ApplyUpdateProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplyUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<apply_update_properties::Status>,
@@ -23,36 +30,6 @@ pub mod apply_update_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplyUpdate {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ApplyUpdateProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListApplyUpdate {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ApplyUpdate>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfigurationAssignmentProperties {
-    #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
-    pub maintenance_configuration_id: Option<String>,
-    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfigurationAssignment {
     #[serde(flatten)]
     pub resource: Resource,
@@ -62,22 +39,89 @@ pub struct ConfigurationAssignment {
     pub properties: Option<ConfigurationAssignmentProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfigurationAssignmentProperties {
+    #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
+    pub maintenance_configuration_id: Option<String>,
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InputLinuxParameters {
+    #[serde(rename = "packageNameMasksToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub package_name_masks_to_exclude: Vec<String>,
+    #[serde(rename = "packageNameMasksToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub package_name_masks_to_include: Vec<String>,
+    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub classifications_to_include: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InputPatchConfiguration {
+    #[serde(rename = "rebootSetting", default, skip_serializing_if = "Option::is_none")]
+    pub reboot_setting: Option<input_patch_configuration::RebootSetting>,
+    #[serde(rename = "windowsParameters", default, skip_serializing_if = "Option::is_none")]
+    pub windows_parameters: Option<InputWindowsParameters>,
+    #[serde(rename = "linuxParameters", default, skip_serializing_if = "Option::is_none")]
+    pub linux_parameters: Option<InputLinuxParameters>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tasks: Option<SoftwareUpdateConfigurationTasks>,
+}
+pub mod input_patch_configuration {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RebootSetting {
+        IfRequired,
+        Never,
+        Always,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InputWindowsParameters {
+    #[serde(rename = "kbNumbersToExclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub kb_numbers_to_exclude: Vec<String>,
+    #[serde(rename = "kbNumbersToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub kb_numbers_to_include: Vec<String>,
+    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
+    pub classifications_to_include: Vec<String>,
+    #[serde(rename = "excludeKbsRequiringReboot", default, skip_serializing_if = "Option::is_none")]
+    pub exclude_kbs_requiring_reboot: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListApplyUpdate {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ApplyUpdate>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListConfigurationAssignmentsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationAssignment>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MaintenanceWindow {
-    #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_date_time: Option<String>,
-    #[serde(rename = "expirationDateTime", default, skip_serializing_if = "Option::is_none")]
-    pub expiration_date_time: Option<String>,
+pub struct ListMaintenanceConfigurationsResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MaintenanceConfiguration>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListUpdatesResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Update>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MaintenanceConfiguration {
+    #[serde(flatten)]
+    pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub duration: Option<String>,
-    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    #[serde(rename = "recurEvery", default, skip_serializing_if = "Option::is_none")]
-    pub recur_every: Option<String>,
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MaintenanceConfigurationProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MaintenanceConfigurationProperties {
@@ -115,101 +159,22 @@ pub mod maintenance_configuration_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InputPatchConfiguration {
-    #[serde(rename = "rebootSetting", default, skip_serializing_if = "Option::is_none")]
-    pub reboot_setting: Option<input_patch_configuration::RebootSetting>,
-    #[serde(rename = "windowsParameters", default, skip_serializing_if = "Option::is_none")]
-    pub windows_parameters: Option<InputWindowsParameters>,
-    #[serde(rename = "linuxParameters", default, skip_serializing_if = "Option::is_none")]
-    pub linux_parameters: Option<InputLinuxParameters>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tasks: Option<SoftwareUpdateConfigurationTasks>,
-}
-pub mod input_patch_configuration {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RebootSetting {
-        IfRequired,
-        Never,
-        Always,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InputWindowsParameters {
-    #[serde(rename = "kbNumbersToExclude", default, skip_serializing_if = "Vec::is_empty")]
-    pub kb_numbers_to_exclude: Vec<String>,
-    #[serde(rename = "kbNumbersToInclude", default, skip_serializing_if = "Vec::is_empty")]
-    pub kb_numbers_to_include: Vec<String>,
-    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
-    pub classifications_to_include: Vec<String>,
-    #[serde(rename = "excludeKbsRequiringReboot", default, skip_serializing_if = "Option::is_none")]
-    pub exclude_kbs_requiring_reboot: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InputLinuxParameters {
-    #[serde(rename = "packageNameMasksToExclude", default, skip_serializing_if = "Vec::is_empty")]
-    pub package_name_masks_to_exclude: Vec<String>,
-    #[serde(rename = "packageNameMasksToInclude", default, skip_serializing_if = "Vec::is_empty")]
-    pub package_name_masks_to_include: Vec<String>,
-    #[serde(rename = "classificationsToInclude", default, skip_serializing_if = "Vec::is_empty")]
-    pub classifications_to_include: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SoftwareUpdateConfigurationTasks {
-    #[serde(rename = "preTasks", default, skip_serializing_if = "Vec::is_empty")]
-    pub pre_tasks: Vec<TaskProperties>,
-    #[serde(rename = "postTasks", default, skip_serializing_if = "Vec::is_empty")]
-    pub post_tasks: Vec<TaskProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TaskProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>,
-    #[serde(rename = "taskScope", default, skip_serializing_if = "Option::is_none")]
-    pub task_scope: Option<task_properties::TaskScope>,
-}
-pub mod task_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TaskScope {
-        Global,
-        Resource,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MaintenanceConfiguration {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MaintenanceConfigurationProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MaintenanceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetails {
+pub struct MaintenanceWindow {
+    #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_date_time: Option<String>,
+    #[serde(rename = "expirationDateTime", default, skip_serializing_if = "Option::is_none")]
+    pub expiration_date_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListMaintenanceConfigurationsResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MaintenanceConfiguration>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
+    pub duration: Option<String>,
+    #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    #[serde(rename = "recurEvery", default, skip_serializing_if = "Option::is_none")]
+    pub recur_every: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -236,9 +201,20 @@ pub struct OperationInfo {
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListUpdatesResult {
+pub struct OperationsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Update>,
+    pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Update {
@@ -291,6 +267,13 @@ pub struct UpdateProperties {
     pub resource_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SoftwareUpdateConfigurationTasks {
+    #[serde(rename = "preTasks", default, skip_serializing_if = "Vec::is_empty")]
+    pub pre_tasks: Vec<TaskProperties>,
+    #[serde(rename = "postTasks", default, skip_serializing_if = "Vec::is_empty")]
+    pub post_tasks: Vec<TaskProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -320,5 +303,22 @@ pub mod system_data {
         Application,
         ManagedIdentity,
         Key,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TaskProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[serde(rename = "taskScope", default, skip_serializing_if = "Option::is_none")]
+    pub task_scope: Option<task_properties::TaskScope>,
+}
+pub mod task_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum TaskScope {
+        Global,
+        Resource,
     }
 }

@@ -3,6 +3,63 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BudgetModel {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BudgetProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BudgetProperties {
+    pub category: budget_properties::Category,
+    pub amount: f64,
+    #[serde(rename = "timeGrain")]
+    pub time_grain: budget_properties::TimeGrain,
+    #[serde(rename = "timePeriod")]
+    pub time_period: BudgetTimePeriod,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<ReportConfigFilter>,
+    #[serde(rename = "currentSpend", default, skip_serializing_if = "Option::is_none")]
+    pub current_spend: Option<CurrentSpend>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notifications: Option<serde_json::Value>,
+}
+pub mod budget_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Category {
+        Cost,
+        Usage,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum TimeGrain {
+        Monthly,
+        Quarterly,
+        Annually,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BudgetTimePeriod {
+    #[serde(rename = "startDate")]
+    pub start_date: String,
+    #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BudgetsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BudgetModel>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CurrentSpend {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub amount: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -28,15 +85,83 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
+pub struct KpiProperties {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<kpi_properties::Type>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+    pub enabled: Option<bool>,
+}
+pub mod kpi_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Forecast,
+        Budget,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Notification {
+    pub enabled: bool,
+    pub operator: notification::Operator,
+    pub threshold: f64,
+    #[serde(rename = "contactEmails")]
+    pub contact_emails: Vec<String>,
+    #[serde(rename = "contactRoles", default, skip_serializing_if = "Vec::is_empty")]
+    pub contact_roles: Vec<String>,
+    #[serde(rename = "contactGroups", default, skip_serializing_if = "Vec::is_empty")]
+    pub contact_groups: Vec<String>,
+}
+pub mod notification {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Operator {
+        EqualTo,
+        GreaterThan,
+        GreaterThanOrEqualTo,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PivotProperties {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<pivot_properties::Type>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+pub mod pivot_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Dimension,
+        TagKey,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProxyResource {
@@ -50,33 +175,35 @@ pub struct ProxyResource {
     pub e_tag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigDefinition {
-    #[serde(rename = "type")]
-    pub type_: report_config_definition::Type,
-    pub timeframe: report_config_definition::Timeframe,
-    #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
-    pub time_period: Option<ReportConfigTimePeriod>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dataset: Option<ReportConfigDataset>,
+pub struct ReportConfigAggregation {
+    pub name: String,
+    pub function: report_config_aggregation::Function,
 }
-pub mod report_config_definition {
+pub mod report_config_aggregation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Usage,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Timeframe {
-        WeekToDate,
-        MonthToDate,
-        YearToDate,
-        Custom,
+    pub enum Function {
+        Sum,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigTimePeriod {
-    pub from: String,
-    pub to: String,
+pub enum ReportConfigColumnType {
+    Tag,
+    Dimension,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReportConfigComparisonExpression {
+    pub name: String,
+    pub operator: report_config_comparison_expression::Operator,
+    pub values: Vec<String>,
+}
+pub mod report_config_comparison_expression {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Operator {
+        In,
+        Contains,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigDataset {
@@ -107,16 +234,47 @@ pub struct ReportConfigDatasetConfiguration {
     pub columns: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigAggregation {
-    pub name: String,
-    pub function: report_config_aggregation::Function,
+pub struct ReportConfigDefinition {
+    #[serde(rename = "type")]
+    pub type_: report_config_definition::Type,
+    pub timeframe: report_config_definition::Timeframe,
+    #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
+    pub time_period: Option<ReportConfigTimePeriod>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dataset: Option<ReportConfigDataset>,
 }
-pub mod report_config_aggregation {
+pub mod report_config_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Function {
-        Sum,
+    pub enum Type {
+        Usage,
     }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Timeframe {
+        WeekToDate,
+        MonthToDate,
+        YearToDate,
+        Custom,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReportConfigFilter {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub and: Vec<ReportConfigFilter>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub or: Vec<ReportConfigFilter>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not: Box<Option<ReportConfigFilter>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dimension: Option<ReportConfigComparisonExpression>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<ReportConfigComparisonExpression>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReportConfigGrouping {
+    #[serde(rename = "type")]
+    pub type_: ReportConfigColumnType,
+    pub name: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigSorting {
@@ -133,68 +291,20 @@ pub mod report_config_sorting {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigGrouping {
-    #[serde(rename = "type")]
-    pub type_: ReportConfigColumnType,
-    pub name: String,
+pub struct ReportConfigTimePeriod {
+    pub from: String,
+    pub to: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigFilter {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub and: Vec<ReportConfigFilter>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub or: Vec<ReportConfigFilter>,
+pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub not: Box<Option<ReportConfigFilter>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dimension: Option<ReportConfigComparisonExpression>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<ReportConfigComparisonExpression>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ReportConfigColumnType {
-    Tag,
-    Dimension,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReportConfigComparisonExpression {
-    pub name: String,
-    pub operator: report_config_comparison_expression::Operator,
-    pub values: Vec<String>,
-}
-pub mod report_config_comparison_expression {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Operator {
-        In,
-        Contains,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
+    pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-}
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-    }
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Scope {
@@ -208,18 +318,18 @@ pub struct Scope {
     pub child_scope: Box<Option<Scope>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ViewListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<View>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct View {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ViewProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ViewListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<View>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ViewProperties {
@@ -267,115 +377,5 @@ pub mod view_properties {
         AmortizedCost,
         #[serde(rename = "AHUB")]
         Ahub,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KpiProperties {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<kpi_properties::Type>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-}
-pub mod kpi_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Forecast,
-        Budget,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PivotProperties {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<pivot_properties::Type>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-pub mod pivot_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Dimension,
-        TagKey,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BudgetsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<BudgetModel>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BudgetModel {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BudgetProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BudgetProperties {
-    pub category: budget_properties::Category,
-    pub amount: f64,
-    #[serde(rename = "timeGrain")]
-    pub time_grain: budget_properties::TimeGrain,
-    #[serde(rename = "timePeriod")]
-    pub time_period: BudgetTimePeriod,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<ReportConfigFilter>,
-    #[serde(rename = "currentSpend", default, skip_serializing_if = "Option::is_none")]
-    pub current_spend: Option<CurrentSpend>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub notifications: Option<serde_json::Value>,
-}
-pub mod budget_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Category {
-        Cost,
-        Usage,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TimeGrain {
-        Monthly,
-        Quarterly,
-        Annually,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BudgetTimePeriod {
-    #[serde(rename = "startDate")]
-    pub start_date: String,
-    #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
-    pub end_date: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CurrentSpend {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub amount: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Notification {
-    pub enabled: bool,
-    pub operator: notification::Operator,
-    pub threshold: f64,
-    #[serde(rename = "contactEmails")]
-    pub contact_emails: Vec<String>,
-    #[serde(rename = "contactRoles", default, skip_serializing_if = "Vec::is_empty")]
-    pub contact_roles: Vec<String>,
-    #[serde(rename = "contactGroups", default, skip_serializing_if = "Vec::is_empty")]
-    pub contact_groups: Vec<String>,
-}
-pub mod notification {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Operator {
-        EqualTo,
-        GreaterThan,
-        GreaterThanOrEqualTo,
     }
 }

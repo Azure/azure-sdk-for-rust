@@ -3,25 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MdeOnboardingDataProperties {
-    #[serde(rename = "onboardingPackageWindows", default, skip_serializing_if = "Option::is_none")]
-    pub onboarding_package_windows: Option<String>,
-    #[serde(rename = "onboardingPackageLinux", default, skip_serializing_if = "Option::is_none")]
-    pub onboarding_package_linux: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MdeOnboardingData {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MdeOnboardingDataProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MdeOnboardingDataList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MdeOnboardingData>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
@@ -45,6 +26,25 @@ pub struct ErrorAdditionalInfo {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MdeOnboardingData {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MdeOnboardingDataProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MdeOnboardingDataList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MdeOnboardingData>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MdeOnboardingDataProperties {
+    #[serde(rename = "onboardingPackageWindows", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_package_windows: Option<String>,
+    #[serde(rename = "onboardingPackageLinux", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_package_linux: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {

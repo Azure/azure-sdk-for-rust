@@ -51,6 +51,12 @@ impl<T> ReferenceOr<T> {
     }
 }
 
+/// a `$ref` URI
+/// https://swagger.io/docs/specification/using-ref/
+/// examples:
+///   "$ref": "#/definitions/CloudError"
+///   "$ref": "../../../../../common-types/resource-management/v1/types.json#/parameters/ApiVersionParameter"
+///   "$ref": "#/parameters/privateCloudName"
 #[derive(Clone, Debug, PartialEq)]
 pub struct Reference {
     pub file: Option<String>,

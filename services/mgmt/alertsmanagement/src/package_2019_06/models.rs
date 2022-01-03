@@ -3,13 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SmartDetectorErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupsInformation {
     #[serde(rename = "customEmailSubject", default, skip_serializing_if = "Option::is_none")]
     pub custom_email_subject: Option<String>,
@@ -19,36 +12,11 @@ pub struct ActionGroupsInformation {
     pub group_ids: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThrottlingInformation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub duration: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRule {
     #[serde(flatten)]
     pub azure_resource: AzureResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertRuleProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertRulesList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<AlertRule>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRulePatchObject {
@@ -64,18 +32,35 @@ pub struct AlertRulePatchObject {
     pub properties: Option<AlertRulePatchProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Detector {
-    pub id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+pub struct AlertRulePatchProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "supportedResourceTypes", default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_resource_types: Vec<String>,
-    #[serde(rename = "imagePaths", default, skip_serializing_if = "Vec::is_empty")]
-    pub image_paths: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<alert_rule_patch_properties::State>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<alert_rule_patch_properties::Severity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency: Option<String>,
+    #[serde(rename = "actionGroups", default, skip_serializing_if = "Option::is_none")]
+    pub action_groups: Option<ActionGroupsInformation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub throttling: Option<ThrottlingInformation>,
+}
+pub mod alert_rule_patch_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Severity {
+        Sev0,
+        Sev1,
+        Sev2,
+        Sev3,
+        Sev4,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleProperties {
@@ -108,33 +93,48 @@ pub mod alert_rule_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertRulePatchProperties {
+pub struct AlertRulesList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<AlertRule>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Detector {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<alert_rule_patch_properties::State>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<alert_rule_patch_properties::Severity>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub frequency: Option<String>,
-    #[serde(rename = "actionGroups", default, skip_serializing_if = "Option::is_none")]
-    pub action_groups: Option<ActionGroupsInformation>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub throttling: Option<ThrottlingInformation>,
+    #[serde(rename = "supportedResourceTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_resource_types: Vec<String>,
+    #[serde(rename = "imagePaths", default, skip_serializing_if = "Vec::is_empty")]
+    pub image_paths: Vec<String>,
 }
-pub mod alert_rule_patch_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Enabled,
-        Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Severity {
-        Sev0,
-        Sev1,
-        Sev2,
-        Sev3,
-        Sev4,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartDetectorErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThrottlingInformation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration: Option<String>,
 }

@@ -3,6 +3,15 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ArmBaseModel {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Addon {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
@@ -146,15 +155,6 @@ pub mod arc_addon_properties {
         Failed,
         Deleting,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ArmBaseModel {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AsymmetricEncryptedSecret {
@@ -356,6 +356,16 @@ pub mod container_properties {
         PageBlob,
         AzureFile,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DcAccessCode {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DcAccessCodeProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DcAccessCodeProperties {
+    #[serde(rename = "authCode", default, skip_serializing_if = "Option::is_none")]
+    pub auth_code: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxEdgeDevice {
@@ -642,16 +652,6 @@ pub struct DataBoxEdgeSkuList {
     pub value: Vec<DataBoxEdgeSku>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DcAccessCode {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DcAccessCodeProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DcAccessCodeProperties {
-    #[serde(rename = "authCode", default, skip_serializing_if = "Option::is_none")]
-    pub auth_code: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdgeProfile {

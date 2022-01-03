@@ -3,29 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventRoute {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "endpointName")]
-    pub endpoint_name: String,
-    pub filter: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventRouteCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<EventRoute>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-pub type NonPagedDigitalTwinsModelDataCollection = Vec<DigitalTwinsModelData>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PagedDigitalTwinsModelDataCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DigitalTwinsModelData>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsModelData {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<serde_json::Value>,
@@ -40,16 +17,33 @@ pub struct DigitalTwinsModelData {
     pub model: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RelationshipCollection {
+pub struct Error {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<serde_json::Value>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub details: Vec<Error>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Box<Option<InnerError>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IncomingRelationshipCollection {
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<Error>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventRoute {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "endpointName")]
+    pub endpoint_name: String,
+    pub filter: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventRouteCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<IncomingRelationship>,
+    pub value: Vec<EventRoute>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -65,11 +59,26 @@ pub struct IncomingRelationship {
     pub relationship_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QuerySpecification {
+pub struct IncomingRelationshipCollection {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<IncomingRelationship>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub query: Option<String>,
-    #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
-    pub continuation_token: Option<String>,
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Box<Option<InnerError>>,
+}
+pub type NonPagedDigitalTwinsModelDataCollection = Vec<DigitalTwinsModelData>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PagedDigitalTwinsModelDataCollection {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DigitalTwinsModelData>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryResult {
@@ -79,25 +88,16 @@ pub struct QueryResult {
     pub continuation_token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct QuerySpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<Error>,
+    pub query: Option<String>,
+    #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
+    pub continuation_token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Error {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+pub struct RelationshipCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<Error>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<InnerError>>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InnerError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<InnerError>>,
+    pub value: Vec<serde_json::Value>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }

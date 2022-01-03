@@ -3,14 +3,16 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureMetricsDocument {
-    pub time: String,
-    pub data: AzureMetricsData,
+pub struct ApiError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureMetricsData {
-    #[serde(rename = "baseData")]
-    pub base_data: AzureMetricsBaseData,
+pub struct ApiFailureResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ApiError>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMetricsBaseData {
@@ -21,13 +23,14 @@ pub struct AzureMetricsBaseData {
     pub series: Vec<AzureTimeSeriesData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureTimeSeriesData {
-    #[serde(rename = "dimValues", default, skip_serializing_if = "Vec::is_empty")]
-    pub dim_values: Vec<String>,
-    pub min: f64,
-    pub max: f64,
-    pub sum: f64,
-    pub count: i32,
+pub struct AzureMetricsData {
+    #[serde(rename = "baseData")]
+    pub base_data: AzureMetricsBaseData,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMetricsDocument {
+    pub time: String,
+    pub data: AzureMetricsData,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMetricsResult {
@@ -37,14 +40,11 @@ pub struct AzureMetricsResult {
     pub api_failure_response: Option<ApiFailureResponse>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiFailureResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ApiError>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+pub struct AzureTimeSeriesData {
+    #[serde(rename = "dimValues", default, skip_serializing_if = "Vec::is_empty")]
+    pub dim_values: Vec<String>,
+    pub min: f64,
+    pub max: f64,
+    pub sum: f64,
+    pub count: i32,
 }

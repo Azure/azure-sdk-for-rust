@@ -3,34 +3,25 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DatabaseAccount>,
+pub struct Capability {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDatabaseListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SqlDatabase>,
+pub struct CassandraKeyspace {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CassandraKeyspaceProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlContainerListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SqlContainer>,
+pub struct CassandraKeyspaceCreateUpdateParameters {
+    pub properties: CassandraKeyspaceCreateUpdateProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbDatabaseListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MongoDbDatabase>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbCollectionListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MongoDbCollection>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TableListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Table>,
+pub struct CassandraKeyspaceCreateUpdateProperties {
+    pub resource: CassandraKeyspaceResource,
+    pub options: CreateUpdateOptions,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CassandraKeyspaceListResult {
@@ -38,73 +29,134 @@ pub struct CassandraKeyspaceListResult {
     pub value: Vec<CassandraKeyspace>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CassandraKeyspaceProperties {
+    #[serde(flatten)]
+    pub cassandra_keyspace_resource: CassandraKeyspaceResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CassandraKeyspaceResource {
+    pub id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CassandraPartitionKey {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CassandraSchema {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub columns: Vec<Column>,
+    #[serde(rename = "partitionKeys", default, skip_serializing_if = "Vec::is_empty")]
+    pub partition_keys: Vec<CassandraPartitionKey>,
+    #[serde(rename = "clusterKeys", default, skip_serializing_if = "Vec::is_empty")]
+    pub cluster_keys: Vec<ClusterKey>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CassandraTable {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CassandraTableProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CassandraTableCreateUpdateParameters {
+    pub properties: CassandraTableCreateUpdateProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CassandraTableCreateUpdateProperties {
+    pub resource: CassandraTableResource,
+    pub options: CreateUpdateOptions,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CassandraTableListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CassandraTable>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GremlinDatabaseListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<GremlinDatabase>,
+pub struct CassandraTableProperties {
+    #[serde(flatten)]
+    pub cassandra_table_resource: CassandraTableResource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GremlinGraphListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<GremlinGraph>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
+pub struct CassandraTableResource {
+    pub id: String,
+    #[serde(rename = "defaultTtl", default, skip_serializing_if = "Option::is_none")]
+    pub default_ttl: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
+    pub schema: Option<CassandraSchema>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ClusterKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub name: Option<String>,
+    #[serde(rename = "orderBy", default, skip_serializing_if = "Option::is_none")]
+    pub order_by: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FailoverPolicies {
-    #[serde(rename = "failoverPolicies")]
-    pub failover_policies: Vec<FailoverPolicy>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FailoverPolicy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "locationName", default, skip_serializing_if = "Option::is_none")]
-    pub location_name: Option<String>,
-    #[serde(rename = "failoverPriority", default, skip_serializing_if = "Option::is_none")]
-    pub failover_priority: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegionForOnlineOffline {
-    pub region: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Location {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "locationName", default, skip_serializing_if = "Option::is_none")]
-    pub location_name: Option<String>,
-    #[serde(rename = "documentEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub document_endpoint: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[serde(rename = "failoverPriority", default, skip_serializing_if = "Option::is_none")]
-    pub failover_priority: Option<i32>,
-    #[serde(rename = "isZoneRedundant", default, skip_serializing_if = "Option::is_none")]
-    pub is_zone_redundant: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+pub struct Column {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Tags>,
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConflictResolutionPolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<conflict_resolution_policy::Mode>,
+    #[serde(rename = "conflictResolutionPath", default, skip_serializing_if = "Option::is_none")]
+    pub conflict_resolution_path: Option<String>,
+    #[serde(rename = "conflictResolutionProcedure", default, skip_serializing_if = "Option::is_none")]
+    pub conflict_resolution_procedure: Option<String>,
+}
+pub mod conflict_resolution_policy {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Mode {
+        LastWriterWins,
+        Custom,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum ConnectorOffer {
+    Small,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConsistencyPolicy {
+    #[serde(rename = "defaultConsistencyLevel")]
+    pub default_consistency_level: consistency_policy::DefaultConsistencyLevel,
+    #[serde(rename = "maxStalenessPrefix", default, skip_serializing_if = "Option::is_none")]
+    pub max_staleness_prefix: Option<i64>,
+    #[serde(rename = "maxIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
+    pub max_interval_in_seconds: Option<i32>,
+}
+pub mod consistency_policy {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum DefaultConsistencyLevel {
+        Eventual,
+        Session,
+        BoundedStaleness,
+        Strong,
+        ConsistentPrefix,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerPartitionKey {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub paths: Vec<Path>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<container_partition_key::Kind>,
+}
+pub mod container_partition_key {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Kind {
+        Hash,
+        Range,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateUpdateOptions {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseAccount {
     #[serde(flatten)]
@@ -126,169 +178,91 @@ pub mod database_account {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExtendedResourceProperties {
-    #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-    pub rid: Option<String>,
-    #[serde(rename = "_ts", default, skip_serializing_if = "Option::is_none")]
-    pub ts: Option<serde_json::Value>,
-    #[serde(rename = "_etag", default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
+pub struct DatabaseAccountConnectionString {
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Throughput {
+pub struct DatabaseAccountCreateUpdateParameters {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ThroughputProperties>,
+    pub kind: Option<database_account_create_update_parameters::Kind>,
+    pub properties: DatabaseAccountCreateUpdateProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThroughputProperties {
-    #[serde(flatten)]
-    pub throughput_resource: ThroughputResource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDatabase {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SqlDatabaseProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDatabaseProperties {
-    #[serde(flatten)]
-    pub sql_database_resource: SqlDatabaseResource,
-    #[serde(flatten)]
-    pub extended_resource_properties: ExtendedResourceProperties,
-    #[serde(rename = "_colls", default, skip_serializing_if = "Option::is_none")]
-    pub colls: Option<String>,
-    #[serde(rename = "_users", default, skip_serializing_if = "Option::is_none")]
-    pub users: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlContainer {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<SqlContainerProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlContainerProperties {
-    #[serde(flatten)]
-    pub sql_container_resource: SqlContainerResource,
-    #[serde(flatten)]
-    pub extended_resource_properties: ExtendedResourceProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbDatabase {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MongoDbDatabaseProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbDatabaseProperties {
-    #[serde(flatten)]
-    pub mongo_db_database_resource: MongoDbDatabaseResource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbCollection {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MongoDbCollectionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbCollectionProperties {
-    #[serde(flatten)]
-    pub mongo_db_collection_resource: MongoDbCollectionResource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Table {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TableProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TableProperties {
-    #[serde(flatten)]
-    pub table_resource: TableResource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraKeyspace {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CassandraKeyspaceProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraKeyspaceProperties {
-    #[serde(flatten)]
-    pub cassandra_keyspace_resource: CassandraKeyspaceResource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraTable {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CassandraTableProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraTableProperties {
-    #[serde(flatten)]
-    pub cassandra_table_resource: CassandraTableResource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GremlinDatabase {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GremlinDatabaseProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GremlinDatabaseProperties {
-    #[serde(flatten)]
-    pub gremlin_database_resource: GremlinDatabaseResource,
-    #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
-    pub rid: Option<String>,
-    #[serde(rename = "_ts", default, skip_serializing_if = "Option::is_none")]
-    pub ts: Option<serde_json::Value>,
-    #[serde(rename = "_etag", default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GremlinGraph {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<GremlinGraphProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GremlinGraphProperties {
-    #[serde(flatten)]
-    pub gremlin_graph_resource: GremlinGraphResource,
-    #[serde(flatten)]
-    pub extended_resource_properties: ExtendedResourceProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConsistencyPolicy {
-    #[serde(rename = "defaultConsistencyLevel")]
-    pub default_consistency_level: consistency_policy::DefaultConsistencyLevel,
-    #[serde(rename = "maxStalenessPrefix", default, skip_serializing_if = "Option::is_none")]
-    pub max_staleness_prefix: Option<i64>,
-    #[serde(rename = "maxIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
-    pub max_interval_in_seconds: Option<i32>,
-}
-pub mod consistency_policy {
+pub mod database_account_create_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DefaultConsistencyLevel {
-        Eventual,
-        Session,
-        BoundedStaleness,
-        Strong,
-        ConsistentPrefix,
+    pub enum Kind {
+        #[serde(rename = "GlobalDocumentDB")]
+        GlobalDocumentDb,
+        #[serde(rename = "MongoDB")]
+        MongoDb,
+        Parse,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseAccountCreateUpdateProperties {
+    #[serde(rename = "consistencyPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub consistency_policy: Option<ConsistencyPolicy>,
+    pub locations: Vec<Location>,
+    #[serde(rename = "databaseAccountOfferType")]
+    pub database_account_offer_type: DatabaseAccountOfferType,
+    #[serde(rename = "ipRangeFilter", default, skip_serializing_if = "Option::is_none")]
+    pub ip_range_filter: Option<IpRangeFilter>,
+    #[serde(rename = "isVirtualNetworkFilterEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_virtual_network_filter_enabled: Option<bool>,
+    #[serde(rename = "enableAutomaticFailover", default, skip_serializing_if = "Option::is_none")]
+    pub enable_automatic_failover: Option<bool>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub capabilities: Vec<Capability>,
+    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
+    pub virtual_network_rules: Vec<VirtualNetworkRule>,
+    #[serde(rename = "enableMultipleWriteLocations", default, skip_serializing_if = "Option::is_none")]
+    pub enable_multiple_write_locations: Option<bool>,
+    #[serde(rename = "enableCassandraConnector", default, skip_serializing_if = "Option::is_none")]
+    pub enable_cassandra_connector: Option<bool>,
+    #[serde(rename = "connectorOffer", default, skip_serializing_if = "Option::is_none")]
+    pub connector_offer: Option<ConnectorOffer>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseAccountListConnectionStringsResult {
+    #[serde(rename = "connectionStrings", default, skip_serializing_if = "Vec::is_empty")]
+    pub connection_strings: Vec<DatabaseAccountConnectionString>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseAccountListKeysResult {
+    #[serde(flatten)]
+    pub database_account_list_read_only_keys_result: DatabaseAccountListReadOnlyKeysResult,
+    #[serde(rename = "primaryMasterKey", default, skip_serializing_if = "Option::is_none")]
+    pub primary_master_key: Option<String>,
+    #[serde(rename = "secondaryMasterKey", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_master_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseAccountListReadOnlyKeysResult {
+    #[serde(rename = "primaryReadonlyMasterKey", default, skip_serializing_if = "Option::is_none")]
+    pub primary_readonly_master_key: Option<String>,
+    #[serde(rename = "secondaryReadonlyMasterKey", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_readonly_master_key: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum DatabaseAccountOfferType {
+    Standard,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseAccountPatchParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Tags>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseAccountPatchProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseAccountPatchProperties {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub capabilities: Vec<Capability>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseAccountProperties {
@@ -324,89 +298,6 @@ pub struct DatabaseAccountProperties {
     pub connector_offer: Option<ConnectorOffer>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountPatchProperties {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub capabilities: Vec<Capability>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountCreateUpdateProperties {
-    #[serde(rename = "consistencyPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub consistency_policy: Option<ConsistencyPolicy>,
-    pub locations: Vec<Location>,
-    #[serde(rename = "databaseAccountOfferType")]
-    pub database_account_offer_type: DatabaseAccountOfferType,
-    #[serde(rename = "ipRangeFilter", default, skip_serializing_if = "Option::is_none")]
-    pub ip_range_filter: Option<IpRangeFilter>,
-    #[serde(rename = "isVirtualNetworkFilterEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_virtual_network_filter_enabled: Option<bool>,
-    #[serde(rename = "enableAutomaticFailover", default, skip_serializing_if = "Option::is_none")]
-    pub enable_automatic_failover: Option<bool>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub capabilities: Vec<Capability>,
-    #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
-    pub virtual_network_rules: Vec<VirtualNetworkRule>,
-    #[serde(rename = "enableMultipleWriteLocations", default, skip_serializing_if = "Option::is_none")]
-    pub enable_multiple_write_locations: Option<bool>,
-    #[serde(rename = "enableCassandraConnector", default, skip_serializing_if = "Option::is_none")]
-    pub enable_cassandra_connector: Option<bool>,
-    #[serde(rename = "connectorOffer", default, skip_serializing_if = "Option::is_none")]
-    pub connector_offer: Option<ConnectorOffer>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountCreateUpdateParameters {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<database_account_create_update_parameters::Kind>,
-    pub properties: DatabaseAccountCreateUpdateProperties,
-}
-pub mod database_account_create_update_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "GlobalDocumentDB")]
-        GlobalDocumentDb,
-        #[serde(rename = "MongoDB")]
-        MongoDb,
-        Parse,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountPatchParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Tags>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseAccountPatchProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountListReadOnlyKeysResult {
-    #[serde(rename = "primaryReadonlyMasterKey", default, skip_serializing_if = "Option::is_none")]
-    pub primary_readonly_master_key: Option<String>,
-    #[serde(rename = "secondaryReadonlyMasterKey", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_readonly_master_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountListKeysResult {
-    #[serde(flatten)]
-    pub database_account_list_read_only_keys_result: DatabaseAccountListReadOnlyKeysResult,
-    #[serde(rename = "primaryMasterKey", default, skip_serializing_if = "Option::is_none")]
-    pub primary_master_key: Option<String>,
-    #[serde(rename = "secondaryMasterKey", default, skip_serializing_if = "Option::is_none")]
-    pub secondary_master_key: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountConnectionString {
-    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
-    pub connection_string: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseAccountListConnectionStringsResult {
-    #[serde(rename = "connectionStrings", default, skip_serializing_if = "Vec::is_empty")]
-    pub connection_strings: Vec<DatabaseAccountConnectionString>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseAccountRegenerateKeyParameters {
     #[serde(rename = "keyKind")]
     pub key_kind: database_account_regenerate_key_parameters::KeyKind,
@@ -426,79 +317,51 @@ pub mod database_account_regenerate_key_parameters {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum DatabaseAccountOfferType {
-    Standard,
+pub struct DatabaseAccountsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DatabaseAccount>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThroughputUpdateParameters {
-    pub properties: ThroughputUpdateProperties,
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThroughputUpdateProperties {
-    pub resource: ThroughputResource,
+pub struct ExcludedPath {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDatabaseCreateUpdateParameters {
-    pub properties: SqlDatabaseCreateUpdateProperties,
+pub struct ExtendedResourceProperties {
+    #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
+    pub rid: Option<String>,
+    #[serde(rename = "_ts", default, skip_serializing_if = "Option::is_none")]
+    pub ts: Option<serde_json::Value>,
+    #[serde(rename = "_etag", default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDatabaseCreateUpdateProperties {
-    pub resource: SqlDatabaseResource,
-    pub options: CreateUpdateOptions,
+pub struct FailoverPolicies {
+    #[serde(rename = "failoverPolicies")]
+    pub failover_policies: Vec<FailoverPolicy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlContainerCreateUpdateParameters {
-    pub properties: SqlContainerCreateUpdateProperties,
+pub struct FailoverPolicy {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "locationName", default, skip_serializing_if = "Option::is_none")]
+    pub location_name: Option<String>,
+    #[serde(rename = "failoverPriority", default, skip_serializing_if = "Option::is_none")]
+    pub failover_priority: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlContainerCreateUpdateProperties {
-    pub resource: SqlContainerResource,
-    pub options: CreateUpdateOptions,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbDatabaseCreateUpdateParameters {
-    pub properties: MongoDbDatabaseCreateUpdateProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbDatabaseCreateUpdateProperties {
-    pub resource: MongoDbDatabaseResource,
-    pub options: CreateUpdateOptions,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbCollectionCreateUpdateParameters {
-    pub properties: MongoDbCollectionCreateUpdateProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbCollectionCreateUpdateProperties {
-    pub resource: MongoDbCollectionResource,
-    pub options: CreateUpdateOptions,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TableCreateUpdateParameters {
-    pub properties: TableCreateUpdateProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TableCreateUpdateProperties {
-    pub resource: TableResource,
-    pub options: CreateUpdateOptions,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraKeyspaceCreateUpdateParameters {
-    pub properties: CassandraKeyspaceCreateUpdateProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraKeyspaceCreateUpdateProperties {
-    pub resource: CassandraKeyspaceResource,
-    pub options: CreateUpdateOptions,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraTableCreateUpdateParameters {
-    pub properties: CassandraTableCreateUpdateProperties,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraTableCreateUpdateProperties {
-    pub resource: CassandraTableResource,
-    pub options: CreateUpdateOptions,
+pub struct GremlinDatabase {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GremlinDatabaseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GremlinDatabaseCreateUpdateParameters {
@@ -510,6 +373,33 @@ pub struct GremlinDatabaseCreateUpdateProperties {
     pub options: CreateUpdateOptions,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GremlinDatabaseListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GremlinDatabase>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GremlinDatabaseProperties {
+    #[serde(flatten)]
+    pub gremlin_database_resource: GremlinDatabaseResource,
+    #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
+    pub rid: Option<String>,
+    #[serde(rename = "_ts", default, skip_serializing_if = "Option::is_none")]
+    pub ts: Option<serde_json::Value>,
+    #[serde(rename = "_etag", default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GremlinDatabaseResource {
+    pub id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GremlinGraph {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GremlinGraphProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GremlinGraphCreateUpdateParameters {
     pub properties: GremlinGraphCreateUpdateProperties,
 }
@@ -519,26 +409,16 @@ pub struct GremlinGraphCreateUpdateProperties {
     pub options: CreateUpdateOptions,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThroughputResource {
-    pub throughput: i64,
+pub struct GremlinGraphListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GremlinGraph>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlDatabaseResource {
-    pub id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SqlContainerResource {
-    pub id: String,
-    #[serde(rename = "indexingPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub indexing_policy: Option<IndexingPolicy>,
-    #[serde(rename = "partitionKey", default, skip_serializing_if = "Option::is_none")]
-    pub partition_key: Option<ContainerPartitionKey>,
-    #[serde(rename = "defaultTtl", default, skip_serializing_if = "Option::is_none")]
-    pub default_ttl: Option<i64>,
-    #[serde(rename = "uniqueKeyPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub unique_key_policy: Option<UniqueKeyPolicy>,
-    #[serde(rename = "conflictResolutionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub conflict_resolution_policy: Option<ConflictResolutionPolicy>,
+pub struct GremlinGraphProperties {
+    #[serde(flatten)]
+    pub gremlin_graph_resource: GremlinGraphResource,
+    #[serde(flatten)]
+    pub extended_resource_properties: ExtendedResourceProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GremlinGraphResource {
@@ -554,31 +434,7 @@ pub struct GremlinGraphResource {
     #[serde(rename = "conflictResolutionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub conflict_resolution_policy: Option<ConflictResolutionPolicy>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IndexingPolicy {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub automatic: Option<bool>,
-    #[serde(rename = "indexingMode", default, skip_serializing_if = "Option::is_none")]
-    pub indexing_mode: Option<indexing_policy::IndexingMode>,
-    #[serde(rename = "includedPaths", default, skip_serializing_if = "Vec::is_empty")]
-    pub included_paths: Vec<IncludedPath>,
-    #[serde(rename = "excludedPaths", default, skip_serializing_if = "Vec::is_empty")]
-    pub excluded_paths: Vec<ExcludedPath>,
-}
-pub mod indexing_policy {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum IndexingMode {
-        Consistent,
-        Lazy,
-        None,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExcludedPath {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-}
+pub type IpRangeFilter = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncludedPath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -614,51 +470,145 @@ pub mod indexes {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerPartitionKey {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub paths: Vec<Path>,
+pub struct IndexingPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<container_partition_key::Kind>,
+    pub automatic: Option<bool>,
+    #[serde(rename = "indexingMode", default, skip_serializing_if = "Option::is_none")]
+    pub indexing_mode: Option<indexing_policy::IndexingMode>,
+    #[serde(rename = "includedPaths", default, skip_serializing_if = "Vec::is_empty")]
+    pub included_paths: Vec<IncludedPath>,
+    #[serde(rename = "excludedPaths", default, skip_serializing_if = "Vec::is_empty")]
+    pub excluded_paths: Vec<ExcludedPath>,
 }
-pub mod container_partition_key {
+pub mod indexing_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        Hash,
-        Range,
+    pub enum IndexingMode {
+        Consistent,
+        Lazy,
+        None,
     }
 }
-pub type Path = String;
+pub type Key = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UniqueKeyPolicy {
-    #[serde(rename = "uniqueKeys", default, skip_serializing_if = "Vec::is_empty")]
-    pub unique_keys: Vec<UniqueKey>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UniqueKey {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub paths: Vec<Path>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConflictResolutionPolicy {
+pub struct Location {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mode: Option<conflict_resolution_policy::Mode>,
-    #[serde(rename = "conflictResolutionPath", default, skip_serializing_if = "Option::is_none")]
-    pub conflict_resolution_path: Option<String>,
-    #[serde(rename = "conflictResolutionProcedure", default, skip_serializing_if = "Option::is_none")]
-    pub conflict_resolution_procedure: Option<String>,
+    pub id: Option<String>,
+    #[serde(rename = "locationName", default, skip_serializing_if = "Option::is_none")]
+    pub location_name: Option<String>,
+    #[serde(rename = "documentEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub document_endpoint: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[serde(rename = "failoverPriority", default, skip_serializing_if = "Option::is_none")]
+    pub failover_priority: Option<i32>,
+    #[serde(rename = "isZoneRedundant", default, skip_serializing_if = "Option::is_none")]
+    pub is_zone_redundant: Option<bool>,
 }
-pub mod conflict_resolution_policy {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Metric {
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
+    pub time_grain: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<UnitType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<MetricName>,
+    #[serde(rename = "metricValues", default, skip_serializing_if = "Vec::is_empty")]
+    pub metric_values: Vec<MetricValue>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricAvailability {
+    #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
+    pub time_grain: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retention: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricDefinition {
+    #[serde(rename = "metricAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
+    pub metric_availabilities: Vec<MetricAvailability>,
+    #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
+    pub primary_aggregation_type: Option<metric_definition::PrimaryAggregationType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<UnitType>,
+    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<MetricName>,
+}
+pub mod metric_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Mode {
-        LastWriterWins,
-        Custom,
+    pub enum PrimaryAggregationType {
+        None,
+        Average,
+        Total,
+        Minimum,
+        Maximum,
+        Last,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MongoDbDatabaseResource {
-    pub id: String,
+pub struct MetricDefinitionsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MetricDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Metric>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricName {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
+    pub localized_value: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MetricValue {
+    #[serde(rename = "_count", default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub average: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub maximum: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minimum: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbCollection {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MongoDbCollectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbCollectionCreateUpdateParameters {
+    pub properties: MongoDbCollectionCreateUpdateProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbCollectionCreateUpdateProperties {
+    pub resource: MongoDbCollectionResource,
+    pub options: CreateUpdateOptions,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbCollectionListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MongoDbCollection>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbCollectionProperties {
+    #[serde(flatten)]
+    pub mongo_db_collection_resource: MongoDbCollectionResource,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MongoDbCollectionResource {
@@ -669,7 +619,35 @@ pub struct MongoDbCollectionResource {
     pub indexes: Vec<MongoIndex>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ShardKeys {}
+pub struct MongoDbDatabase {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MongoDbDatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbDatabaseCreateUpdateParameters {
+    pub properties: MongoDbDatabaseCreateUpdateProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbDatabaseCreateUpdateProperties {
+    pub resource: MongoDbDatabaseResource,
+    pub options: CreateUpdateOptions,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbDatabaseListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<MongoDbDatabase>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbDatabaseProperties {
+    #[serde(flatten)]
+    pub mongo_db_database_resource: MongoDbDatabaseResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoDbDatabaseResource {
+    pub id: String,
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MongoIndex {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -682,79 +660,12 @@ pub struct MongoIndexKeys {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<Key>,
 }
-pub type Key = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MongoIndexOptions {
     #[serde(rename = "expireAfterSeconds", default, skip_serializing_if = "Option::is_none")]
     pub expire_after_seconds: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unique: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TableResource {
-    pub id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraKeyspaceResource {
-    pub id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraTableResource {
-    pub id: String,
-    #[serde(rename = "defaultTtl", default, skip_serializing_if = "Option::is_none")]
-    pub default_ttl: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub schema: Option<CassandraSchema>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraSchema {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub columns: Vec<Column>,
-    #[serde(rename = "partitionKeys", default, skip_serializing_if = "Vec::is_empty")]
-    pub partition_keys: Vec<CassandraPartitionKey>,
-    #[serde(rename = "clusterKeys", default, skip_serializing_if = "Vec::is_empty")]
-    pub cluster_keys: Vec<ClusterKey>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Column {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CassandraPartitionKey {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClusterKey {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "orderBy", default, skip_serializing_if = "Option::is_none")]
-    pub order_by: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GremlinDatabaseResource {
-    pub id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateUpdateOptions {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Capability {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tags {}
-pub type ProvisioningState = String;
-pub type IpRangeFilter = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VirtualNetworkRule {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "ignoreMissingVNetServiceEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub ignore_missing_v_net_service_endpoint: Option<bool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -785,27 +696,18 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UsagesResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Usage>,
+pub struct PartitionMetric {
+    #[serde(flatten)]
+    pub metric: Metric,
+    #[serde(rename = "partitionId", default, skip_serializing_if = "Option::is_none")]
+    pub partition_id: Option<String>,
+    #[serde(rename = "partitionKeyRangeId", default, skip_serializing_if = "Option::is_none")]
+    pub partition_key_range_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Usage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<UnitType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<MetricName>,
-    #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
-    pub quota_period: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i64>,
-    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
-    pub current_value: Option<i64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PartitionUsagesResult {
+pub struct PartitionMetricListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PartitionUsage>,
+    pub value: Vec<PartitionMetric>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionUsage {
@@ -817,89 +719,11 @@ pub struct PartitionUsage {
     pub partition_key_range_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricDefinitionsListResult {
+pub struct PartitionUsagesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<MetricDefinition>,
+    pub value: Vec<PartitionUsage>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricDefinition {
-    #[serde(rename = "metricAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
-    pub metric_availabilities: Vec<MetricAvailability>,
-    #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
-    pub primary_aggregation_type: Option<metric_definition::PrimaryAggregationType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<UnitType>,
-    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
-    pub resource_uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<MetricName>,
-}
-pub mod metric_definition {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PrimaryAggregationType {
-        None,
-        Average,
-        Total,
-        Minimum,
-        Maximum,
-        Last,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAvailability {
-    #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
-    pub time_grain: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub retention: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Metric>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Metric {
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
-    pub time_grain: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<UnitType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<MetricName>,
-    #[serde(rename = "metricValues", default, skip_serializing_if = "Vec::is_empty")]
-    pub metric_values: Vec<MetricValue>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricName {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
-    pub localized_value: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricValue {
-    #[serde(rename = "_count", default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub average: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub maximum: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub minimum: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub total: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PercentileMetricListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PercentileMetric>,
-}
+pub type Path = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PercentileMetric {
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -914,6 +738,11 @@ pub struct PercentileMetric {
     pub name: Option<MetricName>,
     #[serde(rename = "metricValues", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_values: Vec<PercentileMetricValue>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PercentileMetricListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<PercentileMetric>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PercentileMetricValue {
@@ -934,19 +763,169 @@ pub struct PercentileMetricValue {
     #[serde(rename = "P99", default, skip_serializing_if = "Option::is_none")]
     pub p99: Option<f64>,
 }
+pub type ProvisioningState = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PartitionMetricListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<PartitionMetric>,
+pub struct RegionForOnlineOffline {
+    pub region: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PartitionMetric {
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Tags>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ShardKeys {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlContainer {
     #[serde(flatten)]
-    pub metric: Metric,
-    #[serde(rename = "partitionId", default, skip_serializing_if = "Option::is_none")]
-    pub partition_id: Option<String>,
-    #[serde(rename = "partitionKeyRangeId", default, skip_serializing_if = "Option::is_none")]
-    pub partition_key_range_id: Option<String>,
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SqlContainerProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlContainerCreateUpdateParameters {
+    pub properties: SqlContainerCreateUpdateProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlContainerCreateUpdateProperties {
+    pub resource: SqlContainerResource,
+    pub options: CreateUpdateOptions,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlContainerListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SqlContainer>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlContainerProperties {
+    #[serde(flatten)]
+    pub sql_container_resource: SqlContainerResource,
+    #[serde(flatten)]
+    pub extended_resource_properties: ExtendedResourceProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlContainerResource {
+    pub id: String,
+    #[serde(rename = "indexingPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub indexing_policy: Option<IndexingPolicy>,
+    #[serde(rename = "partitionKey", default, skip_serializing_if = "Option::is_none")]
+    pub partition_key: Option<ContainerPartitionKey>,
+    #[serde(rename = "defaultTtl", default, skip_serializing_if = "Option::is_none")]
+    pub default_ttl: Option<i64>,
+    #[serde(rename = "uniqueKeyPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub unique_key_policy: Option<UniqueKeyPolicy>,
+    #[serde(rename = "conflictResolutionPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub conflict_resolution_policy: Option<ConflictResolutionPolicy>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDatabase {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SqlDatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDatabaseCreateUpdateParameters {
+    pub properties: SqlDatabaseCreateUpdateProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDatabaseCreateUpdateProperties {
+    pub resource: SqlDatabaseResource,
+    pub options: CreateUpdateOptions,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDatabaseListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SqlDatabase>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDatabaseProperties {
+    #[serde(flatten)]
+    pub sql_database_resource: SqlDatabaseResource,
+    #[serde(flatten)]
+    pub extended_resource_properties: ExtendedResourceProperties,
+    #[serde(rename = "_colls", default, skip_serializing_if = "Option::is_none")]
+    pub colls: Option<String>,
+    #[serde(rename = "_users", default, skip_serializing_if = "Option::is_none")]
+    pub users: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SqlDatabaseResource {
+    pub id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Table {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TableProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TableCreateUpdateParameters {
+    pub properties: TableCreateUpdateProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TableCreateUpdateProperties {
+    pub resource: TableResource,
+    pub options: CreateUpdateOptions,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TableListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Table>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TableProperties {
+    #[serde(flatten)]
+    pub table_resource: TableResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TableResource {
+    pub id: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Tags {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Throughput {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ThroughputProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThroughputProperties {
+    #[serde(flatten)]
+    pub throughput_resource: ThroughputResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThroughputResource {
+    pub throughput: i64,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThroughputUpdateParameters {
+    pub properties: ThroughputUpdateProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThroughputUpdateProperties {
+    pub resource: ThroughputResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UniqueKey {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub paths: Vec<Path>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UniqueKeyPolicy {
+    #[serde(rename = "uniqueKeys", default, skip_serializing_if = "Vec::is_empty")]
+    pub unique_keys: Vec<UniqueKey>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UnitType {
@@ -959,6 +938,27 @@ pub enum UnitType {
     Milliseconds,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ConnectorOffer {
-    Small,
+pub struct Usage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<UnitType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<MetricName>,
+    #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
+    pub quota_period: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
+    pub current_value: Option<i64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UsagesResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Usage>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VirtualNetworkRule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "ignoreMissingVNetServiceEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub ignore_missing_v_net_service_endpoint: Option<bool>,
 }

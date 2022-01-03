@@ -3,25 +3,84 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobCollectionListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobCollectionDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct BasicAuthentication {
+    #[serde(flatten)]
+    pub http_authentication: HttpAuthentication,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct ClientCertAuthentication {
+    #[serde(flatten)]
+    pub http_authentication: HttpAuthentication,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pfx: Option<String>,
+    #[serde(rename = "certificateThumbprint", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_thumbprint: Option<String>,
+    #[serde(rename = "certificateExpirationDate", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_expiration_date: Option<String>,
+    #[serde(rename = "certificateSubjectName", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_subject_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobHistoryListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobHistoryDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct HttpAuthentication {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<http_authentication::Type>,
+}
+pub mod http_authentication {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        NotSpecified,
+        ClientCertificate,
+        ActiveDirectoryOAuth,
+        Basic,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct HttpRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authentication: Option<HttpAuthentication>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub headers: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobAction {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<job_action::Type>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request: Option<HttpRequest>,
+    #[serde(rename = "queueMessage", default, skip_serializing_if = "Option::is_none")]
+    pub queue_message: Option<StorageQueueMessage>,
+    #[serde(rename = "serviceBusQueueMessage", default, skip_serializing_if = "Option::is_none")]
+    pub service_bus_queue_message: Option<ServiceBusQueueMessage>,
+    #[serde(rename = "serviceBusTopicMessage", default, skip_serializing_if = "Option::is_none")]
+    pub service_bus_topic_message: Option<ServiceBusTopicMessage>,
+    #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub retry_policy: Option<RetryPolicy>,
+    #[serde(rename = "errorAction", default, skip_serializing_if = "Option::is_none")]
+    pub error_action: Option<JobErrorAction>,
+}
+pub mod job_action {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Http,
+        Https,
+        StorageQueue,
+        ServiceBusQueue,
+        ServiceBusTopic,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCollectionDefinition {
@@ -37,6 +96,13 @@ pub struct JobCollectionDefinition {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobCollectionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobCollectionListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JobCollectionDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCollectionProperties {
@@ -55,20 +121,6 @@ pub mod job_collection_properties {
         Disabled,
         Suspended,
         Deleted,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<sku::Name>,
-}
-pub mod sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        Standard,
-        Free,
-        Premium,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -92,17 +144,36 @@ pub struct JobDefinition {
     pub properties: Option<JobProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobProperties {
-    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
-    pub start_time: Option<String>,
+pub struct JobErrorAction {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<job_error_action::Type>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<JobAction>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub recurrence: Option<JobRecurrence>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<JobState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<JobStatus>,
+    pub request: Option<HttpRequest>,
+    #[serde(rename = "queueMessage", default, skip_serializing_if = "Option::is_none")]
+    pub queue_message: Option<StorageQueueMessage>,
+    #[serde(rename = "serviceBusQueueMessage", default, skip_serializing_if = "Option::is_none")]
+    pub service_bus_queue_message: Option<ServiceBusQueueMessage>,
+    #[serde(rename = "serviceBusTopicMessage", default, skip_serializing_if = "Option::is_none")]
+    pub service_bus_topic_message: Option<ServiceBusTopicMessage>,
+    #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
+    pub retry_policy: Option<RetryPolicy>,
+}
+pub mod job_error_action {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Http,
+        Https,
+        StorageQueue,
+        ServiceBusQueue,
+        ServiceBusTopic,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum JobExecutionStatus {
+    Completed,
+    Failed,
+    Postponed,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobHistoryDefinition {
@@ -143,95 +214,136 @@ pub mod job_history_definition_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobAction {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<job_action::Type>,
+pub struct JobHistoryFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub request: Option<HttpRequest>,
-    #[serde(rename = "queueMessage", default, skip_serializing_if = "Option::is_none")]
-    pub queue_message: Option<StorageQueueMessage>,
-    #[serde(rename = "serviceBusQueueMessage", default, skip_serializing_if = "Option::is_none")]
-    pub service_bus_queue_message: Option<ServiceBusQueueMessage>,
-    #[serde(rename = "serviceBusTopicMessage", default, skip_serializing_if = "Option::is_none")]
-    pub service_bus_topic_message: Option<ServiceBusTopicMessage>,
-    #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retry_policy: Option<RetryPolicy>,
-    #[serde(rename = "errorAction", default, skip_serializing_if = "Option::is_none")]
-    pub error_action: Option<JobErrorAction>,
+    pub status: Option<JobExecutionStatus>,
 }
-pub mod job_action {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobHistoryListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JobHistoryDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JobDefinition>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobMaxRecurrence {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency: Option<job_max_recurrence::Frequency>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<i64>,
+}
+pub mod job_max_recurrence {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Http,
-        Https,
-        StorageQueue,
-        ServiceBusQueue,
-        ServiceBusTopic,
+    pub enum Frequency {
+        Minute,
+        Hour,
+        Day,
+        Week,
+        Month,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobErrorAction {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<job_error_action::Type>,
+pub struct JobProperties {
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub request: Option<HttpRequest>,
-    #[serde(rename = "queueMessage", default, skip_serializing_if = "Option::is_none")]
-    pub queue_message: Option<StorageQueueMessage>,
-    #[serde(rename = "serviceBusQueueMessage", default, skip_serializing_if = "Option::is_none")]
-    pub service_bus_queue_message: Option<ServiceBusQueueMessage>,
-    #[serde(rename = "serviceBusTopicMessage", default, skip_serializing_if = "Option::is_none")]
-    pub service_bus_topic_message: Option<ServiceBusTopicMessage>,
-    #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retry_policy: Option<RetryPolicy>,
+    pub action: Option<JobAction>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recurrence: Option<JobRecurrence>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<JobState>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<JobStatus>,
 }
-pub mod job_error_action {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobRecurrence {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frequency: Option<job_recurrence::Frequency>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule: Option<JobRecurrenceSchedule>,
+}
+pub mod job_recurrence {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        Http,
-        Https,
-        StorageQueue,
-        ServiceBusQueue,
-        ServiceBusTopic,
+    pub enum Frequency {
+        Minute,
+        Hour,
+        Day,
+        Week,
+        Month,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HttpRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authentication: Option<HttpAuthentication>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub method: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub body: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub headers: Option<serde_json::Value>,
+pub struct JobRecurrenceSchedule {
+    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
+    pub week_days: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hours: Vec<i64>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub minutes: Vec<i64>,
+    #[serde(rename = "monthDays", default, skip_serializing_if = "Vec::is_empty")]
+    pub month_days: Vec<i64>,
+    #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
+    pub monthly_occurrences: Vec<JobRecurrenceScheduleMonthlyOccurrence>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClientCertAuthentication {
-    #[serde(flatten)]
-    pub http_authentication: HttpAuthentication,
+pub struct JobRecurrenceScheduleMonthlyOccurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub pfx: Option<String>,
-    #[serde(rename = "certificateThumbprint", default, skip_serializing_if = "Option::is_none")]
-    pub certificate_thumbprint: Option<String>,
-    #[serde(rename = "certificateExpirationDate", default, skip_serializing_if = "Option::is_none")]
-    pub certificate_expiration_date: Option<String>,
-    #[serde(rename = "certificateSubjectName", default, skip_serializing_if = "Option::is_none")]
-    pub certificate_subject_name: Option<String>,
+    pub day: Option<job_recurrence_schedule_monthly_occurrence::Day>,
+    #[serde(rename = "Occurrence", default, skip_serializing_if = "Option::is_none")]
+    pub occurrence: Option<i64>,
+}
+pub mod job_recurrence_schedule_monthly_occurrence {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Day {
+        Monday,
+        Tuesday,
+        Wednesday,
+        Thursday,
+        Friday,
+        Saturday,
+        Sunday,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BasicAuthentication {
-    #[serde(flatten)]
-    pub http_authentication: HttpAuthentication,
+pub enum JobState {
+    Enabled,
+    Disabled,
+    Faulted,
+    Completed,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobStateFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub username: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
+    pub state: Option<JobState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct JobStatus {
+    #[serde(rename = "executionCount", default, skip_serializing_if = "Option::is_none")]
+    pub execution_count: Option<i64>,
+    #[serde(rename = "failureCount", default, skip_serializing_if = "Option::is_none")]
+    pub failure_count: Option<i64>,
+    #[serde(rename = "faultedCount", default, skip_serializing_if = "Option::is_none")]
+    pub faulted_count: Option<i64>,
+    #[serde(rename = "lastExecutionTime", default, skip_serializing_if = "Option::is_none")]
+    pub last_execution_time: Option<String>,
+    #[serde(rename = "nextExecutionTime", default, skip_serializing_if = "Option::is_none")]
+    pub next_execution_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OAuthAuthentication {
@@ -247,68 +359,28 @@ pub struct OAuthAuthentication {
     pub client_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HttpAuthentication {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<http_authentication::Type>,
+pub enum RecurrenceFrequency {
+    Minute,
+    Hour,
+    Day,
+    Week,
+    Month,
 }
-pub mod http_authentication {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RetryPolicy {
+    #[serde(rename = "retryType", default, skip_serializing_if = "Option::is_none")]
+    pub retry_type: Option<retry_policy::RetryType>,
+    #[serde(rename = "retryInterval", default, skip_serializing_if = "Option::is_none")]
+    pub retry_interval: Option<String>,
+    #[serde(rename = "retryCount", default, skip_serializing_if = "Option::is_none")]
+    pub retry_count: Option<i64>,
+}
+pub mod retry_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        NotSpecified,
-        ClientCertificate,
-        ActiveDirectoryOAuth,
-        Basic,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageQueueMessage {
-    #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account: Option<String>,
-    #[serde(rename = "queueName", default, skip_serializing_if = "Option::is_none")]
-    pub queue_name: Option<String>,
-    #[serde(rename = "sasToken", default, skip_serializing_if = "Option::is_none")]
-    pub sas_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusQueueMessage {
-    #[serde(flatten)]
-    pub service_bus_message: ServiceBusMessage,
-    #[serde(rename = "queueName", default, skip_serializing_if = "Option::is_none")]
-    pub queue_name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusTopicMessage {
-    #[serde(flatten)]
-    pub service_bus_message: ServiceBusMessage,
-    #[serde(rename = "topicPath", default, skip_serializing_if = "Option::is_none")]
-    pub topic_path: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusMessage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authentication: Option<ServiceBusAuthentication>,
-    #[serde(rename = "brokeredMessageProperties", default, skip_serializing_if = "Option::is_none")]
-    pub brokered_message_properties: Option<ServiceBusBrokeredMessageProperties>,
-    #[serde(rename = "customMessageProperties", default, skip_serializing_if = "Option::is_none")]
-    pub custom_message_properties: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub namespace: Option<String>,
-    #[serde(rename = "transportType", default, skip_serializing_if = "Option::is_none")]
-    pub transport_type: Option<service_bus_message::TransportType>,
-}
-pub mod service_bus_message {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum TransportType {
-        NotSpecified,
-        NetMessaging,
-        #[serde(rename = "AMQP")]
-        Amqp,
+    pub enum RetryType {
+        None,
+        Fixed,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -358,138 +430,66 @@ pub struct ServiceBusBrokeredMessageProperties {
     pub via_partition_key: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetryPolicy {
-    #[serde(rename = "retryType", default, skip_serializing_if = "Option::is_none")]
-    pub retry_type: Option<retry_policy::RetryType>,
-    #[serde(rename = "retryInterval", default, skip_serializing_if = "Option::is_none")]
-    pub retry_interval: Option<String>,
-    #[serde(rename = "retryCount", default, skip_serializing_if = "Option::is_none")]
-    pub retry_count: Option<i64>,
+pub struct ServiceBusMessage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authentication: Option<ServiceBusAuthentication>,
+    #[serde(rename = "brokeredMessageProperties", default, skip_serializing_if = "Option::is_none")]
+    pub brokered_message_properties: Option<ServiceBusBrokeredMessageProperties>,
+    #[serde(rename = "customMessageProperties", default, skip_serializing_if = "Option::is_none")]
+    pub custom_message_properties: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    #[serde(rename = "transportType", default, skip_serializing_if = "Option::is_none")]
+    pub transport_type: Option<service_bus_message::TransportType>,
 }
-pub mod retry_policy {
+pub mod service_bus_message {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum RetryType {
-        None,
-        Fixed,
+    pub enum TransportType {
+        NotSpecified,
+        NetMessaging,
+        #[serde(rename = "AMQP")]
+        Amqp,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobMaxRecurrence {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub frequency: Option<job_max_recurrence::Frequency>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<i64>,
+pub struct ServiceBusQueueMessage {
+    #[serde(flatten)]
+    pub service_bus_message: ServiceBusMessage,
+    #[serde(rename = "queueName", default, skip_serializing_if = "Option::is_none")]
+    pub queue_name: Option<String>,
 }
-pub mod job_max_recurrence {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceBusTopicMessage {
+    #[serde(flatten)]
+    pub service_bus_message: ServiceBusMessage,
+    #[serde(rename = "topicPath", default, skip_serializing_if = "Option::is_none")]
+    pub topic_path: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<sku::Name>,
+}
+pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Frequency {
-        Minute,
-        Hour,
-        Day,
-        Week,
-        Month,
+    pub enum Name {
+        Standard,
+        Free,
+        Premium,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobRecurrence {
+pub struct StorageQueueMessage {
+    #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account: Option<String>,
+    #[serde(rename = "queueName", default, skip_serializing_if = "Option::is_none")]
+    pub queue_name: Option<String>,
+    #[serde(rename = "sasToken", default, skip_serializing_if = "Option::is_none")]
+    pub sas_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub frequency: Option<job_recurrence::Frequency>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub count: Option<i64>,
-    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
-    pub end_time: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub schedule: Option<JobRecurrenceSchedule>,
-}
-pub mod job_recurrence {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Frequency {
-        Minute,
-        Hour,
-        Day,
-        Week,
-        Month,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum RecurrenceFrequency {
-    Minute,
-    Hour,
-    Day,
-    Week,
-    Month,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobRecurrenceSchedule {
-    #[serde(rename = "weekDays", default, skip_serializing_if = "Vec::is_empty")]
-    pub week_days: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub hours: Vec<i64>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub minutes: Vec<i64>,
-    #[serde(rename = "monthDays", default, skip_serializing_if = "Vec::is_empty")]
-    pub month_days: Vec<i64>,
-    #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
-    pub monthly_occurrences: Vec<JobRecurrenceScheduleMonthlyOccurrence>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobRecurrenceScheduleMonthlyOccurrence {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub day: Option<job_recurrence_schedule_monthly_occurrence::Day>,
-    #[serde(rename = "Occurrence", default, skip_serializing_if = "Option::is_none")]
-    pub occurrence: Option<i64>,
-}
-pub mod job_recurrence_schedule_monthly_occurrence {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Day {
-        Monday,
-        Tuesday,
-        Wednesday,
-        Thursday,
-        Friday,
-        Saturday,
-        Sunday,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobStateFilter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<JobState>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum JobState {
-    Enabled,
-    Disabled,
-    Faulted,
-    Completed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobHistoryFilter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<JobExecutionStatus>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum JobExecutionStatus {
-    Completed,
-    Failed,
-    Postponed,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobStatus {
-    #[serde(rename = "executionCount", default, skip_serializing_if = "Option::is_none")]
-    pub execution_count: Option<i64>,
-    #[serde(rename = "failureCount", default, skip_serializing_if = "Option::is_none")]
-    pub failure_count: Option<i64>,
-    #[serde(rename = "faultedCount", default, skip_serializing_if = "Option::is_none")]
-    pub faulted_count: Option<i64>,
-    #[serde(rename = "lastExecutionTime", default, skip_serializing_if = "Option::is_none")]
-    pub last_execution_time: Option<String>,
-    #[serde(rename = "nextExecutionTime", default, skip_serializing_if = "Option::is_none")]
-    pub next_execution_time: Option<String>,
+    pub message: Option<String>,
 }

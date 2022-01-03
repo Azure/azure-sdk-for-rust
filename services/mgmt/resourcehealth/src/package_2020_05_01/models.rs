@@ -3,49 +3,30 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImpactedResourceStatus {
-    #[serde(flatten)]
-    pub resource: Resource,
+pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<impacted_resource_status::Properties>,
+    pub error: Option<error_response::Error>,
 }
-pub mod impacted_resource_status {
+pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
-        pub availability_state: Option<properties::AvailabilityState>,
+    pub struct Error {
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub title: Option<String>,
+        pub code: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub summary: Option<String>,
-        #[serde(rename = "reasonType", default, skip_serializing_if = "Option::is_none")]
-        pub reason_type: Option<properties::ReasonType>,
-        #[serde(rename = "occurredTime", default, skip_serializing_if = "Option::is_none")]
-        pub occurred_time: Option<String>,
-    }
-    pub mod properties {
-        use super::*;
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub enum AvailabilityState {
-            Available,
-            Unavailable,
-            Degraded,
-            Unknown,
-        }
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub enum ReasonType {
-            Unplanned,
-            Planned,
-            UserInitiated,
-        }
+        pub message: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub details: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AvailabilityStatusListResult {
-    pub value: Vec<AvailabilityStatus>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailabilityStatus {
@@ -123,8 +104,56 @@ pub mod availability_status {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    pub value: Vec<Operation>,
+pub struct AvailabilityStatusListResult {
+    pub value: Vec<AvailabilityStatus>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImpactedRegion {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImpactedResourceStatus {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<impacted_resource_status::Properties>,
+}
+pub mod impacted_resource_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
+        pub availability_state: Option<properties::AvailabilityState>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub title: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub summary: Option<String>,
+        #[serde(rename = "reasonType", default, skip_serializing_if = "Option::is_none")]
+        pub reason_type: Option<properties::ReasonType>,
+        #[serde(rename = "occurredTime", default, skip_serializing_if = "Option::is_none")]
+        pub occurred_time: Option<String>,
+    }
+    pub mod properties {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum AvailabilityState {
+            Available,
+            Unavailable,
+            Degraded,
+            Unknown,
+        }
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum ReasonType {
+            Unplanned,
+            Planned,
+            UserInitiated,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -146,6 +175,10 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendedAction {
@@ -198,37 +231,4 @@ pub struct StatusBanner {
     pub cloud: Option<String>,
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImpactedRegion {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<error_response::Error>,
-}
-pub mod error_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Error {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub code: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub message: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub details: Option<String>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
 }

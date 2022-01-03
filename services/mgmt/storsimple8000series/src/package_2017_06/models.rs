@@ -575,6 +575,17 @@ pub mod controller_power_state_change_request_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DnsSettings {
+    #[serde(rename = "primaryDnsServer", default, skip_serializing_if = "Option::is_none")]
+    pub primary_dns_server: Option<String>,
+    #[serde(rename = "primaryIpv6DnsServer", default, skip_serializing_if = "Option::is_none")]
+    pub primary_ipv6_dns_server: Option<String>,
+    #[serde(rename = "secondaryDnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    pub secondary_dns_servers: Vec<String>,
+    #[serde(rename = "secondaryIpv6DnsServers", default, skip_serializing_if = "Vec::is_empty")]
+    pub secondary_ipv6_dns_servers: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataStatistics {
     #[serde(rename = "totalData", default, skip_serializing_if = "Option::is_none")]
     pub total_data: Option<i64>,
@@ -740,17 +751,6 @@ pub struct DimensionFilter {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub values: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DnsSettings {
-    #[serde(rename = "primaryDnsServer", default, skip_serializing_if = "Option::is_none")]
-    pub primary_dns_server: Option<String>,
-    #[serde(rename = "primaryIpv6DnsServer", default, skip_serializing_if = "Option::is_none")]
-    pub primary_ipv6_dns_server: Option<String>,
-    #[serde(rename = "secondaryDnsServers", default, skip_serializing_if = "Vec::is_empty")]
-    pub secondary_dns_servers: Vec<String>,
-    #[serde(rename = "secondaryIpv6DnsServers", default, skip_serializing_if = "Vec::is_empty")]
-    pub secondary_ipv6_dns_servers: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionSettings {

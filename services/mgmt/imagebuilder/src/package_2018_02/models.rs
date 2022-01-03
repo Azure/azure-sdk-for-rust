@@ -3,38 +3,33 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateListResult {
+pub struct ApiError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ImageTemplate>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub details: Vec<ApiErrorBase>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<InnerError>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateSource {
-    #[serde(rename = "type")]
-    pub type_: String,
+pub struct ApiErrorBase {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateIsoSource {
+pub struct ImageTemplate {
     #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
-    #[serde(rename = "sourceURI")]
-    pub source_uri: String,
-    #[serde(rename = "sha256Checksum")]
-    pub sha256_checksum: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplatePlatformImageSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
+    pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub publisher: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub offer: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
+    pub properties: Option<ImageTemplateProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateCustomizer {
@@ -42,13 +37,6 @@ pub struct ImageTemplateCustomizer {
     pub type_: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateShellCustomizer {
-    #[serde(flatten)]
-    pub image_template_customizer: ImageTemplateCustomizer,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub script: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateDistributor {
@@ -60,50 +48,13 @@ pub struct ImageTemplateDistributor {
     pub artifact_tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateManagedImageDistributor {
+pub struct ImageTemplateIsoSource {
     #[serde(flatten)]
-    pub image_template_distributor: ImageTemplateDistributor,
-    #[serde(rename = "imageId")]
-    pub image_id: String,
-    pub location: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateSharedImageDistributor {
-    #[serde(flatten)]
-    pub image_template_distributor: ImageTemplateDistributor,
-    #[serde(rename = "galleryImageId")]
-    pub gallery_image_id: String,
-    #[serde(rename = "replicationRegions")]
-    pub replication_regions: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ProvisioningState {
-    Creating,
-    Succeeded,
-    Failed,
-    Deleting,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProvisioningError {
-    #[serde(rename = "provisioningErrorCode", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_error_code: Option<provisioning_error::ProvisioningErrorCode>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-pub mod provisioning_error {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningErrorCode {
-        BadSourceType,
-        #[serde(rename = "BadPIRSource")]
-        BadPirSource,
-        #[serde(rename = "BadISOSource")]
-        BadIsoSource,
-        BadCustomizerType,
-        NoCustomizerShellScript,
-        ServerError,
-        Other,
-    }
+    pub image_template_source: ImageTemplateSource,
+    #[serde(rename = "sourceURI")]
+    pub source_uri: String,
+    #[serde(rename = "sha256Checksum")]
+    pub sha256_checksum: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateLastRunStatus {
@@ -146,6 +97,34 @@ pub mod image_template_last_run_status {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageTemplateListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ImageTemplate>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageTemplateManagedImageDistributor {
+    #[serde(flatten)]
+    pub image_template_distributor: ImageTemplateDistributor,
+    #[serde(rename = "imageId")]
+    pub image_id: String,
+    pub location: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageTemplatePlatformImageSource {
+    #[serde(flatten)]
+    pub image_template_source: ImageTemplateSource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offer: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateProperties {
     pub source: ImageTemplateSource,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -159,18 +138,25 @@ pub struct ImageTemplateProperties {
     pub last_run_status: Option<ImageTemplateLastRunStatus>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunOutputProperties {
-    #[serde(rename = "artifactId", default, skip_serializing_if = "Option::is_none")]
-    pub artifact_id: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
+pub struct ImageTemplateSharedImageDistributor {
+    #[serde(flatten)]
+    pub image_template_distributor: ImageTemplateDistributor,
+    #[serde(rename = "galleryImageId")]
+    pub gallery_image_id: String,
+    #[serde(rename = "replicationRegions")]
+    pub replication_regions: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplate {
+pub struct ImageTemplateShellCustomizer {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub image_template_customizer: ImageTemplateCustomizer,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ImageTemplateProperties>,
+    pub script: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImageTemplateSource {
+    #[serde(rename = "type")]
+    pub type_: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateUpdateParameters {
@@ -178,38 +164,11 @@ pub struct ImageTemplateUpdateParameters {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunOutput {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
+pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RunOutputProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RunOutputCollection {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RunOutput>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
+    pub exceptiontype: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubResource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    pub name: String,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+    pub errordetail: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -244,31 +203,72 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiErrorBase {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
+pub struct ProvisioningError {
+    #[serde(rename = "provisioningErrorCode", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_error_code: Option<provisioning_error::ProvisioningErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InnerError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exceptiontype: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub errordetail: Option<String>,
+pub mod provisioning_error {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningErrorCode {
+        BadSourceType,
+        #[serde(rename = "BadPIRSource")]
+        BadPirSource,
+        #[serde(rename = "BadISOSource")]
+        BadIsoSource,
+        BadCustomizerType,
+        NoCustomizerShellScript,
+        ServerError,
+        Other,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApiError {
+pub enum ProvisioningState {
+    Creating,
+    Succeeded,
+    Failed,
+    Deleting,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunOutput {
+    #[serde(flatten)]
+    pub sub_resource: SubResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RunOutputProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunOutputCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ApiErrorBase>,
+    pub value: Vec<RunOutput>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RunOutputProperties {
+    #[serde(rename = "artifactId", default, skip_serializing_if = "Option::is_none")]
+    pub artifact_id: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<InnerError>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub id: Option<String>,
+    pub name: String,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
 }

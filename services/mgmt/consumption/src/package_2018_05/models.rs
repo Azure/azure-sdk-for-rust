@@ -15,6 +15,64 @@ pub struct ErrorResponse {
     pub error: Option<ErrorDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Forecast {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ForecastProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ForecastProperties {
+    #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
+    pub usage_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub grain: Option<forecast_properties::Grain>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub charge: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+    #[serde(rename = "chargeType", default, skip_serializing_if = "Option::is_none")]
+    pub charge_type: Option<forecast_properties::ChargeType>,
+    #[serde(rename = "confidenceLevels", default, skip_serializing_if = "Vec::is_empty")]
+    pub confidence_levels: Vec<serde_json::Value>,
+}
+pub mod forecast_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Grain {
+        Daily,
+        Monthly,
+        Yearly,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ChargeType {
+        Actual,
+        Forecast,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ForecastsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Forecast>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MeterDetails {
+    #[serde(rename = "meterName", default, skip_serializing_if = "Option::is_none")]
+    pub meter_name: Option<String>,
+    #[serde(rename = "meterCategory", default, skip_serializing_if = "Option::is_none")]
+    pub meter_category: Option<String>,
+    #[serde(rename = "meterSubCategory", default, skip_serializing_if = "Option::is_none")]
+    pub meter_sub_category: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(rename = "meterLocation", default, skip_serializing_if = "Option::is_none")]
+    pub meter_location: Option<String>,
+    #[serde(rename = "totalIncludedQuantity", default, skip_serializing_if = "Option::is_none")]
+    pub total_included_quantity: Option<f64>,
+    #[serde(rename = "pretaxStandardRate", default, skip_serializing_if = "Option::is_none")]
+    pub pretax_standard_rate: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -39,24 +97,6 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PriceSheetResult {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PriceSheetModel>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PriceSheetModel {
@@ -87,28 +127,22 @@ pub struct PriceSheetProperties {
     pub offer_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Forecast {
+pub struct PriceSheetResult {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ForecastProperties>,
+    pub properties: Option<PriceSheetModel>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MeterDetails {
-    #[serde(rename = "meterName", default, skip_serializing_if = "Option::is_none")]
-    pub meter_name: Option<String>,
-    #[serde(rename = "meterCategory", default, skip_serializing_if = "Option::is_none")]
-    pub meter_category: Option<String>,
-    #[serde(rename = "meterSubCategory", default, skip_serializing_if = "Option::is_none")]
-    pub meter_sub_category: Option<String>,
+pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<String>,
-    #[serde(rename = "meterLocation", default, skip_serializing_if = "Option::is_none")]
-    pub meter_location: Option<String>,
-    #[serde(rename = "totalIncludedQuantity", default, skip_serializing_if = "Option::is_none")]
-    pub total_included_quantity: Option<f64>,
-    #[serde(rename = "pretaxStandardRate", default, skip_serializing_if = "Option::is_none")]
-    pub pretax_standard_rate: Option<f64>,
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageDetail {
@@ -116,13 +150,6 @@ pub struct UsageDetail {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UsageDetailProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UsageDetailsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<UsageDetail>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageDetailProperties {
@@ -180,36 +207,9 @@ pub struct UsageDetailProperties {
     pub additional_properties: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ForecastsListResult {
+pub struct UsageDetailsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Forecast>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ForecastProperties {
-    #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
-    pub usage_date: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub grain: Option<forecast_properties::Grain>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub charge: Option<f64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub currency: Option<String>,
-    #[serde(rename = "chargeType", default, skip_serializing_if = "Option::is_none")]
-    pub charge_type: Option<forecast_properties::ChargeType>,
-    #[serde(rename = "confidenceLevels", default, skip_serializing_if = "Vec::is_empty")]
-    pub confidence_levels: Vec<serde_json::Value>,
-}
-pub mod forecast_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Grain {
-        Daily,
-        Monthly,
-        Yearly,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ChargeType {
-        Actual,
-        Forecast,
-    }
+    pub value: Vec<UsageDetail>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }

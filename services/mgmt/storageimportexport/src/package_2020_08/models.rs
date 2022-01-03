@@ -3,6 +3,81 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DeliveryPackageInformation {
+    #[serde(rename = "carrierName")]
+    pub carrier_name: String,
+    #[serde(rename = "trackingNumber")]
+    pub tracking_number: String,
+    #[serde(rename = "driveCount", default, skip_serializing_if = "Option::is_none")]
+    pub drive_count: Option<i64>,
+    #[serde(rename = "shipDate", default, skip_serializing_if = "Option::is_none")]
+    pub ship_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DriveBitLockerKey {
+    #[serde(rename = "bitLockerKey", default, skip_serializing_if = "Option::is_none")]
+    pub bit_locker_key: Option<String>,
+    #[serde(rename = "driveId", default, skip_serializing_if = "Option::is_none")]
+    pub drive_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DriveStatus {
+    #[serde(rename = "driveId", default, skip_serializing_if = "Option::is_none")]
+    pub drive_id: Option<String>,
+    #[serde(rename = "bitLockerKey", default, skip_serializing_if = "Option::is_none")]
+    pub bit_locker_key: Option<String>,
+    #[serde(rename = "manifestFile", default, skip_serializing_if = "Option::is_none")]
+    pub manifest_file: Option<String>,
+    #[serde(rename = "manifestHash", default, skip_serializing_if = "Option::is_none")]
+    pub manifest_hash: Option<String>,
+    #[serde(rename = "driveHeaderHash", default, skip_serializing_if = "Option::is_none")]
+    pub drive_header_hash: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<drive_status::State>,
+    #[serde(rename = "copyStatus", default, skip_serializing_if = "Option::is_none")]
+    pub copy_status: Option<String>,
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<i32>,
+    #[serde(rename = "verboseLogUri", default, skip_serializing_if = "Option::is_none")]
+    pub verbose_log_uri: Option<String>,
+    #[serde(rename = "errorLogUri", default, skip_serializing_if = "Option::is_none")]
+    pub error_log_uri: Option<String>,
+    #[serde(rename = "manifestUri", default, skip_serializing_if = "Option::is_none")]
+    pub manifest_uri: Option<String>,
+    #[serde(rename = "bytesSucceeded", default, skip_serializing_if = "Option::is_none")]
+    pub bytes_succeeded: Option<i64>,
+}
+pub mod drive_status {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Specified,
+        Received,
+        NeverReceived,
+        Transferring,
+        Completed,
+        CompletedMoreInfo,
+        ShippedBack,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EncryptionKeyDetails {
+    #[serde(rename = "kekType", default, skip_serializing_if = "Option::is_none")]
+    pub kek_type: Option<encryption_key_details::KekType>,
+    #[serde(rename = "kekUrl", default, skip_serializing_if = "Option::is_none")]
+    pub kek_url: Option<String>,
+    #[serde(rename = "kekVaultResourceID", default, skip_serializing_if = "Option::is_none")]
+    pub kek_vault_resource_id: Option<String>,
+}
+pub mod encryption_key_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum KekType {
+        MicrosoftManaged,
+        CustomerManaged,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
@@ -24,13 +99,44 @@ pub mod error_response {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PutJobParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<JobDetails>,
+pub struct Export {
+    #[serde(rename = "blobList", default, skip_serializing_if = "Option::is_none")]
+    pub blob_list: Option<export::BlobList>,
+    #[serde(rename = "blobListBlobPath", default, skip_serializing_if = "Option::is_none")]
+    pub blob_list_blob_path: Option<String>,
+}
+pub mod export {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct BlobList {
+        #[serde(rename = "blobPath", default, skip_serializing_if = "Vec::is_empty")]
+        pub blob_path: Vec<String>,
+        #[serde(rename = "blobPathPrefix", default, skip_serializing_if = "Vec::is_empty")]
+        pub blob_path_prefix: Vec<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GetBitLockerKeysResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DriveBitLockerKey>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IdentityDetails {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<identity_details::Type>,
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+pub mod identity_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        SystemAssigned,
+        UserAssigned,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDetails {
@@ -72,77 +178,6 @@ pub struct JobDetails {
     pub encryption_key: Option<EncryptionKeyDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncryptionKeyDetails {
-    #[serde(rename = "kekType", default, skip_serializing_if = "Option::is_none")]
-    pub kek_type: Option<encryption_key_details::KekType>,
-    #[serde(rename = "kekUrl", default, skip_serializing_if = "Option::is_none")]
-    pub kek_url: Option<String>,
-    #[serde(rename = "kekVaultResourceID", default, skip_serializing_if = "Option::is_none")]
-    pub kek_vault_resource_id: Option<String>,
-}
-pub mod encryption_key_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum KekType {
-        MicrosoftManaged,
-        CustomerManaged,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IdentityDetails {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<identity_details::Type>,
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-}
-pub mod identity_details {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        None,
-        SystemAssigned,
-        UserAssigned,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateJobParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<update_job_parameters::Properties>,
-}
-pub mod update_job_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Properties {
-        #[serde(rename = "cancelRequested", default, skip_serializing_if = "Option::is_none")]
-        pub cancel_requested: Option<bool>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub state: Option<String>,
-        #[serde(rename = "returnAddress", default, skip_serializing_if = "Option::is_none")]
-        pub return_address: Option<ReturnAddress>,
-        #[serde(rename = "returnShipping", default, skip_serializing_if = "Option::is_none")]
-        pub return_shipping: Option<ReturnShipping>,
-        #[serde(rename = "deliveryPackage", default, skip_serializing_if = "Option::is_none")]
-        pub delivery_package: Option<DeliveryPackageInformation>,
-        #[serde(rename = "logLevel", default, skip_serializing_if = "Option::is_none")]
-        pub log_level: Option<String>,
-        #[serde(rename = "backupDriveManifest", default, skip_serializing_if = "Option::is_none")]
-        pub backup_drive_manifest: Option<bool>,
-        #[serde(rename = "driveList", default, skip_serializing_if = "Vec::is_empty")]
-        pub drive_list: Vec<DriveStatus>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListJobsResponse {
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<JobResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobResponse {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -162,23 +197,16 @@ pub struct JobResponse {
     pub identity: Option<IdentityDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    pub name: String,
-    pub display: operation::Display,
+pub struct ListJobsResponse {
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<JobResponse>,
 }
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ListOperationsResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {
@@ -218,6 +246,50 @@ pub mod location {
         #[serde(rename = "alternateLocations", default, skip_serializing_if = "Vec::is_empty")]
         pub alternate_locations: Vec<String>,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LocationsResponse {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Location>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    pub name: String,
+    pub display: operation::Display,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PackageInformation {
+    #[serde(rename = "carrierName")]
+    pub carrier_name: String,
+    #[serde(rename = "trackingNumber")]
+    pub tracking_number: String,
+    #[serde(rename = "driveCount")]
+    pub drive_count: i64,
+    #[serde(rename = "shipDate")]
+    pub ship_date: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PutJobParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<JobDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReturnAddress {
@@ -266,105 +338,33 @@ pub struct ShippingInformation {
     pub additional_information: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PackageInformation {
-    #[serde(rename = "carrierName")]
-    pub carrier_name: String,
-    #[serde(rename = "trackingNumber")]
-    pub tracking_number: String,
-    #[serde(rename = "driveCount")]
-    pub drive_count: i64,
-    #[serde(rename = "shipDate")]
-    pub ship_date: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeliveryPackageInformation {
-    #[serde(rename = "carrierName")]
-    pub carrier_name: String,
-    #[serde(rename = "trackingNumber")]
-    pub tracking_number: String,
-    #[serde(rename = "driveCount", default, skip_serializing_if = "Option::is_none")]
-    pub drive_count: Option<i64>,
-    #[serde(rename = "shipDate", default, skip_serializing_if = "Option::is_none")]
-    pub ship_date: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DriveStatus {
-    #[serde(rename = "driveId", default, skip_serializing_if = "Option::is_none")]
-    pub drive_id: Option<String>,
-    #[serde(rename = "bitLockerKey", default, skip_serializing_if = "Option::is_none")]
-    pub bit_locker_key: Option<String>,
-    #[serde(rename = "manifestFile", default, skip_serializing_if = "Option::is_none")]
-    pub manifest_file: Option<String>,
-    #[serde(rename = "manifestHash", default, skip_serializing_if = "Option::is_none")]
-    pub manifest_hash: Option<String>,
-    #[serde(rename = "driveHeaderHash", default, skip_serializing_if = "Option::is_none")]
-    pub drive_header_hash: Option<String>,
+pub struct UpdateJobParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<drive_status::State>,
-    #[serde(rename = "copyStatus", default, skip_serializing_if = "Option::is_none")]
-    pub copy_status: Option<String>,
-    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
-    pub percent_complete: Option<i32>,
-    #[serde(rename = "verboseLogUri", default, skip_serializing_if = "Option::is_none")]
-    pub verbose_log_uri: Option<String>,
-    #[serde(rename = "errorLogUri", default, skip_serializing_if = "Option::is_none")]
-    pub error_log_uri: Option<String>,
-    #[serde(rename = "manifestUri", default, skip_serializing_if = "Option::is_none")]
-    pub manifest_uri: Option<String>,
-    #[serde(rename = "bytesSucceeded", default, skip_serializing_if = "Option::is_none")]
-    pub bytes_succeeded: Option<i64>,
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<update_job_parameters::Properties>,
 }
-pub mod drive_status {
+pub mod update_job_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Specified,
-        Received,
-        NeverReceived,
-        Transferring,
-        Completed,
-        CompletedMoreInfo,
-        ShippedBack,
+    pub struct Properties {
+        #[serde(rename = "cancelRequested", default, skip_serializing_if = "Option::is_none")]
+        pub cancel_requested: Option<bool>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub state: Option<String>,
+        #[serde(rename = "returnAddress", default, skip_serializing_if = "Option::is_none")]
+        pub return_address: Option<ReturnAddress>,
+        #[serde(rename = "returnShipping", default, skip_serializing_if = "Option::is_none")]
+        pub return_shipping: Option<ReturnShipping>,
+        #[serde(rename = "deliveryPackage", default, skip_serializing_if = "Option::is_none")]
+        pub delivery_package: Option<DeliveryPackageInformation>,
+        #[serde(rename = "logLevel", default, skip_serializing_if = "Option::is_none")]
+        pub log_level: Option<String>,
+        #[serde(rename = "backupDriveManifest", default, skip_serializing_if = "Option::is_none")]
+        pub backup_drive_manifest: Option<bool>,
+        #[serde(rename = "driveList", default, skip_serializing_if = "Vec::is_empty")]
+        pub drive_list: Vec<DriveStatus>,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Export {
-    #[serde(rename = "blobList", default, skip_serializing_if = "Option::is_none")]
-    pub blob_list: Option<export::BlobList>,
-    #[serde(rename = "blobListBlobPath", default, skip_serializing_if = "Option::is_none")]
-    pub blob_list_blob_path: Option<String>,
-}
-pub mod export {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct BlobList {
-        #[serde(rename = "blobPath", default, skip_serializing_if = "Vec::is_empty")]
-        pub blob_path: Vec<String>,
-        #[serde(rename = "blobPathPrefix", default, skip_serializing_if = "Vec::is_empty")]
-        pub blob_path_prefix: Vec<String>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LocationsResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Location>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GetBitLockerKeysResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<DriveBitLockerKey>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DriveBitLockerKey {
-    #[serde(rename = "bitLockerKey", default, skip_serializing_if = "Option::is_none")]
-    pub bit_locker_key: Option<String>,
-    #[serde(rename = "driveId", default, skip_serializing_if = "Option::is_none")]
-    pub drive_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ListOperationsResponse {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {

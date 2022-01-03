@@ -577,13 +577,6 @@ pub struct PolicyViolation {
     pub message: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationArtifact {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Artifact>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResponseWithContinuationArtifactSource {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ArtifactSource>,
@@ -591,9 +584,9 @@ pub struct ResponseWithContinuationArtifactSource {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationCost {
+pub struct ResponseWithContinuationArtifact {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Cost>,
+    pub value: Vec<Artifact>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -601,6 +594,13 @@ pub struct ResponseWithContinuationCost {
 pub struct ResponseWithContinuationCostInsight {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CostInsight>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResponseWithContinuationCost {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Cost>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -626,13 +626,6 @@ pub struct ResponseWithContinuationGalleryImage {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationLab {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Lab>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResponseWithContinuationLabVhd {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LabVhd>,
@@ -643,6 +636,13 @@ pub struct ResponseWithContinuationLabVhd {
 pub struct ResponseWithContinuationLabVirtualMachine {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LabVirtualMachine>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResponseWithContinuationLab {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Lab>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -784,6 +784,15 @@ pub struct SubscriptionNotificationProperties {
     pub tenant_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VmCostProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
+    pub resource_group_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetwork {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkProperties>,
@@ -810,15 +819,6 @@ pub struct VirtualNetworkProperties {
     pub subnet_overrides: Vec<SubnetOverride>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmCostProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
-    pub resource_group_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cost: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WeekDetails {

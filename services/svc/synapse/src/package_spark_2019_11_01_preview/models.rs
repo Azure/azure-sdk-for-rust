@@ -3,13 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkBatchJobCollection {
-    pub from: i32,
-    pub total: i32,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sessions: Vec<SparkBatchJob>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkBatchJob {
     #[serde(rename = "livyInfo", default, skip_serializing_if = "Option::is_none")]
     pub livy_info: Option<SparkBatchJobState>,
@@ -63,125 +56,11 @@ pub mod spark_batch_job {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkBatchJobState {
-    #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
-    pub not_started_at: Option<String>,
-    #[serde(rename = "startingAt", default, skip_serializing_if = "Option::is_none")]
-    pub starting_at: Option<String>,
-    #[serde(rename = "runningAt", default, skip_serializing_if = "Option::is_none")]
-    pub running_at: Option<String>,
-    #[serde(rename = "deadAt", default, skip_serializing_if = "Option::is_none")]
-    pub dead_at: Option<String>,
-    #[serde(rename = "successAt", default, skip_serializing_if = "Option::is_none")]
-    pub success_at: Option<String>,
-    #[serde(rename = "killedAt", default, skip_serializing_if = "Option::is_none")]
-    pub killed_at: Option<String>,
-    #[serde(rename = "recoveringAt", default, skip_serializing_if = "Option::is_none")]
-    pub recovering_at: Option<String>,
-    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
-    pub current_state: Option<String>,
-    #[serde(rename = "jobCreationRequest", default, skip_serializing_if = "Option::is_none")]
-    pub job_creation_request: Option<SparkRequest>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkScheduler {
-    #[serde(rename = "submittedAt", default, skip_serializing_if = "Option::is_none")]
-    pub submitted_at: Option<String>,
-    #[serde(rename = "scheduledAt", default, skip_serializing_if = "Option::is_none")]
-    pub scheduled_at: Option<String>,
-    #[serde(rename = "endedAt", default, skip_serializing_if = "Option::is_none")]
-    pub ended_at: Option<String>,
-    #[serde(rename = "cancellationRequestedAt", default, skip_serializing_if = "Option::is_none")]
-    pub cancellation_requested_at: Option<String>,
-    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
-    pub current_state: Option<spark_scheduler::CurrentState>,
-}
-pub mod spark_scheduler {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CurrentState {
-        Queued,
-        Scheduled,
-        Ended,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkServicePlugin {
-    #[serde(rename = "preparationStartedAt", default, skip_serializing_if = "Option::is_none")]
-    pub preparation_started_at: Option<String>,
-    #[serde(rename = "resourceAcquisitionStartedAt", default, skip_serializing_if = "Option::is_none")]
-    pub resource_acquisition_started_at: Option<String>,
-    #[serde(rename = "submissionStartedAt", default, skip_serializing_if = "Option::is_none")]
-    pub submission_started_at: Option<String>,
-    #[serde(rename = "monitoringStartedAt", default, skip_serializing_if = "Option::is_none")]
-    pub monitoring_started_at: Option<String>,
-    #[serde(rename = "cleanupStartedAt", default, skip_serializing_if = "Option::is_none")]
-    pub cleanup_started_at: Option<String>,
-    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
-    pub current_state: Option<spark_service_plugin::CurrentState>,
-}
-pub mod spark_service_plugin {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CurrentState {
-        Preparation,
-        ResourceAcquisition,
-        Queued,
-        Submission,
-        Monitoring,
-        Cleanup,
-        Ended,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkServiceError {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<spark_service_error::Source>,
-}
-pub mod spark_service_error {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Source {
-        System,
-        User,
-        Unknown,
-        Dependency,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub file: Option<String>,
-    #[serde(rename = "className", default, skip_serializing_if = "Option::is_none")]
-    pub class_name: Option<String>,
+pub struct SparkBatchJobCollection {
+    pub from: i32,
+    pub total: i32,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub args: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub jars: Vec<String>,
-    #[serde(rename = "pyFiles", default, skip_serializing_if = "Vec::is_empty")]
-    pub py_files: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub files: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub archives: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub conf: Option<serde_json::Value>,
-    #[serde(rename = "driverMemory", default, skip_serializing_if = "Option::is_none")]
-    pub driver_memory: Option<String>,
-    #[serde(rename = "driverCores", default, skip_serializing_if = "Option::is_none")]
-    pub driver_cores: Option<i32>,
-    #[serde(rename = "executorMemory", default, skip_serializing_if = "Option::is_none")]
-    pub executor_memory: Option<String>,
-    #[serde(rename = "executorCores", default, skip_serializing_if = "Option::is_none")]
-    pub executor_cores: Option<i32>,
-    #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
-    pub num_executors: Option<i32>,
+    pub sessions: Vec<SparkBatchJob>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkBatchJobOptions {
@@ -217,11 +96,125 @@ pub struct SparkBatchJobOptions {
     pub num_executors: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkSessionCollection {
-    pub from: i32,
-    pub total: i32,
+pub struct SparkBatchJobState {
+    #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
+    pub not_started_at: Option<String>,
+    #[serde(rename = "startingAt", default, skip_serializing_if = "Option::is_none")]
+    pub starting_at: Option<String>,
+    #[serde(rename = "runningAt", default, skip_serializing_if = "Option::is_none")]
+    pub running_at: Option<String>,
+    #[serde(rename = "deadAt", default, skip_serializing_if = "Option::is_none")]
+    pub dead_at: Option<String>,
+    #[serde(rename = "successAt", default, skip_serializing_if = "Option::is_none")]
+    pub success_at: Option<String>,
+    #[serde(rename = "killedAt", default, skip_serializing_if = "Option::is_none")]
+    pub killed_at: Option<String>,
+    #[serde(rename = "recoveringAt", default, skip_serializing_if = "Option::is_none")]
+    pub recovering_at: Option<String>,
+    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
+    pub current_state: Option<String>,
+    #[serde(rename = "jobCreationRequest", default, skip_serializing_if = "Option::is_none")]
+    pub job_creation_request: Option<SparkRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<String>,
+    #[serde(rename = "className", default, skip_serializing_if = "Option::is_none")]
+    pub class_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sessions: Vec<SparkSession>,
+    pub args: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub jars: Vec<String>,
+    #[serde(rename = "pyFiles", default, skip_serializing_if = "Vec::is_empty")]
+    pub py_files: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub archives: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conf: Option<serde_json::Value>,
+    #[serde(rename = "driverMemory", default, skip_serializing_if = "Option::is_none")]
+    pub driver_memory: Option<String>,
+    #[serde(rename = "driverCores", default, skip_serializing_if = "Option::is_none")]
+    pub driver_cores: Option<i32>,
+    #[serde(rename = "executorMemory", default, skip_serializing_if = "Option::is_none")]
+    pub executor_memory: Option<String>,
+    #[serde(rename = "executorCores", default, skip_serializing_if = "Option::is_none")]
+    pub executor_cores: Option<i32>,
+    #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub num_executors: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkScheduler {
+    #[serde(rename = "submittedAt", default, skip_serializing_if = "Option::is_none")]
+    pub submitted_at: Option<String>,
+    #[serde(rename = "scheduledAt", default, skip_serializing_if = "Option::is_none")]
+    pub scheduled_at: Option<String>,
+    #[serde(rename = "endedAt", default, skip_serializing_if = "Option::is_none")]
+    pub ended_at: Option<String>,
+    #[serde(rename = "cancellationRequestedAt", default, skip_serializing_if = "Option::is_none")]
+    pub cancellation_requested_at: Option<String>,
+    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
+    pub current_state: Option<spark_scheduler::CurrentState>,
+}
+pub mod spark_scheduler {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CurrentState {
+        Queued,
+        Scheduled,
+        Ended,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkServiceError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<spark_service_error::Source>,
+}
+pub mod spark_service_error {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Source {
+        System,
+        User,
+        Unknown,
+        Dependency,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkServicePlugin {
+    #[serde(rename = "preparationStartedAt", default, skip_serializing_if = "Option::is_none")]
+    pub preparation_started_at: Option<String>,
+    #[serde(rename = "resourceAcquisitionStartedAt", default, skip_serializing_if = "Option::is_none")]
+    pub resource_acquisition_started_at: Option<String>,
+    #[serde(rename = "submissionStartedAt", default, skip_serializing_if = "Option::is_none")]
+    pub submission_started_at: Option<String>,
+    #[serde(rename = "monitoringStartedAt", default, skip_serializing_if = "Option::is_none")]
+    pub monitoring_started_at: Option<String>,
+    #[serde(rename = "cleanupStartedAt", default, skip_serializing_if = "Option::is_none")]
+    pub cleanup_started_at: Option<String>,
+    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
+    pub current_state: Option<spark_service_plugin::CurrentState>,
+}
+pub mod spark_service_plugin {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CurrentState {
+        Preparation,
+        ResourceAcquisition,
+        Queued,
+        Submission,
+        Monitoring,
+        Cleanup,
+        Ended,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkSession {
@@ -277,29 +270,11 @@ pub mod spark_session {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkSessionState {
-    #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
-    pub not_started_at: Option<String>,
-    #[serde(rename = "startingAt", default, skip_serializing_if = "Option::is_none")]
-    pub starting_at: Option<String>,
-    #[serde(rename = "idleAt", default, skip_serializing_if = "Option::is_none")]
-    pub idle_at: Option<String>,
-    #[serde(rename = "deadAt", default, skip_serializing_if = "Option::is_none")]
-    pub dead_at: Option<String>,
-    #[serde(rename = "shuttingDownAt", default, skip_serializing_if = "Option::is_none")]
-    pub shutting_down_at: Option<String>,
-    #[serde(rename = "killedAt", default, skip_serializing_if = "Option::is_none")]
-    pub killed_at: Option<String>,
-    #[serde(rename = "recoveringAt", default, skip_serializing_if = "Option::is_none")]
-    pub recovering_at: Option<String>,
-    #[serde(rename = "busyAt", default, skip_serializing_if = "Option::is_none")]
-    pub busy_at: Option<String>,
-    #[serde(rename = "errorAt", default, skip_serializing_if = "Option::is_none")]
-    pub error_at: Option<String>,
-    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
-    pub current_state: Option<String>,
-    #[serde(rename = "jobCreationRequest", default, skip_serializing_if = "Option::is_none")]
-    pub job_creation_request: Option<SparkRequest>,
+pub struct SparkSessionCollection {
+    pub from: i32,
+    pub total: i32,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sessions: Vec<SparkSession>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkSessionOptions {
@@ -336,10 +311,29 @@ pub struct SparkSessionOptions {
     pub num_executors: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkStatementCollection {
-    pub total_statements: i32,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub statements: Vec<SparkStatement>,
+pub struct SparkSessionState {
+    #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
+    pub not_started_at: Option<String>,
+    #[serde(rename = "startingAt", default, skip_serializing_if = "Option::is_none")]
+    pub starting_at: Option<String>,
+    #[serde(rename = "idleAt", default, skip_serializing_if = "Option::is_none")]
+    pub idle_at: Option<String>,
+    #[serde(rename = "deadAt", default, skip_serializing_if = "Option::is_none")]
+    pub dead_at: Option<String>,
+    #[serde(rename = "shuttingDownAt", default, skip_serializing_if = "Option::is_none")]
+    pub shutting_down_at: Option<String>,
+    #[serde(rename = "killedAt", default, skip_serializing_if = "Option::is_none")]
+    pub killed_at: Option<String>,
+    #[serde(rename = "recoveringAt", default, skip_serializing_if = "Option::is_none")]
+    pub recovering_at: Option<String>,
+    #[serde(rename = "busyAt", default, skip_serializing_if = "Option::is_none")]
+    pub busy_at: Option<String>,
+    #[serde(rename = "errorAt", default, skip_serializing_if = "Option::is_none")]
+    pub error_at: Option<String>,
+    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
+    pub current_state: Option<String>,
+    #[serde(rename = "jobCreationRequest", default, skip_serializing_if = "Option::is_none")]
+    pub job_creation_request: Option<SparkRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkStatement {
@@ -352,18 +346,15 @@ pub struct SparkStatement {
     pub output: Option<SparkStatementOutput>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkStatementOutput {
+pub struct SparkStatementCancellationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    pub execution_count: i32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub data: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ename: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub evalue: Option<String>,
+    pub msg: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkStatementCollection {
+    pub total_statements: i32,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub traceback: Vec<String>,
+    pub statements: Vec<SparkStatement>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkStatementOptions {
@@ -387,7 +378,16 @@ pub mod spark_statement_options {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SparkStatementCancellationResult {
+pub struct SparkStatementOutput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub msg: Option<String>,
+    pub status: Option<String>,
+    pub execution_count: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ename: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evalue: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub traceback: Vec<String>,
 }

@@ -3,44 +3,97 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+pub struct AutoScaleVCore {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub sku: AutoScaleVCoreSku,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AutoScaleVCoreProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
+pub struct AutoScaleVCoreListResult {
+    pub value: Vec<AutoScaleVCore>,
 }
-pub mod operation {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutoScaleVCoreMutableProperties {
+    #[serde(rename = "capacityLimit", default, skip_serializing_if = "Option::is_none")]
+    pub capacity_limit: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutoScaleVCoreProperties {
+    #[serde(flatten)]
+    pub auto_scale_v_core_mutable_properties: AutoScaleVCoreMutableProperties,
+    #[serde(rename = "capacityObjectId", default, skip_serializing_if = "Option::is_none")]
+    pub capacity_object_id: Option<String>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<auto_scale_v_core_properties::ProvisioningState>,
+}
+pub mod auto_scale_v_core_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
+    pub enum ProvisioningState {
+        Succeeded,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
+pub struct AutoScaleVCoreSku {
+    pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub tier: Option<auto_scale_v_core_sku::Tier>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
+}
+pub mod auto_scale_v_core_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        AutoScale,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AutoScaleVCoreUpdateParameters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<AutoScaleVCoreSku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AutoScaleVCoreMutableProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CapacitySku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<capacity_sku::Tier>,
+}
+pub mod capacity_sku {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Tier {
+        #[serde(rename = "PBIE_Azure")]
+        PbieAzure,
+        Premium,
+        AutoPremiumHost,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckCapacityNameAvailabilityParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    pub location: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckCapacityNameAvailabilityResult {
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
+    pub reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedCapacities {
+    pub value: Vec<DedicatedCapacity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedCapacity {
@@ -51,17 +104,24 @@ pub struct DedicatedCapacity {
     pub properties: Option<DedicatedCapacityProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedCapacities {
-    pub value: Vec<DedicatedCapacity>,
+pub struct DedicatedCapacityAdministrators {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub members: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedCapacityUpdateParameters {
+pub struct DedicatedCapacityMutableProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<CapacitySku>,
+    pub administration: Option<DedicatedCapacityAdministrators>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DedicatedCapacityMutableProperties>,
+    pub mode: Option<dedicated_capacity_mutable_properties::Mode>,
+}
+pub mod dedicated_capacity_mutable_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Mode {
+        Gen1,
+        Gen2,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedCapacityProperties {
@@ -106,55 +166,13 @@ pub mod dedicated_capacity_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CapacitySku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<capacity_sku::Tier>,
-}
-pub mod capacity_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        #[serde(rename = "PBIE_Azure")]
-        PbieAzure,
-        Premium,
-        AutoPremiumHost,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedCapacityMutableProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub administration: Option<DedicatedCapacityAdministrators>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mode: Option<dedicated_capacity_mutable_properties::Mode>,
-}
-pub mod dedicated_capacity_mutable_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Mode {
-        Gen1,
-        Gen2,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DedicatedCapacityAdministrators {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub members: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuEnumerationForNewResourceResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<CapacitySku>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuEnumerationForExistingResourceResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SkuDetailsForExistingResource>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuDetailsForExistingResource {
+pub struct DedicatedCapacityUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<CapacitySku>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DedicatedCapacityMutableProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -172,20 +190,66 @@ pub mod error_response {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckCapacityNameAvailabilityParameters {
+pub enum IdentityType {
+    User,
+    Application,
+    ManagedIdentity,
+    Key,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckCapacityNameAvailabilityResult {
-    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub name_available: Option<bool>,
+pub struct SkuDetailsForExistingResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
+    pub sku: Option<CapacitySku>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkuEnumerationForExistingResourceResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SkuDetailsForExistingResource>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkuEnumerationForNewResourceResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<CapacitySku>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemData {
@@ -201,68 +265,4 @@ pub struct SystemData {
     pub last_modified_by_type: Option<IdentityType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum IdentityType {
-    User,
-    Application,
-    ManagedIdentity,
-    Key,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScaleVCore {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub sku: AutoScaleVCoreSku,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AutoScaleVCoreProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScaleVCoreListResult {
-    pub value: Vec<AutoScaleVCore>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScaleVCoreUpdateParameters {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<AutoScaleVCoreSku>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AutoScaleVCoreMutableProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScaleVCoreProperties {
-    #[serde(flatten)]
-    pub auto_scale_v_core_mutable_properties: AutoScaleVCoreMutableProperties,
-    #[serde(rename = "capacityObjectId", default, skip_serializing_if = "Option::is_none")]
-    pub capacity_object_id: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<auto_scale_v_core_properties::ProvisioningState>,
-}
-pub mod auto_scale_v_core_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Succeeded,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScaleVCoreMutableProperties {
-    #[serde(rename = "capacityLimit", default, skip_serializing_if = "Option::is_none")]
-    pub capacity_limit: Option<i32>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScaleVCoreSku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<auto_scale_v_core_sku::Tier>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capacity: Option<i32>,
-}
-pub mod auto_scale_v_core_sku {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Tier {
-        AutoScale,
-    }
 }

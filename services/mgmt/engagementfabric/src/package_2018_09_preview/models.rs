@@ -3,33 +3,74 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tier: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackedResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    pub location: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    pub sku: Sku,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Account {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccountList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Account>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccountPatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Channel {
+    #[serde(flatten)]
+    pub proxy_only_resource: ProxyOnlyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ChannelProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChannelList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Channel>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChannelProperties {
+    #[serde(rename = "channelType")]
+    pub channel_type: String,
+    #[serde(rename = "channelFunctions", default, skip_serializing_if = "Vec::is_empty")]
+    pub channel_functions: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credentials: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChannelTypeDescription {
+    #[serde(rename = "channelType", default, skip_serializing_if = "Option::is_none")]
+    pub channel_type: Option<String>,
+    #[serde(rename = "channelDescription", default, skip_serializing_if = "Option::is_none")]
+    pub channel_description: Option<String>,
+    #[serde(rename = "channelFunctions", default, skip_serializing_if = "Vec::is_empty")]
+    pub channel_functions: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChannelTypeDescriptionList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ChannelTypeDescription>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckNameAvailabilityParameter {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub type_: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CheckNameAvailabilityResult {
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<CheckNameUnavailableReason>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum CheckNameUnavailableReason {
+    Invalid,
+    AlreadyExists,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudError {
@@ -48,21 +89,6 @@ pub struct CloudErrorBody {
     pub details: Vec<CloudErrorBody>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccountPatch {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccountList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Account>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KeyDescriptionList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<KeyDescription>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -72,69 +98,14 @@ pub struct KeyDescription {
     pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegenerateKeyParameter {
-    pub name: String,
-    pub rank: KeyRank,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChannelTypeDescriptionList {
+pub struct KeyDescriptionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ChannelTypeDescription>,
+    pub value: Vec<KeyDescription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChannelTypeDescription {
-    #[serde(rename = "channelType", default, skip_serializing_if = "Option::is_none")]
-    pub channel_type: Option<String>,
-    #[serde(rename = "channelDescription", default, skip_serializing_if = "Option::is_none")]
-    pub channel_description: Option<String>,
-    #[serde(rename = "channelFunctions", default, skip_serializing_if = "Vec::is_empty")]
-    pub channel_functions: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChannelProperties {
-    #[serde(rename = "channelType")]
-    pub channel_type: String,
-    #[serde(rename = "channelFunctions", default, skip_serializing_if = "Vec::is_empty")]
-    pub channel_functions: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub credentials: Option<serde_json::Value>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyOnlyResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Channel {
-    #[serde(flatten)]
-    pub proxy_only_resource: ProxyOnlyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ChannelProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChannelList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Channel>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckNameAvailabilityParameter {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CheckNameAvailabilityResult {
-    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
-    pub name_available: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<CheckNameUnavailableReason>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
+pub enum KeyRank {
+    PrimaryKey,
+    SecondaryKey,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -155,9 +126,34 @@ pub struct OperationDisplay {
     pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkuDescriptionList {
+pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SkuDescription>,
+    pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyOnlyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegenerateKeyParameter {
+    pub name: String,
+    pub rank: KeyRank,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Sku {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuDescription {
@@ -175,6 +171,11 @@ pub struct SkuDescription {
     pub restrictions: Vec<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SkuDescriptionList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SkuDescription>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuLocationInfoItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -182,12 +183,11 @@ pub struct SkuLocationInfoItem {
     pub zones: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum KeyRank {
-    PrimaryKey,
-    SecondaryKey,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum CheckNameUnavailableReason {
-    Invalid,
-    AlreadyExists,
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    pub location: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    pub sku: Sku,
 }

@@ -2,34 +2,6 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CanonicalSupportPlanProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
-}
-pub mod canonical_support_plan_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        Succeeded,
-        Failed,
-        Cancelled,
-        Purchasing,
-        Downgrading,
-        Cancelling,
-        Upgrading,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CanonicalSupportPlanResponseEnvelope {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    pub properties: CanonicalSupportPlanProperties,
-}
 pub type CanonicalSupportPlanInfo = Vec<CanonicalSupportPlanInfoDefinition>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CanonicalSupportPlanInfoDefinition {
@@ -62,11 +34,44 @@ pub mod canonical_support_plan_info_definition {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CanonicalSupportPlanProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
+}
+pub mod canonical_support_plan_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ProvisioningState {
+        Succeeded,
+        Failed,
+        Cancelled,
+        Purchasing,
+        Downgrading,
+        Cancelling,
+        Upgrading,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CanonicalSupportPlanResponseEnvelope {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    pub properties: CanonicalSupportPlanProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDefinition {
+    pub message: String,
+    pub code: String,
+}
+pub type OperationList = Vec<OperationsDefinition>;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<OperationList>,
 }
-pub type OperationList = Vec<OperationsDefinition>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -84,9 +89,4 @@ pub struct OperationsDisplayDefinition {
     pub operation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDefinition {
-    pub message: String,
-    pub code: String,
 }

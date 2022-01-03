@@ -22,12 +22,6 @@ pub mod conversion {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConversionList {
-    pub conversions: Vec<Conversion>,
-    #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConversionInputSettings {
     #[serde(rename = "storageContainerUri")]
     pub storage_container_uri: String,
@@ -39,6 +33,12 @@ pub struct ConversionInputSettings {
     pub relative_input_asset_path: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConversionList {
+    pub conversions: Vec<Conversion>,
+    #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConversionOutputSettings {
     #[serde(rename = "storageContainerUri")]
     pub storage_container_uri: String,
@@ -48,10 +48,6 @@ pub struct ConversionOutputSettings {
     pub blob_prefix: Option<String>,
     #[serde(rename = "outputAssetFilename", default, skip_serializing_if = "Option::is_none")]
     pub output_asset_filename: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateConversionSettings {
-    pub settings: ConversionSettings,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConversionSettings {
@@ -69,8 +65,14 @@ pub enum ConversionStatus {
     Succeeded,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    pub error: Error,
+pub struct CreateConversionSettings {
+    pub settings: ConversionSettings,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CreateSessionSettings {
+    #[serde(rename = "maxLeaseTimeMinutes")]
+    pub max_lease_time_minutes: i64,
+    pub size: SessionSize,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
@@ -82,6 +84,10 @@ pub struct Error {
     pub target: Option<String>,
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Box<Option<Error>>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    pub error: Error,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SessionProperties {
@@ -106,15 +112,9 @@ pub struct SessionProperties {
     pub creation_time: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateSessionSettings {
-    #[serde(rename = "maxLeaseTimeMinutes")]
-    pub max_lease_time_minutes: i64,
-    pub size: SessionSize,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateSessionSettings {
-    #[serde(rename = "maxLeaseTimeMinutes")]
-    pub max_lease_time_minutes: i64,
+pub enum SessionSize {
+    Standard,
+    Premium,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SessionStatus {
@@ -125,13 +125,13 @@ pub enum SessionStatus {
     Stopped,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum SessionSize {
-    Standard,
-    Premium,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SessionsList {
     pub sessions: Vec<SessionProperties>,
     #[serde(rename = "@nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateSessionSettings {
+    #[serde(rename = "maxLeaseTimeMinutes")]
+    pub max_lease_time_minutes: i64,
 }

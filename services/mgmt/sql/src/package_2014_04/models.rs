@@ -36,6 +36,19 @@ pub mod check_name_availability_response {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Database {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseListResult {
+    pub value: Vec<Database>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collation: Option<String>,
@@ -347,13 +360,52 @@ pub mod database_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Database {
+pub struct DatabaseSecurityAlertPolicy {
     #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseProperties>,
+    pub properties: Option<DatabaseSecurityAlertPolicyProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseSecurityAlertPolicyProperties {
+    pub state: database_security_alert_policy_properties::State,
+    #[serde(rename = "disabledAlerts", default, skip_serializing_if = "Option::is_none")]
+    pub disabled_alerts: Option<String>,
+    #[serde(rename = "emailAddresses", default, skip_serializing_if = "Option::is_none")]
+    pub email_addresses: Option<String>,
+    #[serde(rename = "emailAccountAdmins", default, skip_serializing_if = "Option::is_none")]
+    pub email_account_admins: Option<database_security_alert_policy_properties::EmailAccountAdmins>,
+    #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub storage_endpoint: Option<String>,
+    #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_access_key: Option<String>,
+    #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
+    pub retention_days: Option<i32>,
+    #[serde(rename = "useServerDefault", default, skip_serializing_if = "Option::is_none")]
+    pub use_server_default: Option<database_security_alert_policy_properties::UseServerDefault>,
+}
+pub mod database_security_alert_policy_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        New,
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum EmailAccountAdmins {
+        Enabled,
+        Disabled,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum UseServerDefault {
+        Enabled,
+        Disabled,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseUpdate {
@@ -365,8 +417,26 @@ pub struct DatabaseUpdate {
     pub properties: Option<DatabaseProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseListResult {
-    pub value: Vec<Database>,
+pub struct ElasticPool {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ElasticPoolProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ElasticPoolActivity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ElasticPoolActivityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ElasticPoolActivityListResult {
+    pub value: Vec<ElasticPoolActivity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolActivityProperties {
@@ -412,17 +482,17 @@ pub struct ElasticPoolActivityProperties {
     pub requested_dtu_guarantee: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ElasticPoolActivity {
+pub struct ElasticPoolDatabaseActivity {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ElasticPoolActivityProperties>,
+    pub properties: Option<ElasticPoolDatabaseActivityProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ElasticPoolActivityListResult {
-    pub value: Vec<ElasticPoolActivity>,
+pub struct ElasticPoolDatabaseActivityListResult {
+    pub value: Vec<ElasticPoolDatabaseActivity>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolDatabaseActivityProperties {
@@ -458,348 +528,8 @@ pub struct ElasticPoolDatabaseActivityProperties {
     pub state: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ElasticPoolDatabaseActivity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ElasticPoolDatabaseActivityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ElasticPoolDatabaseActivityListResult {
-    pub value: Vec<ElasticPoolDatabaseActivity>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecommendedIndexProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<recommended_index_properties::Action>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<recommended_index_properties::State>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created: Option<String>,
-    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified: Option<String>,
-    #[serde(rename = "indexType", default, skip_serializing_if = "Option::is_none")]
-    pub index_type: Option<recommended_index_properties::IndexType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub schema: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub table: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub columns: Vec<String>,
-    #[serde(rename = "includedColumns", default, skip_serializing_if = "Vec::is_empty")]
-    pub included_columns: Vec<String>,
-    #[serde(rename = "indexScript", default, skip_serializing_if = "Option::is_none")]
-    pub index_script: Option<String>,
-    #[serde(rename = "estimatedImpact", default, skip_serializing_if = "Vec::is_empty")]
-    pub estimated_impact: Vec<OperationImpact>,
-    #[serde(rename = "reportedImpact", default, skip_serializing_if = "Vec::is_empty")]
-    pub reported_impact: Vec<OperationImpact>,
-}
-pub mod recommended_index_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Action {
-        Create,
-        Drop,
-        Rebuild,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        Active,
-        Pending,
-        Executing,
-        Verifying,
-        #[serde(rename = "Pending Revert")]
-        PendingRevert,
-        Reverting,
-        Reverted,
-        Ignored,
-        Expired,
-        Blocked,
-        Success,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum IndexType {
-        #[serde(rename = "CLUSTERED")]
-        Clustered,
-        #[serde(rename = "NONCLUSTERED")]
-        Nonclustered,
-        #[serde(rename = "COLUMNSTORE")]
-        Columnstore,
-        #[serde(rename = "CLUSTERED COLUMNSTORE")]
-        ClusteredColumnstore,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecommendedIndex {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RecommendedIndexProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransparentDataEncryptionProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<transparent_data_encryption_properties::Status>,
-}
-pub mod transparent_data_encryption_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Enabled,
-        Disabled,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransparentDataEncryption {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TransparentDataEncryptionProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceTierAdvisorProperties {
-    #[serde(rename = "observationPeriodStart", default, skip_serializing_if = "Option::is_none")]
-    pub observation_period_start: Option<String>,
-    #[serde(rename = "observationPeriodEnd", default, skip_serializing_if = "Option::is_none")]
-    pub observation_period_end: Option<String>,
-    #[serde(rename = "activeTimeRatio", default, skip_serializing_if = "Option::is_none")]
-    pub active_time_ratio: Option<f64>,
-    #[serde(rename = "minDtu", default, skip_serializing_if = "Option::is_none")]
-    pub min_dtu: Option<f64>,
-    #[serde(rename = "avgDtu", default, skip_serializing_if = "Option::is_none")]
-    pub avg_dtu: Option<f64>,
-    #[serde(rename = "maxDtu", default, skip_serializing_if = "Option::is_none")]
-    pub max_dtu: Option<f64>,
-    #[serde(rename = "maxSizeInGB", default, skip_serializing_if = "Option::is_none")]
-    pub max_size_in_gb: Option<f64>,
-    #[serde(rename = "serviceLevelObjectiveUsageMetrics", default, skip_serializing_if = "Vec::is_empty")]
-    pub service_level_objective_usage_metrics: Vec<SloUsageMetric>,
-    #[serde(rename = "currentServiceLevelObjective", default, skip_serializing_if = "Option::is_none")]
-    pub current_service_level_objective: Option<String>,
-    #[serde(rename = "currentServiceLevelObjectiveId", default, skip_serializing_if = "Option::is_none")]
-    pub current_service_level_objective_id: Option<String>,
-    #[serde(
-        rename = "usageBasedRecommendationServiceLevelObjective",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub usage_based_recommendation_service_level_objective: Option<String>,
-    #[serde(
-        rename = "usageBasedRecommendationServiceLevelObjectiveId",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub usage_based_recommendation_service_level_objective_id: Option<String>,
-    #[serde(
-        rename = "databaseSizeBasedRecommendationServiceLevelObjective",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub database_size_based_recommendation_service_level_objective: Option<String>,
-    #[serde(
-        rename = "databaseSizeBasedRecommendationServiceLevelObjectiveId",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub database_size_based_recommendation_service_level_objective_id: Option<String>,
-    #[serde(
-        rename = "disasterPlanBasedRecommendationServiceLevelObjective",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub disaster_plan_based_recommendation_service_level_objective: Option<String>,
-    #[serde(
-        rename = "disasterPlanBasedRecommendationServiceLevelObjectiveId",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub disaster_plan_based_recommendation_service_level_objective_id: Option<String>,
-    #[serde(
-        rename = "overallRecommendationServiceLevelObjective",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub overall_recommendation_service_level_objective: Option<String>,
-    #[serde(
-        rename = "overallRecommendationServiceLevelObjectiveId",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
-    pub overall_recommendation_service_level_objective_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub confidence: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceTierAdvisor {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServiceTierAdvisorProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SloUsageMetric {
-    #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
-    pub service_level_objective: Option<slo_usage_metric::ServiceLevelObjective>,
-    #[serde(rename = "serviceLevelObjectiveId", default, skip_serializing_if = "Option::is_none")]
-    pub service_level_objective_id: Option<String>,
-    #[serde(rename = "inRangeTimeRatio", default, skip_serializing_if = "Option::is_none")]
-    pub in_range_time_ratio: Option<f64>,
-}
-pub mod slo_usage_metric {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ServiceLevelObjective {
-        System,
-        System0,
-        System1,
-        System2,
-        System3,
-        System4,
-        System2L,
-        System3L,
-        System4L,
-        Free,
-        Basic,
-        S0,
-        S1,
-        S2,
-        S3,
-        S4,
-        S6,
-        S7,
-        S9,
-        S12,
-        P1,
-        P2,
-        P3,
-        P4,
-        P6,
-        P11,
-        P15,
-        #[serde(rename = "PRS1")]
-        Prs1,
-        #[serde(rename = "PRS2")]
-        Prs2,
-        #[serde(rename = "PRS4")]
-        Prs4,
-        #[serde(rename = "PRS6")]
-        Prs6,
-        #[serde(rename = "DW100")]
-        Dw100,
-        #[serde(rename = "DW200")]
-        Dw200,
-        #[serde(rename = "DW300")]
-        Dw300,
-        #[serde(rename = "DW400")]
-        Dw400,
-        #[serde(rename = "DW500")]
-        Dw500,
-        #[serde(rename = "DW600")]
-        Dw600,
-        #[serde(rename = "DW1000")]
-        Dw1000,
-        #[serde(rename = "DW1200")]
-        Dw1200,
-        #[serde(rename = "DW1000c")]
-        Dw1000c,
-        #[serde(rename = "DW1500")]
-        Dw1500,
-        #[serde(rename = "DW1500c")]
-        Dw1500c,
-        #[serde(rename = "DW2000")]
-        Dw2000,
-        #[serde(rename = "DW2000c")]
-        Dw2000c,
-        #[serde(rename = "DW3000")]
-        Dw3000,
-        #[serde(rename = "DW2500c")]
-        Dw2500c,
-        #[serde(rename = "DW3000c")]
-        Dw3000c,
-        #[serde(rename = "DW6000")]
-        Dw6000,
-        #[serde(rename = "DW5000c")]
-        Dw5000c,
-        #[serde(rename = "DW6000c")]
-        Dw6000c,
-        #[serde(rename = "DW7500c")]
-        Dw7500c,
-        #[serde(rename = "DW10000c")]
-        Dw10000c,
-        #[serde(rename = "DW15000c")]
-        Dw15000c,
-        #[serde(rename = "DW30000c")]
-        Dw30000c,
-        #[serde(rename = "DS100")]
-        Ds100,
-        #[serde(rename = "DS200")]
-        Ds200,
-        #[serde(rename = "DS300")]
-        Ds300,
-        #[serde(rename = "DS400")]
-        Ds400,
-        #[serde(rename = "DS500")]
-        Ds500,
-        #[serde(rename = "DS600")]
-        Ds600,
-        #[serde(rename = "DS1000")]
-        Ds1000,
-        #[serde(rename = "DS1200")]
-        Ds1200,
-        #[serde(rename = "DS1500")]
-        Ds1500,
-        #[serde(rename = "DS2000")]
-        Ds2000,
-        ElasticPool,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationImpact {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<String>,
-    #[serde(rename = "changeValueAbsolute", default, skip_serializing_if = "Option::is_none")]
-    pub change_value_absolute: Option<f64>,
-    #[serde(rename = "changeValueRelative", default, skip_serializing_if = "Option::is_none")]
-    pub change_value_relative: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceTierAdvisorListResult {
-    pub value: Vec<ServiceTierAdvisor>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransparentDataEncryptionActivityProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<transparent_data_encryption_activity_properties::Status>,
-    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
-    pub percent_complete: Option<f32>,
-}
-pub mod transparent_data_encryption_activity_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Status {
-        Encrypting,
-        Decrypting,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransparentDataEncryptionActivity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TransparentDataEncryptionActivityProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TransparentDataEncryptionActivityListResult {
-    pub value: Vec<TransparentDataEncryptionActivity>,
+pub struct ElasticPoolListResult {
+    pub value: Vec<ElasticPool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolProperties {
@@ -838,15 +568,6 @@ pub mod elastic_pool_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ElasticPool {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ElasticPoolProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolUpdate {
     #[serde(flatten)]
     pub resource: Resource,
@@ -856,15 +577,34 @@ pub struct ElasticPoolUpdate {
     pub properties: Option<ElasticPoolProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ElasticPoolListResult {
-    pub value: Vec<ElasticPool>,
+pub struct ExportRequest {
+    #[serde(rename = "storageKeyType")]
+    pub storage_key_type: export_request::StorageKeyType,
+    #[serde(rename = "storageKey")]
+    pub storage_key: String,
+    #[serde(rename = "storageUri")]
+    pub storage_uri: String,
+    #[serde(rename = "administratorLogin")]
+    pub administrator_login: String,
+    #[serde(rename = "administratorLoginPassword")]
+    pub administrator_login_password: String,
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<export_request::AuthenticationType>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FirewallRuleProperties {
-    #[serde(rename = "startIpAddress")]
-    pub start_ip_address: String,
-    #[serde(rename = "endIpAddress")]
-    pub end_ip_address: String,
+pub mod export_request {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum StorageKeyType {
+        StorageAccessKey,
+        SharedAccessKey,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AuthenticationType {
+        #[serde(rename = "SQL")]
+        Sql,
+        #[serde(rename = "ADPassword")]
+        AdPassword,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
@@ -885,27 +625,11 @@ pub struct FirewallRuleListResult {
     pub value: Vec<FirewallRule>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportExtensionProperties {
-    #[serde(flatten)]
-    pub export_request: ExportRequest,
-    #[serde(rename = "operationMode")]
-    pub operation_mode: import_extension_properties::OperationMode,
-}
-pub mod import_extension_properties {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OperationMode {
-        Import,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportExtensionRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ImportExtensionProperties>,
+pub struct FirewallRuleProperties {
+    #[serde(rename = "startIpAddress")]
+    pub start_ip_address: String,
+    #[serde(rename = "endIpAddress")]
+    pub end_ip_address: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportExportResponse {
@@ -934,6 +658,29 @@ pub struct ImportExportResponseProperties {
     pub blob_uri: Option<String>,
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportExtensionProperties {
+    #[serde(flatten)]
+    pub export_request: ExportRequest,
+    #[serde(rename = "operationMode")]
+    pub operation_mode: import_extension_properties::OperationMode,
+}
+pub mod import_extension_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OperationMode {
+        Import,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ImportExtensionRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ImportExtensionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportRequest {
@@ -1074,34 +821,35 @@ pub mod import_request {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExportRequest {
-    #[serde(rename = "storageKeyType")]
-    pub storage_key_type: export_request::StorageKeyType,
-    #[serde(rename = "storageKey")]
-    pub storage_key: String,
-    #[serde(rename = "storageUri")]
-    pub storage_uri: String,
-    #[serde(rename = "administratorLogin")]
-    pub administrator_login: String,
-    #[serde(rename = "administratorLoginPassword")]
-    pub administrator_login_password: String,
-    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
-    pub authentication_type: Option<export_request::AuthenticationType>,
+pub struct OperationImpact {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+    #[serde(rename = "changeValueAbsolute", default, skip_serializing_if = "Option::is_none")]
+    pub change_value_absolute: Option<f64>,
+    #[serde(rename = "changeValueRelative", default, skip_serializing_if = "Option::is_none")]
+    pub change_value_relative: Option<f64>,
 }
-pub mod export_request {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageKeyType {
-        StorageAccessKey,
-        SharedAccessKey,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum AuthenticationType {
-        #[serde(rename = "SQL")]
-        Sql,
-        #[serde(rename = "ADPassword")]
-        AdPassword,
-    }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecommendedElasticPool {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RecommendedElasticPoolProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecommendedElasticPoolListMetricsResult {
+    pub value: Vec<RecommendedElasticPoolMetric>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RecommendedElasticPoolListResult {
+    pub value: Vec<RecommendedElasticPool>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendedElasticPoolMetric {
@@ -1149,19 +897,89 @@ pub mod recommended_elastic_pool_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecommendedElasticPool {
+pub struct RecommendedIndex {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RecommendedElasticPoolProperties>,
+    pub properties: Option<RecommendedIndexProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecommendedElasticPoolListResult {
-    pub value: Vec<RecommendedElasticPool>,
+pub struct RecommendedIndexProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<recommended_index_properties::Action>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<recommended_index_properties::State>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
+    #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified: Option<String>,
+    #[serde(rename = "indexType", default, skip_serializing_if = "Option::is_none")]
+    pub index_type: Option<recommended_index_properties::IndexType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub columns: Vec<String>,
+    #[serde(rename = "includedColumns", default, skip_serializing_if = "Vec::is_empty")]
+    pub included_columns: Vec<String>,
+    #[serde(rename = "indexScript", default, skip_serializing_if = "Option::is_none")]
+    pub index_script: Option<String>,
+    #[serde(rename = "estimatedImpact", default, skip_serializing_if = "Vec::is_empty")]
+    pub estimated_impact: Vec<OperationImpact>,
+    #[serde(rename = "reportedImpact", default, skip_serializing_if = "Vec::is_empty")]
+    pub reported_impact: Vec<OperationImpact>,
+}
+pub mod recommended_index_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Action {
+        Create,
+        Drop,
+        Rebuild,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum State {
+        Active,
+        Pending,
+        Executing,
+        Verifying,
+        #[serde(rename = "Pending Revert")]
+        PendingRevert,
+        Reverting,
+        Reverted,
+        Ignored,
+        Expired,
+        Blocked,
+        Success,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum IndexType {
+        #[serde(rename = "CLUSTERED")]
+        Clustered,
+        #[serde(rename = "NONCLUSTERED")]
+        Nonclustered,
+        #[serde(rename = "COLUMNSTORE")]
+        Columnstore,
+        #[serde(rename = "CLUSTERED COLUMNSTORE")]
+        ClusteredColumnstore,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecommendedElasticPoolListMetricsResult {
-    pub value: Vec<RecommendedElasticPoolMetric>,
+pub struct ReplicationLink {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ReplicationLinkProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReplicationLinkListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ReplicationLink>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicationLinkProperties {
@@ -1217,72 +1035,213 @@ pub mod replication_link_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationLink {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ReplicationLinkProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationLinkListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ReplicationLink>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UnlinkParameters {
-    #[serde(rename = "forcedTermination", default, skip_serializing_if = "Option::is_none")]
-    pub forced_termination: Option<bool>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseSecurityAlertPolicy {
+pub struct ServiceTierAdvisor {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DatabaseSecurityAlertPolicyProperties>,
+    pub properties: Option<ServiceTierAdvisorProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatabaseSecurityAlertPolicyProperties {
-    pub state: database_security_alert_policy_properties::State,
-    #[serde(rename = "disabledAlerts", default, skip_serializing_if = "Option::is_none")]
-    pub disabled_alerts: Option<String>,
-    #[serde(rename = "emailAddresses", default, skip_serializing_if = "Option::is_none")]
-    pub email_addresses: Option<String>,
-    #[serde(rename = "emailAccountAdmins", default, skip_serializing_if = "Option::is_none")]
-    pub email_account_admins: Option<database_security_alert_policy_properties::EmailAccountAdmins>,
-    #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub storage_endpoint: Option<String>,
-    #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_access_key: Option<String>,
-    #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
-    pub retention_days: Option<i32>,
-    #[serde(rename = "useServerDefault", default, skip_serializing_if = "Option::is_none")]
-    pub use_server_default: Option<database_security_alert_policy_properties::UseServerDefault>,
+pub struct ServiceTierAdvisorListResult {
+    pub value: Vec<ServiceTierAdvisor>,
 }
-pub mod database_security_alert_policy_properties {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServiceTierAdvisorProperties {
+    #[serde(rename = "observationPeriodStart", default, skip_serializing_if = "Option::is_none")]
+    pub observation_period_start: Option<String>,
+    #[serde(rename = "observationPeriodEnd", default, skip_serializing_if = "Option::is_none")]
+    pub observation_period_end: Option<String>,
+    #[serde(rename = "activeTimeRatio", default, skip_serializing_if = "Option::is_none")]
+    pub active_time_ratio: Option<f64>,
+    #[serde(rename = "minDtu", default, skip_serializing_if = "Option::is_none")]
+    pub min_dtu: Option<f64>,
+    #[serde(rename = "avgDtu", default, skip_serializing_if = "Option::is_none")]
+    pub avg_dtu: Option<f64>,
+    #[serde(rename = "maxDtu", default, skip_serializing_if = "Option::is_none")]
+    pub max_dtu: Option<f64>,
+    #[serde(rename = "maxSizeInGB", default, skip_serializing_if = "Option::is_none")]
+    pub max_size_in_gb: Option<f64>,
+    #[serde(rename = "serviceLevelObjectiveUsageMetrics", default, skip_serializing_if = "Vec::is_empty")]
+    pub service_level_objective_usage_metrics: Vec<SloUsageMetric>,
+    #[serde(rename = "currentServiceLevelObjective", default, skip_serializing_if = "Option::is_none")]
+    pub current_service_level_objective: Option<String>,
+    #[serde(rename = "currentServiceLevelObjectiveId", default, skip_serializing_if = "Option::is_none")]
+    pub current_service_level_objective_id: Option<String>,
+    #[serde(
+        rename = "usageBasedRecommendationServiceLevelObjective",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub usage_based_recommendation_service_level_objective: Option<String>,
+    #[serde(
+        rename = "usageBasedRecommendationServiceLevelObjectiveId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub usage_based_recommendation_service_level_objective_id: Option<String>,
+    #[serde(
+        rename = "databaseSizeBasedRecommendationServiceLevelObjective",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub database_size_based_recommendation_service_level_objective: Option<String>,
+    #[serde(
+        rename = "databaseSizeBasedRecommendationServiceLevelObjectiveId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub database_size_based_recommendation_service_level_objective_id: Option<String>,
+    #[serde(
+        rename = "disasterPlanBasedRecommendationServiceLevelObjective",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub disaster_plan_based_recommendation_service_level_objective: Option<String>,
+    #[serde(
+        rename = "disasterPlanBasedRecommendationServiceLevelObjectiveId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub disaster_plan_based_recommendation_service_level_objective_id: Option<String>,
+    #[serde(
+        rename = "overallRecommendationServiceLevelObjective",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub overall_recommendation_service_level_objective: Option<String>,
+    #[serde(
+        rename = "overallRecommendationServiceLevelObjectiveId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub overall_recommendation_service_level_objective_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SloUsageMetric {
+    #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
+    pub service_level_objective: Option<slo_usage_metric::ServiceLevelObjective>,
+    #[serde(rename = "serviceLevelObjectiveId", default, skip_serializing_if = "Option::is_none")]
+    pub service_level_objective_id: Option<String>,
+    #[serde(rename = "inRangeTimeRatio", default, skip_serializing_if = "Option::is_none")]
+    pub in_range_time_ratio: Option<f64>,
+}
+pub mod slo_usage_metric {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum State {
-        New,
-        Enabled,
-        Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum EmailAccountAdmins {
-        Enabled,
-        Disabled,
-    }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum UseServerDefault {
-        Enabled,
-        Disabled,
+    pub enum ServiceLevelObjective {
+        System,
+        System0,
+        System1,
+        System2,
+        System3,
+        System4,
+        System2L,
+        System3L,
+        System4L,
+        Free,
+        Basic,
+        S0,
+        S1,
+        S2,
+        S3,
+        S4,
+        S6,
+        S7,
+        S9,
+        S12,
+        P1,
+        P2,
+        P3,
+        P4,
+        P6,
+        P11,
+        P15,
+        #[serde(rename = "PRS1")]
+        Prs1,
+        #[serde(rename = "PRS2")]
+        Prs2,
+        #[serde(rename = "PRS4")]
+        Prs4,
+        #[serde(rename = "PRS6")]
+        Prs6,
+        #[serde(rename = "DW100")]
+        Dw100,
+        #[serde(rename = "DW200")]
+        Dw200,
+        #[serde(rename = "DW300")]
+        Dw300,
+        #[serde(rename = "DW400")]
+        Dw400,
+        #[serde(rename = "DW500")]
+        Dw500,
+        #[serde(rename = "DW600")]
+        Dw600,
+        #[serde(rename = "DW1000")]
+        Dw1000,
+        #[serde(rename = "DW1200")]
+        Dw1200,
+        #[serde(rename = "DW1000c")]
+        Dw1000c,
+        #[serde(rename = "DW1500")]
+        Dw1500,
+        #[serde(rename = "DW1500c")]
+        Dw1500c,
+        #[serde(rename = "DW2000")]
+        Dw2000,
+        #[serde(rename = "DW2000c")]
+        Dw2000c,
+        #[serde(rename = "DW3000")]
+        Dw3000,
+        #[serde(rename = "DW2500c")]
+        Dw2500c,
+        #[serde(rename = "DW3000c")]
+        Dw3000c,
+        #[serde(rename = "DW6000")]
+        Dw6000,
+        #[serde(rename = "DW5000c")]
+        Dw5000c,
+        #[serde(rename = "DW6000c")]
+        Dw6000c,
+        #[serde(rename = "DW7500c")]
+        Dw7500c,
+        #[serde(rename = "DW10000c")]
+        Dw10000c,
+        #[serde(rename = "DW15000c")]
+        Dw15000c,
+        #[serde(rename = "DW30000c")]
+        Dw30000c,
+        #[serde(rename = "DS100")]
+        Ds100,
+        #[serde(rename = "DS200")]
+        Ds200,
+        #[serde(rename = "DS300")]
+        Ds300,
+        #[serde(rename = "DS400")]
+        Ds400,
+        #[serde(rename = "DS500")]
+        Ds500,
+        #[serde(rename = "DS600")]
+        Ds600,
+        #[serde(rename = "DS1000")]
+        Ds1000,
+        #[serde(rename = "DS1200")]
+        Ds1200,
+        #[serde(rename = "DS1500")]
+        Ds1500,
+        #[serde(rename = "DS2000")]
+        Ds2000,
+        ElasticPool,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1294,16 +1253,57 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
+pub struct TransparentDataEncryption {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+    pub properties: Option<TransparentDataEncryptionProperties>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProxyResource {
+pub struct TransparentDataEncryptionActivity {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TransparentDataEncryptionActivityProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransparentDataEncryptionActivityListResult {
+    pub value: Vec<TransparentDataEncryptionActivity>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransparentDataEncryptionActivityProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<transparent_data_encryption_activity_properties::Status>,
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<f32>,
+}
+pub mod transparent_data_encryption_activity_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Encrypting,
+        Decrypting,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TransparentDataEncryptionProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<transparent_data_encryption_properties::Status>,
+}
+pub mod transparent_data_encryption_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Enabled,
+        Disabled,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UnlinkParameters {
+    #[serde(rename = "forcedTermination", default, skip_serializing_if = "Option::is_none")]
+    pub forced_termination: Option<bool>,
 }

@@ -3,30 +3,9 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionCreationResult {
-    #[serde(rename = "subscriptionLink", default, skip_serializing_if = "Option::is_none")]
-    pub subscription_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionCreationParameters {
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub owners: Vec<AdPrincipal>,
-    #[serde(rename = "offerType", default, skip_serializing_if = "Option::is_none")]
-    pub offer_type: Option<subscription_creation_parameters::OfferType>,
-    #[serde(rename = "additionalParameters", default, skip_serializing_if = "Option::is_none")]
-    pub additional_parameters: Option<serde_json::Value>,
-}
-pub mod subscription_creation_parameters {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum OfferType {
-        #[serde(rename = "MS-AZR-0017P")]
-        MsAzr0017p,
-        #[serde(rename = "MS-AZR-0148P")]
-        MsAzr0148p,
-    }
+pub struct AdPrincipal {
+    #[serde(rename = "objectId")]
+    pub object_id: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -39,25 +18,6 @@ pub struct ErrorResponse {
 pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdPrincipal {
-    #[serde(rename = "objectId")]
-    pub object_id: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionOperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<SubscriptionOperation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionOperation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(rename = "statusDetail", default, skip_serializing_if = "Option::is_none")]
-    pub status_detail: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {
@@ -106,6 +66,53 @@ pub mod subscription {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionCreationParameters {
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub owners: Vec<AdPrincipal>,
+    #[serde(rename = "offerType", default, skip_serializing_if = "Option::is_none")]
+    pub offer_type: Option<subscription_creation_parameters::OfferType>,
+    #[serde(rename = "additionalParameters", default, skip_serializing_if = "Option::is_none")]
+    pub additional_parameters: Option<serde_json::Value>,
+}
+pub mod subscription_creation_parameters {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum OfferType {
+        #[serde(rename = "MS-AZR-0017P")]
+        MsAzr0017p,
+        #[serde(rename = "MS-AZR-0148P")]
+        MsAzr0148p,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionCreationResult {
+    #[serde(rename = "subscriptionLink", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Subscription>,
+    #[serde(rename = "nextLink")]
+    pub next_link: String,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionOperation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(rename = "statusDetail", default, skip_serializing_if = "Option::is_none")]
+    pub status_detail: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionOperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<SubscriptionOperation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionPolicies {
     #[serde(rename = "locationPlacementId", default, skip_serializing_if = "Option::is_none")]
     pub location_placement_id: Option<String>,
@@ -122,13 +129,6 @@ pub mod subscription_policies {
         Off,
         CurrentPeriodOff,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Subscription>,
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TenantIdDescription {

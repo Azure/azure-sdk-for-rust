@@ -1584,16 +1584,16 @@ pub struct ResponseWithContinuationArmTemplate {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationArtifact {
+pub struct ResponseWithContinuationArtifactSource {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Artifact>,
+    pub value: Vec<ArtifactSource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationArtifactSource {
+pub struct ResponseWithContinuationArtifact {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ArtifactSource>,
+    pub value: Vec<Artifact>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1633,13 +1633,6 @@ pub struct ResponseWithContinuationGalleryImage {
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResponseWithContinuationLab {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Lab>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResponseWithContinuationLabVhd {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LabVhd>,
@@ -1650,6 +1643,13 @@ pub struct ResponseWithContinuationLabVhd {
 pub struct ResponseWithContinuationLabVirtualMachine {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LabVirtualMachine>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResponseWithContinuationLab {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Lab>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

@@ -3,6 +3,13 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AttestedData {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encoding: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compute {
     #[serde(rename = "azEnvironment", default, skip_serializing_if = "Option::is_none")]
     pub az_environment: Option<String>,
@@ -52,6 +59,95 @@ pub struct Compute {
     pub zone: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IdentityErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<identity_error_response::Error>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_description: Option<String>,
+}
+pub mod identity_error_response {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Error {
+        #[serde(rename = "invalid_request")]
+        InvalidRequest,
+        #[serde(rename = "unauthorized_client")]
+        UnauthorizedClient,
+        #[serde(rename = "access_denied")]
+        AccessDenied,
+        #[serde(rename = "unsupported_response_type")]
+        UnsupportedResponseType,
+        #[serde(rename = "invalid_scope")]
+        InvalidScope,
+        #[serde(rename = "server_error")]
+        ServerError,
+        #[serde(rename = "service_unavailable")]
+        ServiceUnavailable,
+        #[serde(rename = "bad_request")]
+        BadRequest,
+        #[serde(rename = "forbidden")]
+        Forbidden,
+        #[serde(rename = "not_found")]
+        NotFound,
+        #[serde(rename = "method_not_allowed")]
+        MethodNotAllowed,
+        #[serde(rename = "too_many_requests")]
+        TooManyRequests,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IdentityInfoResponse {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IdentityTokenResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub access_token: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_in: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_on: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ext_expires_in: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_before: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub object_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub msi_res_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Instance {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compute: Option<Compute>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<Network>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Ipv4Properties {
+    #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub private_ip_address: Option<String>,
+    #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub public_ip_address: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Ipv6Properties {
+    #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub private_ip_address: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Network {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub interface: Vec<NetworkInterface>,
@@ -97,105 +193,9 @@ pub struct PublicKeysProperties {
     pub key_data: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Ipv4Properties {
-    #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
-    pub private_ip_address: Option<String>,
-    #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
-    pub public_ip_address: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Ipv6Properties {
-    #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
-    pub private_ip_address: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubnetProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Instance {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub compute: Option<Compute>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub network: Option<Network>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AttestedData {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub signature: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encoding: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IdentityErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<identity_error_response::Error>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error_description: Option<String>,
-}
-pub mod identity_error_response {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Error {
-        #[serde(rename = "invalid_request")]
-        InvalidRequest,
-        #[serde(rename = "unauthorized_client")]
-        UnauthorizedClient,
-        #[serde(rename = "access_denied")]
-        AccessDenied,
-        #[serde(rename = "unsupported_response_type")]
-        UnsupportedResponseType,
-        #[serde(rename = "invalid_scope")]
-        InvalidScope,
-        #[serde(rename = "server_error")]
-        ServerError,
-        #[serde(rename = "service_unavailable")]
-        ServiceUnavailable,
-        #[serde(rename = "bad_request")]
-        BadRequest,
-        #[serde(rename = "forbidden")]
-        Forbidden,
-        #[serde(rename = "not_found")]
-        NotFound,
-        #[serde(rename = "method_not_allowed")]
-        MethodNotAllowed,
-        #[serde(rename = "too_many_requests")]
-        TooManyRequests,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IdentityTokenResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub access_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub expires_in: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub expires_on: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ext_expires_in: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub not_before: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token_type: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub client_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub object_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub msi_res_id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IdentityInfoResponse {
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
 }

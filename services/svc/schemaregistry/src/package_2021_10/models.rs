@@ -3,23 +3,6 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SchemaId {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SchemaGroups {
-    #[serde(rename = "schemaGroups", default, skip_serializing_if = "Vec::is_empty")]
-    pub schema_groups: Vec<SchemaGroup>,
-}
-pub type SchemaGroup = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SchemaVersions {
-    #[serde(rename = "schemaVersions", default, skip_serializing_if = "Vec::is_empty")]
-    pub schema_versions: Vec<SchemaVersion>,
-}
-pub type SchemaVersion = i64;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
     pub error: ErrorDetail,
 }
@@ -29,4 +12,21 @@ pub struct ErrorDetail {
     pub message: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+}
+pub type SchemaGroup = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SchemaGroups {
+    #[serde(rename = "schemaGroups", default, skip_serializing_if = "Vec::is_empty")]
+    pub schema_groups: Vec<SchemaGroup>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SchemaId {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+pub type SchemaVersion = i64;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SchemaVersions {
+    #[serde(rename = "schemaVersions", default, skip_serializing_if = "Vec::is_empty")]
+    pub schema_versions: Vec<SchemaVersion>,
 }

@@ -3,56 +3,60 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationDefinition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RegistrationDefinitionProperties>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plan: Option<Plan>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+pub struct Authorization {
+    #[serde(rename = "principalId")]
+    pub principal_id: String,
+    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id_display_name: Option<String>,
+    #[serde(rename = "roleDefinitionId")]
+    pub role_definition_id: String,
+    #[serde(rename = "delegatedRoleDefinitionIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub delegated_role_definition_ids: Vec<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationDefinitionProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    pub authorizations: Vec<Authorization>,
-    #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
-    pub registration_definition_name: Option<String>,
-    #[serde(rename = "managedByTenantId")]
-    pub managed_by_tenant_id: String,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
-    #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
-    pub managed_by_tenant_name: Option<String>,
+pub struct ErrorDefinition {
+    pub code: String,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDefinition>,
 }
-pub mod registration_definition_properties {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDefinition>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ProvisioningState {
-        NotSpecified,
-        Accepted,
-        Running,
-        Ready,
-        Creating,
-        Created,
-        Deleting,
-        Deleted,
-        Canceled,
-        Failed,
-        Succeeded,
-        Updating,
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationDefinitionList {
+pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RegistrationDefinition>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub value: Vec<Operation>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Plan {
+    pub name: String,
+    pub publisher: String,
+    pub product: String,
+    pub version: String,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationAssignment {
@@ -64,6 +68,13 @@ pub struct RegistrationAssignment {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistrationAssignmentList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<RegistrationAssignment>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationAssignmentProperties {
@@ -146,65 +157,54 @@ pub mod registration_assignment_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RegistrationAssignmentList {
+pub struct RegistrationDefinition {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<RegistrationDefinitionProperties>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<Plan>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RegistrationDefinitionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<RegistrationAssignment>,
+    pub value: Vec<RegistrationDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Plan {
-    pub name: String,
-    pub publisher: String,
-    pub product: String,
-    pub version: String,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
+pub struct RegistrationDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
+    pub description: Option<String>,
+    pub authorizations: Vec<Authorization>,
+    #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
+    pub registration_definition_name: Option<String>,
+    #[serde(rename = "managedByTenantId")]
+    pub managed_by_tenant_id: String,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
+    #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
+    pub managed_by_tenant_name: Option<String>,
 }
-pub mod operation {
+pub mod registration_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub description: Option<String>,
+    pub enum ProvisioningState {
+        NotSpecified,
+        Accepted,
+        Running,
+        Ready,
+        Creating,
+        Created,
+        Deleting,
+        Deleted,
+        Canceled,
+        Failed,
+        Succeeded,
+        Updating,
     }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationList {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Authorization {
-    #[serde(rename = "principalId")]
-    pub principal_id: String,
-    #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id_display_name: Option<String>,
-    #[serde(rename = "roleDefinitionId")]
-    pub role_definition_id: String,
-    #[serde(rename = "delegatedRoleDefinitionIds", default, skip_serializing_if = "Vec::is_empty")]
-    pub delegated_role_definition_ids: Vec<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDefinition {
-    pub code: String,
-    pub message: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub details: Vec<ErrorDefinition>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDefinition>,
 }

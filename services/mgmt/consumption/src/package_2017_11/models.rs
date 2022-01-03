@@ -3,6 +3,18 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorDetails {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ErrorResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MeterDetails {
     #[serde(rename = "meterName", default, skip_serializing_if = "Option::is_none")]
     pub meter_name: Option<String>,
@@ -20,18 +32,112 @@ pub struct MeterDetails {
     pub pretax_standard_rate: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Operation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display: Option<operation::Display>,
+}
+pub mod operation {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Display {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub provider: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub resource: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub operation: Option<String>,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Operation>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationDetails {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ReservationDetailsProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationDetailsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ReservationDetails>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationDetailsProperties {
+    #[serde(rename = "reservationOrderId", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_order_id: Option<String>,
+    #[serde(rename = "reservationId", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_id: Option<String>,
+    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
+    pub sku_name: Option<String>,
+    #[serde(rename = "reservedHours", default, skip_serializing_if = "Option::is_none")]
+    pub reserved_hours: Option<f64>,
+    #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
+    pub usage_date: Option<String>,
+    #[serde(rename = "usedHours", default, skip_serializing_if = "Option::is_none")]
+    pub used_hours: Option<f64>,
+    #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
+    pub instance_id: Option<String>,
+    #[serde(rename = "totalReservedQuantity", default, skip_serializing_if = "Option::is_none")]
+    pub total_reserved_quantity: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationSummaries {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ReservationSummariesProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationSummariesListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ReservationSummaries>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationSummariesProperties {
+    #[serde(rename = "reservationOrderId", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_order_id: Option<String>,
+    #[serde(rename = "reservationId", default, skip_serializing_if = "Option::is_none")]
+    pub reservation_id: Option<String>,
+    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
+    pub sku_name: Option<String>,
+    #[serde(rename = "reservedHours", default, skip_serializing_if = "Option::is_none")]
+    pub reserved_hours: Option<f64>,
+    #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
+    pub usage_date: Option<String>,
+    #[serde(rename = "usedHours", default, skip_serializing_if = "Option::is_none")]
+    pub used_hours: Option<f64>,
+    #[serde(rename = "minUtilizationPercentage", default, skip_serializing_if = "Option::is_none")]
+    pub min_utilization_percentage: Option<f64>,
+    #[serde(rename = "avgUtilizationPercentage", default, skip_serializing_if = "Option::is_none")]
+    pub avg_utilization_percentage: Option<f64>,
+    #[serde(rename = "maxUtilizationPercentage", default, skip_serializing_if = "Option::is_none")]
+    pub max_utilization_percentage: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Resource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageDetail {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UsageDetailProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UsageDetailsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<UsageDetail>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsageDetailProperties {
@@ -81,115 +187,9 @@ pub struct UsageDetailProperties {
     pub additional_properties: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationSummaries {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ReservationSummariesProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationSummariesListResult {
+pub struct UsageDetailsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ReservationSummaries>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationSummariesProperties {
-    #[serde(rename = "reservationOrderId", default, skip_serializing_if = "Option::is_none")]
-    pub reservation_order_id: Option<String>,
-    #[serde(rename = "reservationId", default, skip_serializing_if = "Option::is_none")]
-    pub reservation_id: Option<String>,
-    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
-    pub sku_name: Option<String>,
-    #[serde(rename = "reservedHours", default, skip_serializing_if = "Option::is_none")]
-    pub reserved_hours: Option<f64>,
-    #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
-    pub usage_date: Option<String>,
-    #[serde(rename = "usedHours", default, skip_serializing_if = "Option::is_none")]
-    pub used_hours: Option<f64>,
-    #[serde(rename = "minUtilizationPercentage", default, skip_serializing_if = "Option::is_none")]
-    pub min_utilization_percentage: Option<f64>,
-    #[serde(rename = "avgUtilizationPercentage", default, skip_serializing_if = "Option::is_none")]
-    pub avg_utilization_percentage: Option<f64>,
-    #[serde(rename = "maxUtilizationPercentage", default, skip_serializing_if = "Option::is_none")]
-    pub max_utilization_percentage: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationDetails {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ReservationDetailsProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationDetailsListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<ReservationDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationDetailsProperties {
-    #[serde(rename = "reservationOrderId", default, skip_serializing_if = "Option::is_none")]
-    pub reservation_order_id: Option<String>,
-    #[serde(rename = "reservationId", default, skip_serializing_if = "Option::is_none")]
-    pub reservation_id: Option<String>,
-    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
-    pub sku_name: Option<String>,
-    #[serde(rename = "reservedHours", default, skip_serializing_if = "Option::is_none")]
-    pub reserved_hours: Option<f64>,
-    #[serde(rename = "usageDate", default, skip_serializing_if = "Option::is_none")]
-    pub usage_date: Option<String>,
-    #[serde(rename = "usedHours", default, skip_serializing_if = "Option::is_none")]
-    pub used_hours: Option<f64>,
-    #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
-    pub instance_id: Option<String>,
-    #[serde(rename = "totalReservedQuantity", default, skip_serializing_if = "Option::is_none")]
-    pub total_reserved_quantity: Option<f64>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorDetails {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ErrorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorDetails>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Operation {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display: Option<operation::Display>,
-}
-pub mod operation {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct Display {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub provider: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub resource: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub operation: Option<String>,
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
+    pub value: Vec<UsageDetail>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
 }
