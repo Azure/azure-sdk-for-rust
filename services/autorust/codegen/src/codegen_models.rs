@@ -154,7 +154,11 @@ fn resolve_schema_property(
 }
 
 fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen, spec: &Spec) -> Result<SchemaGen, Error> {
-    let mut schema = schema.clone();
+    // recursively apply to all properties
+    let properties: Vec<_> = schema.properties.iter().map(|property| {
+        let schema = resolve_all_of(all_schemas, &property.schema, spec)?;
+        Ok(PropertyGen { name: property.name.clone(), schema })
+    }).collect::<Result<_, Error>>()?;
     let all_of: Vec<_> = schema
         .schema
         .all_of
@@ -171,6 +175,8 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
             }
         })
         .collect::<Result<_, Error>>()?;
+    let mut schema = schema.clone();
+    schema.properties = properties;
     schema.all_of = all_of.into_iter().flatten().collect();
     Ok(schema)
 }
@@ -226,8 +232,8 @@ fn resolve_all_schema_properties(schemas: &IndexMap<RefKey, SchemaGen>, spec: &S
 fn resolve_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
     let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
     for (ref_key, schema) in schemas {
-        let schema_with_properties = resolve_all_of(schemas, schema, spec)?;
-        resolved.insert(ref_key.clone(), schema_with_properties);
+        let schema = resolve_all_of(schemas, schema, spec)?;
+        resolved.insert(ref_key.clone(), schema);
     }
     Ok(resolved)
 }
