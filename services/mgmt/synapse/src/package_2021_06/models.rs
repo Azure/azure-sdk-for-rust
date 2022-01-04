@@ -138,7 +138,7 @@ pub struct BigDataPoolResourceProperties {
     #[serde(rename = "customLibraries", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_libraries: Vec<LibraryInfo>,
     #[serde(rename = "sparkConfigProperties", default, skip_serializing_if = "Option::is_none")]
-    pub spark_config_properties: Option<LibraryRequirements>,
+    pub spark_config_properties: Option<SparkConfigProperties>,
     #[serde(rename = "sparkVersion", default, skip_serializing_if = "Option::is_none")]
     pub spark_version: Option<String>,
     #[serde(rename = "defaultSparkLogFolder", default, skip_serializing_if = "Option::is_none")]
@@ -359,6 +359,10 @@ pub struct DataWarehouseUserActivitiesProperties {
 pub struct DynamicExecutorAllocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[serde(rename = "minExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub min_executors: Option<i32>,
+    #[serde(rename = "maxExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub max_executors: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionDetails {
@@ -495,6 +499,8 @@ pub struct ExtendedServerBlobAuditingPolicyProperties {
     pub is_azure_monitor_target_enabled: Option<bool>,
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
+    #[serde(rename = "isDevopsAuditEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_devops_audit_enabled: Option<bool>,
 }
 pub mod extended_server_blob_auditing_policy_properties {
     use super::*;
@@ -1119,10 +1125,12 @@ pub mod managed_identity_sql_control_settings_model {
 pub struct ManagedIntegrationRuntime {
     #[serde(flatten)]
     pub integration_runtime: IntegrationRuntime,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<IntegrationRuntimeState>,
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<IntegrationRuntimeState>,
     #[serde(rename = "typeProperties")]
     pub type_properties: ManagedIntegrationRuntimeTypeProperties,
+    #[serde(rename = "managedVirtualNetwork", default, skip_serializing_if = "Option::is_none")]
+    pub managed_virtual_network: Option<ManagedIntegrationRuntimeManagedVirtualNetworkReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedIntegrationRuntimeError {
@@ -1134,6 +1142,15 @@ pub struct ManagedIntegrationRuntimeError {
     pub parameters: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedIntegrationRuntimeManagedVirtualNetworkReference {
+    #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
+    pub reference_name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedIntegrationRuntimeNode {
@@ -1958,6 +1975,8 @@ pub struct ServerBlobAuditingPolicyProperties {
     pub is_azure_monitor_target_enabled: Option<bool>,
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
+    #[serde(rename = "isDevopsAuditEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_devops_audit_enabled: Option<bool>,
 }
 pub mod server_blob_auditing_policy_properties {
     use super::*;
@@ -2064,6 +2083,25 @@ pub struct Sku {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SparkConfigProperties {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filename: Option<String>,
+    #[serde(rename = "configurationType", default, skip_serializing_if = "Option::is_none")]
+    pub configuration_type: Option<spark_config_properties::ConfigurationType>,
+}
+pub mod spark_config_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ConfigurationType {
+        File,
+        Artifact,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlPool {
@@ -2354,8 +2392,6 @@ pub mod sql_pool_resource_properties {
         Grs,
         #[serde(rename = "LRS")]
         Lrs,
-        #[serde(rename = "ZRS")]
-        Zrs,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2955,6 +2991,8 @@ pub struct WorkspaceProperties {
     pub settings: Option<serde_json::Value>,
     #[serde(rename = "azureADOnlyAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub azure_ad_only_authentication: Option<bool>,
+    #[serde(rename = "trustedServiceBypassEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub trusted_service_bypass_enabled: Option<bool>,
 }
 pub mod workspace_properties {
     use super::*;

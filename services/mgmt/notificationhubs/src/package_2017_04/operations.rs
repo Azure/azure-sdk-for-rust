@@ -1249,10 +1249,7 @@ pub mod namespaces {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::SharedAccessAuthorizationRuleListResult, Error>>
-            {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ResourceListKeys, Error>> {
                 Box::pin(async move {
                     let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.NotificationHubs/namespaces/{}/AuthorizationRules/{}/listKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . namespace_name , & self . authorization_rule_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
@@ -1274,7 +1271,7 @@ pub mod namespaces {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::SharedAccessAuthorizationRuleListResult =
+                            let rsp_value: models::ResourceListKeys =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }

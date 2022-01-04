@@ -7218,14 +7218,14 @@ pub mod activity_log_alerts {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             activity_log_alert_name: impl Into<String>,
-            activity_log_alert: impl Into<models::ActivityLogAlertResource>,
+            activity_log_alert_rule: impl Into<models::ActivityLogAlertResource>,
         ) -> create_or_update::Builder {
             create_or_update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 activity_log_alert_name: activity_log_alert_name.into(),
-                activity_log_alert: activity_log_alert.into(),
+                activity_log_alert_rule: activity_log_alert_rule.into(),
             }
         }
         pub fn update(
@@ -7233,14 +7233,14 @@ pub mod activity_log_alerts {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             activity_log_alert_name: impl Into<String>,
-            activity_log_alert_patch: impl Into<models::ActivityLogAlertPatchBody>,
+            activity_log_alert_rule_patch: impl Into<models::AlertRulePatchObject>,
         ) -> update::Builder {
             update::Builder {
                 client: self.0.clone(),
                 subscription_id: subscription_id.into(),
                 resource_group_name: resource_group_name.into(),
                 activity_log_alert_name: activity_log_alert_name.into(),
-                activity_log_alert_patch: activity_log_alert_patch.into(),
+                activity_log_alert_rule_patch: activity_log_alert_rule_patch.into(),
             }
         }
         pub fn delete(
@@ -7309,7 +7309,7 @@ pub mod activity_log_alerts {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ActivityLogAlertResource, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/activityLogAlerts/{}",
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/activityLogAlerts/{}",
                         self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
@@ -7386,13 +7386,13 @@ pub mod activity_log_alerts {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) activity_log_alert_name: String,
-            pub(crate) activity_log_alert: models::ActivityLogAlertResource,
+            pub(crate) activity_log_alert_rule: models::ActivityLogAlertResource,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/activityLogAlerts/{}",
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/activityLogAlerts/{}",
                         self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
@@ -7409,7 +7409,7 @@ pub mod activity_log_alerts {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&self.activity_log_alert).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.activity_log_alert_rule).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7471,13 +7471,13 @@ pub mod activity_log_alerts {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) activity_log_alert_name: String,
-            pub(crate) activity_log_alert_patch: models::ActivityLogAlertPatchBody,
+            pub(crate) activity_log_alert_rule_patch: models::AlertRulePatchObject,
         }
         impl Builder {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ActivityLogAlertResource, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/activityLogAlerts/{}",
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/activityLogAlerts/{}",
                         self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
@@ -7494,7 +7494,7 @@ pub mod activity_log_alerts {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&self.activity_log_alert_patch).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.activity_log_alert_rule_patch).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -7560,7 +7560,7 @@ pub mod activity_log_alerts {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/activityLogAlerts/{}",
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/activityLogAlerts/{}",
                         self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name,
@@ -7628,10 +7628,10 @@ pub mod activity_log_alerts {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ActivityLogAlertList, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AlertRuleList, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/subscriptions/{}/providers/microsoft.insights/activityLogAlerts",
+                        "{}/subscriptions/{}/providers/Microsoft.Insights/activityLogAlerts",
                         self.client.endpoint(),
                         &self.subscription_id
                     );
@@ -7653,7 +7653,7 @@ pub mod activity_log_alerts {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ActivityLogAlertList =
+                            let rsp_value: models::AlertRuleList =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
@@ -7702,10 +7702,10 @@ pub mod activity_log_alerts {
             pub(crate) resource_group_name: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ActivityLogAlertList, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AlertRuleList, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/microsoft.insights/activityLogAlerts",
+                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Insights/activityLogAlerts",
                         self.client.endpoint(),
                         &self.subscription_id,
                         &self.resource_group_name
@@ -7728,7 +7728,7 @@ pub mod activity_log_alerts {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ActivityLogAlertList =
+                            let rsp_value: models::AlertRuleList =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }

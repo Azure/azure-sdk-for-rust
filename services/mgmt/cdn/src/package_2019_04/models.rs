@@ -1305,4 +1305,8 @@ pub struct CidrIpAddress {
 pub enum Transform {
     Lowercase,
     Uppercase,
+    Trim,
+    UrlDecode,
+    UrlEncode,
+    RemoveNulls,
 }

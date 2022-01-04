@@ -379,8 +379,7 @@ pub struct LegacyReservationRecommendationProperties {
     pub net_savings: Option<f64>,
     #[serde(rename = "firstUsageDate", default, skip_serializing_if = "Option::is_none")]
     pub first_usage_date: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<String>,
+    pub scope: String,
     #[serde(rename = "skuProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub sku_properties: Vec<SkuProperty>,
 }
@@ -438,6 +437,18 @@ pub struct LegacyReservationTransactionProperties {
     pub monetary_commitment: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub overage: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LegacySharedScopeReservationRecommendationProperties {
+    #[serde(flatten)]
+    pub legacy_reservation_recommendation_properties: LegacyReservationRecommendationProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LegacySingleScopeReservationRecommendationProperties {
+    #[serde(flatten)]
+    pub legacy_reservation_recommendation_properties: LegacyReservationRecommendationProperties,
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LegacyUsageDetail {

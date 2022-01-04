@@ -1260,7 +1260,9 @@ pub mod channels {
             pub(crate) subscription_id: String,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::BotChannel, Error>> {
+            pub fn into_future(
+                self,
+            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ListChannelWithKeysResponse, Error>> {
                 Box::pin(async move {
                     let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.BotService/botServices/{}/channels/{}/listChannelWithKeys" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . resource_name , & self . channel_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
@@ -1282,7 +1284,7 @@ pub mod channels {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::BotChannel =
+                            let rsp_value: models::ListChannelWithKeysResponse =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }

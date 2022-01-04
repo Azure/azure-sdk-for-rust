@@ -3719,12 +3719,14 @@ pub struct GoogleAdWordsLinkedService {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GoogleAdWordsLinkedServiceTypeProperties {
-    #[serde(rename = "clientCustomerID")]
-    pub client_customer_id: serde_json::Value,
-    #[serde(rename = "developerToken")]
-    pub developer_token: SecretBase,
-    #[serde(rename = "authenticationType")]
-    pub authentication_type: google_ad_words_linked_service_type_properties::AuthenticationType,
+    #[serde(rename = "connectionProperties", default, skip_serializing_if = "Option::is_none")]
+    pub connection_properties: Option<serde_json::Value>,
+    #[serde(rename = "clientCustomerID", default, skip_serializing_if = "Option::is_none")]
+    pub client_customer_id: Option<serde_json::Value>,
+    #[serde(rename = "developerToken", default, skip_serializing_if = "Option::is_none")]
+    pub developer_token: Option<SecretBase>,
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<google_ad_words_linked_service_type_properties::AuthenticationType>,
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<SecretBase>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
@@ -5488,6 +5490,24 @@ pub struct NotebookMetadata {
     pub kernelspec: Option<NotebookKernelSpec>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language_info: Option<NotebookLanguageInfo>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NotebookParameter {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<NotebookParameterType>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum NotebookParameterType {
+    #[serde(rename = "string")]
+    String,
+    #[serde(rename = "int")]
+    Int,
+    #[serde(rename = "float")]
+    Float,
+    #[serde(rename = "bool")]
+    Bool,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotebookResource {
@@ -8599,7 +8619,7 @@ pub struct SynapseNotebookActivity {
 pub struct SynapseNotebookActivityTypeProperties {
     pub notebook: SynapseNotebookReference,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<ParameterValueSpecification>,
+    pub parameters: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseNotebookReference {

@@ -2678,4 +2678,8 @@ pub mod policy_settings {
 pub enum Transform {
     Lowercase,
     Uppercase,
+    Trim,
+    UrlDecode,
+    UrlEncode,
+    RemoveNulls,
 }

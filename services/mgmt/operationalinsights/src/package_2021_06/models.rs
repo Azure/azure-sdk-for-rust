@@ -646,6 +646,29 @@ pub mod storage_insight_status {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Table {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TableProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TableProperties {
+    #[serde(rename = "retentionInDays", default, skip_serializing_if = "Option::is_none")]
+    pub retention_in_days: Option<i32>,
+    #[serde(rename = "isTroubleshootingAllowed", default, skip_serializing_if = "Option::is_none")]
+    pub is_troubleshooting_allowed: Option<bool>,
+    #[serde(rename = "isTroubleshootEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_troubleshoot_enabled: Option<bool>,
+    #[serde(rename = "lastTroubleshootDate", default, skip_serializing_if = "Option::is_none")]
+    pub last_troubleshoot_date: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TablesListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<Table>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tag {
     pub name: String,
     pub value: String,

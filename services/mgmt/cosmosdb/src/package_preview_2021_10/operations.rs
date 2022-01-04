@@ -5586,6 +5586,11 @@ pub mod sql_resources {
     }
     pub mod create_update_client_encryption_key {
         use super::{models, API_VERSION};
+        #[derive(Debug)]
+        pub enum Response {
+            Accepted202,
+            Ok200(models::ClientEncryptionKeyGetResults),
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5616,9 +5621,7 @@ pub mod sql_resources {
             pub(crate) create_update_client_encryption_key_parameters: models::ClientEncryptionKeyCreateUpdateParameters,
         }
         impl Builder {
-            pub fn into_future(
-                self,
-            ) -> futures::future::BoxFuture<'static, std::result::Result<models::ClientEncryptionKeyGetResults, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
                     let url_str = & format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DocumentDB/databaseAccounts/{}/sqlDatabases/{}/clientEncryptionKeys/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . database_name , & self . client_encryption_key_name) ;
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
@@ -5638,11 +5641,12 @@ pub mod sql_resources {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ClientEncryptionKeyGetResults =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+                            Ok(Response::Ok200(rsp_value))
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;

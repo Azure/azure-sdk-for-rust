@@ -309,6 +309,7 @@ pub mod copy_long_term_retention_backup_parameters_properties {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -437,6 +438,8 @@ pub struct Database {
     pub kind: Option<String>,
     #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
     pub managed_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<DatabaseIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
 }
@@ -653,6 +656,25 @@ pub mod database_extensions_properties {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseIdentity {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<database_identity::Type>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+    #[serde(rename = "delegatedResources", default, skip_serializing_if = "Option::is_none")]
+    pub delegated_resources: Option<serde_json::Value>,
+}
+pub mod database_identity {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        UserAssigned,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Database>,
@@ -792,6 +814,10 @@ pub struct DatabaseProperties {
     pub is_ledger_on: Option<bool>,
     #[serde(rename = "isInfraEncryptionEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_infra_encryption_enabled: Option<bool>,
+    #[serde(rename = "federatedClientId", default, skip_serializing_if = "Option::is_none")]
+    pub federated_client_id: Option<String>,
+    #[serde(rename = "primaryDelegatedIdentityClientId", default, skip_serializing_if = "Option::is_none")]
+    pub primary_delegated_identity_client_id: Option<String>,
 }
 pub mod database_properties {
     use super::*;
@@ -838,6 +864,9 @@ pub mod database_properties {
         OfflineChangingDwPerformanceTiers,
         OnlineChangingDwPerformanceTiers,
         Disabled,
+        Stopping,
+        Stopped,
+        Starting,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CatalogCollation {
@@ -866,12 +895,14 @@ pub mod database_properties {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestedBackupStorageRedundancy {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -937,6 +968,8 @@ pub struct DatabaseUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<DatabaseIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -965,6 +998,13 @@ pub struct DatabaseUsageProperties {
     pub limit: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DatabaseUserIdentity {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseVulnerabilityAssessment {
@@ -1018,6 +1058,13 @@ pub struct DatabaseVulnerabilityAssessmentScansExport {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseVulnerabilityAssessmentScanExportProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Delegation {
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeletedServer {
@@ -2520,12 +2567,14 @@ pub mod long_term_retention_backup_properties {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestedBackupStorageRedundancy {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2552,6 +2601,7 @@ pub mod long_term_retention_operation_result_properties {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3057,6 +3107,7 @@ pub mod managed_instance_long_term_retention_backup_properties {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3283,8 +3334,10 @@ pub struct ManagedInstanceProperties {
     pub private_endpoint_connections: Vec<ManagedInstancePecProperty>,
     #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimal_tls_version: Option<String>,
-    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
-    pub storage_account_type: Option<managed_instance_properties::StorageAccountType>,
+    #[serde(rename = "currentBackupStorageRedundancy", default, skip_serializing_if = "Option::is_none")]
+    pub current_backup_storage_redundancy: Option<managed_instance_properties::CurrentBackupStorageRedundancy>,
+    #[serde(rename = "requestedBackupStorageRedundancy", default, skip_serializing_if = "Option::is_none")]
+    pub requested_backup_storage_redundancy: Option<managed_instance_properties::RequestedBackupStorageRedundancy>,
     #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<bool>,
     #[serde(rename = "primaryUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
@@ -3293,6 +3346,8 @@ pub struct ManagedInstanceProperties {
     pub key_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub administrators: Option<ManagedInstanceExternalAdministrator>,
+    #[serde(rename = "servicePrincipal", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal: Option<ServicePrincipal>,
 }
 pub mod managed_instance_properties {
     use super::*;
@@ -3304,6 +3359,15 @@ pub mod managed_instance_properties {
         Unknown,
         Succeeded,
         Failed,
+        Accepted,
+        Created,
+        Deleted,
+        Unrecognized,
+        Running,
+        Canceled,
+        NotSpecified,
+        Registering,
+        TimedOut,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ManagedInstanceCreateMode {
@@ -3322,13 +3386,18 @@ pub mod managed_instance_properties {
         Default,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StorageAccountType {
-        #[serde(rename = "GRS")]
-        Grs,
-        #[serde(rename = "LRS")]
-        Lrs,
-        #[serde(rename = "ZRS")]
-        Zrs,
+    pub enum CurrentBackupStorageRedundancy {
+        Geo,
+        Local,
+        Zone,
+        GeoZone,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RequestedBackupStorageRedundancy {
+        Geo,
+        Local,
+        Zone,
+        GeoZone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3705,29 +3774,6 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationsHealth {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OperationsHealthProperties>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationsHealthListResult {
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<OperationsHealth>,
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationsHealthProperties {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub health: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutboundFirewallRule {
@@ -4375,8 +4421,6 @@ pub struct RestorableDroppedDatabaseProperties {
     pub database_name: Option<String>,
     #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_bytes: Option<i64>,
-    #[serde(rename = "elasticPoolId", default, skip_serializing_if = "Option::is_none")]
-    pub elastic_pool_id: Option<String>,
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
     #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
@@ -4393,6 +4437,7 @@ pub mod restorable_dropped_database_properties {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4765,11 +4810,18 @@ pub struct ServerConnectionPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerConnectionPolicyProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerConnectionPolicyListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ServerConnectionPolicy>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerConnectionPolicyProperties {
@@ -4781,8 +4833,8 @@ pub mod server_connection_policy_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectionType {
         Default,
-        Proxy,
         Redirect,
+        Proxy,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5216,6 +5268,25 @@ pub struct ServiceObjectiveProperties {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServicePrincipal {
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<service_principal::Type>,
+}
+pub mod service_principal {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        None,
+        SystemAssigned,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
@@ -5859,6 +5930,7 @@ pub mod update_long_term_retention_backup_parameters_properties {
         Geo,
         Local,
         Zone,
+        GeoZone,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

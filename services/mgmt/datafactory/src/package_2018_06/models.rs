@@ -1005,6 +1005,10 @@ pub struct AzureDatabricksDetltaLakeLinkedServiceTypeProperties {
     pub cluster_id: Option<serde_json::Value>,
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
+    #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_resource_id: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDatabricksLinkedService {
@@ -1749,7 +1753,7 @@ pub struct BinarySource {
     #[serde(rename = "formatSettings", default, skip_serializing_if = "Option::is_none")]
     pub format_settings: Option<BinaryReadSettings>,
 }
-pub type BlobEventTypes = Vec<String>;
+pub type BlobEventTypeArray = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobEventsTrigger {
     #[serde(flatten)]
@@ -1767,7 +1771,7 @@ pub mod blob_events_trigger {
         pub blob_path_ends_with: Option<String>,
         #[serde(rename = "ignoreEmptyBlobs", default, skip_serializing_if = "Option::is_none")]
         pub ignore_empty_blobs: Option<bool>,
-        pub events: BlobEventTypes,
+        pub events: BlobEventTypeArray,
         pub scope: String,
     }
 }
@@ -2217,6 +2221,8 @@ pub struct CosmosDbLinkedServiceTypeProperties {
     pub connection_mode: Option<cosmos_db_linked_service_type_properties::ConnectionMode>,
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
 }
 pub mod cosmos_db_linked_service_type_properties {
     use super::*;
@@ -2490,8 +2496,8 @@ pub struct DwCopyCommandSettings {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataFlow {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
+    #[serde(rename = "type")]
+    pub type_: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -3259,6 +3265,8 @@ pub struct DynamicsLinkedServiceTypeProperties {
     pub service_principal_credential: Option<SecretBase>,
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicsSink {
@@ -3959,12 +3967,14 @@ pub struct GoogleAdWordsLinkedService {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GoogleAdWordsLinkedServiceTypeProperties {
-    #[serde(rename = "clientCustomerID")]
-    pub client_customer_id: serde_json::Value,
-    #[serde(rename = "developerToken")]
-    pub developer_token: SecretBase,
-    #[serde(rename = "authenticationType")]
-    pub authentication_type: google_ad_words_linked_service_type_properties::AuthenticationType,
+    #[serde(rename = "connectionProperties", default, skip_serializing_if = "Option::is_none")]
+    pub connection_properties: Option<serde_json::Value>,
+    #[serde(rename = "clientCustomerID", default, skip_serializing_if = "Option::is_none")]
+    pub client_customer_id: Option<serde_json::Value>,
+    #[serde(rename = "developerToken", default, skip_serializing_if = "Option::is_none")]
+    pub developer_token: Option<SecretBase>,
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<google_ad_words_linked_service_type_properties::AuthenticationType>,
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<SecretBase>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
@@ -5316,6 +5326,8 @@ pub struct LinkedIntegrationRuntimeRbacAuthorization {
     pub linked_integration_runtime_type: LinkedIntegrationRuntimeType,
     #[serde(rename = "resourceId")]
     pub resource_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub credential: Option<CredentialReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedIntegrationRuntimeRequest {

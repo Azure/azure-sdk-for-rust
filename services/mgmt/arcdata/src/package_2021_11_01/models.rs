@@ -241,6 +241,7 @@ pub mod sql_managed_instance_properties {
     pub enum LicenseType {
         BasePrice,
         LicenseIncluded,
+        DisasterRecovery,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -22,6 +22,7 @@ const SKIP_SERVICES: &[&str] = &[
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("applicationinsights", "package-preview-2020-06"), // defines operation `list` multiple times
+    ("applicationinsights", "package-2021-11-01"), // duplicate Operations_List https://github.com/Azure/azure-rest-api-specs/issues/17215
     ("analysisservices", "package-2017-08"),
     ("authorization", "package-2020-10-01-preview"),
     ("authorization", "package-2018-05-01-preview"),

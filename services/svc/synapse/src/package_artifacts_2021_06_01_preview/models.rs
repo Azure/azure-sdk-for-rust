@@ -3717,12 +3717,14 @@ pub struct GoogleAdWordsLinkedService {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GoogleAdWordsLinkedServiceTypeProperties {
-    #[serde(rename = "clientCustomerID")]
-    pub client_customer_id: serde_json::Value,
-    #[serde(rename = "developerToken")]
-    pub developer_token: SecretBase,
-    #[serde(rename = "authenticationType")]
-    pub authentication_type: google_ad_words_linked_service_type_properties::AuthenticationType,
+    #[serde(rename = "connectionProperties", default, skip_serializing_if = "Option::is_none")]
+    pub connection_properties: Option<serde_json::Value>,
+    #[serde(rename = "clientCustomerID", default, skip_serializing_if = "Option::is_none")]
+    pub client_customer_id: Option<serde_json::Value>,
+    #[serde(rename = "developerToken", default, skip_serializing_if = "Option::is_none")]
+    pub developer_token: Option<SecretBase>,
+    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_type: Option<google_ad_words_linked_service_type_properties::AuthenticationType>,
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<SecretBase>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
