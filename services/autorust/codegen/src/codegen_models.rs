@@ -155,10 +155,17 @@ fn resolve_schema_property(
 
 fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen, spec: &Spec) -> Result<SchemaGen, Error> {
     // recursively apply to all properties
-    let properties: Vec<_> = schema.properties.iter().map(|property| {
-        let schema = resolve_all_of(all_schemas, &property.schema, spec)?;
-        Ok(PropertyGen { name: property.name.clone(), schema })
-    }).collect::<Result<_, Error>>()?;
+    let properties: Vec<_> = schema
+        .properties
+        .iter()
+        .map(|property| {
+            let schema = resolve_all_of(all_schemas, &property.schema, spec)?;
+            Ok(PropertyGen {
+                name: property.name.clone(),
+                schema,
+            })
+        })
+        .collect::<Result<_, Error>>()?;
     let all_of: Vec<_> = schema
         .schema
         .all_of
