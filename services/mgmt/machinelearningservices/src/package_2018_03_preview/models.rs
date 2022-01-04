@@ -6,22 +6,54 @@ use serde::{Deserialize, Serialize};
 pub struct Aks {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<aks::Properties>,
+}
+pub mod aks {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "clusterFqdn", default, skip_serializing_if = "Option::is_none")]
+        pub cluster_fqdn: Option<String>,
+        #[serde(rename = "systemServices", default, skip_serializing_if = "Vec::is_empty")]
+        pub system_services: Vec<SystemService>,
+        #[serde(rename = "agentCount", default, skip_serializing_if = "Option::is_none")]
+        pub agent_count: Option<i64>,
+        #[serde(rename = "agentVMSize", default, skip_serializing_if = "Option::is_none")]
+        pub agent_vm_size: Option<String>,
+        #[serde(rename = "sslConfiguration", default, skip_serializing_if = "Option::is_none")]
+        pub ssl_configuration: Option<SslConfiguration>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksComputeSecrets {
     #[serde(flatten)]
     pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "userKubeConfig", default, skip_serializing_if = "Option::is_none")]
+    pub user_kube_config: Option<String>,
+    #[serde(rename = "adminKubeConfig", default, skip_serializing_if = "Option::is_none")]
+    pub admin_kube_config: Option<String>,
+    #[serde(rename = "imagePullSecretName", default, skip_serializing_if = "Option::is_none")]
+    pub image_pull_secret_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchAi {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<batch_ai::Properties>,
+}
+pub mod batch_ai {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
+        pub vm_size: Option<String>,
+        #[serde(rename = "vmPriority", default, skip_serializing_if = "Option::is_none")]
+        pub vm_priority: Option<String>,
+        #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
+        pub scale_settings: Option<ScaleSettings>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compute {
@@ -59,8 +91,8 @@ pub mod compute {
 pub struct ComputeResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<Compute>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeSecrets {
@@ -99,8 +131,20 @@ pub struct ErrorResponse {
 pub struct HdInsight {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<hd_insight::Properties>,
+}
+pub mod hd_insight {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "sshPort", default, skip_serializing_if = "Option::is_none")]
+        pub ssh_port: Option<i64>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub address: Option<String>,
+        #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
+        pub administrator_account: Option<VirtualMachineSshCredentials>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
@@ -246,15 +290,29 @@ pub struct SystemService {
 pub struct VirtualMachine {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<virtual_machine::Properties>,
+}
+pub mod virtual_machine {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "virtualMachineSize", default, skip_serializing_if = "Option::is_none")]
+        pub virtual_machine_size: Option<String>,
+        #[serde(rename = "sshPort", default, skip_serializing_if = "Option::is_none")]
+        pub ssh_port: Option<i64>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub address: Option<String>,
+        #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
+        pub administrator_account: Option<VirtualMachineSshCredentials>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
     #[serde(flatten)]
     pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
+    pub administrator_account: Option<VirtualMachineSshCredentials>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSshCredentials {

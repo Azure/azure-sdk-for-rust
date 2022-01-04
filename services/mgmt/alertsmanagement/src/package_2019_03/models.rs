@@ -138,8 +138,6 @@ pub struct MonitorServiceDetails {
 pub struct MonitorServiceList {
     #[serde(flatten)]
     pub alerts_meta_data_properties: AlertsMetaDataProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
     pub data: Vec<MonitorServiceDetails>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

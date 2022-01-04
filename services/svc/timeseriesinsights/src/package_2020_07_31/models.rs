@@ -20,8 +20,7 @@ pub struct AggregateSeries {
 pub struct AggregateVariable {
     #[serde(flatten)]
     pub variable: Variable,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    pub aggregation: Tsx,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Availability {
@@ -41,8 +40,13 @@ pub struct AvailabilityResponse {
 pub struct CategoricalVariable {
     #[serde(flatten)]
     pub variable: Variable,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    pub value: Tsx,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interpolation: Option<Interpolation>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub categories: Vec<TimeSeriesAggregateCategory>,
+    #[serde(rename = "defaultCategory")]
+    pub default_category: TimeSeriesDefaultCategory,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DateTimeRange {
@@ -83,15 +87,15 @@ pub struct GetEvents {
 pub struct GetHierarchiesPage {
     #[serde(flatten)]
     pub paged_response: PagedResponse,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hierarchies: Vec<TimeSeriesHierarchy>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetInstancesPage {
     #[serde(flatten)]
     pub paged_response: PagedResponse,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub instances: Vec<TimeSeriesInstance>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetSeries {
@@ -112,8 +116,8 @@ pub struct GetSeries {
 pub struct GetTypesPage {
     #[serde(flatten)]
     pub paged_response: PagedResponse,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub types: Vec<TimeSeriesType>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HierarchiesBatchRequest {
@@ -307,8 +311,10 @@ pub struct ModelSettingsResponse {
 pub struct NumericVariable {
     #[serde(flatten)]
     pub variable: Variable,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    pub value: Tsx,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interpolation: Option<Interpolation>,
+    pub aggregation: Tsx,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PagedResponse {
@@ -328,8 +334,8 @@ pub enum PropertyType {
 pub struct PropertyValues {
     #[serde(flatten)]
     pub event_property: EventProperty,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -344,8 +350,12 @@ pub struct QueryRequest {
 pub struct QueryResultPage {
     #[serde(flatten)]
     pub paged_response: PagedResponse,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub timestamps: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub properties: Vec<PropertyValues>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub progress: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SearchHierarchyNodesResponse {

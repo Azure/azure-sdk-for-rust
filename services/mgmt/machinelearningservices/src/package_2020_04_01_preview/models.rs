@@ -6,15 +6,37 @@ use serde::{Deserialize, Serialize};
 pub struct Aks {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<aks::Properties>,
+}
+pub mod aks {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "clusterFqdn", default, skip_serializing_if = "Option::is_none")]
+        pub cluster_fqdn: Option<String>,
+        #[serde(rename = "systemServices", default, skip_serializing_if = "Vec::is_empty")]
+        pub system_services: Vec<SystemService>,
+        #[serde(rename = "agentCount", default, skip_serializing_if = "Option::is_none")]
+        pub agent_count: Option<i64>,
+        #[serde(rename = "agentVMSize", default, skip_serializing_if = "Option::is_none")]
+        pub agent_vm_size: Option<String>,
+        #[serde(rename = "sslConfiguration", default, skip_serializing_if = "Option::is_none")]
+        pub ssl_configuration: Option<SslConfiguration>,
+        #[serde(rename = "aksNetworkingConfiguration", default, skip_serializing_if = "Option::is_none")]
+        pub aks_networking_configuration: Option<AksNetworkingConfiguration>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksComputeSecrets {
     #[serde(flatten)]
     pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "userKubeConfig", default, skip_serializing_if = "Option::is_none")]
+    pub user_kube_config: Option<String>,
+    #[serde(rename = "adminKubeConfig", default, skip_serializing_if = "Option::is_none")]
+    pub admin_kube_config: Option<String>,
+    #[serde(rename = "imagePullSecretName", default, skip_serializing_if = "Option::is_none")]
+    pub image_pull_secret_name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksNetworkingConfiguration {
@@ -31,8 +53,57 @@ pub struct AksNetworkingConfiguration {
 pub struct AmlCompute {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<aml_compute::Properties>,
+}
+pub mod aml_compute {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
+        pub vm_size: Option<String>,
+        #[serde(rename = "vmPriority", default, skip_serializing_if = "Option::is_none")]
+        pub vm_priority: Option<properties::VmPriority>,
+        #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
+        pub scale_settings: Option<ScaleSettings>,
+        #[serde(rename = "userAccountCredentials", default, skip_serializing_if = "Option::is_none")]
+        pub user_account_credentials: Option<UserAccountCredentials>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub subnet: Option<ResourceId>,
+        #[serde(rename = "remoteLoginPortPublicAccess", default, skip_serializing_if = "Option::is_none")]
+        pub remote_login_port_public_access: Option<properties::RemoteLoginPortPublicAccess>,
+        #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
+        pub allocation_state: Option<properties::AllocationState>,
+        #[serde(rename = "allocationStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
+        pub allocation_state_transition_time: Option<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub errors: Vec<MachineLearningServiceError>,
+        #[serde(rename = "currentNodeCount", default, skip_serializing_if = "Option::is_none")]
+        pub current_node_count: Option<i32>,
+        #[serde(rename = "targetNodeCount", default, skip_serializing_if = "Option::is_none")]
+        pub target_node_count: Option<i32>,
+        #[serde(rename = "nodeStateCounts", default, skip_serializing_if = "Option::is_none")]
+        pub node_state_counts: Option<NodeStateCounts>,
+    }
+    pub mod properties {
+        use super::*;
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum VmPriority {
+            Dedicated,
+            LowPriority,
+        }
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum RemoteLoginPortPublicAccess {
+            Enabled,
+            Disabled,
+            NotSpecified,
+        }
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum AllocationState {
+            Steady,
+            Resizing,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AmlComputeNodeInformation {
@@ -71,8 +142,8 @@ pub mod aml_compute_node_information {
 pub struct AmlComputeNodesInformation {
     #[serde(flatten)]
     pub compute_nodes_information: ComputeNodesInformation,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub nodes: Vec<AmlComputeNodeInformation>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AmlUserFeature {
@@ -138,8 +209,8 @@ pub struct ComputeNodesInformation {
 pub struct ComputeResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<Compute>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeSecrets {
@@ -167,22 +238,38 @@ pub struct DataFactory {
 pub struct DataLakeAnalytics {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<data_lake_analytics::Properties>,
+}
+pub mod data_lake_analytics {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "dataLakeStoreAccountName", default, skip_serializing_if = "Option::is_none")]
+        pub data_lake_store_account_name: Option<String>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Databricks {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<databricks::Properties>,
+}
+pub mod databricks {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "databricksAccessToken", default, skip_serializing_if = "Option::is_none")]
+        pub databricks_access_token: Option<String>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabricksComputeSecrets {
     #[serde(flatten)]
     pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "databricksAccessToken", default, skip_serializing_if = "Option::is_none")]
+    pub databricks_access_token: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionProperty {
@@ -216,8 +303,20 @@ pub struct ErrorResponse {
 pub struct HdInsight {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<hd_insight::Properties>,
+}
+pub mod hd_insight {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "sshPort", default, skip_serializing_if = "Option::is_none")]
+        pub ssh_port: Option<i64>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub address: Option<String>,
+        #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
+        pub administrator_account: Option<VirtualMachineSshCredentials>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
@@ -722,15 +821,29 @@ pub struct UserAssignedIdentity {
 pub struct VirtualMachine {
     #[serde(flatten)]
     pub compute: Compute,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<virtual_machine::Properties>,
+}
+pub mod virtual_machine {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct Properties {
+        #[serde(rename = "virtualMachineSize", default, skip_serializing_if = "Option::is_none")]
+        pub virtual_machine_size: Option<String>,
+        #[serde(rename = "sshPort", default, skip_serializing_if = "Option::is_none")]
+        pub ssh_port: Option<i64>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub address: Option<String>,
+        #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
+        pub administrator_account: Option<VirtualMachineSshCredentials>,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
     #[serde(flatten)]
     pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
+    pub administrator_account: Option<VirtualMachineSshCredentials>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSize {

@@ -854,8 +854,20 @@ pub struct RuntimeScriptAction {
 pub struct RuntimeScriptActionDetail {
     #[serde(flatten)]
     pub runtime_script_action: RuntimeScriptAction,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "scriptExecutionId", default, skip_serializing_if = "Option::is_none")]
+    pub script_execution_id: Option<i64>,
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operation: Option<String>,
+    #[serde(rename = "executionSummary", default, skip_serializing_if = "Vec::is_empty")]
+    pub execution_summary: Vec<ScriptActionExecutionSummary>,
+    #[serde(rename = "debugInformation", default, skip_serializing_if = "Option::is_none")]
+    pub debug_information: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptAction {

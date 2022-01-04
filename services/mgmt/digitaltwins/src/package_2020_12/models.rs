@@ -249,15 +249,25 @@ pub struct ErrorResponse {
 pub struct EventGrid {
     #[serde(flatten)]
     pub digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "TopicEndpoint")]
+    pub topic_endpoint: String,
+    #[serde(rename = "accessKey1")]
+    pub access_key1: String,
+    #[serde(rename = "accessKey2", default, skip_serializing_if = "Option::is_none")]
+    pub access_key2: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHub {
     #[serde(flatten)]
     pub digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "connectionStringPrimaryKey", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string_primary_key: Option<String>,
+    #[serde(rename = "connectionStringSecondaryKey", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string_secondary_key: Option<String>,
+    #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
+    pub endpoint_uri: Option<String>,
+    #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
+    pub entity_path: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalResource {
@@ -346,6 +356,12 @@ pub struct PrivateEndpointConnectionsResponse {
 pub struct ServiceBus {
     #[serde(flatten)]
     pub digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "primaryConnectionString", default, skip_serializing_if = "Option::is_none")]
+    pub primary_connection_string: Option<String>,
+    #[serde(rename = "secondaryConnectionString", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_connection_string: Option<String>,
+    #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
+    pub endpoint_uri: Option<String>,
+    #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
+    pub entity_path: Option<String>,
 }

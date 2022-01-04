@@ -104,8 +104,8 @@ pub struct EventsAvailabilityResultInfo {
 pub struct EventsAvailabilityResultResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "availabilityResult", default, skip_serializing_if = "Option::is_none")]
+    pub availability_result: Option<EventsAvailabilityResultInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsBrowserTimingInfo {
@@ -134,8 +134,10 @@ pub struct EventsBrowserTimingInfo {
 pub struct EventsBrowserTimingResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "browserTiming", default, skip_serializing_if = "Option::is_none")]
+    pub browser_timing: Option<EventsBrowserTimingInfo>,
+    #[serde(rename = "clientPerformance", default, skip_serializing_if = "Option::is_none")]
+    pub client_performance: Option<EventsClientPerformanceInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsClientInfo {
@@ -178,8 +180,8 @@ pub struct EventsCustomEventInfo {
 pub struct EventsCustomEventResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "customEvent", default, skip_serializing_if = "Option::is_none")]
+    pub custom_event: Option<EventsCustomEventInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsCustomMetricInfo {
@@ -202,8 +204,8 @@ pub struct EventsCustomMetricInfo {
 pub struct EventsCustomMetricResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "customMetric", default, skip_serializing_if = "Option::is_none")]
+    pub custom_metric: Option<EventsCustomMetricInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsDependencyInfo {
@@ -230,8 +232,8 @@ pub struct EventsDependencyInfo {
 pub struct EventsDependencyResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dependency: Option<EventsDependencyInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsExceptionDetail {
@@ -298,8 +300,8 @@ pub struct EventsExceptionInfo {
 pub struct EventsExceptionResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exception: Option<EventsExceptionInfo>,
 }
 pub type EventsFilter = String;
 pub type EventsFormat = String;
@@ -330,8 +332,8 @@ pub struct EventsPageViewInfo {
 pub struct EventsPageViewResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "pageView", default, skip_serializing_if = "Option::is_none")]
+    pub page_view: Option<EventsPageViewInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsPerformanceCounterInfo {
@@ -352,8 +354,8 @@ pub struct EventsPerformanceCounterInfo {
 pub struct EventsPerformanceCounterResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(rename = "performanceCounter", default, skip_serializing_if = "Option::is_none")]
+    pub performance_counter: Option<EventsPerformanceCounterInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsRequestInfo {
@@ -378,8 +380,8 @@ pub struct EventsRequestInfo {
 pub struct EventsRequestResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request: Option<EventsRequestInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsResult {
@@ -460,8 +462,8 @@ pub struct EventsTraceInfo {
 pub struct EventsTraceResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
-    #[serde(flatten)]
-    pub serde_json_value: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trace: Option<EventsTraceInfo>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsUserInfo {

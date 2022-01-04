@@ -127,19 +127,23 @@ impl Spec {
         self.input_files_paths.contains(path.as_ref())
     }
 
-    /// Find the schema for a given doc path and reference
-    pub fn resolve_schema_ref(&self, doc_file: impl AsRef<Path>, reference: Reference) -> Result<ResolvedSchema> {
+    pub fn ref_key(&self, doc_file: impl AsRef<Path>, reference: &Reference) -> Result<RefKey> {
         let doc_file = doc_file.as_ref();
-        let full_path = match reference.file {
+        let full_path = match &reference.file {
             None => doc_file.to_owned(),
             Some(file) => path::join(doc_file, &file).map_err(|source| Error::PathJoin { source })?,
         };
-
-        let name = reference.name.ok_or(Error::NoNameInReference)?;
+        let name = reference.name.clone().ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
             file_path: full_path,
             name,
         };
+        Ok(ref_key)
+    }
+
+    /// Find the schema for a given doc path and reference
+    pub fn resolve_schema_ref(&self, doc_file: impl AsRef<Path>, reference: &Reference) -> Result<ResolvedSchema> {
+        let ref_key = self.ref_key(doc_file, reference)?;
         let schema = self
             .schemas
             .get(&ref_key)
@@ -173,7 +177,7 @@ impl Spec {
                 ref_key: None,
                 schema: schema.clone(),
             }),
-            ReferenceOr::Reference { reference, .. } => self.resolve_schema_ref(doc_file, reference.clone()),
+            ReferenceOr::Reference { reference, .. } => self.resolve_schema_ref(doc_file, reference),
         }
     }
 
