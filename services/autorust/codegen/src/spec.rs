@@ -5,6 +5,7 @@ use autorust_openapi::{
 };
 use indexmap::{IndexMap, IndexSet};
 use std::{
+    collections::BTreeSet,
     ffi::OsStr,
     fs,
     path::{Path, PathBuf},
@@ -107,16 +108,20 @@ impl Spec {
         versions
     }
 
-    /// Look for specs with operations and return the last one sorted alphabetically
-    pub fn api_version(&self) -> Option<String> {
-        let mut versions: Vec<&str> = self
+    /// get a list of `api-version`s used
+    pub fn api_versions(&self) -> Vec<&str> {
+        let versions: BTreeSet<&str> = self
             .docs()
             .values()
             .filter(|doc| !doc.paths().is_empty())
             .filter_map(|api| api.info.version.as_deref())
             .collect();
-        versions.sort_unstable();
-        versions.last().map(|version| version.to_string())
+        versions.into_iter().collect()
+    }
+
+    /// Look for specs with operations and return the last one sorted alphabetically
+    pub fn api_version(&self) -> Option<String> {
+        self.api_versions().last().map(|version| version.to_string())
     }
 
     pub fn input_docs(&self) -> impl Iterator<Item = (&PathBuf, &OpenAPI)> {

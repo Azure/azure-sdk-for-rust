@@ -61,4 +61,7 @@ impl OpenAPI {
             &self.paths
         }
     }
+    pub fn version(&self) -> Result<&str, Error> {
+        Ok(self.info.version.as_ref().ok_or(Error::MissingApiVersion)?.as_str())
+    }
 }
