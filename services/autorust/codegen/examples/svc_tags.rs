@@ -9,6 +9,9 @@ fn main() -> Result<()> {
         println!("{} {}", i + 1, spec.spec());
         for config in spec.configs() {
             println!("  {}", &config.tag);
+            for input_file in &config.input_files {
+                println!("    {}", input_file);
+            }
         }
     }
     Ok(())
