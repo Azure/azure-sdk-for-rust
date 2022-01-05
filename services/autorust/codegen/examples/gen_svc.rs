@@ -70,9 +70,14 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "innerError",
     ),
     (
-         "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/preview/2021-01-01-preview/mr-arr.json",
+        "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/preview/2021-01-01-preview/mr-arr.json",
         "error",
         "innerError",
+    ),
+    (
+         "../../../azure-rest-api-specs/specification/mixedreality/data-plane/Microsoft.MixedReality/preview/0.3-preview.0/mr-aoa.json",
+        "InnerError",
+        "innererror",
     ),
     // confidentialledger
     (
