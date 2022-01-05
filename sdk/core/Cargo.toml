@@ -23,9 +23,9 @@ http = "0.2"
 hyper = { version = "0.14", optional = true }
 hyper-rustls = { version = "0.22", optional = true }
 log = "0.4"
-oauth2 = { version = "4.0", default_features=false }
+oauth2 = { version = "4.0", default-features=false }
 rand = "0.8"
-reqwest = { version = "0.11", features = ["stream"], default_features=false, optional = true }
+reqwest = { version = "0.11", features = ["stream"], default-features=false, optional = true }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
