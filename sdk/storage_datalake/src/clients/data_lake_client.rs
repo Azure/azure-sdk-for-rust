@@ -1,4 +1,4 @@
-use crate::authorization_policy::AuthorizationPolicy;
+use crate::bearer_token_authorization_policy::BearerTokenAuthorizationPolicy;
 use crate::clients::FileSystemClient;
 use crate::requests::*;
 use azure_core::{ClientOptions, HttpClient, Pipeline};
@@ -41,7 +41,7 @@ impl DataLakeClient {
 
         let per_call_policies = Vec::new();
         let auth_policy: Arc<dyn azure_core::Policy> =
-            Arc::new(AuthorizationPolicy::new(bearer_token));
+            Arc::new(BearerTokenAuthorizationPolicy::new(bearer_token));
 
         // take care of adding the AuthorizationPolicy as **last** retry policy.
         // Policies can change the url and/or the headers and the AuthorizationPolicy

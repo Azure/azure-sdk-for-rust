@@ -4,18 +4,18 @@ use http::HeaderValue;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AuthorizationPolicy {
+pub struct BearerTokenAuthorizationPolicy {
     bearer_token: String,
 }
 
-impl AuthorizationPolicy {
+impl BearerTokenAuthorizationPolicy {
     pub(crate) fn new(bearer_token: String) -> Self {
         Self { bearer_token }
     }
 }
 
 #[async_trait::async_trait]
-impl Policy for AuthorizationPolicy {
+impl Policy for BearerTokenAuthorizationPolicy {
     async fn send(
         &self,
         ctx: &Context,
