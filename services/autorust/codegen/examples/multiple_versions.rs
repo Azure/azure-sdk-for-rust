@@ -18,7 +18,7 @@ fn main() -> Result<()> {
 }
 
 fn check(readmes: &[SpecReadme]) -> Result<()> {
-    let mut specs = BTreeSet::new();
+    let mut services = BTreeSet::new();
     let mut tags = 0;
     for readme in readmes {
         let readme_path = readme.readme();
@@ -33,7 +33,7 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
                             println!("  {}", version);
                         }
                         tags = tags + 1;
-                        specs.insert(readme.spec());
+                        services.insert(readme.spec());
                     }
                 }
                 // Err(err) => println!("Error {}", err),
@@ -43,9 +43,9 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
     }
     println!("");
     println!("{} tags", tags);
-    println!("{} specs:", specs.len());
-    for spec in specs {
-        println!("  {}", spec);
+    println!("{} services:", services.len());
+    for service in services {
+        println!("  {}", service);
     }
     Ok(())
 }
