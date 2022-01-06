@@ -703,6 +703,10 @@ pub struct DatabaseStatistics {
 pub struct DynamicExecutorAllocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[serde(rename = "minExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub min_executors: Option<i32>,
+    #[serde(rename = "maxExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub max_executors: Option<i32>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionDetails {
@@ -965,6 +969,8 @@ pub struct ExtendedServerBlobAuditingPolicyProperties {
     pub is_azure_monitor_target_enabled: Option<bool>,
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
+    #[serde(rename = "isDevopsAuditEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_devops_audit_enabled: Option<bool>,
 }
 pub mod extended_server_blob_auditing_policy_properties {
     use super::*;
@@ -1766,6 +1772,8 @@ pub struct ManagedIntegrationRuntime {
     pub state: Option<IntegrationRuntimeState>,
     #[serde(rename = "typeProperties")]
     pub type_properties: ManagedIntegrationRuntimeTypeProperties,
+    #[serde(rename = "managedVirtualNetwork", default, skip_serializing_if = "Option::is_none")]
+    pub managed_virtual_network: Option<ManagedIntegrationRuntimeManagedVirtualNetworkReference>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedIntegrationRuntimeError {
@@ -1777,6 +1785,15 @@ pub struct ManagedIntegrationRuntimeError {
     pub parameters: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedIntegrationRuntimeManagedVirtualNetworkReference {
+    #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
+    pub reference_name: Option<String>,
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedIntegrationRuntimeNode {
@@ -2542,6 +2559,10 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     pub latest_version: Option<String>,
     #[serde(rename = "autoUpdateETA", default, skip_serializing_if = "Option::is_none")]
     pub auto_update_eta: Option<String>,
+    #[serde(rename = "serviceRegion", default, skip_serializing_if = "Option::is_none")]
+    pub service_region: Option<String>,
+    #[serde(rename = "newerVersions", default, skip_serializing_if = "Vec::is_empty")]
+    pub newer_versions: Vec<String>,
 }
 pub mod self_hosted_integration_runtime_status_type_properties {
     use super::*;
@@ -2669,6 +2690,8 @@ pub struct ServerBlobAuditingPolicyProperties {
     pub is_azure_monitor_target_enabled: Option<bool>,
     #[serde(rename = "queueDelayMs", default, skip_serializing_if = "Option::is_none")]
     pub queue_delay_ms: Option<i32>,
+    #[serde(rename = "isDevopsAuditEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_devops_audit_enabled: Option<bool>,
 }
 pub mod server_blob_auditing_policy_properties {
     use super::*;
@@ -3136,8 +3159,6 @@ pub mod sql_pool_resource_properties {
         Grs,
         #[serde(rename = "LRS")]
         Lrs,
-        #[serde(rename = "ZRS")]
-        Zrs,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3752,6 +3773,8 @@ pub struct WorkspaceProperties {
     pub settings: Option<serde_json::Value>,
     #[serde(rename = "azureADOnlyAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub azure_ad_only_authentication: Option<bool>,
+    #[serde(rename = "trustedServiceBypassEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub trusted_service_bypass_enabled: Option<bool>,
 }
 pub mod workspace_properties {
     use super::*;

@@ -265,7 +265,8 @@ pub struct ConfigServerSettingsValidateResult {
 pub struct ContentCertificateProperties {
     #[serde(flatten)]
     pub certificate_properties: CertificateProperties,
-    pub content: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomContainer {
@@ -658,10 +659,19 @@ pub struct OperationDetail {
     pub is_data_action: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    pub action_type: Option<operation_detail::ActionType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
+}
+pub mod operation_detail {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ActionType {
+        Internal,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplay {

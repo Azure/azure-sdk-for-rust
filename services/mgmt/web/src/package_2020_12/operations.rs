@@ -337,8 +337,6 @@ pub enum Error {
     #[error(transparent)]
     Recommendations_DisableRecommendationForSite(#[from] recommendations::disable_recommendation_for_site::Error),
     #[error(transparent)]
-    GenerateGithubAccessTokenForAppserviceCliAsync(#[from] generate_github_access_token_for_appservice_cli_async::Error),
-    #[error(transparent)]
     GetPublishingUser(#[from] get_publishing_user::Error),
     #[error(transparent)]
     UpdatePublishingUser(#[from] update_publishing_user::Error),
@@ -10751,16 +10749,6 @@ pub mod recommendations {
     }
 }
 impl Client {
-    #[doc = "Exchange code for GitHub access token for AppService CLI"]
-    pub fn generate_github_access_token_for_appservice_cli_async(
-        &self,
-        request: impl Into<models::AppserviceGithubTokenRequest>,
-    ) -> generate_github_access_token_for_appservice_cli_async::Builder {
-        generate_github_access_token_for_appservice_cli_async::Builder {
-            client: self.clone(),
-            request: request.into(),
-        }
-    }
     #[doc = "Gets publishing user"]
     pub fn get_publishing_user(&self) -> get_publishing_user::Builder {
         get_publishing_user::Builder { client: self.clone() }
@@ -10915,79 +10903,6 @@ impl Client {
             resource_group_name: resource_group_name.into(),
             move_resource_envelope: move_resource_envelope.into(),
             subscription_id: subscription_id.into(),
-        }
-    }
-}
-pub mod generate_github_access_token_for_appservice_cli_async {
-    use super::{models, API_VERSION};
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::DefaultErrorResponse,
-        },
-        #[error("Failed to parse request URL: {0}")]
-        ParseUrl(url::ParseError),
-        #[error("Failed to build request: {0}")]
-        BuildRequest(http::Error),
-        #[error("Failed to serialize request body: {0}")]
-        Serialize(serde_json::Error),
-        #[error("Failed to get access token: {0}")]
-        GetToken(azure_core::Error),
-        #[error("Failed to execute request: {0}")]
-        SendRequest(azure_core::Error),
-        #[error("Failed to get response bytes: {0}")]
-        ResponseBytes(azure_core::StreamError),
-        #[error("Failed to deserialize response: {0}, body: {1:?}")]
-        Deserialize(serde_json::Error, bytes::Bytes),
-    }
-    #[derive(Clone)]
-    pub struct Builder {
-        pub(crate) client: super::Client,
-        pub(crate) request: models::AppserviceGithubTokenRequest,
-    }
-    impl Builder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::AppserviceGithubToken, Error>> {
-            Box::pin(async move {
-                let url_str = &format!(
-                    "{}/providers/Microsoft.Web/generateGithubAccessTokenForAppserviceCLI",
-                    self.client.endpoint(),
-                );
-                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                let mut req_builder = http::request::Builder::new();
-                req_builder = req_builder.method(http::Method::POST);
-                let credential = self.client.token_credential();
-                let token_response = credential
-                    .get_token(&self.client.scopes().join(" "))
-                    .await
-                    .map_err(Error::GetToken)?;
-                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-                req_builder = req_builder.header("content-type", "application/json");
-                let req_body = azure_core::to_json(&self.request).map_err(Error::Serialize)?;
-                req_builder = req_builder.uri(url.as_str());
-                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                match rsp_status {
-                    http::StatusCode::OK => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::AppserviceGithubToken =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Ok(rsp_value)
-                    }
-                    status_code => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::DefaultErrorResponse =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Err(Error::DefaultResponse {
-                            status_code,
-                            value: rsp_value,
-                        })
-                    }
-                }
-            })
         }
     }
 }

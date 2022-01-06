@@ -1770,6 +1770,7 @@ pub mod ip_firewall_rules {
         pub enum Response {
             Ok200(models::IpFirewallRuleInfo),
             Created201(models::IpFirewallRuleInfo),
+            Accepted202,
         }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
@@ -1842,6 +1843,7 @@ pub mod ip_firewall_rules {
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(Response::Created201(rsp_value))
                         }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ErrorResponse =

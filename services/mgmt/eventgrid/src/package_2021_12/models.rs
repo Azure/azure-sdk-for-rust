@@ -25,6 +25,13 @@ pub mod advanced_filter {
         StringBeginsWith,
         StringEndsWith,
         StringContains,
+        NumberInRange,
+        NumberNotInRange,
+        StringNotBeginsWith,
+        StringNotEndsWith,
+        StringNotContains,
+        IsNullOrUndefined,
+        IsNotNull,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -532,6 +539,16 @@ pub mod input_schema_mapping {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IsNotNullAdvancedFilter {
+    #[serde(flatten)]
+    pub advanced_filter: AdvancedFilter,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IsNullOrUndefinedAdvancedFilter {
+    #[serde(flatten)]
+    pub advanced_filter: AdvancedFilter,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonField {
     #[serde(rename = "sourceField", default, skip_serializing_if = "Option::is_none")]
     pub source_field: Option<String>,
@@ -587,6 +604,13 @@ pub struct NumberInAdvancedFilter {
     pub values: Vec<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NumberInRangeAdvancedFilter {
+    #[serde(flatten)]
+    pub advanced_filter: AdvancedFilter,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<Vec<f64>>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NumberLessThanAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
@@ -606,6 +630,13 @@ pub struct NumberNotInAdvancedFilter {
     pub advanced_filter: AdvancedFilter,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NumberNotInRangeAdvancedFilter {
+    #[serde(flatten)]
+    pub advanced_filter: AdvancedFilter,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<Vec<f64>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -816,6 +847,27 @@ pub struct StringEndsWithAdvancedFilter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringInAdvancedFilter {
+    #[serde(flatten)]
+    pub advanced_filter: AdvancedFilter,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StringNotBeginsWithAdvancedFilter {
+    #[serde(flatten)]
+    pub advanced_filter: AdvancedFilter,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StringNotContainsAdvancedFilter {
+    #[serde(flatten)]
+    pub advanced_filter: AdvancedFilter,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StringNotEndsWithAdvancedFilter {
     #[serde(flatten)]
     pub advanced_filter: AdvancedFilter,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

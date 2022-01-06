@@ -337,6 +337,8 @@ pub struct ClientEncryptionKeyGetResults {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClientEncryptionKeyResource {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[serde(rename = "encryptionAlgorithm", default, skip_serializing_if = "Option::is_none")]
     pub encryption_algorithm: Option<String>,
     #[serde(rename = "wrappedDataEncryptionKey", default, skip_serializing_if = "Option::is_none")]

@@ -122,6 +122,18 @@ pub mod alert_properties {
         pub contact_roles: Vec<String>,
         #[serde(rename = "overridingAlert", default, skip_serializing_if = "Option::is_none")]
         pub overriding_alert: Option<String>,
+        #[serde(rename = "departmentName", default, skip_serializing_if = "Option::is_none")]
+        pub department_name: Option<String>,
+        #[serde(rename = "companyName", default, skip_serializing_if = "Option::is_none")]
+        pub company_name: Option<String>,
+        #[serde(rename = "enrollmentNumber", default, skip_serializing_if = "Option::is_none")]
+        pub enrollment_number: Option<String>,
+        #[serde(rename = "enrollmentStartDate", default, skip_serializing_if = "Option::is_none")]
+        pub enrollment_start_date: Option<String>,
+        #[serde(rename = "enrollmentEndDate", default, skip_serializing_if = "Option::is_none")]
+        pub enrollment_end_date: Option<String>,
+        #[serde(rename = "invoicingThreshold", default, skip_serializing_if = "Option::is_none")]
+        pub invoicing_threshold: Option<f64>,
     }
     pub mod details {
         use super::*;

@@ -1784,6 +1784,45 @@ pub struct GenerateSsoUrlResult {
     pub value: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalSchemaCollection {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<GlobalSchemaContract>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalSchemaContract {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GlobalSchemaContractProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalSchemaContractProperties {
+    #[serde(rename = "schemaType")]
+    pub schema_type: global_schema_contract_properties::SchemaType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub document: Option<GlobalSchemaDocumentProperties>,
+}
+pub mod global_schema_contract_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SchemaType {
+        #[serde(rename = "xml")]
+        Xml,
+        #[serde(rename = "json")]
+        Json,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GlobalSchemaDocumentProperties {}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GroupContract>,

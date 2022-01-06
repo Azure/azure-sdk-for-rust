@@ -21,6 +21,8 @@ pub mod account {
         pub host_name: Option<String>,
         #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
         pub public_network_access: Option<properties::PublicNetworkAccess>,
+        #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
+        pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     }
     pub mod properties {
         use super::*;
@@ -296,8 +298,7 @@ pub struct PrivateEndpoint {
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PrivateEndpointConnectionProperties>,
+    pub properties: PrivateEndpointConnectionProperties,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionListResult {
@@ -310,6 +311,8 @@ pub struct PrivateEndpointConnectionProperties {
     pub private_endpoint: Option<PrivateEndpoint>,
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub group_ids: Vec<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }

@@ -48,6 +48,8 @@ pub mod availability_status {
         #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
         pub availability_state: Option<properties::AvailabilityState>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub title: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub summary: Option<String>,
         #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
         pub detailed_status: Option<String>,

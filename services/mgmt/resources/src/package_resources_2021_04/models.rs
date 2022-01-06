@@ -633,6 +633,8 @@ pub struct ProviderResourceType {
     pub api_versions: Vec<String>,
     #[serde(rename = "defaultApiVersion", default, skip_serializing_if = "Option::is_none")]
     pub default_api_version: Option<String>,
+    #[serde(rename = "zoneMappings", default, skip_serializing_if = "Vec::is_empty")]
+    pub zone_mappings: Vec<ZoneMapping>,
     #[serde(rename = "apiProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub api_profiles: Vec<ApiProfile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -957,4 +959,11 @@ pub mod what_if_property_change {
         Array,
         NoEffect,
     }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ZoneMapping {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub zones: Vec<String>,
 }

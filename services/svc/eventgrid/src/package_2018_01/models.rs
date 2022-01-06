@@ -253,6 +253,8 @@ pub struct AcsRecordingChunkInfoProperties {
     pub metadata_location: Option<String>,
     #[serde(rename = "contentLocation", default, skip_serializing_if = "Option::is_none")]
     pub content_location: Option<String>,
+    #[serde(rename = "deleteLocation", default, skip_serializing_if = "Option::is_none")]
+    pub delete_location: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRecordingFileStatusUpdatedEventData {
@@ -262,8 +264,33 @@ pub struct AcsRecordingFileStatusUpdatedEventData {
     pub recording_start_time: Option<String>,
     #[serde(rename = "recordingDurationMs", default, skip_serializing_if = "Option::is_none")]
     pub recording_duration_ms: Option<i64>,
+    #[serde(rename = "recordingContentType", default, skip_serializing_if = "Option::is_none")]
+    pub recording_content_type: Option<acs_recording_file_status_updated_event_data::RecordingContentType>,
+    #[serde(rename = "recordingChannelType", default, skip_serializing_if = "Option::is_none")]
+    pub recording_channel_type: Option<acs_recording_file_status_updated_event_data::RecordingChannelType>,
+    #[serde(rename = "recordingFormatType", default, skip_serializing_if = "Option::is_none")]
+    pub recording_format_type: Option<acs_recording_file_status_updated_event_data::RecordingFormatType>,
     #[serde(rename = "sessionEndReason", default, skip_serializing_if = "Option::is_none")]
     pub session_end_reason: Option<String>,
+}
+pub mod acs_recording_file_status_updated_event_data {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RecordingContentType {
+        AudioVideo,
+        Audio,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RecordingChannelType {
+        Mixed,
+        Unmixed,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum RecordingFormatType {
+        Wav,
+        Mp3,
+        Mp4,
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsRecordingStorageInfoProperties {
@@ -512,7 +539,11 @@ pub struct ContainerRegistryArtifactEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<ContainerRegistryArtifactEventTarget>,
+    #[serde(rename = "connectedRegistry", default, skip_serializing_if = "Option::is_none")]
+    pub connected_registry: Option<ContainerRegistryEventConnectedRegistry>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryArtifactEventTarget {
@@ -547,6 +578,11 @@ pub struct ContainerRegistryEventActor {
     pub name: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ContainerRegistryEventConnectedRegistry {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -555,6 +591,8 @@ pub struct ContainerRegistryEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<ContainerRegistryEventTarget>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<ContainerRegistryEventRequest>,
@@ -562,6 +600,8 @@ pub struct ContainerRegistryEventData {
     pub actor: Option<ContainerRegistryEventActor>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<ContainerRegistryEventSource>,
+    #[serde(rename = "connectedRegistry", default, skip_serializing_if = "Option::is_none")]
+    pub connected_registry: Option<ContainerRegistryEventConnectedRegistry>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryEventRequest {

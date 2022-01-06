@@ -31,6 +31,15 @@ pub struct AppliedReservationsProperties {
     pub reservation_order_ids: Option<AppliedReservationList>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AppliedScopeProperties {
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(rename = "managementGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub management_group_id: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AppliedScopeType {
     Single,
     Shared,
@@ -118,6 +127,8 @@ pub struct Catalog {
     pub name: Option<String>,
     #[serde(rename = "billingPlans", default, skip_serializing_if = "Option::is_none")]
     pub billing_plans: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub msrp: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terms: Vec<ReservationTerm>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -256,6 +267,13 @@ pub struct MergeProperties {
 pub struct MergeRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MergeProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MsrpProperty {
+    #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
+    pub currency_code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub amount: Option<f64>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationDisplay {
@@ -637,6 +655,10 @@ pub struct ReservationProperties {
     pub split_properties: Option<ReservationSplitProperties>,
     #[serde(rename = "mergeProperties", default, skip_serializing_if = "Option::is_none")]
     pub merge_properties: Option<ReservationMergeProperties>,
+    #[serde(rename = "swapProperties", default, skip_serializing_if = "Option::is_none")]
+    pub swap_properties: Option<ReservationSwapProperties>,
+    #[serde(rename = "appliedScopeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub applied_scope_properties: Option<AppliedScopeProperties>,
     #[serde(rename = "billingScopeId", default, skip_serializing_if = "Option::is_none")]
     pub billing_scope_id: Option<BillingScopeId>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -690,6 +712,13 @@ pub enum ReservationStatusCode {
     Merged,
     Expired,
     Succeeded,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReservationSwapProperties {
+    #[serde(rename = "swapSource", default, skip_serializing_if = "Option::is_none")]
+    pub swap_source: Option<String>,
+    #[serde(rename = "swapDestination", default, skip_serializing_if = "Option::is_none")]
+    pub swap_destination: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReservationTerm {

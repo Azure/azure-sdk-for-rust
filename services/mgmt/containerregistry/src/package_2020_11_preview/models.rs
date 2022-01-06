@@ -452,8 +452,8 @@ pub struct ErrorResponseBody {
     pub message: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<InnerErrorDescription>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<InnerErrorDescription>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Event {
