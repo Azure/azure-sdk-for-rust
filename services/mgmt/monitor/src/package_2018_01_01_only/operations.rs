@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -91,7 +91,7 @@ pub enum Error {
     Metrics_List(#[from] metrics::list::Error),
 }
 pub mod metric_definitions {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
@@ -103,7 +103,7 @@ pub mod metric_definitions {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -155,7 +155,7 @@ pub mod metric_definitions {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-01-01");
                     if let Some(metricnamespace) = &self.metricnamespace {
                         url.query_pairs_mut().append_pair("metricnamespace", metricnamespace);
                     }
@@ -187,7 +187,7 @@ pub mod metric_definitions {
     }
 }
 pub mod metrics {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
@@ -207,7 +207,7 @@ pub mod metrics {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -297,7 +297,7 @@ pub mod metrics {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-01-01");
                     if let Some(timespan) = &self.timespan {
                         url.query_pairs_mut().append_pair("timespan", timespan);
                     }

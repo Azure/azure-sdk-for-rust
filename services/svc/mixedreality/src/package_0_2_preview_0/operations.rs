@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -93,7 +93,7 @@ pub enum Error {
     BlobUploadEndpoint_Get(#[from] blob_upload_endpoint::get::Error),
 }
 pub mod ingestion_job {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the status of a job request."]
@@ -117,7 +117,7 @@ pub mod ingestion_job {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -164,7 +164,7 @@ pub mod ingestion_job {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "0.2-preview.0");
                     if let Some(x_mrc_cv) = &self.x_mrc_cv {
                         req_builder = req_builder.header("x-mrc-cv", x_mrc_cv);
                     }
@@ -195,7 +195,7 @@ pub mod ingestion_job {
         }
     }
     pub mod create {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -247,7 +247,7 @@ pub mod ingestion_job {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "0.2-preview.0");
                     if let Some(x_mrc_cv) = &self.x_mrc_cv {
                         req_builder = req_builder.header("x-mrc-cv", x_mrc_cv);
                     }
@@ -284,7 +284,7 @@ pub mod ingestion_job {
     }
 }
 pub mod blob_upload_endpoint {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a blob upload uri."]
@@ -297,7 +297,7 @@ pub mod blob_upload_endpoint {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -343,7 +343,7 @@ pub mod blob_upload_endpoint {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "0.2-preview.0");
                     if let Some(x_mrc_cv) = &self.x_mrc_cv {
                         req_builder = req_builder.header("x-mrc-cv", x_mrc_cv);
                     }

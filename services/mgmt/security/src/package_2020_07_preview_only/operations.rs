@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -108,7 +108,7 @@ pub enum Error {
     SqlVulnerabilityAssessmentBaselineRules_Add(#[from] sql_vulnerability_assessment_baseline_rules::add::Error),
 }
 pub mod sql_vulnerability_assessment_scans {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the scan details of a single scan record."]
@@ -130,7 +130,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -178,7 +178,7 @@ pub mod sql_vulnerability_assessment_scans {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = azure_core::EMPTY_BODY;
@@ -208,7 +208,7 @@ pub mod sql_vulnerability_assessment_scans {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -254,7 +254,7 @@ pub mod sql_vulnerability_assessment_scans {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = azure_core::EMPTY_BODY;
@@ -285,7 +285,7 @@ pub mod sql_vulnerability_assessment_scans {
     }
 }
 pub mod sql_vulnerability_assessment_scan_results {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the scan results of a single rule in a scan record."]
@@ -315,7 +315,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -365,7 +365,7 @@ pub mod sql_vulnerability_assessment_scan_results {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = azure_core::EMPTY_BODY;
@@ -395,7 +395,7 @@ pub mod sql_vulnerability_assessment_scan_results {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -443,7 +443,7 @@ pub mod sql_vulnerability_assessment_scan_results {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = azure_core::EMPTY_BODY;
@@ -474,7 +474,7 @@ pub mod sql_vulnerability_assessment_scan_results {
     }
 }
 pub mod sql_vulnerability_assessment_baseline_rules {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the results for a given rule in the Baseline."]
@@ -534,7 +534,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -582,7 +582,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = azure_core::EMPTY_BODY;
@@ -612,7 +612,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -665,7 +665,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = if let Some(body) = &self.body {
@@ -700,7 +700,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -753,7 +753,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = azure_core::EMPTY_BODY;
@@ -779,7 +779,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -825,7 +825,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = azure_core::EMPTY_BODY;
@@ -855,7 +855,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
         }
     }
     pub mod add {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -906,7 +906,7 @@ pub mod sql_vulnerability_assessment_baseline_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-01-preview");
                     let workspace_id = &self.workspace_id;
                     url.query_pairs_mut().append_pair("workspaceId", workspace_id);
                     let req_body = if let Some(body) = &self.body {

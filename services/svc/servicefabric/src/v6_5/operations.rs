@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -2877,7 +2877,7 @@ impl Client {
     }
 }
 pub mod get_cluster_manifest {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -2922,7 +2922,7 @@ pub mod get_cluster_manifest {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -2953,7 +2953,7 @@ pub mod get_cluster_manifest {
     }
 }
 pub mod get_cluster_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3023,7 +3023,7 @@ pub mod get_cluster_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(nodes_health_state_filter) = &self.nodes_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("NodesHealthStateFilter", &nodes_health_state_filter.to_string());
@@ -3076,7 +3076,7 @@ pub mod get_cluster_health {
     }
 }
 pub mod get_cluster_health_using_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3151,7 +3151,7 @@ pub mod get_cluster_health_using_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(nodes_health_state_filter) = &self.nodes_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("NodesHealthStateFilter", &nodes_health_state_filter.to_string());
@@ -3209,7 +3209,7 @@ pub mod get_cluster_health_using_policy {
     }
 }
 pub mod get_cluster_health_chunk {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3254,7 +3254,7 @@ pub mod get_cluster_health_chunk {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -3285,7 +3285,7 @@ pub mod get_cluster_health_chunk {
     }
 }
 pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3338,7 +3338,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let req_body = if let Some(cluster_health_chunk_query_description) = &self.cluster_health_chunk_query_description {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(cluster_health_chunk_query_description).map_err(Error::Serialize)?
@@ -3374,7 +3374,7 @@ pub mod get_cluster_health_chunk_using_policy_and_advanced_filters {
     }
 }
 pub mod report_cluster_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3425,7 +3425,7 @@ pub mod report_cluster_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.health_information).map_err(Error::Serialize)?;
                 if let Some(immediate) = &self.immediate {
@@ -3455,7 +3455,7 @@ pub mod report_cluster_health {
     }
 }
 pub mod get_provisioned_fabric_code_version_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3505,7 +3505,7 @@ pub mod get_provisioned_fabric_code_version_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(code_version) = &self.code_version {
                     url.query_pairs_mut().append_pair("CodeVersion", code_version);
                 }
@@ -3539,7 +3539,7 @@ pub mod get_provisioned_fabric_code_version_info_list {
     }
 }
 pub mod get_provisioned_fabric_config_version_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3589,7 +3589,7 @@ pub mod get_provisioned_fabric_config_version_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(config_version) = &self.config_version {
                     url.query_pairs_mut().append_pair("ConfigVersion", config_version);
                 }
@@ -3623,7 +3623,7 @@ pub mod get_provisioned_fabric_config_version_info_list {
     }
 }
 pub mod get_cluster_upgrade_progress {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3668,7 +3668,7 @@ pub mod get_cluster_upgrade_progress {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -3699,7 +3699,7 @@ pub mod get_cluster_upgrade_progress {
     }
 }
 pub mod get_cluster_configuration {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3745,7 +3745,7 @@ pub mod get_cluster_configuration {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let configuration_api_version = &self.configuration_api_version;
                 url.query_pairs_mut()
                     .append_pair("ConfigurationApiVersion", configuration_api_version);
@@ -3779,7 +3779,7 @@ pub mod get_cluster_configuration {
     }
 }
 pub mod get_cluster_configuration_upgrade_status {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3826,7 +3826,7 @@ pub mod get_cluster_configuration_upgrade_status {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -3857,7 +3857,7 @@ pub mod get_cluster_configuration_upgrade_status {
     }
 }
 pub mod get_upgrade_orchestration_service_state {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3904,7 +3904,7 @@ pub mod get_upgrade_orchestration_service_state {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -3935,7 +3935,7 @@ pub mod get_upgrade_orchestration_service_state {
     }
 }
 pub mod set_upgrade_orchestration_service_state {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -3983,7 +3983,7 @@ pub mod set_upgrade_orchestration_service_state {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.upgrade_orchestration_service_state).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -4015,7 +4015,7 @@ pub mod set_upgrade_orchestration_service_state {
     }
 }
 pub mod provision_cluster {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4061,7 +4061,7 @@ pub mod provision_cluster {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.provision_fabric_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -4088,7 +4088,7 @@ pub mod provision_cluster {
     }
 }
 pub mod unprovision_cluster {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4134,7 +4134,7 @@ pub mod unprovision_cluster {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.unprovision_fabric_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -4161,7 +4161,7 @@ pub mod unprovision_cluster {
     }
 }
 pub mod rollback_cluster_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4206,7 +4206,7 @@ pub mod rollback_cluster_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -4233,7 +4233,7 @@ pub mod rollback_cluster_upgrade {
     }
 }
 pub mod resume_cluster_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4279,7 +4279,7 @@ pub mod resume_cluster_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.resume_cluster_upgrade_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -4306,7 +4306,7 @@ pub mod resume_cluster_upgrade {
     }
 }
 pub mod start_cluster_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4352,7 +4352,7 @@ pub mod start_cluster_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.start_cluster_upgrade_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -4379,7 +4379,7 @@ pub mod start_cluster_upgrade {
     }
 }
 pub mod start_cluster_configuration_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4425,7 +4425,7 @@ pub mod start_cluster_configuration_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.cluster_configuration_upgrade_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -4452,7 +4452,7 @@ pub mod start_cluster_configuration_upgrade {
     }
 }
 pub mod update_cluster_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4498,7 +4498,7 @@ pub mod update_cluster_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.update_cluster_upgrade_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -4525,7 +4525,7 @@ pub mod update_cluster_upgrade {
     }
 }
 pub mod get_aad_metadata {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4570,7 +4570,7 @@ pub mod get_aad_metadata {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -4601,7 +4601,7 @@ pub mod get_aad_metadata {
     }
 }
 pub mod get_cluster_version {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4646,7 +4646,7 @@ pub mod get_cluster_version {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -4677,7 +4677,7 @@ pub mod get_cluster_version {
     }
 }
 pub mod get_cluster_load {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4722,7 +4722,7 @@ pub mod get_cluster_load {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -4753,7 +4753,7 @@ pub mod get_cluster_load {
     }
 }
 pub mod toggle_verbose_service_placement_health_reporting {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4799,7 +4799,7 @@ pub mod toggle_verbose_service_placement_health_reporting {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let enabled = &self.enabled;
                 url.query_pairs_mut().append_pair("Enabled", &enabled.to_string());
                 if let Some(timeout) = &self.timeout {
@@ -4828,7 +4828,7 @@ pub mod toggle_verbose_service_placement_health_reporting {
     }
 }
 pub mod get_node_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -4888,7 +4888,7 @@ pub mod get_node_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -4928,7 +4928,7 @@ pub mod get_node_info_list {
     }
 }
 pub mod get_node_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::NodeInfo),
@@ -4979,7 +4979,7 @@ pub mod get_node_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -5011,7 +5011,7 @@ pub mod get_node_info {
     }
 }
 pub mod get_node_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5062,7 +5062,7 @@ pub mod get_node_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -5097,7 +5097,7 @@ pub mod get_node_health {
     }
 }
 pub mod get_node_health_using_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5153,7 +5153,7 @@ pub mod get_node_health_using_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -5193,7 +5193,7 @@ pub mod get_node_health_using_policy {
     }
 }
 pub mod report_node_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5245,7 +5245,7 @@ pub mod report_node_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.health_information).map_err(Error::Serialize)?;
                 if let Some(immediate) = &self.immediate {
@@ -5275,7 +5275,7 @@ pub mod report_node_health {
     }
 }
 pub mod get_node_load_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5321,7 +5321,7 @@ pub mod get_node_load_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -5352,7 +5352,7 @@ pub mod get_node_load_info {
     }
 }
 pub mod disable_node {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5399,7 +5399,7 @@ pub mod disable_node {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.deactivation_intent_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -5426,7 +5426,7 @@ pub mod disable_node {
     }
 }
 pub mod enable_node {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5472,7 +5472,7 @@ pub mod enable_node {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -5499,7 +5499,7 @@ pub mod enable_node {
     }
 }
 pub mod remove_node_state {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5545,7 +5545,7 @@ pub mod remove_node_state {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -5572,7 +5572,7 @@ pub mod remove_node_state {
     }
 }
 pub mod restart_node {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5619,7 +5619,7 @@ pub mod restart_node {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.restart_node_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -5646,7 +5646,7 @@ pub mod restart_node {
     }
 }
 pub mod get_application_type_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5711,7 +5711,7 @@ pub mod get_application_type_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(application_type_definition_kind_filter) = &self.application_type_definition_kind_filter {
                     url.query_pairs_mut().append_pair(
                         "ApplicationTypeDefinitionKindFilter",
@@ -5758,7 +5758,7 @@ pub mod get_application_type_info_list {
     }
 }
 pub mod get_application_type_info_list_by_name {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -5824,7 +5824,7 @@ pub mod get_application_type_info_list_by_name {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(application_type_version) = &self.application_type_version {
                     url.query_pairs_mut()
                         .append_pair("ApplicationTypeVersion", application_type_version);
@@ -5869,7 +5869,7 @@ pub mod get_application_type_info_list_by_name {
     }
 }
 pub mod provision_application_type {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -5920,7 +5920,7 @@ pub mod provision_application_type {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body =
                     azure_core::to_json(&self.provision_application_type_description_base_required_body_param).map_err(Error::Serialize)?;
@@ -5949,7 +5949,7 @@ pub mod provision_application_type {
     }
 }
 pub mod unprovision_application_type {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200,
@@ -6005,7 +6005,7 @@ pub mod unprovision_application_type {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.unprovision_application_type_description_info).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -6033,7 +6033,7 @@ pub mod unprovision_application_type {
     }
 }
 pub mod get_service_type_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -6084,7 +6084,7 @@ pub mod get_service_type_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let application_type_version = &self.application_type_version;
                 url.query_pairs_mut()
                     .append_pair("ApplicationTypeVersion", application_type_version);
@@ -6118,7 +6118,7 @@ pub mod get_service_type_info_list {
     }
 }
 pub mod get_service_type_info_by_name {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::ServiceTypeInfo),
@@ -6176,7 +6176,7 @@ pub mod get_service_type_info_by_name {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let application_type_version = &self.application_type_version;
                 url.query_pairs_mut()
                     .append_pair("ApplicationTypeVersion", application_type_version);
@@ -6211,7 +6211,7 @@ pub mod get_service_type_info_by_name {
     }
 }
 pub mod get_service_manifest {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -6263,7 +6263,7 @@ pub mod get_service_manifest {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let application_type_version = &self.application_type_version;
                 url.query_pairs_mut()
                     .append_pair("ApplicationTypeVersion", application_type_version);
@@ -6299,7 +6299,7 @@ pub mod get_service_manifest {
     }
 }
 pub mod get_deployed_service_type_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -6356,7 +6356,7 @@ pub mod get_deployed_service_type_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(service_manifest_name) = &self.service_manifest_name {
                     url.query_pairs_mut().append_pair("ServiceManifestName", service_manifest_name);
                 }
@@ -6390,7 +6390,7 @@ pub mod get_deployed_service_type_info_list {
     }
 }
 pub mod get_deployed_service_type_info_by_name {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::DeployedServiceTypeInfoList),
@@ -6454,7 +6454,7 @@ pub mod get_deployed_service_type_info_by_name {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(service_manifest_name) = &self.service_manifest_name {
                     url.query_pairs_mut().append_pair("ServiceManifestName", service_manifest_name);
                 }
@@ -6489,7 +6489,7 @@ pub mod get_deployed_service_type_info_by_name {
     }
 }
 pub mod create_application {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -6535,7 +6535,7 @@ pub mod create_application {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.application_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -6562,7 +6562,7 @@ pub mod create_application {
     }
 }
 pub mod delete_application {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -6613,7 +6613,7 @@ pub mod delete_application {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(force_remove) = &self.force_remove {
                     url.query_pairs_mut().append_pair("ForceRemove", &force_remove.to_string());
                 }
@@ -6643,7 +6643,7 @@ pub mod delete_application {
     }
 }
 pub mod get_application_load_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::ApplicationLoadInfo),
@@ -6698,7 +6698,7 @@ pub mod get_application_load_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -6730,7 +6730,7 @@ pub mod get_application_load_info {
     }
 }
 pub mod get_application_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -6800,7 +6800,7 @@ pub mod get_application_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(application_definition_kind_filter) = &self.application_definition_kind_filter {
                     url.query_pairs_mut()
                         .append_pair("ApplicationDefinitionKindFilter", &application_definition_kind_filter.to_string());
@@ -6848,7 +6848,7 @@ pub mod get_application_info_list {
     }
 }
 pub mod get_application_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::ApplicationInfo),
@@ -6904,7 +6904,7 @@ pub mod get_application_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(exclude_application_parameters) = &self.exclude_application_parameters {
                     url.query_pairs_mut()
                         .append_pair("ExcludeApplicationParameters", &exclude_application_parameters.to_string());
@@ -6940,7 +6940,7 @@ pub mod get_application_info {
     }
 }
 pub mod get_application_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7006,7 +7006,7 @@ pub mod get_application_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -7055,7 +7055,7 @@ pub mod get_application_health {
     }
 }
 pub mod get_application_health_using_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7126,7 +7126,7 @@ pub mod get_application_health_using_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -7180,7 +7180,7 @@ pub mod get_application_health_using_policy {
     }
 }
 pub mod report_application_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7232,7 +7232,7 @@ pub mod report_application_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.health_information).map_err(Error::Serialize)?;
                 if let Some(immediate) = &self.immediate {
@@ -7262,7 +7262,7 @@ pub mod report_application_health {
     }
 }
 pub mod start_application_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7309,7 +7309,7 @@ pub mod start_application_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.application_upgrade_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -7336,7 +7336,7 @@ pub mod start_application_upgrade {
     }
 }
 pub mod get_application_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7388,7 +7388,7 @@ pub mod get_application_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -7419,7 +7419,7 @@ pub mod get_application_upgrade {
     }
 }
 pub mod update_application_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7466,7 +7466,7 @@ pub mod update_application_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.application_upgrade_update_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -7493,7 +7493,7 @@ pub mod update_application_upgrade {
     }
 }
 pub mod resume_application_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7544,7 +7544,7 @@ pub mod resume_application_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.resume_application_upgrade_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -7571,7 +7571,7 @@ pub mod resume_application_upgrade {
     }
 }
 pub mod rollback_application_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7617,7 +7617,7 @@ pub mod rollback_application_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -7644,7 +7644,7 @@ pub mod rollback_application_upgrade {
     }
 }
 pub mod get_deployed_application_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7707,7 +7707,7 @@ pub mod get_deployed_application_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -7748,7 +7748,7 @@ pub mod get_deployed_application_info_list {
     }
 }
 pub mod get_deployed_application_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::DeployedApplicationInfo),
@@ -7810,7 +7810,7 @@ pub mod get_deployed_application_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -7846,7 +7846,7 @@ pub mod get_deployed_application_info {
     }
 }
 pub mod get_deployed_application_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -7913,7 +7913,7 @@ pub mod get_deployed_application_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -7958,7 +7958,7 @@ pub mod get_deployed_application_health {
     }
 }
 pub mod get_deployed_application_health_using_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8030,7 +8030,7 @@ pub mod get_deployed_application_health_using_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -8080,7 +8080,7 @@ pub mod get_deployed_application_health_using_policy {
     }
 }
 pub mod report_deployed_application_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8138,7 +8138,7 @@ pub mod report_deployed_application_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.health_information).map_err(Error::Serialize)?;
                 if let Some(immediate) = &self.immediate {
@@ -8168,7 +8168,7 @@ pub mod report_deployed_application_health {
     }
 }
 pub mod get_application_manifest {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8219,7 +8219,7 @@ pub mod get_application_manifest {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let application_type_version = &self.application_type_version;
                 url.query_pairs_mut()
                     .append_pair("ApplicationTypeVersion", application_type_version);
@@ -8253,7 +8253,7 @@ pub mod get_application_manifest {
     }
 }
 pub mod get_service_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8309,7 +8309,7 @@ pub mod get_service_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(service_type_name) = &self.service_type_name {
                     url.query_pairs_mut().append_pair("ServiceTypeName", service_type_name);
                 }
@@ -8346,7 +8346,7 @@ pub mod get_service_info_list {
     }
 }
 pub mod get_service_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::ServiceInfo),
@@ -8403,7 +8403,7 @@ pub mod get_service_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -8435,7 +8435,7 @@ pub mod get_service_info {
     }
 }
 pub mod get_application_name_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8481,7 +8481,7 @@ pub mod get_application_name_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -8512,7 +8512,7 @@ pub mod get_application_name_info {
     }
 }
 pub mod create_service {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8563,7 +8563,7 @@ pub mod create_service {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.service_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -8590,7 +8590,7 @@ pub mod create_service {
     }
 }
 pub mod create_service_from_template {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8641,7 +8641,7 @@ pub mod create_service_from_template {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.service_from_template_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -8668,7 +8668,7 @@ pub mod create_service_from_template {
     }
 }
 pub mod delete_service {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8719,7 +8719,7 @@ pub mod delete_service {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(force_remove) = &self.force_remove {
                     url.query_pairs_mut().append_pair("ForceRemove", &force_remove.to_string());
                 }
@@ -8749,7 +8749,7 @@ pub mod delete_service {
     }
 }
 pub mod update_service {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8796,7 +8796,7 @@ pub mod update_service {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.service_update_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -8823,7 +8823,7 @@ pub mod update_service {
     }
 }
 pub mod get_service_description {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8869,7 +8869,7 @@ pub mod get_service_description {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -8900,7 +8900,7 @@ pub mod get_service_description {
     }
 }
 pub mod get_service_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -8961,7 +8961,7 @@ pub mod get_service_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -9004,7 +9004,7 @@ pub mod get_service_health {
     }
 }
 pub mod get_service_health_using_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9070,7 +9070,7 @@ pub mod get_service_health_using_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -9118,7 +9118,7 @@ pub mod get_service_health_using_policy {
     }
 }
 pub mod report_service_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9170,7 +9170,7 @@ pub mod report_service_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.health_information).map_err(Error::Serialize)?;
                 if let Some(immediate) = &self.immediate {
@@ -9200,7 +9200,7 @@ pub mod report_service_health {
     }
 }
 pub mod resolve_service {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9261,7 +9261,7 @@ pub mod resolve_service {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(partition_key_type) = &self.partition_key_type {
                     url.query_pairs_mut()
                         .append_pair("PartitionKeyType", &partition_key_type.to_string());
@@ -9302,7 +9302,7 @@ pub mod resolve_service {
     }
 }
 pub mod get_unplaced_replica_information {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9362,7 +9362,7 @@ pub mod get_unplaced_replica_information {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(partition_id) = &self.partition_id {
                     url.query_pairs_mut().append_pair("PartitionId", partition_id);
                 }
@@ -9400,7 +9400,7 @@ pub mod get_unplaced_replica_information {
     }
 }
 pub mod get_partition_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9451,7 +9451,7 @@ pub mod get_partition_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -9485,7 +9485,7 @@ pub mod get_partition_info_list {
     }
 }
 pub mod get_partition_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::ServicePartitionInfo),
@@ -9536,7 +9536,7 @@ pub mod get_partition_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -9568,7 +9568,7 @@ pub mod get_partition_info {
     }
 }
 pub mod get_service_name_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9614,7 +9614,7 @@ pub mod get_service_name_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -9645,7 +9645,7 @@ pub mod get_service_name_info {
     }
 }
 pub mod get_partition_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9706,7 +9706,7 @@ pub mod get_partition_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -9749,7 +9749,7 @@ pub mod get_partition_health {
     }
 }
 pub mod get_partition_health_using_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9815,7 +9815,7 @@ pub mod get_partition_health_using_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -9863,7 +9863,7 @@ pub mod get_partition_health_using_policy {
     }
 }
 pub mod report_partition_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9915,7 +9915,7 @@ pub mod report_partition_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.health_information).map_err(Error::Serialize)?;
                 if let Some(immediate) = &self.immediate {
@@ -9945,7 +9945,7 @@ pub mod report_partition_health {
     }
 }
 pub mod get_partition_load_information {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -9991,7 +9991,7 @@ pub mod get_partition_load_information {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -10022,7 +10022,7 @@ pub mod get_partition_load_information {
     }
 }
 pub mod reset_partition_load {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10068,7 +10068,7 @@ pub mod reset_partition_load {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -10095,7 +10095,7 @@ pub mod reset_partition_load {
     }
 }
 pub mod recover_partition {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10141,7 +10141,7 @@ pub mod recover_partition {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -10168,7 +10168,7 @@ pub mod recover_partition {
     }
 }
 pub mod recover_service_partitions {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10218,7 +10218,7 @@ pub mod recover_service_partitions {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -10245,7 +10245,7 @@ pub mod recover_service_partitions {
     }
 }
 pub mod recover_system_partitions {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10290,7 +10290,7 @@ pub mod recover_system_partitions {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -10317,7 +10317,7 @@ pub mod recover_system_partitions {
     }
 }
 pub mod recover_all_partitions {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10362,7 +10362,7 @@ pub mod recover_all_partitions {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -10389,7 +10389,7 @@ pub mod recover_all_partitions {
     }
 }
 pub mod move_primary_replica {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10445,7 +10445,7 @@ pub mod move_primary_replica {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(node_name) = &self.node_name {
                     url.query_pairs_mut().append_pair("NodeName", node_name);
                 }
@@ -10479,7 +10479,7 @@ pub mod move_primary_replica {
     }
 }
 pub mod move_secondary_replica {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10540,7 +10540,7 @@ pub mod move_secondary_replica {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let current_node_name = &self.current_node_name;
                 url.query_pairs_mut().append_pair("CurrentNodeName", current_node_name);
                 if let Some(new_node_name) = &self.new_node_name {
@@ -10576,7 +10576,7 @@ pub mod move_secondary_replica {
     }
 }
 pub mod create_repair_task {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10617,7 +10617,7 @@ pub mod create_repair_task {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.repair_task).map_err(Error::Serialize)?;
                 req_builder = req_builder.uri(url.as_str());
@@ -10646,7 +10646,7 @@ pub mod create_repair_task {
     }
 }
 pub mod cancel_repair_task {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10687,7 +10687,7 @@ pub mod cancel_repair_task {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.repair_task_cancel_description).map_err(Error::Serialize)?;
                 req_builder = req_builder.uri(url.as_str());
@@ -10716,7 +10716,7 @@ pub mod cancel_repair_task {
     }
 }
 pub mod delete_repair_task {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10757,7 +10757,7 @@ pub mod delete_repair_task {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.repair_task_delete_description).map_err(Error::Serialize)?;
                 req_builder = req_builder.uri(url.as_str());
@@ -10781,7 +10781,7 @@ pub mod delete_repair_task {
     }
 }
 pub mod get_repair_task_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10836,7 +10836,7 @@ pub mod get_repair_task_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(task_id_filter) = &self.task_id_filter {
                     url.query_pairs_mut().append_pair("TaskIdFilter", task_id_filter);
                 }
@@ -10873,7 +10873,7 @@ pub mod get_repair_task_list {
     }
 }
 pub mod force_approve_repair_task {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10914,7 +10914,7 @@ pub mod force_approve_repair_task {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.repair_task_approve_description).map_err(Error::Serialize)?;
                 req_builder = req_builder.uri(url.as_str());
@@ -10943,7 +10943,7 @@ pub mod force_approve_repair_task {
     }
 }
 pub mod update_repair_task_health_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -10984,7 +10984,7 @@ pub mod update_repair_task_health_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.repair_task_update_health_policy_description).map_err(Error::Serialize)?;
                 req_builder = req_builder.uri(url.as_str());
@@ -11013,7 +11013,7 @@ pub mod update_repair_task_health_policy {
     }
 }
 pub mod update_repair_execution_state {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11054,7 +11054,7 @@ pub mod update_repair_execution_state {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.repair_task).map_err(Error::Serialize)?;
                 req_builder = req_builder.uri(url.as_str());
@@ -11083,7 +11083,7 @@ pub mod update_repair_execution_state {
     }
 }
 pub mod get_replica_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11134,7 +11134,7 @@ pub mod get_replica_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -11168,7 +11168,7 @@ pub mod get_replica_info_list {
     }
 }
 pub mod get_replica_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::ReplicaInfo),
@@ -11225,7 +11225,7 @@ pub mod get_replica_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -11257,7 +11257,7 @@ pub mod get_replica_info {
     }
 }
 pub mod get_replica_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11314,7 +11314,7 @@ pub mod get_replica_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -11349,7 +11349,7 @@ pub mod get_replica_health {
     }
 }
 pub mod get_replica_health_using_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11411,7 +11411,7 @@ pub mod get_replica_health_using_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -11451,7 +11451,7 @@ pub mod get_replica_health_using_policy {
     }
 }
 pub mod report_replica_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11510,7 +11510,7 @@ pub mod report_replica_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let service_kind = &self.service_kind;
                 url.query_pairs_mut().append_pair("ServiceKind", service_kind);
                 req_builder = req_builder.header("content-type", "application/json");
@@ -11542,7 +11542,7 @@ pub mod report_replica_health {
     }
 }
 pub mod get_deployed_service_replica_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::DeployedServiceReplicaInfoList),
@@ -11609,7 +11609,7 @@ pub mod get_deployed_service_replica_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(partition_id) = &self.partition_id {
                     url.query_pairs_mut().append_pair("PartitionId", partition_id);
                 }
@@ -11647,7 +11647,7 @@ pub mod get_deployed_service_replica_info_list {
     }
 }
 pub mod get_deployed_service_replica_detail_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11703,7 +11703,7 @@ pub mod get_deployed_service_replica_detail_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -11734,7 +11734,7 @@ pub mod get_deployed_service_replica_detail_info {
     }
 }
 pub mod get_deployed_service_replica_detail_info_by_partition_id {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11788,7 +11788,7 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -11819,7 +11819,7 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
     }
 }
 pub mod restart_replica {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11873,7 +11873,7 @@ pub mod restart_replica {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -11900,7 +11900,7 @@ pub mod restart_replica {
     }
 }
 pub mod remove_replica {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -11959,7 +11959,7 @@ pub mod remove_replica {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(force_remove) = &self.force_remove {
                     url.query_pairs_mut().append_pair("ForceRemove", &force_remove.to_string());
                 }
@@ -11989,7 +11989,7 @@ pub mod remove_replica {
     }
 }
 pub mod get_deployed_service_package_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12043,7 +12043,7 @@ pub mod get_deployed_service_package_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -12074,7 +12074,7 @@ pub mod get_deployed_service_package_info_list {
     }
 }
 pub mod get_deployed_service_package_info_list_by_name {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::DeployedServicePackageInfoList),
@@ -12133,7 +12133,7 @@ pub mod get_deployed_service_package_info_list_by_name {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -12165,7 +12165,7 @@ pub mod get_deployed_service_package_info_list_by_name {
     }
 }
 pub mod get_deployed_service_package_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12224,7 +12224,7 @@ pub mod get_deployed_service_package_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -12259,7 +12259,7 @@ pub mod get_deployed_service_package_health {
     }
 }
 pub mod get_deployed_service_package_health_using_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12323,7 +12323,7 @@ pub mod get_deployed_service_package_health_using_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(events_health_state_filter) = &self.events_health_state_filter {
                     url.query_pairs_mut()
                         .append_pair("EventsHealthStateFilter", &events_health_state_filter.to_string());
@@ -12363,7 +12363,7 @@ pub mod get_deployed_service_package_health_using_policy {
     }
 }
 pub mod report_deployed_service_package_health {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12423,7 +12423,7 @@ pub mod report_deployed_service_package_health {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.health_information).map_err(Error::Serialize)?;
                 if let Some(immediate) = &self.immediate {
@@ -12453,7 +12453,7 @@ pub mod report_deployed_service_package_health {
     }
 }
 pub mod deploy_service_package_to_node {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12500,7 +12500,7 @@ pub mod deploy_service_package_to_node {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.deploy_service_package_to_node_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -12527,7 +12527,7 @@ pub mod deploy_service_package_to_node {
     }
 }
 pub mod get_deployed_code_package_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12589,7 +12589,7 @@ pub mod get_deployed_code_package_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(service_manifest_name) = &self.service_manifest_name {
                     url.query_pairs_mut().append_pair("ServiceManifestName", service_manifest_name);
                 }
@@ -12626,7 +12626,7 @@ pub mod get_deployed_code_package_info_list {
     }
 }
 pub mod restart_deployed_code_package {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12679,7 +12679,7 @@ pub mod restart_deployed_code_package {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.restart_deployed_code_package_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -12706,7 +12706,7 @@ pub mod restart_deployed_code_package {
     }
 }
 pub mod get_container_logs_deployed_on_node {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12770,7 +12770,7 @@ pub mod get_container_logs_deployed_on_node {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let service_manifest_name = &self.service_manifest_name;
                 url.query_pairs_mut().append_pair("ServiceManifestName", service_manifest_name);
                 let code_package_name = &self.code_package_name;
@@ -12811,7 +12811,7 @@ pub mod get_container_logs_deployed_on_node {
     }
 }
 pub mod invoke_container_api {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12867,7 +12867,7 @@ pub mod invoke_container_api {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let service_manifest_name = &self.service_manifest_name;
                 url.query_pairs_mut().append_pair("ServiceManifestName", service_manifest_name);
                 let code_package_name = &self.code_package_name;
@@ -12905,7 +12905,7 @@ pub mod invoke_container_api {
     }
 }
 pub mod create_compose_deployment {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -12951,7 +12951,7 @@ pub mod create_compose_deployment {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.create_compose_deployment_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -12978,7 +12978,7 @@ pub mod create_compose_deployment {
     }
 }
 pub mod get_compose_deployment_status {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13024,7 +13024,7 @@ pub mod get_compose_deployment_status {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -13055,7 +13055,7 @@ pub mod get_compose_deployment_status {
     }
 }
 pub mod get_compose_deployment_status_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13112,7 +13112,7 @@ pub mod get_compose_deployment_status_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -13149,7 +13149,7 @@ pub mod get_compose_deployment_status_list {
     }
 }
 pub mod get_compose_deployment_upgrade_progress {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13201,7 +13201,7 @@ pub mod get_compose_deployment_upgrade_progress {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -13232,7 +13232,7 @@ pub mod get_compose_deployment_upgrade_progress {
     }
 }
 pub mod remove_compose_deployment {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13278,7 +13278,7 @@ pub mod remove_compose_deployment {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -13305,7 +13305,7 @@ pub mod remove_compose_deployment {
     }
 }
 pub mod start_compose_deployment_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13352,7 +13352,7 @@ pub mod start_compose_deployment_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.compose_deployment_upgrade_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -13379,7 +13379,7 @@ pub mod start_compose_deployment_upgrade {
     }
 }
 pub mod start_rollback_compose_deployment_upgrade {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13429,7 +13429,7 @@ pub mod start_rollback_compose_deployment_upgrade {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -13456,7 +13456,7 @@ pub mod start_rollback_compose_deployment_upgrade {
     }
 }
 pub mod get_chaos {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13501,7 +13501,7 @@ pub mod get_chaos {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -13532,7 +13532,7 @@ pub mod get_chaos {
     }
 }
 pub mod start_chaos {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13578,7 +13578,7 @@ pub mod start_chaos {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.chaos_parameters).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -13605,7 +13605,7 @@ pub mod start_chaos {
     }
 }
 pub mod stop_chaos {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13650,7 +13650,7 @@ pub mod stop_chaos {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -13677,7 +13677,7 @@ pub mod stop_chaos {
     }
 }
 pub mod get_chaos_events {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13742,7 +13742,7 @@ pub mod get_chaos_events {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -13785,7 +13785,7 @@ pub mod get_chaos_events {
     }
 }
 pub mod get_chaos_schedule {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13830,7 +13830,7 @@ pub mod get_chaos_schedule {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -13861,7 +13861,7 @@ pub mod get_chaos_schedule {
     }
 }
 pub mod post_chaos_schedule {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13907,7 +13907,7 @@ pub mod post_chaos_schedule {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -13934,7 +13934,7 @@ pub mod post_chaos_schedule {
     }
 }
 pub mod get_image_store_content {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -13980,7 +13980,7 @@ pub mod get_image_store_content {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -14011,7 +14011,7 @@ pub mod get_image_store_content {
     }
 }
 pub mod upload_file {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14057,7 +14057,7 @@ pub mod upload_file {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -14083,7 +14083,7 @@ pub mod upload_file {
     }
 }
 pub mod delete_image_store_content {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14129,7 +14129,7 @@ pub mod delete_image_store_content {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -14155,7 +14155,7 @@ pub mod delete_image_store_content {
     }
 }
 pub mod get_image_store_root_content {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14200,7 +14200,7 @@ pub mod get_image_store_root_content {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -14231,7 +14231,7 @@ pub mod get_image_store_root_content {
     }
 }
 pub mod copy_image_store_content {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14277,7 +14277,7 @@ pub mod copy_image_store_content {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.image_store_copy_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -14304,7 +14304,7 @@ pub mod copy_image_store_content {
     }
 }
 pub mod delete_image_store_upload_session {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14350,7 +14350,7 @@ pub mod delete_image_store_upload_session {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let session_id = &self.session_id;
                 url.query_pairs_mut().append_pair("session-id", session_id);
                 if let Some(timeout) = &self.timeout {
@@ -14378,7 +14378,7 @@ pub mod delete_image_store_upload_session {
     }
 }
 pub mod commit_image_store_upload_session {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14424,7 +14424,7 @@ pub mod commit_image_store_upload_session {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let session_id = &self.session_id;
                 url.query_pairs_mut().append_pair("session-id", session_id);
                 if let Some(timeout) = &self.timeout {
@@ -14453,7 +14453,7 @@ pub mod commit_image_store_upload_session {
     }
 }
 pub mod get_image_store_upload_session_by_id {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14499,7 +14499,7 @@ pub mod get_image_store_upload_session_by_id {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let session_id = &self.session_id;
                 url.query_pairs_mut().append_pair("session-id", session_id);
                 if let Some(timeout) = &self.timeout {
@@ -14532,7 +14532,7 @@ pub mod get_image_store_upload_session_by_id {
     }
 }
 pub mod get_image_store_upload_session_by_path {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14578,7 +14578,7 @@ pub mod get_image_store_upload_session_by_path {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -14609,7 +14609,7 @@ pub mod get_image_store_upload_session_by_path {
     }
 }
 pub mod upload_file_chunk {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14657,7 +14657,7 @@ pub mod upload_file_chunk {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let session_id = &self.session_id;
                 url.query_pairs_mut().append_pair("session-id", session_id);
                 req_builder = req_builder.header("Content-Range", &self.content_range);
@@ -14686,7 +14686,7 @@ pub mod upload_file_chunk {
     }
 }
 pub mod get_image_store_root_folder_size {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14731,7 +14731,7 @@ pub mod get_image_store_root_folder_size {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -14762,7 +14762,7 @@ pub mod get_image_store_root_folder_size {
     }
 }
 pub mod get_image_store_folder_size {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14808,7 +14808,7 @@ pub mod get_image_store_folder_size {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -14839,7 +14839,7 @@ pub mod get_image_store_folder_size {
     }
 }
 pub mod invoke_infrastructure_command {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14890,7 +14890,7 @@ pub mod invoke_infrastructure_command {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let command = &self.command;
                 url.query_pairs_mut().append_pair("Command", command);
                 if let Some(service_id) = &self.service_id {
@@ -14927,7 +14927,7 @@ pub mod invoke_infrastructure_command {
     }
 }
 pub mod invoke_infrastructure_query {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -14978,7 +14978,7 @@ pub mod invoke_infrastructure_query {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let command = &self.command;
                 url.query_pairs_mut().append_pair("Command", command);
                 if let Some(service_id) = &self.service_id {
@@ -15014,7 +15014,7 @@ pub mod invoke_infrastructure_query {
     }
 }
 pub mod start_data_loss {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15068,7 +15068,7 @@ pub mod start_data_loss {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 let data_loss_mode = &self.data_loss_mode;
@@ -15099,7 +15099,7 @@ pub mod start_data_loss {
     }
 }
 pub mod get_data_loss_progress {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15152,7 +15152,7 @@ pub mod get_data_loss_progress {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 if let Some(timeout) = &self.timeout {
@@ -15185,7 +15185,7 @@ pub mod get_data_loss_progress {
     }
 }
 pub mod start_quorum_loss {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15240,7 +15240,7 @@ pub mod start_quorum_loss {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 let quorum_loss_mode = &self.quorum_loss_mode;
@@ -15274,7 +15274,7 @@ pub mod start_quorum_loss {
     }
 }
 pub mod get_quorum_loss_progress {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15327,7 +15327,7 @@ pub mod get_quorum_loss_progress {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 if let Some(timeout) = &self.timeout {
@@ -15360,7 +15360,7 @@ pub mod get_quorum_loss_progress {
     }
 }
 pub mod start_partition_restart {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15414,7 +15414,7 @@ pub mod start_partition_restart {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 let restart_partition_mode = &self.restart_partition_mode;
@@ -15445,7 +15445,7 @@ pub mod start_partition_restart {
     }
 }
 pub mod get_partition_restart_progress {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15498,7 +15498,7 @@ pub mod get_partition_restart_progress {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 if let Some(timeout) = &self.timeout {
@@ -15531,7 +15531,7 @@ pub mod get_partition_restart_progress {
     }
 }
 pub mod start_node_transition {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15581,7 +15581,7 @@ pub mod start_node_transition {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 let node_transition_type = &self.node_transition_type;
@@ -15617,7 +15617,7 @@ pub mod start_node_transition {
     }
 }
 pub mod get_node_transition_progress {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15668,7 +15668,7 @@ pub mod get_node_transition_progress {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 if let Some(timeout) = &self.timeout {
@@ -15701,7 +15701,7 @@ pub mod get_node_transition_progress {
     }
 }
 pub mod get_fault_operation_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15748,7 +15748,7 @@ pub mod get_fault_operation_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let type_filter = &self.type_filter;
                 url.query_pairs_mut().append_pair("TypeFilter", &type_filter.to_string());
                 let state_filter = &self.state_filter;
@@ -15783,7 +15783,7 @@ pub mod get_fault_operation_list {
     }
 }
 pub mod cancel_operation {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15830,7 +15830,7 @@ pub mod cancel_operation {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let operation_id = &self.operation_id;
                 url.query_pairs_mut().append_pair("OperationId", operation_id);
                 let force = &self.force;
@@ -15861,7 +15861,7 @@ pub mod cancel_operation {
     }
 }
 pub mod create_backup_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15907,7 +15907,7 @@ pub mod create_backup_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.backup_policy_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -15934,7 +15934,7 @@ pub mod create_backup_policy {
     }
 }
 pub mod delete_backup_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -15984,7 +15984,7 @@ pub mod delete_backup_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -16011,7 +16011,7 @@ pub mod delete_backup_policy {
     }
 }
 pub mod get_backup_policy_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16068,7 +16068,7 @@ pub mod get_backup_policy_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -16105,7 +16105,7 @@ pub mod get_backup_policy_list {
     }
 }
 pub mod get_backup_policy_by_name {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16155,7 +16155,7 @@ pub mod get_backup_policy_by_name {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -16186,7 +16186,7 @@ pub mod get_backup_policy_by_name {
     }
 }
 pub mod get_all_entities_backed_up_by_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16246,7 +16246,7 @@ pub mod get_all_entities_backed_up_by_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -16283,7 +16283,7 @@ pub mod get_all_entities_backed_up_by_policy {
     }
 }
 pub mod update_backup_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16334,7 +16334,7 @@ pub mod update_backup_policy {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.backup_policy_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -16361,7 +16361,7 @@ pub mod update_backup_policy {
     }
 }
 pub mod enable_application_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16408,7 +16408,7 @@ pub mod enable_application_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.enable_backup_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -16435,7 +16435,7 @@ pub mod enable_application_backup {
     }
 }
 pub mod disable_application_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16486,7 +16486,7 @@ pub mod disable_application_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -16517,7 +16517,7 @@ pub mod disable_application_backup {
     }
 }
 pub mod get_application_backup_configuration_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16579,7 +16579,7 @@ pub mod get_application_backup_configuration_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -16616,7 +16616,7 @@ pub mod get_application_backup_configuration_info {
     }
 }
 pub mod get_application_backup_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16687,7 +16687,7 @@ pub mod get_application_backup_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -16733,7 +16733,7 @@ pub mod get_application_backup_list {
     }
 }
 pub mod suspend_application_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16779,7 +16779,7 @@ pub mod suspend_application_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -16806,7 +16806,7 @@ pub mod suspend_application_backup {
     }
 }
 pub mod resume_application_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16852,7 +16852,7 @@ pub mod resume_application_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -16879,7 +16879,7 @@ pub mod resume_application_backup {
     }
 }
 pub mod enable_service_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -16926,7 +16926,7 @@ pub mod enable_service_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.enable_backup_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -16953,7 +16953,7 @@ pub mod enable_service_backup {
     }
 }
 pub mod disable_service_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17004,7 +17004,7 @@ pub mod disable_service_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let req_body = if let Some(disable_backup_description) = &self.disable_backup_description {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(disable_backup_description).map_err(Error::Serialize)?
@@ -17035,7 +17035,7 @@ pub mod disable_service_backup {
     }
 }
 pub mod get_service_backup_configuration_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17097,7 +17097,7 @@ pub mod get_service_backup_configuration_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(continuation_token) = &self.continuation_token {
                     url.query_pairs_mut().append_pair("ContinuationToken", continuation_token);
                 }
@@ -17134,7 +17134,7 @@ pub mod get_service_backup_configuration_info {
     }
 }
 pub mod get_service_backup_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17205,7 +17205,7 @@ pub mod get_service_backup_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -17251,7 +17251,7 @@ pub mod get_service_backup_list {
     }
 }
 pub mod suspend_service_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17297,7 +17297,7 @@ pub mod suspend_service_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -17324,7 +17324,7 @@ pub mod suspend_service_backup {
     }
 }
 pub mod resume_service_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17370,7 +17370,7 @@ pub mod resume_service_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -17397,7 +17397,7 @@ pub mod resume_service_backup {
     }
 }
 pub mod enable_partition_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17444,7 +17444,7 @@ pub mod enable_partition_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.enable_backup_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -17471,7 +17471,7 @@ pub mod enable_partition_backup {
     }
 }
 pub mod disable_partition_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17522,7 +17522,7 @@ pub mod disable_partition_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let req_body = if let Some(disable_backup_description) = &self.disable_backup_description {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(disable_backup_description).map_err(Error::Serialize)?
@@ -17553,7 +17553,7 @@ pub mod disable_partition_backup {
     }
 }
 pub mod get_partition_backup_configuration_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17605,7 +17605,7 @@ pub mod get_partition_backup_configuration_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -17636,7 +17636,7 @@ pub mod get_partition_backup_configuration_info {
     }
 }
 pub mod get_partition_backup_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17697,7 +17697,7 @@ pub mod get_partition_backup_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -17737,7 +17737,7 @@ pub mod get_partition_backup_list {
     }
 }
 pub mod suspend_partition_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17783,7 +17783,7 @@ pub mod suspend_partition_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -17810,7 +17810,7 @@ pub mod suspend_partition_backup {
     }
 }
 pub mod resume_partition_backup {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17856,7 +17856,7 @@ pub mod resume_partition_backup {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -17883,7 +17883,7 @@ pub mod resume_partition_backup {
     }
 }
 pub mod backup_partition {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -17939,7 +17939,7 @@ pub mod backup_partition {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let req_body = if let Some(backup_partition_description) = &self.backup_partition_description {
                     req_builder = req_builder.header("content-type", "application/json");
                     azure_core::to_json(backup_partition_description).map_err(Error::Serialize)?
@@ -17973,7 +17973,7 @@ pub mod backup_partition {
     }
 }
 pub mod get_partition_backup_progress {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18019,7 +18019,7 @@ pub mod get_partition_backup_progress {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -18050,7 +18050,7 @@ pub mod get_partition_backup_progress {
     }
 }
 pub mod restore_partition {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18102,7 +18102,7 @@ pub mod restore_partition {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.restore_partition_description).map_err(Error::Serialize)?;
                 if let Some(restore_timeout) = &self.restore_timeout {
@@ -18132,7 +18132,7 @@ pub mod restore_partition {
     }
 }
 pub mod get_partition_restore_progress {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18178,7 +18178,7 @@ pub mod get_partition_restore_progress {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -18209,7 +18209,7 @@ pub mod get_partition_restore_progress {
     }
 }
 pub mod get_backups_from_backup_location {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18265,7 +18265,7 @@ pub mod get_backups_from_backup_location {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -18303,7 +18303,7 @@ pub mod get_backups_from_backup_location {
     }
 }
 pub mod create_name {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18349,7 +18349,7 @@ pub mod create_name {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.name_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -18376,7 +18376,7 @@ pub mod create_name {
     }
 }
 pub mod get_name_exists_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18422,7 +18422,7 @@ pub mod get_name_exists_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -18448,7 +18448,7 @@ pub mod get_name_exists_info {
     }
 }
 pub mod delete_name {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18494,7 +18494,7 @@ pub mod delete_name {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -18520,7 +18520,7 @@ pub mod delete_name {
     }
 }
 pub mod get_sub_name_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18576,7 +18576,7 @@ pub mod get_sub_name_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(recursive) = &self.recursive {
                     url.query_pairs_mut().append_pair("Recursive", &recursive.to_string());
                 }
@@ -18613,7 +18613,7 @@ pub mod get_sub_name_info_list {
     }
 }
 pub mod get_property_info_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18669,7 +18669,7 @@ pub mod get_property_info_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(include_values) = &self.include_values {
                     url.query_pairs_mut().append_pair("IncludeValues", &include_values.to_string());
                 }
@@ -18706,7 +18706,7 @@ pub mod get_property_info_list {
     }
 }
 pub mod get_property_info {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18753,7 +18753,7 @@ pub mod get_property_info {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let property_name = &self.property_name;
                 url.query_pairs_mut().append_pair("PropertyName", property_name);
                 if let Some(timeout) = &self.timeout {
@@ -18786,7 +18786,7 @@ pub mod get_property_info {
     }
 }
 pub mod put_property {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18833,7 +18833,7 @@ pub mod put_property {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.property_description).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -18860,7 +18860,7 @@ pub mod put_property {
     }
 }
 pub mod delete_property {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -18907,7 +18907,7 @@ pub mod delete_property {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 let property_name = &self.property_name;
                 url.query_pairs_mut().append_pair("PropertyName", property_name);
                 if let Some(timeout) = &self.timeout {
@@ -18935,7 +18935,7 @@ pub mod delete_property {
     }
 }
 pub mod submit_property_batch {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -18984,7 +18984,7 @@ pub mod submit_property_batch {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.property_batch_description_list).map_err(Error::Serialize)?;
                 if let Some(timeout) = &self.timeout {
@@ -19022,7 +19022,7 @@ pub mod submit_property_batch {
     }
 }
 pub mod get_cluster_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19084,7 +19084,7 @@ pub mod get_cluster_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -19130,7 +19130,7 @@ pub mod get_cluster_event_list {
     }
 }
 pub mod get_containers_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19192,7 +19192,7 @@ pub mod get_containers_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -19238,7 +19238,7 @@ pub mod get_containers_event_list {
     }
 }
 pub mod get_node_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19301,7 +19301,7 @@ pub mod get_node_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -19347,7 +19347,7 @@ pub mod get_node_event_list {
     }
 }
 pub mod get_nodes_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19409,7 +19409,7 @@ pub mod get_nodes_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -19455,7 +19455,7 @@ pub mod get_nodes_event_list {
     }
 }
 pub mod get_application_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19522,7 +19522,7 @@ pub mod get_application_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -19568,7 +19568,7 @@ pub mod get_application_event_list {
     }
 }
 pub mod get_applications_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19630,7 +19630,7 @@ pub mod get_applications_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -19676,7 +19676,7 @@ pub mod get_applications_event_list {
     }
 }
 pub mod get_service_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19739,7 +19739,7 @@ pub mod get_service_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -19785,7 +19785,7 @@ pub mod get_service_event_list {
     }
 }
 pub mod get_services_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19847,7 +19847,7 @@ pub mod get_services_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -19893,7 +19893,7 @@ pub mod get_services_event_list {
     }
 }
 pub mod get_partition_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -19956,7 +19956,7 @@ pub mod get_partition_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -20002,7 +20002,7 @@ pub mod get_partition_event_list {
     }
 }
 pub mod get_partitions_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -20064,7 +20064,7 @@ pub mod get_partitions_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -20110,7 +20110,7 @@ pub mod get_partitions_event_list {
     }
 }
 pub mod get_partition_replica_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -20179,7 +20179,7 @@ pub mod get_partition_replica_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -20225,7 +20225,7 @@ pub mod get_partition_replica_event_list {
     }
 }
 pub mod get_partition_replicas_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -20292,7 +20292,7 @@ pub mod get_partition_replicas_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -20338,7 +20338,7 @@ pub mod get_partition_replicas_event_list {
     }
 }
 pub mod get_correlated_event_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -20388,7 +20388,7 @@ pub mod get_correlated_event_list {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                 if let Some(timeout) = &self.timeout {
                     url.query_pairs_mut().append_pair("timeout", &timeout.to_string());
                 }
@@ -20419,7 +20419,7 @@ pub mod get_correlated_event_list {
     }
 }
 pub mod mesh_secret {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Secret resource with the given name."]
@@ -20454,7 +20454,7 @@ pub mod mesh_secret {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20495,7 +20495,7 @@ pub mod mesh_secret {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20523,7 +20523,7 @@ pub mod mesh_secret {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::SecretResourceDescription),
@@ -20571,7 +20571,7 @@ pub mod mesh_secret {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.secret_resource_description).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -20607,7 +20607,7 @@ pub mod mesh_secret {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -20654,7 +20654,7 @@ pub mod mesh_secret {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20679,7 +20679,7 @@ pub mod mesh_secret {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20721,7 +20721,7 @@ pub mod mesh_secret {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20750,7 +20750,7 @@ pub mod mesh_secret {
     }
 }
 pub mod mesh_secret_value {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the specified secret value resource."]
@@ -20800,7 +20800,7 @@ pub mod mesh_secret_value {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -20849,7 +20849,7 @@ pub mod mesh_secret_value {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -20877,7 +20877,7 @@ pub mod mesh_secret_value {
         }
     }
     pub mod add_value {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::SecretValueResourceDescription),
@@ -20931,7 +20931,7 @@ pub mod mesh_secret_value {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.secret_value_resource_description).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -20967,7 +20967,7 @@ pub mod mesh_secret_value {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21020,7 +21020,7 @@ pub mod mesh_secret_value {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21045,7 +21045,7 @@ pub mod mesh_secret_value {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21089,7 +21089,7 @@ pub mod mesh_secret_value {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21117,7 +21117,7 @@ pub mod mesh_secret_value {
         }
     }
     pub mod show {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21164,7 +21164,7 @@ pub mod mesh_secret_value {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -21194,7 +21194,7 @@ pub mod mesh_secret_value {
     }
 }
 pub mod mesh_volume {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Volume resource with the given name."]
@@ -21229,7 +21229,7 @@ pub mod mesh_volume {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21270,7 +21270,7 @@ pub mod mesh_volume {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21298,7 +21298,7 @@ pub mod mesh_volume {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::VolumeResourceDescription),
@@ -21346,7 +21346,7 @@ pub mod mesh_volume {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.volume_resource_description).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -21382,7 +21382,7 @@ pub mod mesh_volume {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21429,7 +21429,7 @@ pub mod mesh_volume {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21454,7 +21454,7 @@ pub mod mesh_volume {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21496,7 +21496,7 @@ pub mod mesh_volume {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21525,7 +21525,7 @@ pub mod mesh_volume {
     }
 }
 pub mod mesh_network {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Network resource with the given name."]
@@ -21560,7 +21560,7 @@ pub mod mesh_network {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21603,7 +21603,7 @@ pub mod mesh_network {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21631,7 +21631,7 @@ pub mod mesh_network {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::NetworkResourceDescription),
@@ -21679,7 +21679,7 @@ pub mod mesh_network {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.network_resource_description).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -21715,7 +21715,7 @@ pub mod mesh_network {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -21762,7 +21762,7 @@ pub mod mesh_network {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21787,7 +21787,7 @@ pub mod mesh_network {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21829,7 +21829,7 @@ pub mod mesh_network {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21858,7 +21858,7 @@ pub mod mesh_network {
     }
 }
 pub mod mesh_application {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Application resource with the given name."]
@@ -21893,7 +21893,7 @@ pub mod mesh_application {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -21940,7 +21940,7 @@ pub mod mesh_application {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -21968,7 +21968,7 @@ pub mod mesh_application {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ApplicationResourceDescription),
@@ -22020,7 +22020,7 @@ pub mod mesh_application {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.application_resource_description).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -22056,7 +22056,7 @@ pub mod mesh_application {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -22107,7 +22107,7 @@ pub mod mesh_application {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22132,7 +22132,7 @@ pub mod mesh_application {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22175,7 +22175,7 @@ pub mod mesh_application {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22204,7 +22204,7 @@ pub mod mesh_application {
     }
 }
 pub mod mesh_service {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Service resource with the given name."]
@@ -22224,7 +22224,7 @@ pub mod mesh_service {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22273,7 +22273,7 @@ pub mod mesh_service {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22301,7 +22301,7 @@ pub mod mesh_service {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22348,7 +22348,7 @@ pub mod mesh_service {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22377,7 +22377,7 @@ pub mod mesh_service {
     }
 }
 pub mod mesh_code_package {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the logs from the container."]
@@ -22399,7 +22399,7 @@ pub mod mesh_code_package {
         }
     }
     pub mod get_container_logs {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22455,7 +22455,7 @@ pub mod mesh_code_package {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     if let Some(tail) = &self.tail {
                         url.query_pairs_mut().append_pair("Tail", tail);
                     }
@@ -22487,7 +22487,7 @@ pub mod mesh_code_package {
     }
 }
 pub mod mesh_service_replica {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the given replica of the service of an application."]
@@ -22514,7 +22514,7 @@ pub mod mesh_service_replica {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22563,7 +22563,7 @@ pub mod mesh_service_replica {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22591,7 +22591,7 @@ pub mod mesh_service_replica {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22640,7 +22640,7 @@ pub mod mesh_service_replica {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22669,7 +22669,7 @@ pub mod mesh_service_replica {
     }
 }
 pub mod mesh_gateway {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets the Gateway resource with the given name."]
@@ -22704,7 +22704,7 @@ pub mod mesh_gateway {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22747,7 +22747,7 @@ pub mod mesh_gateway {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22775,7 +22775,7 @@ pub mod mesh_gateway {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::GatewayResourceDescription),
@@ -22823,7 +22823,7 @@ pub mod mesh_gateway {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.gateway_resource_description).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -22859,7 +22859,7 @@ pub mod mesh_gateway {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -22906,7 +22906,7 @@ pub mod mesh_gateway {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -22931,7 +22931,7 @@ pub mod mesh_gateway {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -22973,7 +22973,7 @@ pub mod mesh_gateway {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "6.5.0.36");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;

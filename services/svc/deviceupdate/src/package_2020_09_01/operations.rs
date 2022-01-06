@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -88,7 +88,7 @@ pub enum Error {
     Deployments_RetryDeployment(#[from] deployments::retry_deployment::Error),
 }
 pub mod deployments {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn cancel_deployment(
@@ -119,7 +119,7 @@ pub mod deployments {
         }
     }
     pub mod cancel_deployment {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -195,7 +195,7 @@ pub mod deployments {
         }
     }
     pub mod retry_deployment {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
