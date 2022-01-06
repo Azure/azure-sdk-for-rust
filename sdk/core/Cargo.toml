@@ -41,7 +41,7 @@ getrandom = { version = "0.2", features = ["js"] }
 rustc_version = "0.4"
 
 [dev-dependencies]
-env_logger = "0.8"
+env_logger = "0.9"
 tokio = { version = "1", features = ["default"] }
 
 [features]
