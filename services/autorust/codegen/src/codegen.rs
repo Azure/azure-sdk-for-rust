@@ -186,12 +186,10 @@ pub fn type_name_gen(type_name: &TypeName, as_ref: bool, qualify_models: bool) -
     })
 }
 
-pub fn create_mod(api_version: &str) -> TokenStream {
+pub fn create_mod() -> TokenStream {
     quote! {
         pub mod models;
         pub mod operations;
-        #[allow(dead_code)]
-        pub const API_VERSION: &str = #api_version;
     }
 }
 

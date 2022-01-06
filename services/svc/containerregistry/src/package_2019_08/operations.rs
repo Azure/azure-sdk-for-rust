@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -90,7 +90,7 @@ pub enum Error {
     Blob_CheckChunk(#[from] blob::check_chunk::Error),
 }
 pub mod blob {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn start_upload(&self, name: impl Into<String>) -> start_upload::Builder {
@@ -117,7 +117,7 @@ pub mod blob {
         }
     }
     pub mod start_upload {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -181,7 +181,7 @@ pub mod blob {
         }
     }
     pub mod get_chunk {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -251,7 +251,7 @@ pub mod blob {
         }
     }
     pub mod check_chunk {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]

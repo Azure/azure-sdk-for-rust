@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -141,7 +141,7 @@ pub enum Error {
     EventRoutes_Delete(#[from] event_routes::delete::Error),
 }
 pub mod digital_twin_models {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -190,7 +190,7 @@ pub mod digital_twin_models {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -257,7 +257,7 @@ pub mod digital_twin_models {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -302,7 +302,7 @@ pub mod digital_twin_models {
         }
     }
     pub mod add {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -360,7 +360,7 @@ pub mod digital_twin_models {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -399,7 +399,7 @@ pub mod digital_twin_models {
         }
     }
     pub mod get_by_id {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -455,7 +455,7 @@ pub mod digital_twin_models {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -493,7 +493,7 @@ pub mod digital_twin_models {
         }
     }
     pub mod update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -545,7 +545,7 @@ pub mod digital_twin_models {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -575,7 +575,7 @@ pub mod digital_twin_models {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -626,7 +626,7 @@ pub mod digital_twin_models {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -656,7 +656,7 @@ pub mod digital_twin_models {
     }
 }
 pub mod query {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn query_twins(&self, query_specification: impl Into<models::QuerySpecification>) -> query_twins::Builder {
@@ -670,7 +670,7 @@ pub mod query {
         }
     }
     pub mod query_twins {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -726,7 +726,7 @@ pub mod query {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -765,7 +765,7 @@ pub mod query {
     }
 }
 pub mod digital_twins {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get_by_id(&self, id: impl Into<String>) -> get_by_id::Builder {
@@ -934,7 +934,7 @@ pub mod digital_twins {
         }
     }
     pub mod get_by_id {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -985,7 +985,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1019,7 +1019,7 @@ pub mod digital_twins {
         }
     }
     pub mod add {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(serde_json::Value),
@@ -1081,7 +1081,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1120,7 +1120,7 @@ pub mod digital_twins {
         }
     }
     pub mod update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -1182,7 +1182,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1216,7 +1216,7 @@ pub mod digital_twins {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1272,7 +1272,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1304,7 +1304,7 @@ pub mod digital_twins {
         }
     }
     pub mod get_relationship_by_id {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1361,7 +1361,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1395,7 +1395,7 @@ pub mod digital_twins {
         }
     }
     pub mod add_relationship {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1458,7 +1458,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1496,7 +1496,7 @@ pub mod digital_twins {
         }
     }
     pub mod update_relationship {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1559,7 +1559,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1592,7 +1592,7 @@ pub mod digital_twins {
         }
     }
     pub mod delete_relationship {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1654,7 +1654,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1686,7 +1686,7 @@ pub mod digital_twins {
         }
     }
     pub mod list_relationships {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1742,7 +1742,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1779,7 +1779,7 @@ pub mod digital_twins {
         }
     }
     pub mod list_incoming_relationships {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1832,7 +1832,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1866,7 +1866,7 @@ pub mod digital_twins {
         }
     }
     pub mod send_telemetry {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1924,7 +1924,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -1958,7 +1958,7 @@ pub mod digital_twins {
         }
     }
     pub mod send_component_telemetry {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2022,7 +2022,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -2056,7 +2056,7 @@ pub mod digital_twins {
         }
     }
     pub mod get_component {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2113,7 +2113,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -2147,7 +2147,7 @@ pub mod digital_twins {
         }
     }
     pub mod update_component {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -2215,7 +2215,7 @@ pub mod digital_twins {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -2250,7 +2250,7 @@ pub mod digital_twins {
     }
 }
 pub mod event_routes {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -2288,7 +2288,7 @@ pub mod event_routes {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2343,7 +2343,7 @@ pub mod event_routes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -2380,7 +2380,7 @@ pub mod event_routes {
         }
     }
     pub mod get_by_id {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2431,7 +2431,7 @@ pub mod event_routes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -2465,7 +2465,7 @@ pub mod event_routes {
         }
     }
     pub mod add {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2521,7 +2521,7 @@ pub mod event_routes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }
@@ -2555,7 +2555,7 @@ pub mod event_routes {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2606,7 +2606,7 @@ pub mod event_routes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-06-30-preview");
                     if let Some(traceparent) = &self.traceparent {
                         req_builder = req_builder.header("traceparent", traceparent);
                     }

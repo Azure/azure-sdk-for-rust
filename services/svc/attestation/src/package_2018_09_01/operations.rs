@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -111,7 +111,7 @@ pub enum Error {
     MetadataConfiguration_Get(#[from] metadata_configuration::get::Error),
 }
 pub mod policy {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Accepts a new policy document and returns a JWT which expresses  used in preparation to set attestation policy."]
@@ -147,7 +147,7 @@ pub mod policy {
         }
     }
     pub mod prepare_to_set {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -193,7 +193,7 @@ pub mod policy {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                     let tee = &self.tee;
                     url.query_pairs_mut().append_pair("tee", tee);
                     req_builder = req_builder.header("content-type", "application/json");
@@ -236,7 +236,7 @@ pub mod policy {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -281,7 +281,7 @@ pub mod policy {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                     let tee = &self.tee;
                     url.query_pairs_mut().append_pair("tee", tee);
                     let req_body = azure_core::EMPTY_BODY;
@@ -323,7 +323,7 @@ pub mod policy {
         }
     }
     pub mod reset {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -369,7 +369,7 @@ pub mod policy {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                     let tee = &self.tee;
                     url.query_pairs_mut().append_pair("tee", tee);
                     req_builder = req_builder.header("content-type", "application/json");
@@ -412,7 +412,7 @@ pub mod policy {
         }
     }
     pub mod set {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -458,7 +458,7 @@ pub mod policy {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                     let tee = &self.tee;
                     url.query_pairs_mut().append_pair("tee", tee);
                     req_builder = req_builder.header("content-type", "application/json");
@@ -497,7 +497,7 @@ pub mod policy {
     }
 }
 pub mod policy_certificates {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the set of certificates used to express policy for the current tenant."]
@@ -520,7 +520,7 @@ pub mod policy_certificates {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -564,7 +564,7 @@ pub mod policy_certificates {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -604,7 +604,7 @@ pub mod policy_certificates {
         }
     }
     pub mod remove {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -649,7 +649,7 @@ pub mod policy_certificates {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.policy_certificate_to_remove).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -690,7 +690,7 @@ pub mod policy_certificates {
         }
     }
     pub mod add {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -735,7 +735,7 @@ pub mod policy_certificates {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-09-01-preview");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.policy_certificate_to_add).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -777,7 +777,7 @@ pub mod policy_certificates {
     }
 }
 pub mod signing_certificates {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the attestation signing keys in use by the attestation service"]
@@ -786,7 +786,7 @@ pub mod signing_certificates {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -862,7 +862,7 @@ pub mod signing_certificates {
     }
 }
 pub mod metadata_configuration {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Retrieves the OpenID Configuration data for the Azure Attestation Service"]
@@ -871,7 +871,7 @@ pub mod metadata_configuration {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]

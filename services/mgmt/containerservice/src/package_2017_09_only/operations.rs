@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -86,7 +86,7 @@ pub enum Error {
     ContainerServices_ListOrchestrators(#[from] container_services::list_orchestrators::Error),
 }
 pub mod container_services {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Gets a list of supported orchestrators in the specified subscription."]
@@ -100,7 +100,7 @@ pub mod container_services {
         }
     }
     pub mod list_orchestrators {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -151,7 +151,7 @@ pub mod container_services {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2017-09-30");
                     if let Some(resource_type) = &self.resource_type {
                         url.query_pairs_mut().append_pair("resource-type", resource_type);
                     }

@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -226,7 +226,7 @@ impl Client {
     }
 }
 pub mod get_docker_registry_v2_support {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -288,7 +288,7 @@ pub mod get_docker_registry_v2_support {
     }
 }
 pub mod get_tag_list {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -359,7 +359,7 @@ pub mod get_tag_list {
     }
 }
 pub mod get_manifest {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -431,7 +431,7 @@ pub mod get_manifest {
     }
 }
 pub mod get_repositories {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -514,7 +514,7 @@ pub mod get_repositories {
     }
 }
 pub mod get_acr_repositories {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -597,7 +597,7 @@ pub mod get_acr_repositories {
     }
 }
 pub mod get_acr_repository_attributes {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -668,7 +668,7 @@ pub mod get_acr_repository_attributes {
     }
 }
 pub mod update_acr_repository_attributes {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -744,7 +744,7 @@ pub mod update_acr_repository_attributes {
     }
 }
 pub mod delete_acr_repository {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -815,7 +815,7 @@ pub mod delete_acr_repository {
     }
 }
 pub mod get_acr_tags {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -918,7 +918,7 @@ pub mod get_acr_tags {
     }
 }
 pub mod get_acr_tag_attributes {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -990,7 +990,7 @@ pub mod get_acr_tag_attributes {
     }
 }
 pub mod update_acr_tag_attributes {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -1067,7 +1067,7 @@ pub mod update_acr_tag_attributes {
     }
 }
 pub mod delete_acr_tag {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -1134,7 +1134,7 @@ pub mod delete_acr_tag {
     }
 }
 pub mod get_acr_manifests {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -1229,7 +1229,7 @@ pub mod get_acr_manifests {
     }
 }
 pub mod get_acr_manifest_attributes {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]
@@ -1301,7 +1301,7 @@ pub mod get_acr_manifest_attributes {
     }
 }
 pub mod update_acr_manifest_attributes {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("Error response #response_type")]

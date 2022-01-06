@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -86,7 +86,7 @@ pub enum Error {
     MetricNamespaces_List(#[from] metric_namespaces::list::Error),
 }
 pub mod metric_namespaces {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self, resource_uri: impl Into<String>) -> list::Builder {
@@ -98,7 +98,7 @@ pub mod metric_namespaces {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -148,7 +148,7 @@ pub mod metric_namespaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2017-12-01-preview");
                     if let Some(start_time) = &self.start_time {
                         url.query_pairs_mut().append_pair("startTime", start_time);
                     }

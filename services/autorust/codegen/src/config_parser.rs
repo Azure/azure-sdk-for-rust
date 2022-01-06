@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
@@ -181,13 +180,6 @@ mod tests {
             Some("2019-05-05-preview".to_owned()),
             get_input_file_api_version("Microsoft.AlertsManagement/preview/2019-05-05-preview/ActionRules.json")
         );
-    }
-
-    fn new_package_from_tag(tag: &str) -> Configuration {
-        Configuration {
-            tag: tag.to_owned(),
-            input_files: Vec::new(),
-        }
     }
 
     #[test]

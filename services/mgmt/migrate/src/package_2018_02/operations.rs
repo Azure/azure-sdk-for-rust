@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -153,7 +153,7 @@ pub enum Error {
     Operations_List(#[from] operations::list::Error),
 }
 pub mod location {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn check_name_availability(
@@ -171,7 +171,7 @@ pub mod location {
         }
     }
     pub mod check_name_availability {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -221,7 +221,7 @@ pub mod location {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -251,7 +251,7 @@ pub mod location {
     }
 }
 pub mod assessment_options {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get the assessment options."]
@@ -265,7 +265,7 @@ pub mod assessment_options {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -319,7 +319,7 @@ pub mod assessment_options {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -351,7 +351,7 @@ pub mod assessment_options {
     }
 }
 pub mod projects {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all projects."]
@@ -454,7 +454,7 @@ pub mod projects {
         }
     }
     pub mod list_by_subscription {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -504,7 +504,7 @@ pub mod projects {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -535,7 +535,7 @@ pub mod projects {
         }
     }
     pub mod list_by_resource_group {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -587,7 +587,7 @@ pub mod projects {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -618,7 +618,7 @@ pub mod projects {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -672,7 +672,7 @@ pub mod projects {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -703,7 +703,7 @@ pub mod projects {
         }
     }
     pub mod create {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Project),
@@ -767,7 +767,7 @@ pub mod projects {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -809,7 +809,7 @@ pub mod projects {
         }
     }
     pub mod update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -868,7 +868,7 @@ pub mod projects {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -904,7 +904,7 @@ pub mod projects {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -958,7 +958,7 @@ pub mod projects {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -984,7 +984,7 @@ pub mod projects {
         }
     }
     pub mod get_keys {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1038,7 +1038,7 @@ pub mod projects {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -1071,7 +1071,7 @@ pub mod projects {
     }
 }
 pub mod machines {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all machines in the project"]
@@ -1108,7 +1108,7 @@ pub mod machines {
         }
     }
     pub mod list_by_project {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1162,7 +1162,7 @@ pub mod machines {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -1193,7 +1193,7 @@ pub mod machines {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1249,7 +1249,7 @@ pub mod machines {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -1281,7 +1281,7 @@ pub mod machines {
     }
 }
 pub mod groups {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all groups"]
@@ -1353,7 +1353,7 @@ pub mod groups {
         }
     }
     pub mod list_by_project {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1407,7 +1407,7 @@ pub mod groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -1438,7 +1438,7 @@ pub mod groups {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1494,7 +1494,7 @@ pub mod groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -1525,7 +1525,7 @@ pub mod groups {
         }
     }
     pub mod create {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Group),
@@ -1591,7 +1591,7 @@ pub mod groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -1633,7 +1633,7 @@ pub mod groups {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1689,7 +1689,7 @@ pub mod groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -1716,7 +1716,7 @@ pub mod groups {
     }
 }
 pub mod assessments {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get all assessments created for the specified group."]
@@ -1830,7 +1830,7 @@ pub mod assessments {
         }
     }
     pub mod list_by_group {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1886,7 +1886,7 @@ pub mod assessments {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -1917,7 +1917,7 @@ pub mod assessments {
         }
     }
     pub mod list_by_project {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1971,7 +1971,7 @@ pub mod assessments {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -2002,7 +2002,7 @@ pub mod assessments {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2060,7 +2060,7 @@ pub mod assessments {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -2091,7 +2091,7 @@ pub mod assessments {
         }
     }
     pub mod create {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Assessment),
@@ -2159,7 +2159,7 @@ pub mod assessments {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -2201,7 +2201,7 @@ pub mod assessments {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2259,7 +2259,7 @@ pub mod assessments {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -2285,7 +2285,7 @@ pub mod assessments {
         }
     }
     pub mod get_report_download_url {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2335,7 +2335,7 @@ pub mod assessments {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -2368,7 +2368,7 @@ pub mod assessments {
     }
 }
 pub mod assessed_machines {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get assessed machines for assessment."]
@@ -2413,7 +2413,7 @@ pub mod assessed_machines {
         }
     }
     pub mod list_by_assessment {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2463,7 +2463,7 @@ pub mod assessed_machines {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -2494,7 +2494,7 @@ pub mod assessed_machines {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2545,7 +2545,7 @@ pub mod assessed_machines {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-02-02");
                     if let Some(accept_language) = &self.accept_language {
                         req_builder = req_builder.header("Accept-Language", accept_language);
                     }
@@ -2577,7 +2577,7 @@ pub mod assessed_machines {
     }
 }
 pub mod operations {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get list of operations supported in the API."]
@@ -2586,7 +2586,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
