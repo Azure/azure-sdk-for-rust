@@ -11,6 +11,7 @@ pub struct SharedKeyAuthorizationPolicy {
 }
 
 impl SharedKeyAuthorizationPolicy {
+    #[allow(unused)]
     pub(crate) fn new(shared_key: String, storage_account_name: String) -> Self {
         Self {
             shared_key,
