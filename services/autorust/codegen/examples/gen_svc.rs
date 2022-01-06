@@ -150,6 +150,11 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "InnerError",
         "innererror"
     ),
+    (
+        "../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/preview/2021-06-30-preview/digitaltwins.json",
+        "InnerError",
+        "innererror"
+    ),
 ];
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
