@@ -22,6 +22,10 @@ pub fn join<P1: AsRef<Path>, P2: AsRef<Path>>(a: P1, b: P2) -> Result<PathBuf, E
     Ok(c)
 }
 
+pub fn join_several<P1: AsRef<Path>>(a: P1, b: &[PathBuf]) -> Result<Vec<PathBuf>, Error> {
+    b.iter().map(|b| join(&a, b)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

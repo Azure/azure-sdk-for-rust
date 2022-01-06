@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use serde::Deserialize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
@@ -9,6 +9,12 @@ pub struct Configuration {
 
     #[serde(skip_deserializing)]
     pub tag: String,
+}
+
+impl Configuration {
+    pub fn input_files(&self) -> Vec<PathBuf> {
+        self.input_files.iter().map(PathBuf::from).collect()
+    }
 }
 
 /// Receives the AutoRest configuration file and parses it to its various configurations (by tags/API versions),
