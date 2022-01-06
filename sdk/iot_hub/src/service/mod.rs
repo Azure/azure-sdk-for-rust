@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use azure_core::HttpClient;
 use base64::{decode, encode_config};
-use hmac::{Hmac, Mac, NewMac};
+use hmac::{Hmac, Mac};
 use http::request::Builder as RequestBuilder;
 use http::{header, Method};
 use sha2::Sha256;
@@ -65,7 +65,7 @@ pub enum GenerateSasTokenError {
     #[error("Failed to decode the given private key: {0}")]
     DecodePrivateKeyError(base64::DecodeError),
     #[error("Failed to use the given private key for the hashing algorithm: {0}")]
-    HashingFailed(crypto_mac::InvalidKeyLength),
+    HashingFailed(hmac::digest::InvalidLength),
 }
 
 impl ServiceClient {
