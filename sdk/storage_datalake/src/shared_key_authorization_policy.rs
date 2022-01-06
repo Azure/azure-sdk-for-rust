@@ -1,8 +1,8 @@
 use azure_core::{Context, Policy, PolicyResult, Request, Response};
 use http::header::AUTHORIZATION;
 use http::{HeaderMap, HeaderValue, Method};
-use std::sync::Arc;
 use ring::hmac;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SharedKeyAuthorizationPolicy {
@@ -11,10 +11,7 @@ pub struct SharedKeyAuthorizationPolicy {
 }
 
 impl SharedKeyAuthorizationPolicy {
-    pub(crate) fn new(
-        shared_key: String,
-        storage_account_name: String,
-    ) -> Self {
+    pub(crate) fn new(shared_key: String, storage_account_name: String) -> Self {
         Self {
             shared_key,
             storage_account_name,
@@ -37,7 +34,10 @@ impl Policy for SharedKeyAuthorizationPolicy {
         }
 
         let uri_path = &request.uri().path_and_query().unwrap().to_string()[1..];
-        trace!("uri_path used by SharedKeyAuthorizationPolicy == {:#?}", uri_path);
+        trace!(
+            "uri_path used by SharedKeyAuthorizationPolicy == {:#?}",
+            uri_path
+        );
         let url = url::Url::parse(uri_path)?;
 
         let auth = generate_authorization(
@@ -83,29 +83,29 @@ fn string_to_sign(
     http_method: &Method,
     storage_account_name: &str,
 ) -> String {
-	// content lenght must only be specified if != 0
-	// this is valid from 2015-02-21
-	let cl = http_headers
-		.get(http::header::CONTENT_LENGTH)
-		.map(|s| if s == "0" { "" } else { s.to_str().unwrap() })
-		.unwrap_or("");
-	format!(
-		"{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
-		http_method.as_str(),
-		add_if_exists(http_headers, http::header::CONTENT_ENCODING),
-		add_if_exists(http_headers, http::header::CONTENT_LANGUAGE),
-		cl,
-		add_if_exists(http_headers, azure_storage::headers::CONTENT_MD5),
-		add_if_exists(http_headers, http::header::CONTENT_TYPE),
-		add_if_exists(http_headers, http::header::DATE),
-		add_if_exists(http_headers, http::header::IF_MODIFIED_SINCE),
-		add_if_exists(http_headers, http::header::IF_MATCH),
-		add_if_exists(http_headers, http::header::IF_NONE_MATCH),
-		add_if_exists(http_headers, http::header::IF_UNMODIFIED_SINCE),
-		add_if_exists(http_headers, http::header::RANGE),
-		canonicalize_header(http_headers),
-		canonicalized_resource(storage_account_name, url)
-	)
+    // content lenght must only be specified if != 0
+    // this is valid from 2015-02-21
+    let cl = http_headers
+        .get(http::header::CONTENT_LENGTH)
+        .map(|s| if s == "0" { "" } else { s.to_str().unwrap() })
+        .unwrap_or("");
+    format!(
+        "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
+        http_method.as_str(),
+        add_if_exists(http_headers, http::header::CONTENT_ENCODING),
+        add_if_exists(http_headers, http::header::CONTENT_LANGUAGE),
+        cl,
+        add_if_exists(http_headers, azure_storage::headers::CONTENT_MD5),
+        add_if_exists(http_headers, http::header::CONTENT_TYPE),
+        add_if_exists(http_headers, http::header::DATE),
+        add_if_exists(http_headers, http::header::IF_MODIFIED_SINCE),
+        add_if_exists(http_headers, http::header::IF_MATCH),
+        add_if_exists(http_headers, http::header::IF_NONE_MATCH),
+        add_if_exists(http_headers, http::header::IF_UNMODIFIED_SINCE),
+        add_if_exists(http_headers, http::header::RANGE),
+        canonicalize_header(http_headers),
+        canonicalized_resource(storage_account_name, url)
+    )
 
     // expected
     // GET\n /*HTTP Verb*/
@@ -227,4 +227,3 @@ fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
 
     base64::encode(sig.as_ref())
 }
-
