@@ -544,6 +544,10 @@ pub struct LegacyUsageDetailProperties {
     pub frequency: Option<String>,
     #[serde(rename = "payGPrice", default, skip_serializing_if = "Option::is_none")]
     pub pay_g_price: Option<f64>,
+    #[serde(rename = "benefitId", default, skip_serializing_if = "Option::is_none")]
+    pub benefit_id: Option<String>,
+    #[serde(rename = "benefitName", default, skip_serializing_if = "Option::is_none")]
+    pub benefit_name: Option<String>,
     #[serde(rename = "pricingModel", default, skip_serializing_if = "Option::is_none")]
     pub pricing_model: Option<legacy_usage_detail_properties::PricingModel>,
 }

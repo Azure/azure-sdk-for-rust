@@ -2163,6 +2163,39 @@ pub struct QueryStatistic {
     pub intervals: Vec<QueryInterval>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReadOnlyFollowingDatabase {
+    #[serde(flatten)]
+    pub database: Database,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ReadOnlyFollowingDatabaseProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReadOnlyFollowingDatabaseProperties {
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ResourceProvisioningState>,
+    #[serde(rename = "softDeletePeriod", default, skip_serializing_if = "Option::is_none")]
+    pub soft_delete_period: Option<String>,
+    #[serde(rename = "hotCachePeriod", default, skip_serializing_if = "Option::is_none")]
+    pub hot_cache_period: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub statistics: Option<DatabaseStatistics>,
+    #[serde(rename = "leaderClusterResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub leader_cluster_resource_id: Option<String>,
+    #[serde(rename = "attachedDatabaseConfigurationName", default, skip_serializing_if = "Option::is_none")]
+    pub attached_database_configuration_name: Option<String>,
+    #[serde(rename = "principalsModificationKind", default, skip_serializing_if = "Option::is_none")]
+    pub principals_modification_kind: Option<read_only_following_database_properties::PrincipalsModificationKind>,
+}
+pub mod read_only_following_database_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum PrincipalsModificationKind {
+        Union,
+        Replace,
+        None,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReadWriteDatabase {
     #[serde(flatten)]
     pub database: Database,

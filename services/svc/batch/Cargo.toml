@@ -19,10 +19,11 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1.0" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [features]
-default = ["package-2021-06.14.0", "enable_reqwest"]
+default = ["package-2022-01.15.0", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []
+"package-2022-01.15.0" = []
 "package-2021-06.14.0" = []
 "package-2020-09.12.0" = []
 "package-2020-03.11.0" = []

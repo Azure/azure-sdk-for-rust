@@ -6,13 +6,12 @@ use serde::{Deserialize, Serialize};
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ExtendedErrorInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<ErrorResponseCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ErrorResponseCode {
-    NotFound,
-    Conflict,
-    BadRequest,
-}
+pub type ErrorResponseCode = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtendedErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]

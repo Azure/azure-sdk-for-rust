@@ -544,6 +544,10 @@ pub struct AzureBlobFsLinkedServiceTypeProperties {
     pub tenant: Option<serde_json::Value>,
     #[serde(rename = "azureCloudType", default, skip_serializing_if = "Option::is_none")]
     pub azure_cloud_type: Option<serde_json::Value>,
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential: Option<SecretBase>,
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<serde_json::Value>,
 }
