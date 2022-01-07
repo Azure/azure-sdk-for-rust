@@ -600,6 +600,10 @@ pub mod json_web_key {
         Oct,
         #[serde(rename = "oct-HSM")]
         OctHsm,
+        #[serde(rename = "OKP")]
+        Okp,
+        #[serde(rename = "OKP-HSM")]
+        OkpHsm,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Crv {
@@ -611,6 +615,7 @@ pub mod json_web_key {
         P521,
         #[serde(rename = "P-256K")]
         P256k,
+        Ed25519,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -688,6 +693,10 @@ pub mod key_create_parameters {
         Oct,
         #[serde(rename = "oct-HSM")]
         OctHsm,
+        #[serde(rename = "OKP")]
+        Okp,
+        #[serde(rename = "OKP-HSM")]
+        OkpHsm,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Crv {
@@ -699,6 +708,7 @@ pub mod key_create_parameters {
         P521,
         #[serde(rename = "P-256K")]
         P256k,
+        Ed25519,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -841,6 +851,10 @@ pub mod key_properties {
         Oct,
         #[serde(rename = "oct-HSM")]
         OctHsm,
+        #[serde(rename = "OKP")]
+        Okp,
+        #[serde(rename = "OKP-HSM")]
+        OkpHsm,
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Crv {
@@ -852,6 +866,7 @@ pub mod key_properties {
         P521,
         #[serde(rename = "P-256K")]
         P256k,
+        Ed25519,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -939,6 +954,8 @@ pub mod key_sign_parameters {
         Es512,
         #[serde(rename = "ES256K")]
         Es256k,
+        #[serde(rename = "EdDSA")]
+        EdDsa,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -989,6 +1006,8 @@ pub mod key_verify_parameters {
         Es512,
         #[serde(rename = "ES256K")]
         Es256k,
+        #[serde(rename = "EdDSA")]
+        EdDsa,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

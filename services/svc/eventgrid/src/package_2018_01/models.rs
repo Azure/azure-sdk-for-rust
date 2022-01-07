@@ -1584,13 +1584,13 @@ pub struct ResourceActionCancelData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceActionFailureData {
@@ -1609,13 +1609,13 @@ pub struct ResourceActionFailureData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceActionSuccessData {
@@ -1634,13 +1634,22 @@ pub struct ResourceActionSuccessData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceAuthorization {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence: Option<serde_json::Value>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceDeleteCancelData {
@@ -1659,13 +1668,13 @@ pub struct ResourceDeleteCancelData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceDeleteFailureData {
@@ -1684,13 +1693,13 @@ pub struct ResourceDeleteFailureData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceDeleteSuccessData {
@@ -1709,13 +1718,24 @@ pub struct ResourceDeleteSuccessData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ResourceHttpRequest {
+    #[serde(rename = "clientRequestId", default, skip_serializing_if = "Option::is_none")]
+    pub client_request_id: Option<String>,
+    #[serde(rename = "clientIpAddress", default, skip_serializing_if = "Option::is_none")]
+    pub client_ip_address: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceWriteCancelData {
@@ -1734,13 +1754,13 @@ pub struct ResourceWriteCancelData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceWriteFailureData {
@@ -1759,13 +1779,13 @@ pub struct ResourceWriteFailureData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceWriteSuccessData {
@@ -1784,13 +1804,13 @@ pub struct ResourceWriteSuccessData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<String>,
+    pub authorization: Option<ResourceAuthorization>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub claims: Option<String>,
+    pub claims: Option<serde_json::Value>,
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
-    pub http_request: Option<String>,
+    pub http_request: Option<ResourceHttpRequest>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusActiveMessagesAvailablePeriodicNotificationsEventData {

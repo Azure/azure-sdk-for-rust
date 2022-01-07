@@ -23,6 +23,10 @@ pub use package_2019_09_preview::{models, operations, operations::Client, operat
 pub mod package_2020_03_preview;
 #[cfg(all(feature = "package-2020-03-preview", not(feature = "no-default-version")))]
 pub use package_2020_03_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "package-2021-12-01-preview")]
+pub mod package_2021_12_01_preview;
+#[cfg(all(feature = "package-2021-12-01-preview", not(feature = "no-default-version")))]
+pub use package_2021_12_01_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-2020-08")]
 pub mod package_2020_08;
 #[cfg(all(feature = "package-2020-08", not(feature = "no-default-version")))]

@@ -610,6 +610,10 @@ pub struct AzureBlobFsLinkedServiceTypeProperties {
     pub encrypted_credential: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credential: Option<CredentialReference>,
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential: Option<SecretBase>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBlobFsLocation {
@@ -3671,6 +3675,19 @@ pub struct FactoryVstsConfiguration {
     pub project_name: String,
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FailActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
+    #[serde(rename = "typeProperties")]
+    pub type_properties: FailActivityTypeProperties,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FailActivityTypeProperties {
+    pub message: serde_json::Value,
+    #[serde(rename = "errorCode")]
+    pub error_code: serde_json::Value,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileServerLinkedService {

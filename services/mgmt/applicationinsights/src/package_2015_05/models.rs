@@ -99,14 +99,14 @@ pub mod application_insights_component_analytics_item {
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
+        #[serde(rename = "none")]
+        None,
         #[serde(rename = "query")]
         Query,
-        #[serde(rename = "function")]
-        Function,
-        #[serde(rename = "folder")]
-        Folder,
         #[serde(rename = "recent")]
         Recent,
+        #[serde(rename = "function")]
+        Function,
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

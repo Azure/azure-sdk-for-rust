@@ -817,9 +817,9 @@ pub struct ReportConfigFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub not: Box<Option<ReportConfigFilter>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dimension: Option<ReportConfigComparisonExpression>,
+    pub dimensions: Option<ReportConfigComparisonExpression>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<ReportConfigComparisonExpression>,
+    pub tags: Option<ReportConfigComparisonExpression>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigGrouping {
