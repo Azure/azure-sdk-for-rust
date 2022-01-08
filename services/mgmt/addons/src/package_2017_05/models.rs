@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanonicalSupportPlanProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
@@ -37,19 +37,19 @@ pub struct ErrorDefinition {
     pub code: String,
 }
 pub type OperationList = Vec<OperationsDefinition>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<OperationList>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationsDisplayDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDisplayDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,

@@ -18,7 +18,7 @@ pub struct Container {
     pub name: String,
     pub properties: ContainerProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
@@ -72,7 +72,7 @@ pub mod container_group {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerGroupListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerGroup>,
@@ -100,7 +100,7 @@ pub struct ContainerProperties {
 }
 pub mod container_properties {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct InstanceView {
         #[serde(rename = "restartCount", default, skip_serializing_if = "Option::is_none")]
         pub restart_count: Option<i64>,
@@ -112,7 +112,7 @@ pub mod container_properties {
         pub events: Vec<ContainerEvent>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
@@ -152,7 +152,7 @@ pub mod ip_address {
         Public,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Logs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
@@ -185,7 +185,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceLimits {
     #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
     pub memory_in_gb: Option<f64>,

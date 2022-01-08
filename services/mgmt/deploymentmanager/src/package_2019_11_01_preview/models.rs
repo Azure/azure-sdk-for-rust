@@ -40,12 +40,12 @@ pub struct Authentication {
     #[serde(rename = "type")]
     pub type_: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -80,14 +80,14 @@ pub struct Identity {
     #[serde(rename = "identityIds")]
     pub identity_ids: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Message {
     #[serde(rename = "timeStamp", default, skip_serializing_if = "Option::is_none")]
     pub time_stamp: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -98,7 +98,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -109,7 +109,7 @@ pub struct OperationDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<Operation>,
@@ -119,7 +119,7 @@ pub struct PrePostStep {
     #[serde(rename = "stepId")]
     pub step_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -128,7 +128,7 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceOperation {
     #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
@@ -191,7 +191,7 @@ pub mod rest_request_authentication {
         RolloutIdentity,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestResponse {
     #[serde(rename = "successStatusCodes", default, skip_serializing_if = "Vec::is_empty")]
     pub success_status_codes: Vec<String>,
@@ -200,7 +200,7 @@ pub struct RestResponse {
 }
 pub mod rest_response {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Regex {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub matches: Vec<String>,
@@ -231,7 +231,7 @@ pub struct RolloutIdentityAuthentication {
     pub rest_request_authentication: RestRequestAuthentication,
 }
 pub type RolloutListResult = Vec<Rollout>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RolloutOperationInfo {
     #[serde(rename = "retryAttempt", default, skip_serializing_if = "Option::is_none")]
     pub retry_attempt: Option<i32>,
@@ -244,7 +244,7 @@ pub struct RolloutOperationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RolloutProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -323,7 +323,7 @@ pub struct ServiceResource {
     pub properties: serde_json::Value,
 }
 pub type ServiceTopologiesListResult = Vec<ServiceTopologyResource>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTopologyProperties {
     #[serde(rename = "artifactSourceId", default, skip_serializing_if = "Option::is_none")]
     pub artifact_source_id: Option<String>,
@@ -343,7 +343,7 @@ pub struct ServiceUnit {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub steps: Vec<RolloutStep>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceUnitArtifacts {
     #[serde(rename = "templateUri", default, skip_serializing_if = "Option::is_none")]
     pub template_uri: Option<String>,
@@ -390,7 +390,7 @@ pub struct StepGroup {
     #[serde(rename = "postDeploymentSteps", default, skip_serializing_if = "Vec::is_empty")]
     pub post_deployment_steps: Vec<PrePostStep>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StepOperationInfo {
     #[serde(rename = "deploymentName", default, skip_serializing_if = "Option::is_none")]
     pub deployment_name: Option<String>,

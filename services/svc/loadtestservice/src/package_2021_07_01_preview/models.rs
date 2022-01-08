@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppComponent {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
@@ -31,7 +31,7 @@ pub struct AppComponentsMap {
     pub name: Option<String>,
     pub value: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientMetricsFilters {
     #[serde(rename = "testRunId", default, skip_serializing_if = "Option::is_none")]
     pub test_run_id: Option<String>,
@@ -40,24 +40,24 @@ pub struct ClientMetricsFilters {
     #[serde(rename = "timeRange", default, skip_serializing_if = "Option::is_none")]
     pub time_range: Option<TimeRange>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientMetricsResults {
     #[serde(rename = "testRunId", default, skip_serializing_if = "Option::is_none")]
     pub test_run_id: Option<String>,
     #[serde(rename = "timeSeries", default, skip_serializing_if = "Option::is_none")]
     pub time_series: Option<Series>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultServerMetricsConfigListModel {
     #[serde(rename = "defaultMetrics", default, skip_serializing_if = "Option::is_none")]
     pub default_metrics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultServerMetricsConfigModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metricnamespace: Option<String>,
@@ -70,7 +70,7 @@ pub struct DefaultServerMetricsConfigModel {
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -81,7 +81,7 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileUrl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -92,12 +92,12 @@ pub struct FileUrl {
     #[serde(rename = "expireTime", default, skip_serializing_if = "Option::is_none")]
     pub expire_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileUrlList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FileUrl>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileUrlPath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -106,21 +106,21 @@ pub struct FileUrlPath {
     #[serde(rename = "expireTime", default, skip_serializing_if = "Option::is_none")]
     pub expire_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileValidateResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub valid: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filters {
     #[serde(rename = "requestSamplerValues", default, skip_serializing_if = "Vec::is_empty")]
     pub request_sampler_values: Vec<String>,
     #[serde(rename = "errorFiltersValues", default, skip_serializing_if = "Vec::is_empty")]
     pub error_filters_values: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputTestArtifacts {
     #[serde(rename = "configUrl", default, skip_serializing_if = "Option::is_none")]
     pub config_url: Option<FileUrl>,
@@ -131,12 +131,12 @@ pub struct InputTestArtifacts {
     #[serde(rename = "additionalUrls", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_urls: Vec<FileUrl>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadTestConfig {
     #[serde(rename = "engineInstances", default, skip_serializing_if = "Option::is_none")]
     pub engine_instances: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalizedName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
@@ -150,12 +150,12 @@ pub struct OutputTestArtifacts {
     #[serde(rename = "logsUrl")]
     pub logs_url: FileUrl,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PassFailCriteria {
     #[serde(rename = "passFailMetrics", default, skip_serializing_if = "Option::is_none")]
     pub pass_fail_metrics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PassFailMetric {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub clientmetric: Option<String>,
@@ -188,14 +188,14 @@ pub struct ResourceMetricModel {
     #[serde(rename = "resourceType")]
     pub resource_type: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Series {
     #[serde(rename = "activeUsers", default, skip_serializing_if = "Option::is_none")]
     pub active_users: Option<serde_json::Value>,
@@ -212,7 +212,7 @@ pub struct ServerMetricName {
     #[serde(rename = "localizedValue")]
     pub localized_value: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerMetricsModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -223,7 +223,7 @@ pub struct ServerMetricsModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedResourceType {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
@@ -235,7 +235,7 @@ pub struct TestArtifacts {
     #[serde(rename = "outputArtifacts", default, skip_serializing_if = "Option::is_none")]
     pub output_artifacts: Option<OutputTestArtifacts>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestModel {
     #[serde(rename = "testId", default, skip_serializing_if = "Option::is_none")]
     pub test_id: Option<String>,
@@ -264,14 +264,14 @@ pub struct TestModel {
     #[serde(rename = "environmentVariables", default, skip_serializing_if = "Option::is_none")]
     pub environment_variables: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestModelResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TestModel>,
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestRunModel {
     #[serde(rename = "testRunId", default, skip_serializing_if = "Option::is_none")]
     pub test_run_id: Option<String>,
@@ -320,14 +320,14 @@ pub struct TestRunModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestRunModelResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TestRunModel>,
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestRunStatisticsModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transaction: Option<String>,
@@ -358,14 +358,14 @@ pub struct TestRunStatisticsModel {
     #[serde(rename = "sentKBytesPerSec", default, skip_serializing_if = "Option::is_none")]
     pub sent_k_bytes_per_sec: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeRange {
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeries {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,

@@ -7,7 +7,7 @@ pub struct ErrorResponse {
     pub code: String,
     pub message: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -16,7 +16,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -28,7 +28,7 @@ pub mod operation {
         pub description: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -52,14 +52,14 @@ pub struct Workspace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceKeysResponse {
     #[serde(rename = "primaryToken", default, skip_serializing_if = "Option::is_none")]
     pub primary_token: Option<String>,
     #[serde(rename = "secondaryToken", default, skip_serializing_if = "Option::is_none")]
     pub secondary_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
@@ -106,7 +106,7 @@ pub mod workspace_properties {
         Unregistered,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspacePropertiesUpdateParameters {
     #[serde(rename = "workspaceState", default, skip_serializing_if = "Option::is_none")]
     pub workspace_state: Option<workspace_properties_update_parameters::WorkspaceState>,
@@ -126,7 +126,7 @@ pub mod workspace_properties_update_parameters {
         Unregistered,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

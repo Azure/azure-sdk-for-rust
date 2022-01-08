@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Appliance {
     #[serde(flatten)]
     pub generic_resource: GenericResource,
@@ -13,7 +13,7 @@ pub struct Appliance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceArtifact {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -33,7 +33,7 @@ pub struct ApplianceDefinition {
     pub generic_resource: GenericResource,
     pub properties: ApplianceDefinitionProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceDefinitionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplianceDefinition>,
@@ -54,7 +54,7 @@ pub struct ApplianceDefinitionProperties {
     #[serde(rename = "packageFileUri")]
     pub package_file_uri: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Appliance>,
@@ -67,7 +67,7 @@ pub enum ApplianceLockLevel {
     ReadOnly,
     None,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppliancePatchable {
     #[serde(flatten)]
     pub generic_resource: GenericResource,
@@ -93,7 +93,7 @@ pub struct ApplianceProperties {
     #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppliancePropertiesPatchable {
     #[serde(rename = "managedResourceGroupId", default, skip_serializing_if = "Option::is_none")]
     pub managed_resource_group_id: Option<String>,
@@ -115,7 +115,7 @@ pub struct ApplianceProviderAuthorization {
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(rename = "httpStatus", default, skip_serializing_if = "Option::is_none")]
     pub http_status: Option<String>,
@@ -124,7 +124,7 @@ pub struct ErrorResponse {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenericResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -135,7 +135,7 @@ pub struct GenericResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -151,7 +151,7 @@ pub mod identity {
         SystemAssigned,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -160,7 +160,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -170,7 +170,7 @@ pub mod operation {
         pub operation: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -186,7 +186,7 @@ pub struct Plan {
     pub promotion_code: Option<String>,
     pub version: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlanPatchable {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -213,7 +213,7 @@ pub enum ProvisioningState {
     Succeeded,
     Updating,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

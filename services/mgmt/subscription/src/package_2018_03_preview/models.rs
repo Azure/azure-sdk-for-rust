@@ -7,19 +7,19 @@ pub struct AdPrincipal {
     #[serde(rename = "objectId")]
     pub object_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Location {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -34,12 +34,12 @@ pub struct Location {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub longitude: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Location>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Subscription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -65,7 +65,7 @@ pub mod subscription {
         Deleted,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionCreationParameters {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -86,7 +86,7 @@ pub mod subscription_creation_parameters {
         MsAzr0148p,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionCreationResult {
     #[serde(rename = "subscriptionLink", default, skip_serializing_if = "Option::is_none")]
     pub subscription_link: Option<String>,
@@ -98,7 +98,7 @@ pub struct SubscriptionListResult {
     #[serde(rename = "nextLink")]
     pub next_link: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -107,12 +107,12 @@ pub struct SubscriptionOperation {
     #[serde(rename = "statusDetail", default, skip_serializing_if = "Option::is_none")]
     pub status_detail: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionOperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubscriptionOperation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionPolicies {
     #[serde(rename = "locationPlacementId", default, skip_serializing_if = "Option::is_none")]
     pub location_placement_id: Option<String>,
@@ -130,7 +130,7 @@ pub mod subscription_policies {
         CurrentPeriodOff,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TenantIdDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

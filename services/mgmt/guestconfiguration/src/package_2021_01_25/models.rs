@@ -2,14 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<ConfigurationInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentReport {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -44,7 +44,7 @@ pub mod assignment_report {
         Initial,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentReportDetails {
     #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<assignment_report_details::ComplianceStatus>,
@@ -73,7 +73,7 @@ pub mod assignment_report_details {
         Initial,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentReportResource {
     #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<assignment_report_resource::ComplianceStatus>,
@@ -93,28 +93,28 @@ pub mod assignment_report_resource {
         Pending,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentReportResourceComplianceReason {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub phrase: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationSetting {
     #[serde(rename = "configurationMode", default, skip_serializing_if = "Option::is_none")]
     pub configuration_mode: Option<configuration_setting::ConfigurationMode>,
@@ -143,14 +143,14 @@ pub mod configuration_setting {
         StopConfiguration,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
 pub mod error_response {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
@@ -158,7 +158,7 @@ pub mod error_response {
         pub message: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationAssignment {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -167,12 +167,12 @@ pub struct GuestConfigurationAssignment {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationAssignmentList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GuestConfigurationAssignment>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationAssignmentProperties {
     #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_id: Option<String>,
@@ -215,7 +215,7 @@ pub mod guest_configuration_assignment_properties {
         Created,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationAssignmentReport {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -224,12 +224,12 @@ pub struct GuestConfigurationAssignmentReport {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GuestConfigurationAssignmentReportProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationAssignmentReportList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GuestConfigurationAssignmentReport>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationAssignmentReportProperties {
     #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<guest_configuration_assignment_report_properties::ComplianceStatus>,
@@ -257,7 +257,7 @@ pub mod guest_configuration_assignment_report_properties {
         Pending,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationNavigation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<guest_configuration_navigation::Kind>,
@@ -295,7 +295,7 @@ pub mod guest_configuration_navigation {
         ApplyAndMonitor,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -306,7 +306,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -317,23 +317,23 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
         pub status_code: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -344,14 +344,14 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmssvmInfo {
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
@@ -373,7 +373,7 @@ pub mod vmssvm_info {
         Pending,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,

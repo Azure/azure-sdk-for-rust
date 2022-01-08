@@ -9,14 +9,14 @@ pub struct Registry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryCredentials {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Registry>,
@@ -37,7 +37,7 @@ pub mod registry_name_check_request {
         MicrosoftContainerRegistryRegistries,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryNameStatus {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
@@ -57,14 +57,14 @@ pub struct RegistryProperties {
     #[serde(rename = "storageAccount")]
     pub storage_account: StorageAccountProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPropertiesUpdateParameters {
     #[serde(rename = "adminUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

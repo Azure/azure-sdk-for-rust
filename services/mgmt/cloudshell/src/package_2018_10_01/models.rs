@@ -8,7 +8,7 @@ pub struct CloudShellConsole {
     pub resource: Resource,
     pub properties: ConsoleProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudShellPatchUserSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserProperties>,
@@ -91,9 +91,9 @@ pub struct ErrorDetail {
 pub struct ErrorResponse {
     pub error: ErrorDetail,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfile {
     #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_resource_id: Option<String>,
@@ -102,7 +102,7 @@ pub struct StorageProfile {
     #[serde(rename = "diskSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_in_gb: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TerminalSettings {
     #[serde(rename = "fontSize", default, skip_serializing_if = "Option::is_none")]
     pub font_size: Option<terminal_settings::FontSize>,

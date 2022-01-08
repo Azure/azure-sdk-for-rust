@@ -20,12 +20,12 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketplaceRegistrationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MarketplaceRegistrationDefinitionProperties>,
@@ -38,7 +38,7 @@ pub struct MarketplaceRegistrationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketplaceRegistrationDefinitionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MarketplaceRegistrationDefinition>,
@@ -57,7 +57,7 @@ pub struct MarketplaceRegistrationDefinitionProperties {
     #[serde(rename = "planDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub plan_display_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -66,7 +66,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -78,7 +78,7 @@ pub mod operation {
         pub description: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -90,7 +90,7 @@ pub struct Plan {
     pub product: String,
     pub version: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistrationAssignmentProperties>,
@@ -101,7 +101,7 @@ pub struct RegistrationAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationAssignmentList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegistrationAssignment>,
@@ -134,7 +134,7 @@ pub mod registration_assignment_properties {
         Succeeded,
         Updating,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct RegistrationDefinition {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub properties: Option<registration_definition::Properties>,
@@ -149,7 +149,7 @@ pub mod registration_assignment_properties {
     }
     pub mod registration_definition {
         use super::*;
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct Properties {
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub description: Option<String>,
@@ -188,7 +188,7 @@ pub mod registration_assignment_properties {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistrationDefinitionProperties>,
@@ -201,7 +201,7 @@ pub struct RegistrationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationDefinitionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegistrationDefinition>,

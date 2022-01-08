@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Diagnostics {
     #[serde(rename = "columnNumber", default, skip_serializing_if = "Option::is_none")]
     pub column_number: Option<i32>,
@@ -39,7 +39,7 @@ pub struct HiveJobProperties {
     #[serde(rename = "executedStatementCount", default, skip_serializing_if = "Option::is_none")]
     pub executed_statement_count: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDataPath {
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
@@ -48,7 +48,7 @@ pub struct JobDataPath {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -88,7 +88,7 @@ pub mod job_error_details {
         Info,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobInfoListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobInformation>,
@@ -162,7 +162,7 @@ pub mod job_information {
         Failed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobInnerError {
     #[serde(rename = "diagnosticCode", default, skip_serializing_if = "Option::is_none")]
     pub diagnostic_code: Option<i32>,
@@ -204,7 +204,7 @@ pub struct JobProperties {
     #[serde(rename = "type")]
     pub type_: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -225,7 +225,7 @@ pub mod job_resource {
         StatisticsResourceInUserFolder,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStateAuditRecord {
     #[serde(rename = "newState", default, skip_serializing_if = "Option::is_none")]
     pub new_state: Option<String>,
@@ -236,7 +236,7 @@ pub struct JobStateAuditRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatistics {
     #[serde(rename = "lastUpdateTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_update_time_utc: Option<String>,
@@ -245,7 +245,7 @@ pub struct JobStatistics {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stages: Vec<JobStatisticsVertexStage>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatisticsVertexStage {
     #[serde(rename = "dataRead", default, skip_serializing_if = "Option::is_none")]
     pub data_read: Option<i64>,

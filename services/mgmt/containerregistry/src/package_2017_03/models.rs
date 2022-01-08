@@ -2,14 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -20,7 +20,7 @@ pub struct OperationDisplayDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationDefinition>,
@@ -58,14 +58,14 @@ pub struct RegistryCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryPropertiesCreateParameters>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListCredentialsResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub passwords: Vec<RegistryPassword>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Registry>,
@@ -86,7 +86,7 @@ pub mod registry_name_check_request {
         MicrosoftContainerRegistryRegistries,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryNameStatus {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
@@ -95,7 +95,7 @@ pub struct RegistryNameStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPassword {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<registry_password::Name>,
@@ -112,7 +112,7 @@ pub mod registry_password {
         Password2,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryProperties {
     #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
     pub login_server: Option<String>,
@@ -140,14 +140,14 @@ pub struct RegistryPropertiesCreateParameters {
     #[serde(rename = "storageAccount")]
     pub storage_account: StorageAccountParameters,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPropertiesUpdateParameters {
     #[serde(rename = "adminUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountParameters>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -185,7 +185,7 @@ pub struct StorageAccountParameters {
     #[serde(rename = "accessKey")]
     pub access_key: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

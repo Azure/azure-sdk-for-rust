@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<ErrorCode>,
@@ -14,7 +14,7 @@ pub enum ErrorCode {
     InvalidRequestParameter,
     MissingRequestParameter,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridUseBenefitListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HybridUseBenefitModel>,
@@ -31,7 +31,7 @@ pub struct HybridUseBenefitModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HybridUseBenefitProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridUseBenefitProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -40,7 +40,7 @@ pub struct HybridUseBenefitProperties {
     #[serde(rename = "lastUpdatedDate", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -51,14 +51,14 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationResponse>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -73,7 +73,7 @@ pub enum ProvisioningState {
     Cancelled,
     Failed,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -82,7 +82,7 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

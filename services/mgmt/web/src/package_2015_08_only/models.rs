@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServiceCertificate {
     #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_id: Option<String>,
@@ -124,7 +124,7 @@ pub struct AppServiceCertificateOrderCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServiceCertificateOrderPatchResource {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
@@ -208,7 +208,7 @@ pub mod app_service_certificate_order_patch_resource {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServiceCertificatePatchResource {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
@@ -222,7 +222,7 @@ pub struct AppServiceCertificateResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppServiceCertificate>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
@@ -243,7 +243,7 @@ pub struct CertificateDetails {
     #[serde(rename = "rawData", default, skip_serializing_if = "Option::is_none")]
     pub raw_data: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateEmail {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
@@ -252,7 +252,7 @@ pub struct CertificateEmail {
 }
 pub mod certificate_email {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "emailId", default, skip_serializing_if = "Option::is_none")]
         pub email_id: Option<String>,
@@ -260,7 +260,7 @@ pub mod certificate_email {
         pub time_stamp: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateOrderAction {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
@@ -269,7 +269,7 @@ pub struct CertificateOrderAction {
 }
 pub mod certificate_order_action {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<properties::Type>,
@@ -303,7 +303,7 @@ pub struct CsmOperationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -314,12 +314,12 @@ pub struct CsmOperationDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CsmOperationDescriptionProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDescriptionProperties {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -330,7 +330,7 @@ pub struct CsmOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -341,14 +341,14 @@ pub struct Dimension {
     #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailability {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -381,12 +381,12 @@ pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub availabilities: Vec<MetricAvailability>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NameIdentifier {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyOnlyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -397,7 +397,7 @@ pub struct ProxyOnlyResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReissueCertificateOrderRequest {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
@@ -406,7 +406,7 @@ pub struct ReissueCertificateOrderRequest {
 }
 pub mod reissue_certificate_order_request {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
         pub key_size: Option<i32>,
@@ -418,7 +418,7 @@ pub mod reissue_certificate_order_request {
         pub is_private_key_external: Option<bool>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RenewCertificateOrderRequest {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
@@ -427,7 +427,7 @@ pub struct RenewCertificateOrderRequest {
 }
 pub mod renew_certificate_order_request {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
         pub key_size: Option<i32>,
@@ -451,7 +451,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
@@ -460,7 +460,7 @@ pub struct ServiceSpecification {
 pub struct SiteSeal {
     pub html: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteSealRequest {
     #[serde(rename = "lightTheme", default, skip_serializing_if = "Option::is_none")]
     pub light_theme: Option<bool>,

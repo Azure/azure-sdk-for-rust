@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -37,7 +37,7 @@ pub struct ErrorInfo {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorInfo>,
@@ -65,7 +65,7 @@ pub struct LogAnalyticsQueryPackListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackProperties {
     #[serde(rename = "queryPackId", default, skip_serializing_if = "Option::is_none")]
     pub query_pack_id: Option<String>,
@@ -76,7 +76,7 @@ pub struct LogAnalyticsQueryPackProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackQuery {
     #[serde(flatten)]
     pub azure_resource_properties: AzureResourceProperties,
@@ -113,7 +113,7 @@ pub struct LogAnalyticsQueryPackQueryProperties {
 }
 pub mod log_analytics_query_pack_query_properties {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub categories: Vec<String>,
@@ -123,7 +123,7 @@ pub mod log_analytics_query_pack_query_properties {
         pub solutions: Vec<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackQuerySearchProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub related: Option<log_analytics_query_pack_query_search_properties::Related>,
@@ -132,7 +132,7 @@ pub struct LogAnalyticsQueryPackQuerySearchProperties {
 }
 pub mod log_analytics_query_pack_query_search_properties {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub categories: Vec<String>,
@@ -142,7 +142,7 @@ pub mod log_analytics_query_pack_query_search_properties {
         pub solutions: Vec<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -153,7 +153,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -164,7 +164,7 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -183,7 +183,7 @@ pub struct QueryPacksResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
@@ -198,7 +198,7 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableContacts {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub spacecraft: Option<ResourceReference>,
@@ -11,14 +11,14 @@ pub struct AvailableContacts {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContactInstanceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableContactsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AvailableContacts>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableGroundStation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -31,14 +31,14 @@ pub struct AvailableGroundStation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AvailableGroundStationProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableGroundStationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AvailableGroundStation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableGroundStationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub city: Option<String>,
@@ -56,12 +56,12 @@ pub enum Capability {
     EarthObservation,
     Communication,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -72,7 +72,7 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Contact {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -81,7 +81,7 @@ pub struct Contact {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContactInstanceProperties {
     #[serde(rename = "maximumElevationDegrees", default, skip_serializing_if = "Option::is_none")]
     pub maximum_elevation_degrees: Option<f64>,
@@ -102,7 +102,7 @@ pub struct ContactInstanceProperties {
     #[serde(rename = "endElevationDegrees", default, skip_serializing_if = "Option::is_none")]
     pub end_elevation_degrees: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContactListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Contact>,
@@ -179,7 +179,7 @@ pub struct ContactProfileLinkChannel {
     #[serde(rename = "decodingConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub decoding_configuration: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContactProfileListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContactProfile>,
@@ -279,7 +279,7 @@ pub mod end_point {
     }
 }
 pub type Etag = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -294,7 +294,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -319,19 +319,19 @@ pub mod operation {
         Internal,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -342,14 +342,14 @@ pub struct Resource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceIdListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<serde_json::Value>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -395,7 +395,7 @@ pub mod spacecraft_link {
         LinearHorizontal,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SpacecraftListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Spacecraft>,
@@ -428,7 +428,7 @@ pub mod spacecrafts_properties {
         Denied,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -441,7 +441,7 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,

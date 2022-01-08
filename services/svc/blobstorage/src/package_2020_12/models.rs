@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
     #[serde(rename = "Start", default, skip_serializing_if = "Option::is_none")]
     pub start: Option<String>,
@@ -86,7 +86,7 @@ pub struct BlobItemInternal {
     #[serde(rename = "HasVersionsOnly", default, skip_serializing_if = "Option::is_none")]
     pub has_versions_only: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobMetadata {
     #[serde(rename = "Encrypted", default, skip_serializing_if = "Option::is_none")]
     pub encrypted: Option<String>,
@@ -213,14 +213,14 @@ pub struct Block {
     #[serde(rename = "Size")]
     pub size: i64,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlockList {
     #[serde(rename = "CommittedBlocks", default, skip_serializing_if = "Vec::is_empty")]
     pub committed_blocks: Vec<Block>,
     #[serde(rename = "UncommittedBlocks", default, skip_serializing_if = "Vec::is_empty")]
     pub uncommitted_blocks: Vec<Block>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlockLookupList {
     #[serde(rename = "Committed", default, skip_serializing_if = "Vec::is_empty")]
     pub committed: Vec<String>,
@@ -249,7 +249,7 @@ pub struct ContainerItem {
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ContainerMetadata>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerMetadata {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
@@ -304,7 +304,7 @@ pub struct CorsRule {
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DelimitedTextConfiguration {
     #[serde(rename = "ColumnSeparator", default, skip_serializing_if = "Option::is_none")]
     pub column_separator: Option<String>,
@@ -473,7 +473,7 @@ pub mod geo_replication {
         Unavailable,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonTextConfiguration {
     #[serde(rename = "RecordSeparator", default, skip_serializing_if = "Option::is_none")]
     pub record_separator: Option<String>,
@@ -587,9 +587,9 @@ pub struct Metrics {
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectReplicationMetadata {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageList {
     #[serde(rename = "PageRange", default, skip_serializing_if = "Vec::is_empty")]
     pub page_range: Vec<PageRange>,
@@ -603,7 +603,7 @@ pub struct PageRange {
     #[serde(rename = "End")]
     pub end: i64,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParquetConfiguration {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PublicAccessType {
@@ -693,12 +693,12 @@ pub struct StaticWebsite {
     #[serde(rename = "DefaultIndexDocumentPath", default, skip_serializing_if = "Option::is_none")]
     pub default_index_document_path: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceProperties {
     #[serde(rename = "Logging", default, skip_serializing_if = "Option::is_none")]
     pub logging: Option<Logging>,
@@ -715,7 +715,7 @@ pub struct StorageServiceProperties {
     #[serde(rename = "StaticWebsite", default, skip_serializing_if = "Option::is_none")]
     pub static_website: Option<StaticWebsite>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceStats {
     #[serde(rename = "GeoReplication", default, skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,

@@ -2,19 +2,19 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckTrafficManagerRelativeDnsNameAvailabilityParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -25,12 +25,12 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeleteOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub boolean: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsConfig {
     #[serde(rename = "relativeName", default, skip_serializing_if = "Option::is_none")]
     pub relative_name: Option<String>,
@@ -39,7 +39,7 @@ pub struct DnsConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ttl: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -50,7 +50,7 @@ pub struct Endpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointProperties {
     #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_id: Option<String>,
@@ -71,12 +71,12 @@ pub struct EndpointProperties {
     #[serde(rename = "geoMapping", default, skip_serializing_if = "Vec::is_empty")]
     pub geo_mapping: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GeographicHierarchyProperties {
     #[serde(rename = "geographicHierarchy", default, skip_serializing_if = "Option::is_none")]
     pub geographic_hierarchy: Option<Region>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorConfig {
     #[serde(rename = "profileMonitorStatus", default, skip_serializing_if = "Option::is_none")]
     pub profile_monitor_status: Option<String>,
@@ -87,19 +87,19 @@ pub struct MonitorConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Profile {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProfileProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Profile>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileProperties {
     #[serde(rename = "profileStatus", default, skip_serializing_if = "Option::is_none")]
     pub profile_status: Option<String>,
@@ -112,7 +112,7 @@ pub struct ProfileProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<Endpoint>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Region {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -121,7 +121,7 @@ pub struct Region {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<Region>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -134,19 +134,19 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerGeographicHierarchy {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GeographicHierarchyProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerNameAvailability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

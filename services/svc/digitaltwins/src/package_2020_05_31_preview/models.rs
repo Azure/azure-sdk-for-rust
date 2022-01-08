@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -13,7 +13,7 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<InnerError>>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
@@ -27,14 +27,14 @@ pub struct EventRoute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventRouteCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventRoute>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncomingRelationship {
     #[serde(rename = "$relationshipId", default, skip_serializing_if = "Option::is_none")]
     pub relationship_id: Option<String>,
@@ -45,14 +45,14 @@ pub struct IncomingRelationship {
     #[serde(rename = "$relationshipLink", default, skip_serializing_if = "Option::is_none")]
     pub relationship_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncomingRelationshipCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IncomingRelationship>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -74,28 +74,28 @@ pub struct ModelData {
     pub model: Option<serde_json::Value>,
 }
 pub type NonPagedModelDataCollection = Vec<ModelData>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedModelDataCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ModelData>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<serde_json::Value>,
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuerySpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelationshipCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<serde_json::Value>,

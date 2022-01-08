@@ -28,7 +28,7 @@ pub mod asset_item {
         Resource,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AsyncOperationErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -39,7 +39,7 @@ pub struct AsyncOperationErrorInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<AsyncOperationErrorInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AsyncOperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -136,14 +136,14 @@ pub mod diagnostics_configuration {
         All,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExampleRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inputs: Option<serde_json::Value>,
     #[serde(rename = "globalParameters", default, skip_serializing_if = "Option::is_none")]
     pub global_parameters: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphEdge {
     #[serde(rename = "sourceNodeId", default, skip_serializing_if = "Option::is_none")]
     pub source_node_id: Option<String>,
@@ -154,7 +154,7 @@ pub struct GraphEdge {
     #[serde(rename = "targetPortId", default, skip_serializing_if = "Option::is_none")]
     pub target_port_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphNode {
     #[serde(rename = "assetId", default, skip_serializing_if = "Option::is_none")]
     pub asset_id: Option<String>,
@@ -165,7 +165,7 @@ pub struct GraphNode {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphPackage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nodes: Option<serde_json::Value>,
@@ -207,7 +207,7 @@ pub struct GraphParameterLink {
     #[serde(rename = "parameterKey")]
     pub parameter_key: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputPort {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<input_port::Type>,
@@ -223,14 +223,14 @@ pub mod input_port {
 pub struct MachineLearningWorkspace {
     pub id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModeValueInfo {
     #[serde(rename = "interfaceString", default, skip_serializing_if = "Option::is_none")]
     pub interface_string: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ModuleAssetParameter>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleAssetParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -239,7 +239,7 @@ pub struct ModuleAssetParameter {
     #[serde(rename = "modeValuesInfo", default, skip_serializing_if = "Option::is_none")]
     pub mode_values_info: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -250,19 +250,19 @@ pub struct OperationDisplayInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutputPort {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<output_port::Type>,
@@ -274,14 +274,14 @@ pub mod output_port {
         Dataset,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedWebServicesList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WebService>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -294,14 +294,14 @@ pub struct PatchedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchedWebService {
     #[serde(flatten)]
     pub patched_resource: PatchedResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebServiceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RealtimeConfiguration {
     #[serde(rename = "maxConcurrentCalls", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_calls: Option<i64>,
@@ -328,7 +328,7 @@ pub struct ServiceInputOutputSpecification {
     pub type_: String,
     pub properties: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -354,14 +354,14 @@ pub struct WebService {
     pub resource: Resource,
     pub properties: WebServiceProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebServiceKeys {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebServiceParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,

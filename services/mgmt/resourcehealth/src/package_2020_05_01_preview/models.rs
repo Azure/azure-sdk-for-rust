@@ -2,14 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
 pub mod error_response {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
@@ -19,7 +19,7 @@ pub mod error_response {
         pub details: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -28,7 +28,7 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilityStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -43,7 +43,7 @@ pub struct AvailabilityStatus {
 }
 pub mod availability_status {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
         pub availability_state: Option<properties::AvailabilityState>,
@@ -94,7 +94,7 @@ pub mod availability_status {
             Transient,
             Persistent,
         }
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct RecentlyResolved {
             #[serde(rename = "unavailableOccurredTime", default, skip_serializing_if = "Option::is_none")]
             pub unavailable_occurred_time: Option<String>,
@@ -111,7 +111,7 @@ pub struct AvailabilityStatusListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Faq {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub question: Option<String>,
@@ -120,14 +120,14 @@ pub struct Faq {
     #[serde(rename = "localeCode", default, skip_serializing_if = "Option::is_none")]
     pub locale_code: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Impact {
     #[serde(rename = "impactedService", default, skip_serializing_if = "Option::is_none")]
     pub impacted_service: Option<String>,
     #[serde(rename = "impactedRegions", default, skip_serializing_if = "Vec::is_empty")]
     pub impacted_regions: Vec<ImpactedServiceRegion>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImpactedRegion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -140,7 +140,7 @@ pub struct ImpactedResourceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImpactedResourceStatus {
     #[serde(flatten)]
     pub resource: Resource,
@@ -149,7 +149,7 @@ pub struct ImpactedResourceStatus {
 }
 pub mod impacted_resource_status {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
         pub availability_state: Option<properties::AvailabilityState>,
@@ -179,7 +179,7 @@ pub mod impacted_resource_status {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImpactedServiceRegion {
     #[serde(rename = "impactedRegion", default, skip_serializing_if = "Option::is_none")]
     pub impacted_region: Option<String>,
@@ -200,7 +200,7 @@ pub mod impacted_service_region {
         Resolved,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Link {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<link::Type>,
@@ -220,7 +220,7 @@ pub mod link {
         Button,
         Hyperlink,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct DisplayText {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
@@ -228,7 +228,7 @@ pub mod link {
         pub localized_value: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -237,7 +237,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -253,7 +253,7 @@ pub mod operation {
 pub struct OperationListResult {
     pub value: Vec<Operation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedAction {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
@@ -262,7 +262,7 @@ pub struct RecommendedAction {
     #[serde(rename = "actionUrlText", default, skip_serializing_if = "Option::is_none")]
     pub action_url_text: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceImpactingEvent {
     #[serde(rename = "eventStartTime", default, skip_serializing_if = "Option::is_none")]
     pub event_start_time: Option<String>,
@@ -277,12 +277,12 @@ pub struct ServiceImpactingEvent {
 }
 pub mod service_impacting_event {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Status {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct IncidentProperties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub title: Option<String>,
@@ -294,7 +294,7 @@ pub mod service_impacting_event {
         pub incident_type: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatusBanner {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
@@ -305,7 +305,7 @@ pub struct StatusBanner {
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Update {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,

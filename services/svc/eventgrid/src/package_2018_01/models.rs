@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatEventBaseProperties {
     #[serde(rename = "recipientCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub recipient_communication_identifier: Option<CommunicationIdentifierModel>,
@@ -11,28 +11,28 @@ pub struct AcsChatEventBaseProperties {
     #[serde(rename = "threadId", default, skip_serializing_if = "Option::is_none")]
     pub thread_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatEventInThreadBaseProperties {
     #[serde(rename = "transactionId", default, skip_serializing_if = "Option::is_none")]
     pub transaction_id: Option<String>,
     #[serde(rename = "threadId", default, skip_serializing_if = "Option::is_none")]
     pub thread_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatMessageDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
     #[serde(rename = "deleteTime", default, skip_serializing_if = "Option::is_none")]
     pub delete_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatMessageDeletedInThreadEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
     #[serde(rename = "deleteTime", default, skip_serializing_if = "Option::is_none")]
     pub delete_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatMessageEditedEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
@@ -43,7 +43,7 @@ pub struct AcsChatMessageEditedEventData {
     #[serde(rename = "editTime", default, skip_serializing_if = "Option::is_none")]
     pub edit_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatMessageEditedInThreadEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
@@ -54,7 +54,7 @@ pub struct AcsChatMessageEditedInThreadEventData {
     #[serde(rename = "editTime", default, skip_serializing_if = "Option::is_none")]
     pub edit_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatMessageEventBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_base_properties: AcsChatEventBaseProperties,
@@ -71,7 +71,7 @@ pub struct AcsChatMessageEventBaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatMessageEventInThreadBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
@@ -88,7 +88,7 @@ pub struct AcsChatMessageEventInThreadBaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatMessageReceivedEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_base_properties: AcsChatMessageEventBaseProperties,
@@ -97,7 +97,7 @@ pub struct AcsChatMessageReceivedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatMessageReceivedInThreadEventData {
     #[serde(flatten)]
     pub acs_chat_message_event_in_thread_base_properties: AcsChatMessageEventInThreadBaseProperties,
@@ -106,7 +106,7 @@ pub struct AcsChatMessageReceivedInThreadEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatParticipantAddedToThreadEventData {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
@@ -119,7 +119,7 @@ pub struct AcsChatParticipantAddedToThreadEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatParticipantAddedToThreadWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
@@ -130,7 +130,7 @@ pub struct AcsChatParticipantAddedToThreadWithUserEventData {
     #[serde(rename = "participantAdded", default, skip_serializing_if = "Option::is_none")]
     pub participant_added: Option<AcsChatThreadParticipantProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatParticipantRemovedFromThreadEventData {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
@@ -143,7 +143,7 @@ pub struct AcsChatParticipantRemovedFromThreadEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatParticipantRemovedFromThreadWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
@@ -154,7 +154,7 @@ pub struct AcsChatParticipantRemovedFromThreadWithUserEventData {
     #[serde(rename = "participantRemoved", default, skip_serializing_if = "Option::is_none")]
     pub participant_removed: Option<AcsChatThreadParticipantProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadCreatedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
@@ -165,7 +165,7 @@ pub struct AcsChatThreadCreatedEventData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub participants: Vec<AcsChatThreadParticipantProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadCreatedWithUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
@@ -176,7 +176,7 @@ pub struct AcsChatThreadCreatedWithUserEventData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub participants: Vec<AcsChatThreadParticipantProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
@@ -185,7 +185,7 @@ pub struct AcsChatThreadDeletedEventData {
     #[serde(rename = "deleteTime", default, skip_serializing_if = "Option::is_none")]
     pub delete_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadEventBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_base_properties: AcsChatEventBaseProperties,
@@ -194,7 +194,7 @@ pub struct AcsChatThreadEventBaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadEventInThreadBaseProperties {
     #[serde(flatten)]
     pub acs_chat_event_in_thread_base_properties: AcsChatEventInThreadBaseProperties,
@@ -203,14 +203,14 @@ pub struct AcsChatThreadEventInThreadBaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadParticipantProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(rename = "participantCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub participant_communication_identifier: Option<CommunicationIdentifierModel>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadPropertiesUpdatedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_in_thread_base_properties: AcsChatThreadEventInThreadBaseProperties,
@@ -221,7 +221,7 @@ pub struct AcsChatThreadPropertiesUpdatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadPropertiesUpdatedPerUserEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
@@ -232,7 +232,7 @@ pub struct AcsChatThreadPropertiesUpdatedPerUserEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsChatThreadWithUserDeletedEventData {
     #[serde(flatten)]
     pub acs_chat_thread_event_base_properties: AcsChatThreadEventBaseProperties,
@@ -241,7 +241,7 @@ pub struct AcsChatThreadWithUserDeletedEventData {
     #[serde(rename = "deleteTime", default, skip_serializing_if = "Option::is_none")]
     pub delete_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsRecordingChunkInfoProperties {
     #[serde(rename = "documentId", default, skip_serializing_if = "Option::is_none")]
     pub document_id: Option<String>,
@@ -256,7 +256,7 @@ pub struct AcsRecordingChunkInfoProperties {
     #[serde(rename = "deleteLocation", default, skip_serializing_if = "Option::is_none")]
     pub delete_location: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsRecordingFileStatusUpdatedEventData {
     #[serde(rename = "recordingStorageInfo", default, skip_serializing_if = "Option::is_none")]
     pub recording_storage_info: Option<AcsRecordingStorageInfoProperties>,
@@ -292,12 +292,12 @@ pub mod acs_recording_file_status_updated_event_data {
         Mp4,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsRecordingStorageInfoProperties {
     #[serde(rename = "recordingChunks", default, skip_serializing_if = "Vec::is_empty")]
     pub recording_chunks: Vec<AcsRecordingChunkInfoProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsSmsDeliveryAttemptProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -306,7 +306,7 @@ pub struct AcsSmsDeliveryAttemptProperties {
     #[serde(rename = "segmentsFailed", default, skip_serializing_if = "Option::is_none")]
     pub segments_failed: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsSmsDeliveryReportReceivedEventData {
     #[serde(flatten)]
     pub acs_sms_event_base_properties: AcsSmsEventBaseProperties,
@@ -321,7 +321,7 @@ pub struct AcsSmsDeliveryReportReceivedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsSmsEventBaseProperties {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
@@ -330,7 +330,7 @@ pub struct AcsSmsEventBaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsSmsReceivedEventData {
     #[serde(flatten)]
     pub acs_sms_event_base_properties: AcsSmsEventBaseProperties,
@@ -339,87 +339,87 @@ pub struct AcsSmsReceivedEventData {
     #[serde(rename = "receivedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub received_timestamp: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsUserDisconnectedEventData {
     #[serde(rename = "userCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub user_communication_identifier: Option<CommunicationIdentifierModel>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementApiCreatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementApiDeletedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementApiReleaseCreatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementApiReleaseDeletedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementApiReleaseUpdatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementApiUpdatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementProductCreatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementProductDeletedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementProductUpdatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSubscriptionCreatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSubscriptionDeletedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSubscriptionUpdatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementUserCreatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementUserDeletedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementUserUpdatedEventData {
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppConfigurationKeyValueDeletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
@@ -430,7 +430,7 @@ pub struct AppConfigurationKeyValueDeletedEventData {
     #[serde(rename = "syncToken", default, skip_serializing_if = "Option::is_none")]
     pub sync_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppConfigurationKeyValueModifiedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
@@ -441,7 +441,7 @@ pub struct AppConfigurationKeyValueModifiedEventData {
     #[serde(rename = "syncToken", default, skip_serializing_if = "Option::is_none")]
     pub sync_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppEventTypeDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<app_event_type_detail::Action>,
@@ -458,7 +458,7 @@ pub mod app_event_type_detail {
         Failed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServicePlanEventTypeDetail {
     #[serde(rename = "stampKind", default, skip_serializing_if = "Option::is_none")]
     pub stamp_kind: Option<app_service_plan_event_type_detail::StampKind>,
@@ -515,7 +515,7 @@ pub enum CommunicationCloudEnvironmentModel {
     #[serde(rename = "gcch")]
     Gcch,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommunicationIdentifierModel {
     #[serde(rename = "rawId", default, skip_serializing_if = "Option::is_none")]
     pub raw_id: Option<String>,
@@ -530,7 +530,7 @@ pub struct CommunicationIdentifierModel {
 pub struct CommunicationUserIdentifierModel {
     pub id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryArtifactEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -545,7 +545,7 @@ pub struct ContainerRegistryArtifactEventData {
     #[serde(rename = "connectedRegistry", default, skip_serializing_if = "Option::is_none")]
     pub connected_registry: Option<ContainerRegistryEventConnectedRegistry>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryArtifactEventTarget {
     #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
@@ -562,27 +562,27 @@ pub struct ContainerRegistryArtifactEventTarget {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryChartDeletedEventData {
     #[serde(flatten)]
     pub container_registry_artifact_event_data: ContainerRegistryArtifactEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryChartPushedEventData {
     #[serde(flatten)]
     pub container_registry_artifact_event_data: ContainerRegistryArtifactEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryEventActor {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryEventConnectedRegistry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -603,7 +603,7 @@ pub struct ContainerRegistryEventData {
     #[serde(rename = "connectedRegistry", default, skip_serializing_if = "Option::is_none")]
     pub connected_registry: Option<ContainerRegistryEventConnectedRegistry>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryEventRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -616,14 +616,14 @@ pub struct ContainerRegistryEventRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub useragent: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryEventSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub addr: Option<String>,
     #[serde(rename = "instanceID", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryEventTarget {
     #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
@@ -640,17 +640,17 @@ pub struct ContainerRegistryEventTarget {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryImageDeletedEventData {
     #[serde(flatten)]
     pub container_registry_event_data: ContainerRegistryEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryImagePushedEventData {
     #[serde(flatten)]
     pub container_registry_event_data: ContainerRegistryEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceNewKubernetesVersionAvailableEventData {
     #[serde(rename = "latestSupportedKubernetesVersion", default, skip_serializing_if = "Option::is_none")]
     pub latest_supported_kubernetes_version: Option<String>,
@@ -661,14 +661,14 @@ pub struct ContainerServiceNewKubernetesVersionAvailableEventData {
     #[serde(rename = "latestPreviewKubernetesVersion", default, skip_serializing_if = "Option::is_none")]
     pub latest_preview_kubernetes_version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEventEvent {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceConnectionStateEventInfo {
     #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub sequence_number: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceConnectionStateEventProperties {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
@@ -679,7 +679,7 @@ pub struct DeviceConnectionStateEventProperties {
     #[serde(rename = "deviceConnectionStateEventInfo", default, skip_serializing_if = "Option::is_none")]
     pub device_connection_state_event_info: Option<DeviceConnectionStateEventInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceLifeCycleEventProperties {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
@@ -688,7 +688,7 @@ pub struct DeviceLifeCycleEventProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub twin: Option<DeviceTwinInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceTelemetryEventProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub body: Option<serde_json::Value>,
@@ -697,7 +697,7 @@ pub struct DeviceTelemetryEventProperties {
     #[serde(rename = "systemProperties", default, skip_serializing_if = "Option::is_none")]
     pub system_properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceTwinInfo {
     #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<String>,
@@ -724,14 +724,14 @@ pub struct DeviceTwinInfo {
 }
 pub mod device_twin_info {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub desired: Option<DeviceTwinProperties>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub reported: Option<DeviceTwinProperties>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct X509Thumbprint {
         #[serde(rename = "primaryThumbprint", default, skip_serializing_if = "Option::is_none")]
         pub primary_thumbprint: Option<String>,
@@ -739,12 +739,12 @@ pub mod device_twin_info {
         pub secondary_thumbprint: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceTwinMetadata {
     #[serde(rename = "lastUpdated", default, skip_serializing_if = "Option::is_none")]
     pub last_updated: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceTwinProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<DeviceTwinMetadata>,
@@ -767,7 +767,7 @@ pub struct EventGridEvent {
     #[serde(rename = "dataVersion")]
     pub data_version: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubCaptureFileCreatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fileurl: Option<String>,
@@ -788,32 +788,32 @@ pub struct EventHubCaptureFileCreatedEventData {
     #[serde(rename = "lastEnqueueTime", default, skip_serializing_if = "Option::is_none")]
     pub last_enqueue_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubDeviceConnectedEventData {
     #[serde(flatten)]
     pub device_connection_state_event_properties: DeviceConnectionStateEventProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubDeviceCreatedEventData {
     #[serde(flatten)]
     pub device_life_cycle_event_properties: DeviceLifeCycleEventProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubDeviceDeletedEventData {
     #[serde(flatten)]
     pub device_life_cycle_event_properties: DeviceLifeCycleEventProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubDeviceDisconnectedEventData {
     #[serde(flatten)]
     pub device_connection_state_event_properties: DeviceConnectionStateEventProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotHubDeviceTelemetryEventData {
     #[serde(flatten)]
     pub device_telemetry_event_properties: DeviceTelemetryEventProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultCertificateExpiredEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -830,7 +830,7 @@ pub struct KeyVaultCertificateExpiredEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultCertificateNearExpiryEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -847,7 +847,7 @@ pub struct KeyVaultCertificateNearExpiryEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultCertificateNewVersionCreatedEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -864,7 +864,7 @@ pub struct KeyVaultCertificateNewVersionCreatedEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultKeyExpiredEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -881,7 +881,7 @@ pub struct KeyVaultKeyExpiredEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultKeyNearExpiryEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -898,7 +898,7 @@ pub struct KeyVaultKeyNearExpiryEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultKeyNewVersionCreatedEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -915,7 +915,7 @@ pub struct KeyVaultKeyNewVersionCreatedEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultSecretExpiredEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -932,7 +932,7 @@ pub struct KeyVaultSecretExpiredEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultSecretNearExpiryEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -949,7 +949,7 @@ pub struct KeyVaultSecretNearExpiryEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultSecretNewVersionCreatedEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -966,7 +966,7 @@ pub struct KeyVaultSecretNewVersionCreatedEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultVaultAccessPolicyChangedEventData {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -983,7 +983,7 @@ pub struct KeyVaultVaultAccessPolicyChangedEventData {
     #[serde(rename = "EXP", default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineLearningServicesDatasetDriftDetectedEventData {
     #[serde(rename = "dataDriftId", default, skip_serializing_if = "Option::is_none")]
     pub data_drift_id: Option<String>,
@@ -1002,7 +1002,7 @@ pub struct MachineLearningServicesDatasetDriftDetectedEventData {
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineLearningServicesModelDeployedEventData {
     #[serde(rename = "serviceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<String>,
@@ -1015,7 +1015,7 @@ pub struct MachineLearningServicesModelDeployedEventData {
     #[serde(rename = "serviceProperties", default, skip_serializing_if = "Option::is_none")]
     pub service_properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineLearningServicesModelRegisteredEventData {
     #[serde(rename = "modelName", default, skip_serializing_if = "Option::is_none")]
     pub model_name: Option<String>,
@@ -1026,7 +1026,7 @@ pub struct MachineLearningServicesModelRegisteredEventData {
     #[serde(rename = "modelProperties", default, skip_serializing_if = "Option::is_none")]
     pub model_properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineLearningServicesRunCompletedEventData {
     #[serde(rename = "experimentId", default, skip_serializing_if = "Option::is_none")]
     pub experiment_id: Option<String>,
@@ -1041,7 +1041,7 @@ pub struct MachineLearningServicesRunCompletedEventData {
     #[serde(rename = "runProperties", default, skip_serializing_if = "Option::is_none")]
     pub run_properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineLearningServicesRunStatusChangedEventData {
     #[serde(rename = "experimentId", default, skip_serializing_if = "Option::is_none")]
     pub experiment_id: Option<String>,
@@ -1058,12 +1058,12 @@ pub struct MachineLearningServicesRunStatusChangedEventData {
     #[serde(rename = "runStatus", default, skip_serializing_if = "Option::is_none")]
     pub run_status: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsGeofenceEnteredEventData {
     #[serde(flatten)]
     pub maps_geofence_event_properties: MapsGeofenceEventProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsGeofenceEventProperties {
     #[serde(rename = "expiredGeofenceGeometryId", default, skip_serializing_if = "Vec::is_empty")]
     pub expired_geofence_geometry_id: Vec<String>,
@@ -1074,12 +1074,12 @@ pub struct MapsGeofenceEventProperties {
     #[serde(rename = "isEventPublished", default, skip_serializing_if = "Option::is_none")]
     pub is_event_published: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsGeofenceExitedEventData {
     #[serde(flatten)]
     pub maps_geofence_event_properties: MapsGeofenceEventProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsGeofenceGeometry {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
@@ -1094,24 +1094,24 @@ pub struct MapsGeofenceGeometry {
     #[serde(rename = "udId", default, skip_serializing_if = "Option::is_none")]
     pub ud_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsGeofenceResultEventData {
     #[serde(flatten)]
     pub maps_geofence_event_properties: MapsGeofenceEventProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobCanceledEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub outputs: Vec<MediaJobOutput>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobCancelingEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<media_job_error::Code>,
@@ -1152,21 +1152,21 @@ pub mod media_job_error {
         MayRetry,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobErroredEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub outputs: Vec<MediaJobOutput>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobFinishedEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
@@ -1204,32 +1204,32 @@ pub struct MediaJobOutputAsset {
     #[serde(rename = "assetName", default, skip_serializing_if = "Option::is_none")]
     pub asset_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputCanceledEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputCancelingEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputErroredEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputFinishedEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputProcessingEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputProgressEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
@@ -1238,12 +1238,12 @@ pub struct MediaJobOutputProgressEventData {
     #[serde(rename = "jobCorrelationData", default, skip_serializing_if = "Option::is_none")]
     pub job_correlation_data: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputScheduledEventData {
     #[serde(flatten)]
     pub media_job_output_state_change_event_data: MediaJobOutputStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputStateChangeEventData {
     #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
     pub previous_state: Option<media_job_output_state_change_event_data::PreviousState>,
@@ -1265,17 +1265,17 @@ pub mod media_job_output_state_change_event_data {
         Scheduled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobProcessingEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobScheduledEventData {
     #[serde(flatten)]
     pub media_job_state_change_event_data: MediaJobStateChangeEventData,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobStateChangeEventData {
     #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
     pub previous_state: Option<media_job_state_change_event_data::PreviousState>,
@@ -1314,7 +1314,7 @@ pub struct MediaLiveEventChannelArchiveHeartbeatEventData {
     #[serde(rename = "latencyResultCode")]
     pub latency_result_code: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventConnectionRejectedEventData {
     #[serde(rename = "ingestUrl", default, skip_serializing_if = "Option::is_none")]
     pub ingest_url: Option<String>,
@@ -1327,7 +1327,7 @@ pub struct MediaLiveEventConnectionRejectedEventData {
     #[serde(rename = "resultCode", default, skip_serializing_if = "Option::is_none")]
     pub result_code: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventEncoderConnectedEventData {
     #[serde(rename = "ingestUrl", default, skip_serializing_if = "Option::is_none")]
     pub ingest_url: Option<String>,
@@ -1338,7 +1338,7 @@ pub struct MediaLiveEventEncoderConnectedEventData {
     #[serde(rename = "encoderPort", default, skip_serializing_if = "Option::is_none")]
     pub encoder_port: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventEncoderDisconnectedEventData {
     #[serde(rename = "ingestUrl", default, skip_serializing_if = "Option::is_none")]
     pub ingest_url: Option<String>,
@@ -1351,7 +1351,7 @@ pub struct MediaLiveEventEncoderDisconnectedEventData {
     #[serde(rename = "resultCode", default, skip_serializing_if = "Option::is_none")]
     pub result_code: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventIncomingDataChunkDroppedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1366,7 +1366,7 @@ pub struct MediaLiveEventIncomingDataChunkDroppedEventData {
     #[serde(rename = "trackName", default, skip_serializing_if = "Option::is_none")]
     pub track_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventIncomingStreamReceivedEventData {
     #[serde(rename = "ingestUrl", default, skip_serializing_if = "Option::is_none")]
     pub ingest_url: Option<String>,
@@ -1387,7 +1387,7 @@ pub struct MediaLiveEventIncomingStreamReceivedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timescale: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventIncomingStreamsOutOfSyncEventData {
     #[serde(rename = "minLastTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub min_last_timestamp: Option<String>,
@@ -1402,7 +1402,7 @@ pub struct MediaLiveEventIncomingStreamsOutOfSyncEventData {
     #[serde(rename = "timescaleOfMaxLastTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub timescale_of_max_last_timestamp: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventIncomingVideoStreamsOutOfSyncEventData {
     #[serde(rename = "firstTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub first_timestamp: Option<String>,
@@ -1415,7 +1415,7 @@ pub struct MediaLiveEventIncomingVideoStreamsOutOfSyncEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timescale: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventIngestHeartbeatEventData {
     #[serde(rename = "trackType", default, skip_serializing_if = "Option::is_none")]
     pub track_type: Option<String>,
@@ -1450,7 +1450,7 @@ pub struct MediaLiveEventIngestHeartbeatEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub healthy: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaLiveEventTrackDiscontinuityDetectedEventData {
     #[serde(rename = "trackType", default, skip_serializing_if = "Option::is_none")]
     pub track_type: Option<String>,
@@ -1480,7 +1480,7 @@ pub struct MicrosoftTeamsUserIdentifierModel {
 pub struct PhoneNumberIdentifierModel {
     pub value: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyInsightsPolicyStateChangedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1497,7 +1497,7 @@ pub struct PolicyInsightsPolicyStateChangedEventData {
     #[serde(rename = "complianceReasonCode", default, skip_serializing_if = "Option::is_none")]
     pub compliance_reason_code: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyInsightsPolicyStateCreatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1514,7 +1514,7 @@ pub struct PolicyInsightsPolicyStateCreatedEventData {
     #[serde(rename = "complianceReasonCode", default, skip_serializing_if = "Option::is_none")]
     pub compliance_reason_code: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyInsightsPolicyStateDeletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1531,7 +1531,7 @@ pub struct PolicyInsightsPolicyStateDeletedEventData {
     #[serde(rename = "complianceReasonCode", default, skip_serializing_if = "Option::is_none")]
     pub compliance_reason_code: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisExportRdbCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1540,7 +1540,7 @@ pub struct RedisExportRdbCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisImportRdbCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1549,7 +1549,7 @@ pub struct RedisImportRdbCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisPatchingCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1558,7 +1558,7 @@ pub struct RedisPatchingCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisScalingCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1567,7 +1567,7 @@ pub struct RedisScalingCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceActionCancelData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1592,7 +1592,7 @@ pub struct ResourceActionCancelData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceActionFailureData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1617,7 +1617,7 @@ pub struct ResourceActionFailureData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceActionSuccessData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1642,7 +1642,7 @@ pub struct ResourceActionSuccessData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceAuthorization {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
@@ -1651,7 +1651,7 @@ pub struct ResourceAuthorization {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub evidence: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceDeleteCancelData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1676,7 +1676,7 @@ pub struct ResourceDeleteCancelData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceDeleteFailureData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1701,7 +1701,7 @@ pub struct ResourceDeleteFailureData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceDeleteSuccessData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1726,7 +1726,7 @@ pub struct ResourceDeleteSuccessData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceHttpRequest {
     #[serde(rename = "clientRequestId", default, skip_serializing_if = "Option::is_none")]
     pub client_request_id: Option<String>,
@@ -1737,7 +1737,7 @@ pub struct ResourceHttpRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceWriteCancelData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1762,7 +1762,7 @@ pub struct ResourceWriteCancelData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceWriteFailureData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1787,7 +1787,7 @@ pub struct ResourceWriteFailureData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceWriteSuccessData {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -1812,7 +1812,7 @@ pub struct ResourceWriteSuccessData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<ResourceHttpRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusActiveMessagesAvailablePeriodicNotificationsEventData {
     #[serde(rename = "namespaceName", default, skip_serializing_if = "Option::is_none")]
     pub namespace_name: Option<String>,
@@ -1827,7 +1827,7 @@ pub struct ServiceBusActiveMessagesAvailablePeriodicNotificationsEventData {
     #[serde(rename = "subscriptionName", default, skip_serializing_if = "Option::is_none")]
     pub subscription_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusActiveMessagesAvailableWithNoListenersEventData {
     #[serde(rename = "namespaceName", default, skip_serializing_if = "Option::is_none")]
     pub namespace_name: Option<String>,
@@ -1842,7 +1842,7 @@ pub struct ServiceBusActiveMessagesAvailableWithNoListenersEventData {
     #[serde(rename = "subscriptionName", default, skip_serializing_if = "Option::is_none")]
     pub subscription_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusDeadletterMessagesAvailablePeriodicNotificationsEventData {
     #[serde(rename = "namespaceName", default, skip_serializing_if = "Option::is_none")]
     pub namespace_name: Option<String>,
@@ -1857,7 +1857,7 @@ pub struct ServiceBusDeadletterMessagesAvailablePeriodicNotificationsEventData {
     #[serde(rename = "subscriptionName", default, skip_serializing_if = "Option::is_none")]
     pub subscription_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusDeadletterMessagesAvailableWithNoListenersEventData {
     #[serde(rename = "namespaceName", default, skip_serializing_if = "Option::is_none")]
     pub namespace_name: Option<String>,
@@ -1872,7 +1872,7 @@ pub struct ServiceBusDeadletterMessagesAvailableWithNoListenersEventData {
     #[serde(rename = "subscriptionName", default, skip_serializing_if = "Option::is_none")]
     pub subscription_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRServiceClientConnectionConnectedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1883,7 +1883,7 @@ pub struct SignalRServiceClientConnectionConnectedEventData {
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRServiceClientConnectionDisconnectedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
@@ -1896,7 +1896,7 @@ pub struct SignalRServiceClientConnectionDisconnectedEventData {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAsyncOperationInitiatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
@@ -1919,7 +1919,7 @@ pub struct StorageAsyncOperationInitiatedEventData {
     #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub storage_diagnostics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageBlobCreatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
@@ -1946,7 +1946,7 @@ pub struct StorageBlobCreatedEventData {
     #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub storage_diagnostics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageBlobDeletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
@@ -1967,7 +1967,7 @@ pub struct StorageBlobDeletedEventData {
     #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub storage_diagnostics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageBlobInventoryPolicyCompletedEventData {
     #[serde(rename = "scheduleDateTime", default, skip_serializing_if = "Option::is_none")]
     pub schedule_date_time: Option<String>,
@@ -1984,7 +1984,7 @@ pub struct StorageBlobInventoryPolicyCompletedEventData {
     #[serde(rename = "manifestBlobUrl", default, skip_serializing_if = "Option::is_none")]
     pub manifest_blob_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageBlobRenamedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
@@ -2003,7 +2003,7 @@ pub struct StorageBlobRenamedEventData {
     #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub storage_diagnostics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageBlobTierChangedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
@@ -2026,7 +2026,7 @@ pub struct StorageBlobTierChangedEventData {
     #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub storage_diagnostics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageDirectoryCreatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
@@ -2045,7 +2045,7 @@ pub struct StorageDirectoryCreatedEventData {
     #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub storage_diagnostics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageDirectoryDeletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
@@ -2064,7 +2064,7 @@ pub struct StorageDirectoryDeletedEventData {
     #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub storage_diagnostics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageDirectoryRenamedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api: Option<String>,
@@ -2083,7 +2083,7 @@ pub struct StorageDirectoryRenamedEventData {
     #[serde(rename = "storageDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub storage_diagnostics: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageLifecyclePolicyActionSummaryDetail {
     #[serde(rename = "totalObjectsCount", default, skip_serializing_if = "Option::is_none")]
     pub total_objects_count: Option<i64>,
@@ -2092,7 +2092,7 @@ pub struct StorageLifecyclePolicyActionSummaryDetail {
     #[serde(rename = "errorList", default, skip_serializing_if = "Option::is_none")]
     pub error_list: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageLifecyclePolicyCompletedEventData {
     #[serde(rename = "scheduleTime", default, skip_serializing_if = "Option::is_none")]
     pub schedule_time: Option<String>,
@@ -2103,24 +2103,24 @@ pub struct StorageLifecyclePolicyCompletedEventData {
     #[serde(rename = "tierToArchiveSummary", default, skip_serializing_if = "Option::is_none")]
     pub tier_to_archive_summary: Option<StorageLifecyclePolicyActionSummaryDetail>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDeletedEventData {
     #[serde(rename = "eventSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub event_subscription_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionValidationEventData {
     #[serde(rename = "validationCode", default, skip_serializing_if = "Option::is_none")]
     pub validation_code: Option<String>,
     #[serde(rename = "validationUrl", default, skip_serializing_if = "Option::is_none")]
     pub validation_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionValidationResponse {
     #[serde(rename = "validationResponse", default, skip_serializing_if = "Option::is_none")]
     pub validation_response: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebAppServicePlanUpdatedEventData {
     #[serde(rename = "appServicePlanEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_service_plan_event_type_detail: Option<AppServicePlanEventTypeDetail>,
@@ -2141,7 +2141,7 @@ pub struct WebAppServicePlanUpdatedEventData {
 }
 pub mod web_app_service_plan_updated_event_data {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Sku {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
@@ -2155,7 +2155,7 @@ pub mod web_app_service_plan_updated_event_data {
         pub capacity: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebAppUpdatedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2172,7 +2172,7 @@ pub struct WebAppUpdatedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebBackupOperationCompletedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2189,7 +2189,7 @@ pub struct WebBackupOperationCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebBackupOperationFailedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2206,7 +2206,7 @@ pub struct WebBackupOperationFailedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebBackupOperationStartedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2223,7 +2223,7 @@ pub struct WebBackupOperationStartedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebRestoreOperationCompletedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2240,7 +2240,7 @@ pub struct WebRestoreOperationCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebRestoreOperationFailedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2257,7 +2257,7 @@ pub struct WebRestoreOperationFailedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebRestoreOperationStartedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2274,7 +2274,7 @@ pub struct WebRestoreOperationStartedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebSlotSwapCompletedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2291,7 +2291,7 @@ pub struct WebSlotSwapCompletedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebSlotSwapFailedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2308,7 +2308,7 @@ pub struct WebSlotSwapFailedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebSlotSwapStartedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2325,7 +2325,7 @@ pub struct WebSlotSwapStartedEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebSlotSwapWithPreviewCancelledEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
@@ -2342,7 +2342,7 @@ pub struct WebSlotSwapWithPreviewCancelledEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub verb: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebSlotSwapWithPreviewStartedEventData {
     #[serde(rename = "appEventTypeDetail", default, skip_serializing_if = "Option::is_none")]
     pub app_event_type_detail: Option<AppEventTypeDetail>,
