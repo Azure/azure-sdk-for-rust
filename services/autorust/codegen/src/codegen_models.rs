@@ -76,6 +76,10 @@ impl SchemaGen {
         self.schema.required.iter().map(String::as_str).collect()
     }
 
+    fn has_required(&self) -> bool {
+        !self.schema.required.is_empty()
+    }
+
     fn all_of(&self) -> Vec<&SchemaGen> {
         self.all_of.iter().collect()
     }
@@ -90,6 +94,18 @@ impl SchemaGen {
 
     fn properties(&self) -> Vec<&PropertyGen> {
         self.properties.iter().collect()
+    }
+
+    fn has_default(&self) -> bool {
+        if self.has_required() {
+            return false;
+        }
+        for schema in self.all_of(){
+            if !schema.has_default() {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -178,6 +194,7 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
                     .get(&ref_key)
                     .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?
                     .clone();
+                let schema = resolve_all_of(all_schemas, &schema, spec)?;
                 Ok(Some(schema))
             }
         })
@@ -455,8 +472,16 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         });
     }
 
+    let default_code =
+        if schema.has_default() {
+            quote! { #[derive(Default)] }
+        } else {
+            quote! {}
+        };
+
     let st = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #default_code
         pub struct #nm {
             #props
         }
