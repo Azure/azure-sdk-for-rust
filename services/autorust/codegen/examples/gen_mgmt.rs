@@ -49,6 +49,8 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("marketplace", "package-2020-12-01"),
     ("marketplace", "package-composite-v1"),             // mixing versions
     ("marketplace", "package-composite-v2"),             // mixing versions
+    ("monitor", "package-2021-09"),                      // AzureResource defined in 2021-09-01/actionGroups_API.json is different
+    ("monitor", "package-2021-07"),                      // also AzureResource difference
     ("recoveryservicesbackup", "package-2020-07"),       // duplicate fn get_operation_status
     ("recoveryservicesbackup", "package-2020-10"),       // duplicate fn get_operation_status
     ("recoveryservicessiterecovery", "package-2016-08"), // duplicate package-2016-08 https://github.com/Azure/azure-rest-api-specs/pull/11287

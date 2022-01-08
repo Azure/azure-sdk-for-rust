@@ -100,7 +100,7 @@ impl SchemaGen {
         if self.has_required() {
             return false;
         }
-        for schema in self.all_of(){
+        for schema in self.all_of() {
             if !schema.has_default() {
                 return false;
             }
@@ -472,12 +472,11 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         });
     }
 
-    let default_code =
-        if schema.has_default() {
-            quote! { #[derive(Default)] }
-        } else {
-            quote! {}
-        };
+    let default_code = if schema.has_default() {
+        quote! { #[derive(Default)] }
+    } else {
+        quote! {}
+    };
 
     let st = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
