@@ -1,19 +1,20 @@
 use azure_core::{Context, Policy, PolicyResult, Request, Response};
-use http::header::AUTHORIZATION;
 use http::{HeaderMap, HeaderValue, Method};
 use ring::hmac;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SharedKeyAuthorizationPolicy {
+    base_url: String,
     shared_key: String,
     storage_account_name: String,
 }
 
 impl SharedKeyAuthorizationPolicy {
     #[allow(unused)]
-    pub(crate) fn new(shared_key: String, storage_account_name: String) -> Self {
+    pub(crate) fn new(base_url: String, shared_key: String, storage_account_name: String) -> Self {
         Self {
+            base_url,
             shared_key,
             storage_account_name,
         }
@@ -34,12 +35,25 @@ impl Policy for SharedKeyAuthorizationPolicy {
             )));
         }
 
-        let uri_path = &request.uri().path_and_query().unwrap().to_string()[1..];
-        trace!(
-            "uri_path used by SharedKeyAuthorizationPolicy == {:#?}",
-            uri_path
+        let headers_mut = request.headers_mut();
+        headers_mut.append(
+            azure_core::headers::MS_DATE,
+            HeaderValue::from_str(
+                format!("{}", chrono::Utc::now().format("%a, %d %h %Y %T GMT")).as_str(),
+            )?,
         );
-        let url = url::Url::parse(uri_path)?;
+        headers_mut.append(
+            azure_core::headers::VERSION,
+            HeaderValue::from_str("2019-12-12")?,
+        ); // TODO: Remove duplication with storage_account_client.rs
+
+        let uri_path = &request.uri().path_and_query().unwrap().to_string()[1..];
+        let full_url = format!("{}/{}", self.base_url, uri_path);
+        println!(
+            "full_url used by SharedKeyAuthorizationPolicy == {:#?}",
+            full_url
+        );
+        let url = url::Url::parse(full_url.as_str())?;
 
         let auth = generate_authorization(
             request.headers(),
@@ -51,7 +65,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
 
         request
             .headers_mut()
-            .append(AUTHORIZATION, HeaderValue::from_str(&auth)?);
+            .append(http::header::AUTHORIZATION, HeaderValue::from_str(&auth)?);
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.
@@ -68,7 +82,7 @@ fn generate_authorization(
 ) -> String {
     let str_to_sign = string_to_sign(http_headers, url, http_method, storage_account_name);
 
-    // debug!("\nstr_to_sign == {:?}\n", str_to_sign);
+    println!("\nstr_to_sign == {:?}\n", str_to_sign);
     // debug!("str_to_sign == {}", str_to_sign);
 
     let auth = encode_str_to_sign(&str_to_sign, shared_key);

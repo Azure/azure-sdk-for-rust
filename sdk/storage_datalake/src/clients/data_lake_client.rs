@@ -1,6 +1,7 @@
-use crate::bearer_token_authorization_policy::BearerTokenAuthorizationPolicy;
+// use crate::bearer_token_authorization_policy::BearerTokenAuthorizationPolicy;
 use crate::clients::FileSystemClient;
 use crate::requests::*;
+use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
 use azure_core::{ClientOptions, HttpClient, Pipeline};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
@@ -24,7 +25,7 @@ impl DataLakeClient {
     pub(crate) fn new_with_options(
         storage_client: Arc<StorageClient>,
         account: String,
-        bearer_token: String,
+        shared_key: String,
         custom_dns_suffix: Option<String>,
         options: ClientOptions,
     ) -> Self {
@@ -41,7 +42,8 @@ impl DataLakeClient {
 
         let per_call_policies = Vec::new();
         let auth_policy: Arc<dyn azure_core::Policy> =
-            Arc::new(BearerTokenAuthorizationPolicy::new(bearer_token));
+			// Arc::new(BearerTokenAuthorizationPolicy::new(bearer_token));
+			Arc::new(SharedKeyAuthorizationPolicy::new(url.to_owned(), shared_key, account.to_owned()));
 
         // take care of adding the AuthorizationPolicy as **last** retry policy.
         // Policies can change the url and/or the headers and the AuthorizationPolicy
@@ -68,13 +70,13 @@ impl DataLakeClient {
     pub fn new(
         storage_client: Arc<StorageClient>,
         account: String,
-        bearer_token: String,
+        shared_key: String,
         custom_dns_suffix: Option<String>,
     ) -> DataLakeClient {
         Self::new_with_options(
             storage_client,
             account,
-            bearer_token,
+            shared_key,
             custom_dns_suffix,
             ClientOptions::default(),
         )

@@ -9,6 +9,7 @@ pub struct BearerTokenAuthorizationPolicy {
 }
 
 impl BearerTokenAuthorizationPolicy {
+    #[allow(unused)]
     pub(crate) fn new(bearer_token: String) -> Self {
         Self { bearer_token }
     }
