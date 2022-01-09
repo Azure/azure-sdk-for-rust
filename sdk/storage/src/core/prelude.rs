@@ -1,5 +1,5 @@
 pub use crate::core::{
-    clients::{AsStorageClient, StorageAccountClient, StorageClient},
+    clients::{AsStorageClient, StorageAccountClient, StorageAccountOptions, StorageClient},
     shared_access_signature::{
         account_sas::{
             AccountSasPermissions, AccountSasResource, AccountSasResourceType,

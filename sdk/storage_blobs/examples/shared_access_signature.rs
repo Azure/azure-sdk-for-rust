@@ -26,10 +26,9 @@ fn code() -> Result<(), Box<dyn Error + Sync + Send>> {
     let now = Utc::now() - Duration::minutes(15);
     let later = now + Duration::hours(1);
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
 
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let storage_account_client = StorageAccountClient::new_access_key(account, master_key, options);
     let container_client = storage_account_client.as_container_client(&container_name);
     let blob_client = container_client.as_blob_client(&blob_name);
 

@@ -84,10 +84,10 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
 
     let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+        StorageAccountClient::new_access_key(&account, &master_key, options);
 
     let resource_id = "https://storage.azure.com/";
     println!("getting bearer token for '{}'...", resource_id);

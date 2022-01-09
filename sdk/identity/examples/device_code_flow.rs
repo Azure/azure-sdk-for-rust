@@ -77,11 +77,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // this example we are creating an Azure Storage client
     // using the access token.
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
     let storage_account_client = StorageAccountClient::new_bearer_token(
-        http_client.clone(),
         &storage_account_name,
         authorization.access_token().secret() as &str,
+        options,
     );
     let blob_service_client = storage_account_client.as_blob_service_client();
 

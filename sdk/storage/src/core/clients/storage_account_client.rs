@@ -6,12 +6,12 @@ use crate::{
     },
 };
 use azure_core::headers::*;
-use azure_core::HttpClient;
+use azure_core::{ClientOptions, HttpClient, Pipeline, Request};
 use bytes::Bytes;
 use http::{
     header::*,
     method::Method,
-    request::{Builder, Request},
+    request::{Builder as RequestBuilder, Request as HttpRequest},
 };
 use ring::hmac;
 use std::sync::Arc;
@@ -48,14 +48,42 @@ pub enum ServiceType {
 
 #[derive(Debug, Clone)]
 pub struct StorageAccountClient {
+    pipeline: Pipeline,
     storage_credentials: StorageCredentials,
-    http_client: Arc<dyn HttpClient>,
     blob_storage_url: Url,
     table_storage_url: Url,
     queue_storage_url: Url,
     queue_storage_secondary_url: Url,
     filesystem_url: Url,
     account: String,
+}
+
+/// Options for specifying how a Cosmos client will behave
+#[derive(Debug, Clone, Default)]
+pub struct StorageAccountOptions {
+    options: ClientOptions,
+}
+
+/// Create a Pipeline from CosmosOptions
+fn new_pipeline_from_options(
+    options: StorageAccountOptions,
+    storage_credentials: StorageCredentials,
+) -> Pipeline {
+    // let auth_policy: Arc<dyn azure_core::Policy> =
+    //     Arc::new(crate::AuthorizationPolicy::new(authorization_token));
+
+    // take care of adding the AuthorizationPolicy as **last** retry policy.
+    // Policies can change the url and/or the headers and the AuthorizationPolicy
+    // must be able to inspect them or the resulting token will be invalid.
+    let per_retry_policies = vec![]; // vec![auth_policy];
+
+    Pipeline::new(
+        option_env!("CARGO_PKG_NAME"),
+        option_env!("CARGO_PKG_VERSION"),
+        options.options,
+        Vec::new(),
+        per_retry_policies,
+    )
 }
 
 fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::ParseError> {
@@ -80,14 +108,18 @@ fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::Pa
 }
 
 impl StorageAccountClient {
-    pub fn new_access_key<A, K>(http_client: Arc<dyn HttpClient>, account: A, key: K) -> Arc<Self>
+    pub fn new_access_key<A, K>(account: A, key: K, options: StorageAccountOptions) -> Arc<Self>
     where
         A: Into<String>,
         K: Into<String>,
     {
         let account = account.into();
 
+        let storage_credentials = StorageCredentials::Key(account.clone(), key.into());
+        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
+
         Arc::new(Self {
+            pipeline,
             blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
                 .unwrap(),
             table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
@@ -101,55 +133,54 @@ impl StorageAccountClient {
             .unwrap(),
             filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
                 .unwrap(),
-            storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
-            http_client,
+            storage_credentials,
             account,
         })
     }
 
     /// Create a new client for customized emulator endpoints.
     pub fn new_emulator(
-        http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
         queue_storage_url: &Url,
         filesystem_url: &Url,
+        options: StorageAccountOptions,
     ) -> Arc<Self> {
         Self::new_emulator_with_account(
-            http_client,
             blob_storage_url,
             table_storage_url,
             queue_storage_url,
             filesystem_url,
             EMULATOR_ACCOUNT,
             EMULATOR_ACCOUNT_KEY,
+            options,
         )
     }
 
     /// Create a new client using the default HttpClient and the default emulator endpoints.
     pub fn new_emulator_default() -> Arc<Self> {
-        let http_client = azure_core::new_http_client();
+        let options = StorageAccountOptions::default();
         let blob_storage_url = Url::parse("http://127.0.0.1:10000").unwrap();
         let queue_storage_url = Url::parse("http://127.0.0.1:10001").unwrap();
         let table_storage_url = Url::parse("http://127.0.0.1:10002").unwrap();
         let filesystem_url = Url::parse("http://127.0.0.1:10004").unwrap();
         Self::new_emulator(
-            http_client,
             &blob_storage_url,
             &table_storage_url,
             &queue_storage_url,
             &filesystem_url,
+            options,
         )
     }
 
     pub fn new_emulator_with_account<A, K>(
-        http_client: Arc<dyn HttpClient>,
         blob_storage_url: &Url,
         table_storage_url: &Url,
         queue_storage_url: &Url,
         filesystem_url: &Url,
         account: A,
         key: K,
+        options: StorageAccountOptions,
     ) -> Arc<Self>
     where
         A: Into<String>,
@@ -165,22 +196,25 @@ impl StorageAccountClient {
         let filesystem_url =
             Url::parse(&format!("{}{}", filesystem_url.as_str(), account)).unwrap();
 
+        let storage_credentials = StorageCredentials::Key(account.clone(), key.into());
+        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
+
         Arc::new(Self {
+            pipeline,
             blob_storage_url,
             table_storage_url,
             queue_storage_url: queue_storage_url.clone(),
             queue_storage_secondary_url: queue_storage_url,
             filesystem_url,
-            storage_credentials: StorageCredentials::Key(account.clone(), key.into()),
-            http_client,
+            storage_credentials,
             account,
         })
     }
 
     pub fn new_sas_token<A, S>(
-        http_client: Arc<dyn HttpClient>,
         account: A,
         sas_token: S,
+        options: StorageAccountOptions,
     ) -> Result<Arc<Self>, url::ParseError>
     where
         A: Into<String>,
@@ -188,7 +222,12 @@ impl StorageAccountClient {
     {
         let account = account.into();
 
+        let storage_credentials =
+            StorageCredentials::SASToken(get_sas_token_parms(sas_token.as_ref())?);
+        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
+
         Ok(Arc::new(Self {
+            pipeline,
             blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))?,
             table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))?,
             queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))?,
@@ -197,18 +236,15 @@ impl StorageAccountClient {
                 &account
             ))?,
             filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))?,
-            storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
-                sas_token.as_ref(),
-            )?),
-            http_client,
+            storage_credentials,
             account,
         }))
     }
 
     pub fn new_bearer_token<A, BT>(
-        http_client: Arc<dyn HttpClient>,
         account: A,
         bearer_token: BT,
+        options: StorageAccountOptions,
     ) -> Arc<Self>
     where
         A: Into<String>,
@@ -217,7 +253,11 @@ impl StorageAccountClient {
         let account = account.into();
         let bearer_token = bearer_token.into();
 
+        let storage_credentials = StorageCredentials::BearerToken(bearer_token);
+        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
+
         Arc::new(Self {
+            pipeline,
             blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
                 .unwrap(),
             table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
@@ -231,15 +271,14 @@ impl StorageAccountClient {
             .unwrap(),
             filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
                 .unwrap(),
-            storage_credentials: StorageCredentials::BearerToken(bearer_token),
-            http_client,
+            storage_credentials,
             account,
         })
     }
 
     pub fn new_connection_string(
-        http_client: Arc<dyn HttpClient>,
         connection_string: &str,
+        options: StorageAccountOptions,
     ) -> crate::Result<Arc<Self>> {
         match ConnectionString::new(connection_string)? {
             ConnectionString {
@@ -253,17 +292,18 @@ impl StorageAccountClient {
                 ..
             } => {
                 log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
+                let storage_credentials = StorageCredentials::SASToken(get_sas_token_parms(
+                    sas_token,
+                )?);
 
                 Ok(Arc::new(Self {
-                    storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(
-                        sas_token,
-                    )?),
+                    pipeline: new_pipeline_from_options(options, storage_credentials.clone()),
+                    storage_credentials,
                     blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
                     table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
                     queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
                     queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
                     filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-                    http_client,
                     account: account.to_string(),
                 }))
             }
@@ -275,16 +315,19 @@ impl StorageAccountClient {
                 queue_endpoint,
                 file_endpoint,
                 ..
-            } => Ok(Arc::new(Self {
-                storage_credentials: StorageCredentials::SASToken(get_sas_token_parms(sas_token)?),
-                blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
-                table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
-                queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
-                queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
-                filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-                http_client,
+            } => {
+                let storage_credentials = StorageCredentials::SASToken(get_sas_token_parms(sas_token)?);
+                Ok(Arc::new(Self {
+                    pipeline: new_pipeline_from_options(options, storage_credentials.clone()),
+                    storage_credentials,
+                    blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                    table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                    queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                    queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
+                    filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                     account: account.to_string(),
-            })),
+                }))
+            },
             ConnectionString {
                 account_name: Some(account),
                 account_key: Some(key),
@@ -293,16 +336,19 @@ impl StorageAccountClient {
                 queue_endpoint,
                 file_endpoint,
                 ..
-            } => Ok(Arc::new(Self {
-                storage_credentials: StorageCredentials::Key(account.to_owned(), key.to_owned()),
-                blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
-                table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
-                queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
-                queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
-                filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
-                http_client,
+            } => {
+                let storage_credentials = StorageCredentials::Key(account.to_owned(), key.to_owned());
+                Ok(Arc::new(Self {
+                    pipeline: new_pipeline_from_options(options, storage_credentials.clone()),
+                    storage_credentials,
+                    blob_storage_url: get_endpoint_uri(blob_endpoint, account, "blob")?,
+                    table_storage_url: get_endpoint_uri(table_endpoint, account, "table")?,
+                    queue_storage_url: get_endpoint_uri(queue_endpoint, account, "queue")?,
+                    queue_storage_secondary_url: get_endpoint_uri(queue_endpoint, &format!("{}-secondary", account), "queue")?,
+                    filesystem_url: get_endpoint_uri(file_endpoint, account, "dfs")?,
                     account: account.to_string(),
-            })),
+                }))
+            },
            _ => {
                 Err(crate::Error::GenericErrorWithText(
                     "Could not create a storage client from the provided connection string. Please validate that you have specified the account name and means of authentication (key, SAS, etc.)."
@@ -310,10 +356,6 @@ impl StorageAccountClient {
                 ))
             }
         }
-    }
-
-    pub fn http_client(&self) -> &dyn HttpClient {
-        self.http_client.as_ref()
     }
 
     pub fn blob_storage_url(&self) -> &Url {
@@ -348,10 +390,10 @@ impl StorageAccountClient {
         &self,
         url: &str,
         method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
+        http_header_adder: &dyn Fn(RequestBuilder) -> RequestBuilder,
         service_type: ServiceType,
         request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    ) -> crate::Result<(HttpRequest<Bytes>, url::Url)> {
         let dt = chrono::Utc::now();
         let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
 
@@ -364,7 +406,7 @@ impl StorageAccountClient {
             }
         }
 
-        let mut request = Request::builder();
+        let mut request = HttpRequest::builder();
         request = request.method(method).uri(url.as_str());
 
         // let's add content length to avoid "chunking" errors.
@@ -419,6 +461,30 @@ impl StorageAccountClient {
         debug!("using request == {:#?}", request);
 
         Ok((request, url))
+    }
+
+    /// Prepares' an `azure_core::Request`. This function will
+    /// generate a Request with the specified HTTP Method.
+    /// It will also set the body to an empty Bytes instance.
+    /// *Note*: This call does not handle authorization as
+    /// it will be done by the `AuthorizationPolicy`.
+    ///
+    /// Note: Eventually this method will replace `prepare_request` fully.
+    pub fn prepare_request_pipeline(&self, uri: &str, http_method: http::Method) -> Request {
+        RequestBuilder::new()
+            .method(http_method)
+            .uri(uri)
+            .body(bytes::Bytes::new())
+            .unwrap()
+            .into()
+    }
+
+    pub fn pipeline(&self) -> &Pipeline {
+        &self.pipeline
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.pipeline.http_client()
     }
 }
 

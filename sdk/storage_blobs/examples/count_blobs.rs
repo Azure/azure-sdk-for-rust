@@ -14,10 +14,9 @@ async fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let http_client = azure_core::new_http_client();
-    let container_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-            .as_container_client(&container);
+    let options = StorageAccountOptions::default();
+    let container_client = StorageAccountClient::new_access_key(account, master_key, options)
+        .as_container_client(&container);
 
     let mut count: usize = 0;
     let mut list_blobs = Box::pin(container_client.list_blobs().stream());

@@ -29,21 +29,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify destination blob name as fourth command line parameter");
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
 
-    let source_storage_account_client = StorageAccountClient::new_access_key(
-        http_client.clone(),
-        &source_account,
-        &source_master_key,
-    );
+    let source_storage_account_client =
+        StorageAccountClient::new_access_key(&source_account, &source_master_key, options.clone());
     let source_blob = source_storage_account_client
         .as_container_client(&source_container_name)
         .as_blob_client(&source_blob_name);
 
     let destination_blob = StorageAccountClient::new_access_key(
-        http_client.clone(),
         &destination_account,
         &destination_master_key,
+        options,
     )
     .as_container_client(&destination_container_name)
     .as_blob_client(&destination_blob_name);

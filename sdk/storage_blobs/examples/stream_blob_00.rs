@@ -24,12 +24,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .nth(1)
         .expect("please specify container name as first command line parameter");
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
 
-    let blob_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-            .as_container_client(&container_name)
-            .as_blob_client(file_name);
+    let blob_client = StorageAccountClient::new_access_key(account, master_key, options)
+        .as_container_client(&container_name)
+        .as_blob_client(file_name);
 
     let string = "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
 

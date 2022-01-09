@@ -21,9 +21,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let http_client = azure_core::new_http_client();
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let options = StorageAccountOptions::default();
+    let storage_account_client = StorageAccountClient::new_access_key(account, master_key, options);
 
     // this is how you would use the SAS token:
     // let storage_account_client = StorageAccountClient::new_sas_token(http_client.clone(), &account,

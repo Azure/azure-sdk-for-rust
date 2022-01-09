@@ -26,14 +26,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .get_token("https://storage.azure.com/")
         .await?;
 
-    let http_client = azure_core::new_http_client();
-    let blob_client = StorageAccountClient::new_bearer_token(
-        http_client.clone(),
-        &account,
-        bearer_token.token.secret(),
-    )
-    .as_container_client(&container)
-    .as_blob_client(&blob);
+    let options = StorageAccountOptions::default();
+    let blob_client =
+        StorageAccountClient::new_bearer_token(&account, bearer_token.token.secret(), options)
+            .as_container_client(&container)
+            .as_blob_client(&blob);
 
     trace!("Requesting blob");
 

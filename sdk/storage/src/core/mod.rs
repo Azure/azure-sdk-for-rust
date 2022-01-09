@@ -18,6 +18,7 @@ pub use copy_progress::CopyProgress;
 pub mod parsing_xml;
 mod stored_access_policy;
 pub use errors::{Error, Result};
+pub mod authorization_policy;
 pub mod util;
 pub mod xml;
 

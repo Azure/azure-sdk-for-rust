@@ -23,12 +23,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
 
-    let blob_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-            .as_container_client(&container)
-            .as_blob_client(&blob_name);
+    let blob_client = StorageAccountClient::new_access_key(account, master_key, options)
+        .as_container_client(&container)
+        .as_blob_client(&blob_name);
 
     //let data = b"something";
 

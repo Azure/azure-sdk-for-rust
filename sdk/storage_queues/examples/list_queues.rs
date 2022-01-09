@@ -12,10 +12,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
 
-    let storage_account =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
+    let storage_account = StorageAccountClient::new_access_key(account, master_key, options);
 
     let queue_service = storage_account.as_queue_service_client();
 

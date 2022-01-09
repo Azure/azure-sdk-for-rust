@@ -14,10 +14,10 @@ async fn stream_list_blobs() {
 
     let container_name = "streamlistblobs235xx752zdve";
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
 
-    let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-        .as_storage_client();
+    let storage =
+        StorageAccountClient::new_access_key(account, master_key, options).as_storage_client();
     let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
 

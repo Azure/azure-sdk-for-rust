@@ -17,11 +17,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let http_client = azure_core::new_http_client();
-    let blob_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-            .as_container_client(&container_name)
-            .as_blob_client("test1");
+    let options = StorageAccountOptions::default();
+    let blob_client = StorageAccountClient::new_access_key(account, master_key, options)
+        .as_container_client(&container_name)
+        .as_blob_client("test1");
 
     // this example fills a 1 KB file with ASCII text and
     // sends it in chunks of 256 bytes (4 chunks).

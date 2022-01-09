@@ -19,10 +19,10 @@ async fn code() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let master_key =
         std::env::var("STORAGE_MASTER_KEY").expect("Set env variable STORAGE_MASTER_KEY first!");
 
-    let http_client = azure_core::new_http_client();
+    let options = StorageAccountOptions::default();
 
-    let storage = StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key)
-        .as_storage_client();
+    let storage =
+        StorageAccountClient::new_access_key(account, master_key, options).as_storage_client();
     let blob_service = storage.as_blob_service_client();
     let container = storage.as_container_client(container_name);
     let blob = container.as_blob_client(file_name);

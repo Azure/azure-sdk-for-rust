@@ -22,11 +22,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .nth(4)
         .expect("please specify the bearer token as fourth command line parameter");
 
-    let http_client = azure_core::new_http_client();
-    let blob_client =
-        StorageAccountClient::new_bearer_token(http_client.clone(), &account, bearer_token)
-            .as_container_client(&container)
-            .as_blob_client(&blob);
+    let options = StorageAccountOptions::default();
+    let blob_client = StorageAccountClient::new_bearer_token(&account, bearer_token, options)
+        .as_container_client(&container)
+        .as_blob_client(&blob);
 
     trace!("Requesting blob");
 
