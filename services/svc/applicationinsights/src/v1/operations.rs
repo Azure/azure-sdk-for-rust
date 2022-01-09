@@ -16,7 +16,7 @@ pub struct ClientBuilder {
     endpoint: Option<String>,
     scopes: Option<Vec<String>>,
 }
-pub const DEFAULT_ENDPOINT: &str = "https://api.applicationinsights.io";
+pub const DEFAULT_ENDPOINT: &str = "https://api.applicationinsights.io/v1";
 impl ClientBuilder {
     pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
         Self {

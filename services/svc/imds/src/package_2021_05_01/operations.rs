@@ -16,7 +16,7 @@ pub struct ClientBuilder {
     endpoint: Option<String>,
     scopes: Option<Vec<String>>,
 }
-pub const DEFAULT_ENDPOINT: &str = "https://169.254.169.254";
+pub const DEFAULT_ENDPOINT: &str = "https://169.254.169.254/metadata";
 impl ClientBuilder {
     pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
         Self {
