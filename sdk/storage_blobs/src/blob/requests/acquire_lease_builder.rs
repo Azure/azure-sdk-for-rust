@@ -10,7 +10,7 @@ pub struct AcquireLeaseBuilder<'a> {
     lease_duration: LeaseDuration,
     lease_id: Option<&'a LeaseId>,
     proposed_lease_id: Option<&'a ProposedLeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -30,7 +30,7 @@ impl<'a> AcquireLeaseBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
         proposed_lease_id: &'a ProposedLeaseId => Some(proposed_lease_id),
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

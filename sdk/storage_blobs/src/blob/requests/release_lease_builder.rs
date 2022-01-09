@@ -6,7 +6,7 @@ use azure_core::prelude::*;
 #[derive(Debug, Clone)]
 pub struct ReleaseLeaseBuilder<'a> {
     blob_lease_client: &'a BlobLeaseClient,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -20,7 +20,7 @@ impl<'a> ReleaseLeaseBuilder<'a> {
     }
 
     setters! {
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

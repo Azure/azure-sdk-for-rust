@@ -12,7 +12,7 @@ pub struct AppendBlockBuilder<'a> {
     condition_max_size: Option<ConditionMaxSize>,
     condition_append_position: Option<ConditionAppendPosition>,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -35,7 +35,7 @@ impl<'a> AppendBlockBuilder<'a> {
         condition_max_size: ConditionMaxSize => Some(condition_max_size),
         condition_append_position: ConditionAppendPosition => Some(condition_append_position),
         lease_id: &'a LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

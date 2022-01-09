@@ -9,7 +9,7 @@ pub struct BreakLeaseBuilder<'a> {
     blob_client: &'a BlobClient,
     lease_break_period: Option<LeaseBreakPeriod>,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -27,7 +27,7 @@ impl<'a> BreakLeaseBuilder<'a> {
     setters! {
         lease_break_period: LeaseBreakPeriod => Some(lease_break_period),
         lease_id: &'a LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

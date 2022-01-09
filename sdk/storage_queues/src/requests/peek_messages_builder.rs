@@ -10,7 +10,7 @@ pub struct PeekMessagesBuilder<'a> {
     queue_client: &'a QueueClient,
     number_of_messages: Option<NumberOfMessages>,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> PeekMessagesBuilder<'a> {
@@ -26,7 +26,7 @@ impl<'a> PeekMessagesBuilder<'a> {
     setters! {
         number_of_messages: NumberOfMessages => Some(number_of_messages),
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

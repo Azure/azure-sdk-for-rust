@@ -8,7 +8,7 @@ use std::convert::TryInto;
 pub struct SetBlobMetadataBuilder<'a> {
     blob_client: &'a BlobClient,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
     metadata: Option<&'a Metadata>,
 }
@@ -27,7 +27,7 @@ impl<'a> SetBlobMetadataBuilder<'a> {
     setters! {
         lease_id: &'a LeaseId => Some(lease_id),
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         metadata: &'a Metadata => Some(metadata),
     }
 

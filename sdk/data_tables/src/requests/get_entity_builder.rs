@@ -11,7 +11,7 @@ use std::convert::TryInto;
 pub struct GetEntityBuilder<'a> {
     entity_client: &'a EntityClient,
     select: Option<Select<'a>>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> GetEntityBuilder<'a> {
@@ -25,7 +25,7 @@ impl<'a> GetEntityBuilder<'a> {
 
     setters! {
         select: Select<'a> => Some(select),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute<E>(

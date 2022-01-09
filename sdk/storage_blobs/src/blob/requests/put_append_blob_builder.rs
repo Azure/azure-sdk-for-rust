@@ -13,7 +13,7 @@ pub struct PutAppendBlobBuilder<'a> {
     metadata: Option<&'a Metadata>,
     // TODO: Support tags
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -39,7 +39,7 @@ impl<'a> PutAppendBlobBuilder<'a> {
         content_disposition: ContentDisposition<'a> => Some(content_disposition),
         metadata: &'a Metadata => Some(metadata),
         lease_id: &'a LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 
