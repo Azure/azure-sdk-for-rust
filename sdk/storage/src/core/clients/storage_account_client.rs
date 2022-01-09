@@ -62,6 +62,22 @@ pub struct StorageAccountClient {
 #[derive(Debug, Clone, Default)]
 pub struct StorageAccountOptions {
     options: ClientOptions,
+    custom_dns_suffix: Option<String>,
+}
+
+impl StorageAccountOptions {
+    /// Create new options
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[cfg(feature = "mock_transport_framework")]
+    /// Create new options with a given transaction name
+    pub fn new_with_transaction_name(name: String) -> Self {
+        Self {
+            options: ClientOptions::new_with_transaction_name(name.into()),
+        }
+    }
 }
 
 /// Create a Pipeline from CosmosOptions
@@ -69,13 +85,13 @@ fn new_pipeline_from_options(
     options: StorageAccountOptions,
     storage_credentials: StorageCredentials,
 ) -> Pipeline {
-    // let auth_policy: Arc<dyn azure_core::Policy> =
-    //     Arc::new(crate::AuthorizationPolicy::new(authorization_token));
+    let auth_policy: Arc<dyn azure_core::Policy> =
+        Arc::new(crate::core::AuthorizationPolicy::new(storage_credentials));
 
     // take care of adding the AuthorizationPolicy as **last** retry policy.
     // Policies can change the url and/or the headers and the AuthorizationPolicy
     // must be able to inspect them or the resulting token will be invalid.
-    let per_retry_policies = vec![]; // vec![auth_policy];
+    let per_retry_policies = vec![auth_policy];
 
     Pipeline::new(
         option_env!("CARGO_PKG_NAME"),
@@ -108,17 +124,18 @@ fn get_sas_token_parms(sas_token: &str) -> Result<Vec<(String, String)>, url::Pa
 }
 
 impl StorageAccountClient {
-    pub fn new_access_key<A, K>(account: A, key: K, options: StorageAccountOptions) -> Arc<Self>
+    pub fn new<A>(
+        account: A,
+        storage_credentials: StorageCredentials,
+        options: StorageAccountOptions,
+    ) -> Self
     where
         A: Into<String>,
-        K: Into<String>,
     {
+        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
         let account = account.into();
 
-        let storage_credentials = StorageCredentials::Key(account.clone(), key.into());
-        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
-
-        Arc::new(Self {
+        Self {
             pipeline,
             blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
                 .unwrap(),
@@ -135,7 +152,36 @@ impl StorageAccountClient {
                 .unwrap(),
             storage_credentials,
             account,
-        })
+        }
+    }
+
+    pub fn new_access_key<A, K>(account: A, key: K, options: StorageAccountOptions) -> Self
+    where
+        A: Into<String>,
+        K: Into<String>,
+    {
+        let account = account.into();
+        let storage_credentials = StorageCredentials::Key(account.clone(), key.into());
+        let pipeline = new_pipeline_from_options(options, storage_credentials.clone());
+
+        Self {
+            pipeline,
+            blob_storage_url: Url::parse(&format!("https://{}.blob.core.windows.net", &account))
+                .unwrap(),
+            table_storage_url: Url::parse(&format!("https://{}.table.core.windows.net", &account))
+                .unwrap(),
+            queue_storage_url: Url::parse(&format!("https://{}.queue.core.windows.net", &account))
+                .unwrap(),
+            queue_storage_secondary_url: Url::parse(&format!(
+                "https://{}-secondary.queue.core.windows.net",
+                &account
+            ))
+            .unwrap(),
+            filesystem_url: Url::parse(&format!("https://{}.dfs.core.windows.net", &account))
+                .unwrap(),
+            storage_credentials,
+            account,
+        }
     }
 
     /// Create a new client for customized emulator endpoints.
@@ -471,9 +517,14 @@ impl StorageAccountClient {
     ///
     /// Note: Eventually this method will replace `prepare_request` fully.
     pub fn prepare_request_pipeline(&self, uri: &str, http_method: http::Method) -> Request {
+        let dt = chrono::Utc::now();
+        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
+
         RequestBuilder::new()
             .method(http_method)
             .uri(uri)
+            .header(MS_DATE, time)
+            .header(HEADER_VERSION, AZURE_VERSION)
             .body(bytes::Bytes::new())
             .unwrap()
             .into()

@@ -19,6 +19,12 @@ impl<QN: Into<String>> AsQueueClient<QN> for Arc<StorageAccountClient> {
     }
 }
 
+impl<QN: Into<String>> AsQueueClient<QN> for StorageAccountClient {
+    fn as_queue_client(&self, queue_name: QN) -> Arc<QueueClient> {
+        self.as_storage_client().as_queue_client(queue_name)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct QueueClient {
     storage_client: Arc<StorageClient>,

@@ -28,15 +28,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file system response == {:?}\n", create_fs_response);
 
     println!("listing file systems...");
-    let mut stream = Box::pin(
-        data_lake_client
-            .list()
-            .max_results(NonZeroU32::new(3).unwrap())
-            .stream(),
+    let file_systems = data_lake_client
+        .list_file_systems()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
+
+    println!(
+        "Account has {} file system(s)\n",
+        file_systems.file_systems.len()
     );
-    while let Some(list_fs_response) = stream.next().await {
-        println!("list file system response == {:?}\n", list_fs_response);
-    }
 
     println!("getting file system properties...");
     let get_fs_props_response = file_system_client.get_properties().execute().await?;
@@ -76,24 +78,11 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let options = StorageAccountOptions::default();
+    let storage_account_client = StorageAccountClient::new_access_key(
+        &account,
+        &master_key,
+        StorageAccountOptions::default(),
+    );
 
-    let storage_account_client =
-        StorageAccountClient::new_access_key(&account, &master_key, options);
-
-    let resource_id = "https://storage.azure.com/";
-    println!("getting bearer token for '{}'...", resource_id);
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-    println!("token expires on {}\n", bearer_token.expires_on);
-
-    let storage_client = storage_account_client.as_storage_client();
-
-    Ok(DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
-    ))
+    Ok(DataLakeClient::new(storage_account_client))
 }

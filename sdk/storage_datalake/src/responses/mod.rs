@@ -1,5 +1,3 @@
-mod list_file_systems_response;
-pub use list_file_systems_response::ListFileSystemsResponse;
 mod create_file_system_response;
 pub use create_file_system_response::CreateFileSystemResponse;
 mod delete_file_system_response;

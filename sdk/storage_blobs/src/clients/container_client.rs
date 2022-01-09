@@ -30,6 +30,18 @@ impl<CN: Into<String>> AsContainerClient<CN> for Arc<StorageAccountClient> {
     }
 }
 
+impl<CN: Into<String>> AsContainerClient<CN> for StorageClient {
+    fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient> {
+        ContainerClient::new(Arc::new(self.clone()), container_name.into())
+    }
+}
+
+impl<CN: Into<String>> AsContainerClient<CN> for StorageAccountClient {
+    fn as_container_client(&self, container_name: CN) -> Arc<ContainerClient> {
+        self.as_storage_client().as_container_client(container_name)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ContainerClient {
     storage_client: Arc<StorageClient>,

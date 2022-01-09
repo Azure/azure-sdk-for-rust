@@ -1,7 +1,8 @@
 use crate::authorization_policy::AuthorizationPolicy;
 use crate::clients::FileSystemClient;
+use crate::operations::ListFileSystems;
 use crate::requests::*;
-use azure_core::{ClientOptions, HttpClient, Pipeline};
+use azure_core::{HttpClient, Pipeline};
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use http::method::Method;
@@ -12,104 +13,64 @@ const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
-    pipeline: Pipeline,
-    storage_client: Arc<StorageClient>,
-    #[allow(unused)]
-    account: String,
-    custom_dns_suffix: Option<String>,
-    url: String, // TODO: Use CloudLocation similar to CosmosClient
+    client: StorageAccountClient,
 }
 
 impl DataLakeClient {
-    pub(crate) fn new_with_options(
-        storage_client: Arc<StorageClient>,
-        account: String,
-        bearer_token: String,
-        custom_dns_suffix: Option<String>,
-        options: ClientOptions,
-    ) -> Self {
-        // we precalculate the url once in the constructor
-        // so we do not have to do it at every request.
-        let url = format!(
-            "https://{}.{}",
-            account,
-            match custom_dns_suffix.as_ref() {
-                Some(custom_dns_suffix) => custom_dns_suffix,
-                None => DEFAULT_DNS_SUFFIX,
-            }
-        );
-
-        let per_call_policies = Vec::new();
-        let auth_policy: Arc<dyn azure_core::Policy> =
-            Arc::new(AuthorizationPolicy::new(bearer_token));
-
-        // take care of adding the AuthorizationPolicy as **last** retry policy.
-        // Policies can change the url and/or the headers and the AuthorizationPolicy
-        // must be able to inspect them or the resulting token will be invalid.
-        let per_retry_policies = vec![auth_policy];
-
-        let pipeline = Pipeline::new(
-            option_env!("CARGO_PKG_NAME"),
-            option_env!("CARGO_PKG_VERSION"),
-            options,
-            per_call_policies,
-            per_retry_policies,
-        );
-
-        Self {
-            pipeline,
-            storage_client,
-            account,
-            custom_dns_suffix,
-            url,
-        }
+    pub fn new(client: StorageAccountClient) -> Self {
+        Self { client }
     }
 
-    pub fn new(
-        storage_client: Arc<StorageClient>,
-        account: String,
-        bearer_token: String,
-        custom_dns_suffix: Option<String>,
-    ) -> DataLakeClient {
+    pub fn new_with_credential<A>(account: A, storage_credentials: StorageCredentials) -> Self
+    where
+        A: Into<String>,
+    {
         Self::new_with_options(
-            storage_client,
             account,
-            bearer_token,
-            custom_dns_suffix,
-            ClientOptions::default(),
+            storage_credentials,
+            StorageAccountOptions::default(),
         )
+    }
+
+    pub(crate) fn new_with_options<A>(
+        account: A,
+        storage_credentials: StorageCredentials,
+        options: StorageAccountOptions,
+    ) -> Self
+    where
+        A: Into<String>,
+    {
+        let client = StorageAccountClient::new(account, storage_credentials, options);
+        Self { client }
     }
 
     #[cfg(feature = "mock_transport_framework")]
-    pub fn new_with_transaction(
-        storage_client: Arc<StorageClient>,
-        account: String,
-        bearer_token: String,
-        transaction_name: impl Into<String>,
-    ) -> DataLakeClient {
+    pub fn new_with_transaction<A, T>(
+        account: A,
+        storage_credentials: StorageCredentials,
+        transaction_name: T,
+    ) -> Self
+    where
+        A: Into<String>,
+        T: Into<String>,
+    {
         Self::new_with_options(
-            storage_client,
             account,
-            bearer_token,
-            None,
-            ClientOptions::new_with_transaction_name(transaction_name.into()),
+            storage_credentials,
+            StorageAccountOptions::new_with_transaction_name(transaction_name.into()),
         )
     }
 
-    pub fn custom_dns_suffix(&self) -> Option<&str> {
-        self.custom_dns_suffix.as_deref()
-    }
-
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.storage_client.storage_account_client().http_client()
+        self.client.http_client()
     }
 
     pub(crate) fn url(&self) -> &str {
-        &self.url
+        &self.client.filesystem_url().as_str()
     }
 
-    pub fn list(&self) -> ListFileSystemsBuilder {
-        ListFileSystemsBuilder::new(self)
+    pub fn list_file_systems(&self) -> ListFileSystems {
+        ListFileSystems::new(self.client.clone())
     }
 
     pub fn into_file_system_client(self, file_system_name: String) -> FileSystemClient {
@@ -123,11 +84,16 @@ impl DataLakeClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
     ) -> crate::Result<(Request<Bytes>, url::Url)> {
-        self.storage_client
-            .prepare_request(url, method, http_header_adder, request_body)
+        self.client.prepare_request(
+            url,
+            method,
+            http_header_adder,
+            ServiceType::Blob,
+            request_body,
+        )
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        &self.pipeline
+        self.client.pipeline()
     }
 }

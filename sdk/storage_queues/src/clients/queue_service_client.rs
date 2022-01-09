@@ -18,6 +18,12 @@ impl AsQueueServiceClient for Arc<StorageAccountClient> {
     }
 }
 
+impl AsQueueServiceClient for StorageAccountClient {
+    fn as_queue_service_client(&self) -> Arc<QueueServiceClient> {
+        self.as_storage_client().as_queue_service_client()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct QueueServiceClient {
     storage_client: Arc<StorageClient>,

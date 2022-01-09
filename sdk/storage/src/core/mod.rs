@@ -19,6 +19,7 @@ pub mod parsing_xml;
 mod stored_access_policy;
 pub use errors::{Error, Result};
 pub mod authorization_policy;
+pub use authorization_policy::AuthorizationPolicy;
 pub mod util;
 pub mod xml;
 

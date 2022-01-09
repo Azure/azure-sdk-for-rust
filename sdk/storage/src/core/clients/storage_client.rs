@@ -14,6 +14,13 @@ impl AsStorageClient for Arc<StorageAccountClient> {
     }
 }
 
+// TODO temporary fix until all clients are migrated to "into" pattern
+impl AsStorageClient for StorageAccountClient {
+    fn as_storage_client(&self) -> Arc<StorageClient> {
+        StorageClient::new(Arc::new(self.clone()))
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct StorageClient {
     storage_account_client: Arc<StorageAccountClient>,

@@ -82,12 +82,5 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
         .await?;
     println!("token expires on {}\n", bearer_token.expires_on);
 
-    let storage_client = storage_account_client.as_storage_client();
-
-    Ok(DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
-    ))
+    Ok(DataLakeClient::new(storage_account_client.clone()))
 }
