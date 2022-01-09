@@ -8,39 +8,31 @@ pub trait AsStorageClient {
     fn as_storage_client(&self) -> Arc<StorageClient>;
 }
 
-impl AsStorageClient for Arc<StorageAccountClient> {
-    fn as_storage_client(&self) -> Arc<StorageClient> {
-        StorageClient::new(self.clone())
-    }
-}
-
 // TODO temporary fix until all clients are migrated to "into" pattern
 impl AsStorageClient for StorageAccountClient {
     fn as_storage_client(&self) -> Arc<StorageClient> {
-        StorageClient::new(Arc::new(self.clone()))
+        Arc::new(StorageClient::new(self.clone()))
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct StorageClient {
-    storage_account_client: Arc<StorageAccountClient>,
+    client: StorageAccountClient,
 }
 
 impl StorageClient {
-    pub(crate) fn new(storage_account_client: Arc<StorageAccountClient>) -> Arc<Self> {
-        Arc::new(Self {
-            storage_account_client,
-        })
+    pub(crate) fn new(client: StorageAccountClient) -> Self {
+        Self { client }
     }
 
     #[allow(dead_code)]
     pub fn storage_account_client(&self) -> &StorageAccountClient {
-        self.storage_account_client.as_ref()
+        &self.client
     }
 
     #[allow(dead_code)]
     pub fn http_client(&self) -> &dyn azure_core::HttpClient {
-        self.storage_account_client.http_client()
+        self.client.http_client()
     }
 
     fn url_with_segments<'a, I>(mut url: url::Url, segments: I) -> Result<url::Url, url::ParseError>
@@ -62,10 +54,7 @@ impl StorageClient {
     where
         I: IntoIterator<Item = &'a str>,
     {
-        Self::url_with_segments(
-            self.storage_account_client.blob_storage_url().to_owned(),
-            segments,
-        )
+        Self::url_with_segments(self.client.blob_storage_url().to_owned(), segments)
     }
 
     pub fn queue_url_with_segments<'a, I>(
@@ -75,10 +64,7 @@ impl StorageClient {
     where
         I: IntoIterator<Item = &'a str>,
     {
-        Self::url_with_segments(
-            self.storage_account_client.queue_storage_url().to_owned(),
-            segments,
-        )
+        Self::url_with_segments(self.client.queue_storage_url().to_owned(), segments)
     }
 
     #[cfg(feature = "account")]
@@ -100,7 +86,7 @@ impl StorageClient {
         http_header_adder: &dyn Fn(Builder) -> Builder,
         request_body: Option<Bytes>,
     ) -> crate::Result<(Request<Bytes>, url::Url)> {
-        self.storage_account_client.prepare_request(
+        self.client.prepare_request(
             url,
             method,
             http_header_adder,

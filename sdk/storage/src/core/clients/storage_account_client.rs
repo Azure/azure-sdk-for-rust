@@ -1,5 +1,6 @@
 use crate::headers::CONTENT_MD5;
 use crate::{
+    clients::StorageClient,
     core::{ConnectionString, No},
     shared_access_signature::account_sas::{
         AccountSharedAccessSignatureBuilder, ClientAccountSharedAccessSignature,
@@ -430,6 +431,11 @@ impl StorageAccountClient {
 
     pub fn storage_credentials(&self) -> &StorageCredentials {
         &self.storage_credentials
+    }
+
+    /// Convert into a [`StorageClient`]
+    pub fn into_storage_client<S: Into<String>>(self) -> StorageClient {
+        StorageClient::new(self)
     }
 
     pub fn prepare_request(

@@ -238,22 +238,7 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
     let options = StorageAccountOptions::default();
-
     let storage_account_client = StorageAccountClient::new_access_key(account, master_key, options);
 
-    let resource_id = "https://storage.azure.com/";
-    println!("getting bearer token for '{}'...", resource_id);
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-    println!("token expires on {}\n", bearer_token.expires_on);
-
-    let storage_client = storage_account_client.as_storage_client();
-
-    Ok(DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
-    ))
+    Ok(DataLakeClient::new(storage_account_client))
 }
