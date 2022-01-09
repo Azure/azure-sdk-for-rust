@@ -129,6 +129,11 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
         "InnerError",
         "innerError"
     ),
+    (
+        "../../../azure-rest-api-specs/specification/deviceupdate/data-plane/Microsoft.DeviceUpdate/preview/2021-06-01-preview/deviceupdate.json",
+        "InnerError",
+        "innerError"
+    ),
     // digitaltwins
     (
         "../../../azure-rest-api-specs/specification/digitaltwins/data-plane/Microsoft.DigitalTwins/preview/2020-05-31-preview/digitaltwins.json",
