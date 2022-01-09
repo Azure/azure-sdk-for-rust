@@ -17,7 +17,7 @@ pub struct ListFileSystems {
 }
 
 impl ListFileSystems {
-    pub(crate) fn new(client: StorageAccountClient) -> Self {
+    pub(crate) fn new(client: StorageAccountClient, context: Option<Context>) -> Self {
         Self {
             client,
             prefix: None,
@@ -25,7 +25,7 @@ impl ListFileSystems {
             max_results: None,
             client_request_id: None,
             timeout: None,
-            context: None,
+            context,
         }
     }
 
@@ -68,7 +68,7 @@ impl ListFileSystems {
                 let response = match this
                     .client
                     .pipeline()
-                    .send(ctx.clone().insert(ServiceType::Blob), &mut request)
+                    .send(&mut ctx.clone(), &mut request)
                     .await
                 {
                     Ok(r) => r,

@@ -1,24 +1,22 @@
-use crate::authorization_policy::AuthorizationPolicy;
 use crate::clients::FileSystemClient;
 use crate::operations::ListFileSystems;
-use crate::requests::*;
-use azure_core::{HttpClient, Pipeline};
+use azure_core::Context;
 use azure_storage::core::prelude::*;
-use bytes::Bytes;
-use http::method::Method;
-use http::request::{Builder, Request};
-use std::sync::Arc;
-
-const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
     client: StorageAccountClient,
+    context: Context,
 }
 
 impl DataLakeClient {
     pub fn new(client: StorageAccountClient) -> Self {
-        Self { client }
+        let mut context = Context::new();
+        context.insert(ServiceType::Blob);
+        Self {
+            client,
+            context: context.clone(),
+        }
     }
 
     pub fn new_with_credential<A>(account: A, storage_credentials: StorageCredentials) -> Self
@@ -41,7 +39,7 @@ impl DataLakeClient {
         A: Into<String>,
     {
         let client = StorageAccountClient::new(account, storage_credentials, options);
-        Self { client }
+        Self::new(client)
     }
 
     #[cfg(feature = "mock_transport_framework")]
@@ -61,39 +59,11 @@ impl DataLakeClient {
         )
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.client.http_client()
-    }
-
-    pub(crate) fn url(&self) -> &str {
-        &self.client.filesystem_url().as_str()
-    }
-
     pub fn list_file_systems(&self) -> ListFileSystems {
-        ListFileSystems::new(self.client.clone())
+        ListFileSystems::new(self.client.clone(), Some(self.context.clone()))
     }
 
     pub fn into_file_system_client(self, file_system_name: String) -> FileSystemClient {
-        FileSystemClient::new(self, file_system_name)
-    }
-
-    pub(crate) fn prepare_request(
-        &self,
-        url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
-        request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
-        self.client.prepare_request(
-            url,
-            method,
-            http_header_adder,
-            ServiceType::Blob,
-            request_body,
-        )
-    }
-
-    pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.client.pipeline()
+        FileSystemClient::new(self.client, file_system_name)
     }
 }

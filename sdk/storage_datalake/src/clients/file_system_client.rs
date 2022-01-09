@@ -1,32 +1,29 @@
 use crate::operations::*;
 use crate::requests::*;
-use crate::{clients::DataLakeClient, Properties};
+use crate::Properties;
 use azure_core::prelude::IfMatchCondition;
 use azure_core::Pipeline;
 use azure_core::{Context, HttpClient};
+use azure_storage::prelude::{ServiceType, StorageAccountClient};
 use bytes::Bytes;
 use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct FileSystemClient {
-    data_lake_client: DataLakeClient,
+    client: StorageAccountClient,
     name: String,
     url: Url,
 }
 
 impl FileSystemClient {
-    pub(crate) fn new(data_lake_client: DataLakeClient, name: String) -> Self {
-        let mut url = url::Url::parse(data_lake_client.url()).unwrap();
+    pub(crate) fn new(client: StorageAccountClient, name: String) -> Self {
+        let mut url = client.filesystem_url().clone();
         url.path_segments_mut()
             .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)
             .unwrap()
             .push(&name);
 
-        Self {
-            data_lake_client,
-            name,
-            url,
-        }
+        Self { client, name, url }
     }
 
     pub fn create(&self) -> CreateFileSystemBuilder {
@@ -156,7 +153,7 @@ impl FileSystemClient {
     }
 
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.data_lake_client.http_client()
+        self.client.http_client()
     }
 
     pub(crate) fn url(&self) -> &Url {
@@ -171,8 +168,13 @@ impl FileSystemClient {
         http_header_adder: &dyn Fn(http::request::Builder) -> http::request::Builder,
         request_body: Option<Bytes>,
     ) -> crate::Result<(http::request::Request<Bytes>, url::Url)> {
-        self.data_lake_client
-            .prepare_request(url, method, http_header_adder, request_body)
+        self.client.prepare_request(
+            url,
+            method,
+            http_header_adder,
+            ServiceType::Blob,
+            request_body,
+        )
     }
 
     pub(crate) fn prepare_file_create_request(&self, file_path: &str) -> azure_core::Request {
@@ -239,6 +241,6 @@ impl FileSystemClient {
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.data_lake_client.pipeline()
+        self.client.pipeline()
     }
 }
