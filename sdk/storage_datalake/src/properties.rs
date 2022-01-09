@@ -1,46 +1,41 @@
 use azure_core::AddAsHeader;
 use http::request::Builder;
 use http::HeaderMap;
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Properties<'a, 'b>(HashMap<Cow<'a, str>, Cow<'b, str>>);
+pub struct Properties(HashMap<String, String>);
 
 const HEADER: &str = "x-ms-properties";
 
-impl<'a, 'b> Default for Properties<'a, 'b> {
+impl Default for Properties {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, 'b> Properties<'a, 'b> {
+impl Properties {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn insert<K: Into<Cow<'a, str>>, V: Into<Cow<'b, str>>>(
-        &mut self,
-        k: K,
-        v: V,
-    ) -> Option<Cow<'b, str>> {
+    pub fn insert<K: Into<String>, V: Into<String>>(&mut self, k: K, v: V) -> Option<String> {
         self.0.insert(k.into(), v.into())
     }
 
-    pub fn hash_map(&self) -> &HashMap<Cow<'a, str>, Cow<'b, str>> {
+    pub fn hash_map(&self) -> &HashMap<String, String> {
         &self.0
     }
 }
 
-impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
+impl AddAsHeader for Properties {
     fn add_as_header(&self, builder: Builder) -> Builder {
         // the header is a comma separated list of key=base64(value) see
         // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
         let mut s = String::new();
         self.0.iter().for_each(|(k, v)| {
-            s.push_str(&format!("{}={},", k.as_ref(), base64::encode(v.as_ref())));
+            s.push_str(&format!("{}={},", k.as_str(), base64::encode(v.as_str())));
         });
 
         // since we added a comma to the last entry, we will strip it to the exported header (this
@@ -58,7 +53,7 @@ impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
         let s = self
             .0
             .iter()
-            .map(|(k, v)| format!("{}={}", k.as_ref(), base64::encode(v.as_ref())))
+            .map(|(k, v)| format!("{}={}", k.as_str(), base64::encode(v.as_str())))
             .collect::<Vec<_>>()
             .join(",");
 
@@ -70,7 +65,7 @@ impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
     }
 }
 
-impl TryFrom<&HeaderMap> for Properties<'static, 'static> {
+impl TryFrom<&HeaderMap> for Properties {
     type Error = crate::Error;
 
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {

@@ -2,6 +2,7 @@
 
 #![allow(missing_docs)]
 
+mod create_file_system;
 mod file_append;
 mod file_create;
 mod file_delete;
@@ -9,6 +10,7 @@ mod file_flush;
 mod file_rename;
 mod list_file_systems;
 
+pub use create_file_system::*;
 pub use file_append::*;
 pub use file_create::*;
 pub use file_delete::*;

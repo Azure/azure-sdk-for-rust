@@ -14,13 +14,13 @@ pub struct SetFileSystemPropertiesBuilder<'a> {
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
     client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
-    properties: Option<&'a Properties<'a, 'a>>,
+    properties: Option<Properties>,
 }
 
 impl<'a> SetFileSystemPropertiesBuilder<'a> {
     pub(crate) fn new(
         file_system_client: &'a FileSystemClient,
-        properties: Option<&'a Properties<'a, 'a>>,
+        properties: Option<Properties>,
     ) -> Self {
         Self {
             file_system_client,
@@ -54,7 +54,7 @@ impl<'a> SetFileSystemPropertiesBuilder<'a> {
             &Method::PATCH,
             &|mut request| {
                 request = add_optional_header(&self.if_modified_since_condition, request);
-                request = add_optional_header_ref(&self.properties, request);
+                // request = add_optional_header_ref(&self.properties, request);
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },

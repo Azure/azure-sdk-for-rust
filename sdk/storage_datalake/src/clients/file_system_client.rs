@@ -13,21 +13,31 @@ pub struct FileSystemClient {
     client: StorageAccountClient,
     name: String,
     url: Url,
+    context: Context,
 }
 
 impl FileSystemClient {
-    pub(crate) fn new(client: StorageAccountClient, name: String) -> Self {
+    pub(crate) fn new(client: StorageAccountClient, name: String, context: Context) -> Self {
         let mut url = client.filesystem_url().clone();
         url.path_segments_mut()
             .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)
             .unwrap()
             .push(&name);
 
-        Self { client, name, url }
+        Self {
+            client,
+            name,
+            url,
+            context,
+        }
     }
 
     pub fn create(&self) -> CreateFileSystemBuilder {
-        CreateFileSystemBuilder::new(self)
+        CreateFileSystemBuilder::new(
+            self.client.clone(),
+            self.name.clone(),
+            Some(self.context.clone()),
+        )
     }
 
     pub fn delete(&self) -> DeleteFileSystemBuilder {
@@ -40,7 +50,7 @@ impl FileSystemClient {
 
     pub fn set_properties<'a>(
         &'a self,
-        properties: Option<&'a Properties<'a, 'a>>,
+        properties: Option<Properties>,
     ) -> SetFileSystemPropertiesBuilder {
         SetFileSystemPropertiesBuilder::new(self, properties)
     }

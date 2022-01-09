@@ -64,6 +64,6 @@ impl DataLakeClient {
     }
 
     pub fn into_file_system_client(self, file_system_name: String) -> FileSystemClient {
-        FileSystemClient::new(self.client, file_system_name)
+        FileSystemClient::new(self.client, file_system_name, self.context)
     }
 }

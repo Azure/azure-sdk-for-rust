@@ -15,7 +15,7 @@ pub struct GetFileSystemPropertiesResponse {
     pub etag: Etag,
     pub last_modified: DateTime<Utc>,
     pub namespace_enabled: bool,
-    pub properties: Properties<'static, 'static>,
+    pub properties: Properties,
 }
 
 impl TryFrom<&Response<Bytes>> for GetFileSystemPropertiesResponse {
