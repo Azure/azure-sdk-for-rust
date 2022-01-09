@@ -49,10 +49,10 @@ impl Policy for SharedKeyAuthorizationPolicy {
 
         let uri_path = &request.uri().path_and_query().unwrap().to_string()[1..];
         let full_url = format!("{}/{}", self.base_url, uri_path);
-        println!(
-            "full_url used by SharedKeyAuthorizationPolicy == {:#?}",
-            full_url
-        );
+        // println!(
+        //     "full_url used by SharedKeyAuthorizationPolicy == {:#?}",
+        //     full_url
+        // );
         let url = url::Url::parse(full_url.as_str())?;
 
         let auth = generate_authorization(
@@ -82,7 +82,7 @@ fn generate_authorization(
 ) -> String {
     let str_to_sign = string_to_sign(http_headers, url, http_method, storage_account_name);
 
-    println!("\nstr_to_sign == {:?}\n", str_to_sign);
+    // println!("\nstr_to_sign == {:?}\n", str_to_sign);
     // debug!("str_to_sign == {}", str_to_sign);
 
     let auth = encode_str_to_sign(&str_to_sign, shared_key);
