@@ -95,8 +95,12 @@ impl Spec {
             .flatten()
             .collect();
         titles.sort_unstable();
-
         titles.get(0).map(|t| t.as_str())
+    }
+
+    pub fn host(&self) -> Option<&str> {
+        let hosts: Vec<_> = self.docs.values().map(|doc| &doc.host).filter(|t| t.is_some()).flatten().collect();
+        hosts.get(0).map(|t| t.as_str())
     }
 
     pub fn consumes(&self) -> Vec<&String> {
@@ -107,7 +111,6 @@ impl Spec {
             .map(|api| &api.consumes)
             .flatten()
             .collect();
-
         versions.sort_unstable();
         versions
     }
