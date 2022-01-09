@@ -1,11 +1,16 @@
 use crate::operations::*;
 use crate::Properties;
+use azure_core::headers::*;
 use azure_core::prelude::IfMatchCondition;
+use azure_core::Context;
 use azure_core::Pipeline;
-use azure_core::{Context, HttpClient};
-use azure_storage::prelude::{ServiceType, StorageAccountClient};
+use azure_storage::prelude::StorageAccountClient;
 use bytes::Bytes;
 use url::Url;
+
+pub(crate) const HEADER_VERSION: &str = "x-ms-version";
+
+pub(crate) const AZURE_VERSION: &str = "2019-12-12";
 
 pub(crate) fn prepare_file_system_url(client: &StorageAccountClient, name: &str) -> Url {
     let mut url = client.filesystem_url().clone();
@@ -21,8 +26,8 @@ pub(crate) fn prepare_file_system_url(client: &StorageAccountClient, name: &str)
 pub struct FileSystemClient {
     client: StorageAccountClient,
     name: String,
-    url: Url,
     context: Context,
+    url: Url,
 }
 
 impl FileSystemClient {
@@ -36,8 +41,8 @@ impl FileSystemClient {
         Self {
             client,
             name,
-            url,
             context,
+            url,
         }
     }
 
@@ -76,21 +81,22 @@ impl FileSystemClient {
 
     pub async fn create_file(
         &self,
-        ctx: Context,
         file_path: &str,
         options: FileCreateOptions<'_>,
     ) -> Result<FileCreateResponse, crate::Error> {
         let mut request = self.prepare_file_create_request(file_path);
 
         options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(&mut self.context.clone(), &mut request)
+            .await?;
 
         Ok(FileCreateResponse::try_from(response).await?)
     }
 
     pub async fn create_file_if_not_exists(
         &self,
-        ctx: Context,
         file_path: &str,
     ) -> Result<FileCreateResponse, crate::Error> {
         let options = FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
@@ -98,28 +104,32 @@ impl FileSystemClient {
         let mut request = self.prepare_file_create_request(file_path);
 
         options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(&mut self.context.clone(), &mut request)
+            .await?;
 
         Ok(FileCreateResponse::try_from(response).await?)
     }
 
     pub async fn delete_file(
         &self,
-        ctx: Context,
         file_path: &str,
         options: FileDeleteOptions<'_>,
     ) -> Result<FileDeleteResponse, crate::Error> {
         let mut request = self.prepare_file_delete_request(file_path);
 
         options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(&mut self.context.clone(), &mut request)
+            .await?;
 
         Ok(FileDeleteResponse::try_from(response).await?)
     }
 
     pub async fn rename_file(
         &self,
-        ctx: Context,
         source_file_path: &str,
         destination_file_path: &str,
         options: FileRenameOptions<'_>,
@@ -128,14 +138,16 @@ impl FileSystemClient {
 
         let rename_source = format!("/{}/{}", &self.name, source_file_path);
         options.decorate_request(&mut request, rename_source.as_str())?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(&mut self.context.clone(), &mut request)
+            .await?;
 
         Ok(FileRenameResponse::try_from(response).await?)
     }
 
     pub async fn rename_file_if_not_exists(
         &self,
-        ctx: Context,
         source_file_path: &str,
         destination_file_path: &str,
     ) -> Result<FileRenameResponse, crate::Error> {
@@ -145,14 +157,16 @@ impl FileSystemClient {
 
         let rename_source = format!("/{}/{}", &self.name, source_file_path);
         options.decorate_request(&mut request, rename_source.as_str())?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(&mut self.context.clone(), &mut request)
+            .await?;
 
         Ok(FileRenameResponse::try_from(response).await?)
     }
 
     pub async fn append_to_file(
         &self,
-        ctx: Context,
         file_path: &str,
         bytes: Bytes,
         position: i64,
@@ -161,14 +175,16 @@ impl FileSystemClient {
         let mut request = self.prepare_file_append_request(file_path, position);
 
         options.decorate_request(&mut request, bytes)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(&mut self.context.clone(), &mut request)
+            .await?;
 
         Ok(FileAppendResponse::try_from(response).await?)
     }
 
     pub async fn flush_file(
         &self,
-        ctx: Context,
         file_path: &str,
         position: i64,
         close: bool,
@@ -176,39 +192,25 @@ impl FileSystemClient {
     ) -> Result<FileFlushResponse, crate::Error> {
         let mut request = self.prepare_file_flush_request(file_path, position, close);
         options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+        let response = self
+            .pipeline()
+            .send(&mut self.context.clone(), &mut request)
+            .await?;
 
         Ok(FileFlushResponse::try_from(response).await?)
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.client.http_client()
     }
 
     pub(crate) fn url(&self) -> &Url {
         &self.url
     }
 
-    /// Note: This is part of the old (non-pipeline) architecture. Eventually this method will disappear.
-    pub(crate) fn prepare_request(
-        &self,
-        url: &str,
-        method: &http::method::Method,
-        http_header_adder: &dyn Fn(http::request::Builder) -> http::request::Builder,
-        request_body: Option<Bytes>,
-    ) -> crate::Result<(http::request::Request<Bytes>, url::Url)> {
-        self.client.prepare_request(
-            url,
-            method,
-            http_header_adder,
-            ServiceType::Blob,
-            request_body,
-        )
-    }
-
     pub(crate) fn prepare_file_create_request(&self, file_path: &str) -> azure_core::Request {
         let uri = format!("{}/{}?resource=file", self.url(), file_path);
+        let dt = chrono::Utc::now();
+        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
         http::request::Request::put(uri)
+            .header(MS_DATE, time)
+            .header(HEADER_VERSION, AZURE_VERSION)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
             .into()
@@ -216,7 +218,11 @@ impl FileSystemClient {
 
     pub(crate) fn prepare_file_delete_request(&self, file_path: &str) -> azure_core::Request {
         let uri = format!("{}/{}", self.url(), file_path);
+        let dt = chrono::Utc::now();
+        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
         http::request::Request::delete(uri)
+            .header(MS_DATE, time)
+            .header(HEADER_VERSION, AZURE_VERSION)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
             .into()
@@ -227,7 +233,11 @@ impl FileSystemClient {
         destination_file_path: &str,
     ) -> azure_core::Request {
         let uri = format!("{}/{}?mode=legacy", self.url(), destination_file_path);
+        let dt = chrono::Utc::now();
+        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
         http::request::Request::put(uri)
+            .header(MS_DATE, time)
+            .header(HEADER_VERSION, AZURE_VERSION)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
             .into()
@@ -244,7 +254,11 @@ impl FileSystemClient {
             file_path,
             position
         );
+        let dt = chrono::Utc::now();
+        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
         http::request::Request::patch(uri)
+            .header(MS_DATE, time)
+            .header(HEADER_VERSION, AZURE_VERSION)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
             .into()
@@ -263,7 +277,11 @@ impl FileSystemClient {
             position,
             close,
         );
+        let dt = chrono::Utc::now();
+        let time = format!("{}", dt.format("%a, %d %h %Y %T GMT"));
         http::request::Request::patch(uri)
+            .header(MS_DATE, time)
+            .header(HEADER_VERSION, AZURE_VERSION)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
             .into()

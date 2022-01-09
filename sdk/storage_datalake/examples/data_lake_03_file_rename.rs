@@ -1,6 +1,3 @@
-use azure_core::prelude::*;
-use azure_identity::token_credentials::DefaultAzureCredential;
-use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -24,13 +21,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("creating file '{}'...", file_path1);
     let create_file_response1 = file_system_client
-        .create_file(Context::default(), file_path1, FileCreateOptions::default())
+        .create_file(file_path1, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}\n", create_file_response1);
 
     println!("creating file '{}'...", file_path2);
     let create_file_response2 = file_system_client
-        .create_file(Context::default(), file_path2, FileCreateOptions::default())
+        .create_file(file_path2, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}\n", create_file_response2);
 
@@ -39,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         file_path1, file_path2
     );
     let rename_file_if_not_exists_result = file_system_client
-        .rename_file_if_not_exists(Context::default(), file_path1, file_path2)
+        .rename_file_if_not_exists(file_path1, file_path2)
         .await;
     println!(
         "rename file result (should fail) == {:?}\n",
@@ -48,12 +45,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("renaming file '{}' to '{}'...", file_path1, file_path2);
     let rename_file_response = file_system_client
-        .rename_file(
-            Context::default(),
-            file_path1,
-            file_path2,
-            FileRenameOptions::default(),
-        )
+        .rename_file(file_path1, file_path2, FileRenameOptions::default())
         .await?;
     println!("rename file response == {:?}\n", rename_file_response);
 
@@ -74,13 +66,6 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
 
     let storage_account_client =
         StorageAccountClient::new_access_key(&account, &master_key, options);
-
-    let resource_id = "https://storage.azure.com/";
-    println!("getting bearer token for '{}'...", resource_id);
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-    println!("token expires on {}\n", bearer_token.expires_on);
 
     Ok(DataLakeClient::new(storage_account_client.clone()))
 }

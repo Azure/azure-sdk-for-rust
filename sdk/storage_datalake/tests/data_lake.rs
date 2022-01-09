@@ -1,9 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 // #![cfg(feature = "mock_transport_framework")]
 
-use azure_core::prelude::*;
-use azure_identity::token_credentials::DefaultAzureCredential;
-use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -28,21 +25,20 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     let create_fs_response = file_system_client
         .create()
-        .properties(&fs_properties)
-        .execute()
+        .properties(fs_properties.clone())
+        .into_future()
         .await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
     );
 
-    let mut stream = Box::pin(
-        data_lake_client
-            .list()
-            .max_results(NonZeroU32::new(3).unwrap())
-            .stream(),
-    );
+    let mut stream = data_lake_client
+        .list_file_systems()
+        .max_results(NonZeroU32::new(3).unwrap())
+        .into_stream();
     let mut found = false;
+
     while let Some(list_fs_response) = stream.next().await {
         for fs in list_fs_response.unwrap().file_systems {
             if fs.name == file_system_name {
@@ -53,7 +49,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     }
     assert!(found, "did not find created file system");
 
-    let get_fs_props_response = file_system_client.get_properties().execute().await?;
+    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
     let properties_hashmap = get_fs_props_response.properties.hash_map();
     let added_via_option = properties_hashmap.get("AddedVia");
     assert!(
@@ -66,13 +62,13 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         "did not find expected property value for: AddedVia"
     );
 
-    fs_properties.insert("ModifiedBy", "Iota");
+    fs_properties.insert("ModifiedBy".to_string(), "Iota".to_string());
     file_system_client
-        .set_properties(Some(&fs_properties))
-        .execute()
+        .set_properties(Some(fs_properties))
+        .into_future()
         .await?;
 
-    let get_fs_props_response = file_system_client.get_properties().execute().await?;
+    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
     let properties_hashmap = get_fs_props_response.properties.hash_map();
     let modified_by_option = properties_hashmap.get("ModifiedBy");
     assert!(
@@ -85,7 +81,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         "did not find expected property value for: ModifiedBy"
     );
 
-    file_system_client.delete().execute().await?;
+    file_system_client.delete().into_future().await?;
 
     Ok(())
 }
@@ -102,7 +98,7 @@ async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Err
         .clone()
         .into_file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().execute().await?;
+    let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -111,23 +107,23 @@ async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Err
     let file_path = "some/path/e2etest-file.txt";
 
     file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .create_file(file_path, FileCreateOptions::default())
         .await?;
 
     let create_file_if_not_exists_result = file_system_client
-        .create_file_if_not_exists(Context::default(), file_path)
+        .create_file_if_not_exists(file_path)
         .await;
     assert!(create_file_if_not_exists_result.is_err());
 
     file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .create_file(file_path, FileCreateOptions::default())
         .await?;
 
     file_system_client
-        .delete_file(Context::default(), file_path, FileDeleteOptions::default())
+        .delete_file(file_path, FileDeleteOptions::default())
         .await?;
 
-    file_system_client.delete().execute().await?;
+    file_system_client.delete().into_future().await?;
 
     Ok(())
 }
@@ -144,7 +140,7 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
         .clone()
         .into_file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().execute().await?;
+    let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -153,32 +149,20 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
     let file_path = "some/path/e2etest-file.txt";
 
     file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .create_file(file_path, FileCreateOptions::default())
         .await?;
 
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
     file_system_client
-        .append_to_file(
-            Context::default(),
-            file_path,
-            bytes,
-            0,
-            FileAppendOptions::default(),
-        )
+        .append_to_file(file_path, bytes, 0, FileAppendOptions::default())
         .await?;
 
     file_system_client
-        .flush_file(
-            Context::default(),
-            file_path,
-            file_length,
-            true,
-            FileFlushOptions::default(),
-        )
+        .flush_file(file_path, file_length, true, FileFlushOptions::default())
         .await?;
 
-    file_system_client.delete().execute().await?;
+    file_system_client.delete().into_future().await?;
 
     Ok(())
 }
@@ -195,7 +179,7 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
         .clone()
         .into_file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().execute().await?;
+    let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -205,28 +189,23 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
     let file_path2 = "some/path/e2etest-file2.txt";
 
     file_system_client
-        .create_file(Context::default(), file_path1, FileCreateOptions::default())
+        .create_file(file_path1, FileCreateOptions::default())
         .await?;
 
     file_system_client
-        .create_file(Context::default(), file_path2, FileCreateOptions::default())
+        .create_file(file_path2, FileCreateOptions::default())
         .await?;
 
     let rename_file_if_not_exists_result = file_system_client
-        .rename_file_if_not_exists(Context::default(), file_path1, file_path2)
+        .rename_file_if_not_exists(file_path1, file_path2)
         .await;
     assert!(rename_file_if_not_exists_result.is_err());
 
     file_system_client
-        .rename_file(
-            Context::default(),
-            file_path1,
-            file_path2,
-            FileRenameOptions::default(),
-        )
+        .rename_file(file_path1, file_path2, FileRenameOptions::default())
         .await?;
 
-    file_system_client.delete().execute().await?;
+    file_system_client.delete().into_future().await?;
 
     Ok(())
 }

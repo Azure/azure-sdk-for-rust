@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_identity::token_credentials::DefaultAzureCredential;
 use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
@@ -23,7 +22,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("creating file '{}'...", file_path);
     let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .create_file(file_path, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}\n", create_file_response);
 
@@ -37,32 +36,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("appending '{}' to file '{}'...", string1, file_path);
     let append_to_file_response = file_system_client
-        .append_to_file(
-            Context::default(),
-            file_path,
-            data1,
-            0,
-            FileAppendOptions::default(),
-        )
+        .append_to_file(file_path, data1, 0, FileAppendOptions::default())
         .await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("appending '{}' to file '{}'...", string2, file_path);
     let append_to_file_response = file_system_client
-        .append_to_file(
-            Context::default(),
-            file_path,
-            data2,
-            data1_length,
-            FileAppendOptions::default(),
-        )
+        .append_to_file(file_path, data2, data1_length, FileAppendOptions::default())
         .await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("flushing file '{}'...", file_path);
     let flush_file_response = file_system_client
         .flush_file(
-            Context::default(),
             file_path,
             data1_length + data2_length,
             true,

@@ -1,6 +1,3 @@
-use azure_core::prelude::*;
-use azure_identity::token_credentials::DefaultAzureCredential;
-use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -23,13 +20,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("creating file '{}'...", file_path);
     let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .create_file(file_path, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}\n", create_file_response);
 
     println!("creating file '{}' if not exists...", file_path);
     let create_file_if_not_exists_result = file_system_client
-        .create_file_if_not_exists(Context::default(), file_path)
+        .create_file_if_not_exists(file_path)
         .await;
     println!(
         "create file result (should fail) == {:?}\n",
@@ -38,13 +35,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("creating file '{}' (overwrite)...", file_path);
     let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+        .create_file(file_path, FileCreateOptions::default())
         .await?;
     println!("create file response == {:?}\n", create_file_response);
 
     println!("deleting file '{}'...", file_path);
     let delete_file_response = file_system_client
-        .delete_file(Context::default(), file_path, FileDeleteOptions::default())
+        .delete_file(file_path, FileDeleteOptions::default())
         .await?;
     println!("delete_file file response == {:?}\n", delete_file_response);
 
@@ -66,12 +63,5 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
     let storage_account_client =
         StorageAccountClient::new_access_key(&account, &master_key, options);
 
-    let resource_id = "https://storage.azure.com/";
-    println!("getting bearer token for '{}'...", resource_id);
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-    println!("token expires on {}\n", bearer_token.expires_on);
-
-    Ok(DataLakeClient::new(storage_account_client.clone()))
+    Ok(DataLakeClient::new(storage_account_client))
 }
