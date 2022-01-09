@@ -2,8 +2,8 @@ use crate::clients::prepare_file_system_url;
 use crate::{util::*, Properties};
 use azure_core::prelude::*;
 use azure_core::{
-    collect_pinned_stream, headers::add_optional_header2, AppendToUrlQuery, Context,
-    Response as HttpResponse,
+    headers::{add_mandatory_header2, add_optional_header2},
+    AppendToUrlQuery, Context, Response as HttpResponse,
 };
 use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
@@ -11,7 +11,6 @@ use azure_core::{
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, prelude::*};
 use chrono::{DateTime, Utc};
-use http::header::{HeaderValue, CONTENT_LENGTH};
 use std::convert::TryFrom;
 
 /// A future of a file system get properties response
@@ -64,10 +63,7 @@ impl GetFileSystemPropertiesBuilder {
                 .prepare_request_pipeline(url.as_str(), http::Method::HEAD);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
-
-            request
-                .headers_mut()
-                .insert(CONTENT_LENGTH, HeaderValue::from_str("0").unwrap());
+            add_mandatory_header2(&ContentLength::new(0), &mut request)?;
 
             let response = self
                 .client

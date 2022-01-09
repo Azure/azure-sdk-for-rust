@@ -1,11 +1,11 @@
 use crate::clients::prepare_file_system_url;
 use azure_core::prelude::*;
 use azure_core::{
-    collect_pinned_stream, headers::add_optional_header2, AppendToUrlQuery, Context,
-    Response as HttpResponse,
+    collect_pinned_stream,
+    headers::{add_mandatory_header2, add_optional_header2},
+    AppendToUrlQuery, Context, Response as HttpResponse,
 };
 use azure_storage::{core::headers::CommonStorageResponseHeaders, prelude::*};
-use http::header::{HeaderValue, CONTENT_LENGTH};
 use std::convert::TryFrom;
 
 /// A future of a create file system response
@@ -62,12 +62,7 @@ impl DeleteFileSystemBuilder {
 
             add_optional_header2(&this.client_request_id, &mut request)?;
             add_optional_header2(&this.if_modified_since_condition, &mut request)?;
-
-            println!("{:?}", request);
-
-            request
-                .headers_mut()
-                .insert(CONTENT_LENGTH, HeaderValue::from_str("0").unwrap());
+            add_mandatory_header2(&ContentLength::new(0), &mut request)?;
 
             let response = self
                 .client
