@@ -42,6 +42,7 @@ impl DataLakeClient {
 
         let per_call_policies = Vec::new();
         let auth_policy: Arc<dyn azure_core::Policy> =
+            // TODO: Make parameterized
 			// Arc::new(BearerTokenAuthorizationPolicy::new(bearer_token));
 			Arc::new(SharedKeyAuthorizationPolicy::new(url.to_owned(), shared_key, account.to_owned()));
 
