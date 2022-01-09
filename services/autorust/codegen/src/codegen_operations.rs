@@ -36,7 +36,7 @@ fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream, Error> {
     }
 }
 
-pub fn create_client(modules: &[String], host: Option<&str>) -> Result<TokenStream, Error> {
+pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<TokenStream, Error> {
     let mut clients = TokenStream::new();
     for md in modules {
         let md = md.to_snake_case_ident().map_err(Error::ModuleName)?;
@@ -50,11 +50,10 @@ pub fn create_client(modules: &[String], host: Option<&str>) -> Result<TokenStre
     let public_cloud = quote! {
         pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
     };
-    let default_endpoint_code = if let Some(host) = host {
-        if host == "management.azure.com" {
+    let default_endpoint_code = if let Some(endpoint) = endpoint {
+        if endpoint == "https://management.azure.com" {
             public_cloud
         } else {
-            let endpoint = format!("https://{}", host);
             quote! {
                 pub const DEFAULT_ENDPOINT: &str = #endpoint;
             }
@@ -162,7 +161,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     let operations: Vec<_> = cg.spec.operations()?.into_iter().map(WebOperationGen).collect();
     let module_names: BTreeSet<_> = operations.iter().flat_map(|op| op.rust_module_name()).collect();
     let module_names: Vec<_> = module_names.into_iter().collect();
-    file.extend(create_client(&module_names, cg.spec.host())?);
+    file.extend(create_client(&module_names, cg.spec.endpoint().as_deref())?);
 
     let mut errors = TokenStream::new();
     for operation in &operations {
