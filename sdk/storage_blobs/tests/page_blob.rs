@@ -56,5 +56,7 @@ fn initialize() -> Arc<StorageAccountClient> {
 
     let options = StorageAccountOptions::default();
 
-    StorageAccountClient::new_access_key(account, master_key, options)
+    Arc::new(StorageAccountClient::new_access_key(
+        account, master_key, options,
+    ))
 }
