@@ -4865,6 +4865,11 @@ pub mod restart_node_description {
         False,
         True,
     }
+    impl Default for CreateFabricDump {
+        fn default() -> Self {
+            Self::False
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestartPartitionResult {
@@ -6102,12 +6107,22 @@ pub enum UpgradeKind {
     Invalid,
     Rolling,
 }
+impl Default for UpgradeKind {
+    fn default() -> Self {
+        Self::Rolling
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UpgradeMode {
     Invalid,
     UnmonitoredAuto,
     UnmonitoredManual,
     Monitored,
+}
+impl Default for UpgradeMode {
+    fn default() -> Self {
+        Self::UnmonitoredAuto
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpgradeOrchestrationServiceState {
@@ -6137,6 +6152,11 @@ pub enum UpgradeSortOrder {
     ReverseNumeric,
     ReverseLexicographical,
 }
+impl Default for UpgradeSortOrder {
+    fn default() -> Self {
+        Self::Default
+    }
+}
 pub type UpgradeStartTimeUtcString = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UpgradeState {
@@ -6155,6 +6175,11 @@ pub enum UpgradeType {
     Rolling,
     #[serde(rename = "Rolling_ForceRestart")]
     RollingForceRestart,
+}
+impl Default for UpgradeType {
+    fn default() -> Self {
+        Self::Rolling
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadChunkRange {

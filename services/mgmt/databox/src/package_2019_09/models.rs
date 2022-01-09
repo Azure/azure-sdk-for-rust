@@ -547,6 +547,11 @@ pub mod job_properties {
         NonScheduled,
         Scheduled,
     }
+    impl Default for DeliveryType {
+        fn default() -> Self {
+            Self::NonScheduled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobResource {
@@ -856,6 +861,11 @@ pub mod shipping_address {
         None,
         Residential,
         Commercial,
+    }
+    impl Default for AddressType {
+        fn default() -> Self {
+            Self::None
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

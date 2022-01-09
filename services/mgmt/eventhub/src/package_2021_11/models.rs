@@ -337,6 +337,11 @@ pub mod encryption {
         #[serde(rename = "Microsoft.KeyVault")]
         MicrosoftKeyVault,
     }
+    impl Default for KeySource {
+        fn default() -> Self {
+            Self::MicrosoftKeyVault
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
@@ -503,6 +508,11 @@ pub mod network_rule_set {
         pub enum PublicNetworkAccess {
             Enabled,
             Disabled,
+        }
+        impl Default for PublicNetworkAccess {
+            fn default() -> Self {
+                Self::Enabled
+            }
         }
     }
 }

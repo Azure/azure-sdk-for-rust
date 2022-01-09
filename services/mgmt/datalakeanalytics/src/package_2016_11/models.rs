@@ -154,10 +154,20 @@ pub mod create_data_lake_analytics_account_properties {
         Enabled,
         Disabled,
     }
+    impl Default for FirewallState {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FirewallAllowAzureIps {
         Enabled,
         Disabled,
+    }
+    impl Default for FirewallAllowAzureIps {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NewTier {
@@ -178,6 +188,11 @@ pub mod create_data_lake_analytics_account_properties {
         Commitment100000auHours,
         #[serde(rename = "Commitment_500000AUHours")]
         Commitment500000auHours,
+    }
+    impl Default for NewTier {
+        fn default() -> Self {
+            Self::Consumption
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

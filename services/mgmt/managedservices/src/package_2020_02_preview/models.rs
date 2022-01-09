@@ -59,6 +59,11 @@ pub mod just_in_time_access_policy {
         Azure,
         None,
     }
+    impl Default for MultiFactorAuthProvider {
+        fn default() -> Self {
+            Self::None
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketplaceRegistrationDefinition {

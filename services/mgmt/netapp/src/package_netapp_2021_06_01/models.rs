@@ -529,6 +529,11 @@ pub mod export_policy_rule {
         Restricted,
         Unrestricted,
     }
+    impl Default for ChownMode {
+        fn default() -> Self {
+            Self::Restricted
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HourlySchedule {
@@ -635,6 +640,11 @@ pub mod pool_patch_properties {
         Auto,
         Manual,
     }
+    impl Default for QosType {
+        fn default() -> Self {
+            Self::Auto
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolProperties {
@@ -663,10 +673,20 @@ pub mod pool_properties {
         Auto,
         Manual,
     }
+    impl Default for QosType {
+        fn default() -> Self {
+            Self::Auto
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionType {
         Single,
         Double,
+    }
+    impl Default for EncryptionType {
+        fn default() -> Self {
+            Self::Single
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -775,6 +795,11 @@ pub enum ServiceLevel {
     Ultra,
     #[serde(rename = "StandardZRS")]
     StandardZrs,
+}
+impl Default for ServiceLevel {
+    fn default() -> Self {
+        Self::Premium
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
@@ -1101,6 +1126,11 @@ pub mod volume_properties {
         Basic,
         Standard,
     }
+    impl Default for NetworkFeatures {
+        fn default() -> Self {
+            Self::Basic
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageToNetworkProximity {
         Default,
@@ -1123,10 +1153,20 @@ pub mod volume_properties {
         #[serde(rename = "unix")]
         Unix,
     }
+    impl Default for SecurityStyle {
+        fn default() -> Self {
+            Self::Unix
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AvsDataStore {
         Enabled,
         Disabled,
+    }
+    impl Default for AvsDataStore {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -80,6 +80,11 @@ pub mod facet_request_options {
         #[serde(rename = "desc")]
         Desc,
     }
+    impl Default for SortOrder {
+        fn default() -> Self {
+            Self::Desc
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetResult {

@@ -97,6 +97,11 @@ pub mod deployment_script_properties_base {
         OnSuccess,
         OnExpiration,
     }
+    impl Default for CleanupPreference {
+        fn default() -> Self {
+            Self::Always
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,

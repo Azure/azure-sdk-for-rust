@@ -166,6 +166,11 @@ pub mod search_service_properties {
         #[serde(rename = "highDensity")]
         HighDensity,
     }
+    impl Default for HostingMode {
+        fn default() -> Self {
+            Self::Default
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "running")]

@@ -110,6 +110,11 @@ pub mod extension_status {
         Warning,
         Information,
     }
+    impl Default for Level {
+        fn default() -> Self {
+            Self::Information
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionsList {

@@ -483,6 +483,11 @@ pub mod pool_patch_properties {
         Auto,
         Manual,
     }
+    impl Default for QosType {
+        fn default() -> Self {
+            Self::Auto
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolProperties {
@@ -508,10 +513,20 @@ pub mod pool_properties {
         Premium,
         Ultra,
     }
+    impl Default for ServiceLevel {
+        fn default() -> Self {
+            Self::Premium
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QosType {
         Auto,
         Manual,
+    }
+    impl Default for QosType {
+        fn default() -> Self {
+            Self::Auto
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -768,6 +783,11 @@ pub mod volume_patch_properties {
         Premium,
         Ultra,
     }
+    impl Default for ServiceLevel {
+        fn default() -> Self {
+            Self::Premium
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ExportPolicy {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -828,6 +848,11 @@ pub mod volume_properties {
         Premium,
         Ultra,
     }
+    impl Default for ServiceLevel {
+        fn default() -> Self {
+            Self::Premium
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ExportPolicy {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -848,6 +873,11 @@ pub mod volume_properties {
         Ntfs,
         #[serde(rename = "unix")]
         Unix,
+    }
+    impl Default for SecurityStyle {
+        fn default() -> Self {
+            Self::Unix
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

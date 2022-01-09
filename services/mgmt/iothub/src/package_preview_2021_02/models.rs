@@ -641,6 +641,11 @@ pub mod network_rule_set_ip_rule {
     pub enum Action {
         Allow,
     }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRuleSetProperties {
@@ -657,6 +662,11 @@ pub mod network_rule_set_properties {
     pub enum DefaultAction {
         Deny,
         Allow,
+    }
+    impl Default for DefaultAction {
+        fn default() -> Self {
+            Self::Deny
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

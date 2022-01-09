@@ -32,6 +32,11 @@ pub enum OsType {
     Linux,
     Windows,
 }
+impl Default for OsType {
+    fn default() -> Self {
+        Self::Linux
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OpenShiftAgentPoolProfileRole {
     #[serde(rename = "compute")]

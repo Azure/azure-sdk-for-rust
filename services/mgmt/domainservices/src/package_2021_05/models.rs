@@ -48,6 +48,11 @@ pub mod config_diagnostics_validator_result {
         Warning,
         Skipped,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::None
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigDiagnosticsValidatorResultIssue {
@@ -89,35 +94,70 @@ pub mod domain_security_settings {
         Enabled,
         Disabled,
     }
+    impl Default for NtlmV1 {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TlsV1 {
         Enabled,
         Disabled,
+    }
+    impl Default for TlsV1 {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncNtlmPasswords {
         Enabled,
         Disabled,
     }
+    impl Default for SyncNtlmPasswords {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncKerberosPasswords {
         Enabled,
         Disabled,
+    }
+    impl Default for SyncKerberosPasswords {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncOnPremPasswords {
         Enabled,
         Disabled,
     }
+    impl Default for SyncOnPremPasswords {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KerberosRc4Encryption {
         Enabled,
         Disabled,
     }
+    impl Default for KerberosRc4Encryption {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KerberosArmoring {
         Enabled,
         Disabled,
+    }
+    impl Default for KerberosArmoring {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -240,10 +280,20 @@ pub mod ldaps_settings {
         Enabled,
         Disabled,
     }
+    impl Default for Ldaps {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ExternalAccess {
         Enabled,
         Disabled,
+    }
+    impl Default for ExternalAccess {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

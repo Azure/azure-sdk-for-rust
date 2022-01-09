@@ -346,6 +346,11 @@ pub mod job_definition_properties {
         NotRequired,
         Required,
     }
+    impl Default for UserConfirmation {
+        fn default() -> Self {
+            Self::NotRequired
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDetails {
@@ -493,6 +498,11 @@ pub mod run_parameters {
     pub enum UserConfirmation {
         NotRequired,
         Required,
+    }
+    impl Default for UserConfirmation {
+        fn default() -> Self {
+            Self::NotRequired
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

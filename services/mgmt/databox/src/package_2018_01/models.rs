@@ -622,6 +622,11 @@ pub mod shipping_address {
         Residential,
         Commercial,
     }
+    impl Default for AddressType {
+        fn default() -> Self {
+            Self::None
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {

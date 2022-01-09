@@ -204,4 +204,9 @@ pub mod zone_properties {
         Public,
         Private,
     }
+    impl Default for ZoneType {
+        fn default() -> Self {
+            Self::Public
+        }
+    }
 }

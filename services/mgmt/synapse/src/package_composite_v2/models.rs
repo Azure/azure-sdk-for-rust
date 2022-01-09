@@ -3193,6 +3193,11 @@ pub mod sql_pool_resource_properties {
         #[serde(rename = "LRS")]
         Lrs,
     }
+    impl Default for StorageAccountType {
+        fn default() -> Self {
+            Self::Grs
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlPoolSchema {
@@ -3815,6 +3820,11 @@ pub mod workspace_properties {
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+    }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

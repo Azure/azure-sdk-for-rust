@@ -82,6 +82,11 @@ pub mod account_properties {
         Enabled,
         Disabled,
     }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountSku {

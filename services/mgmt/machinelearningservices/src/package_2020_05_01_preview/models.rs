@@ -270,6 +270,11 @@ pub mod aml_compute {
             Disabled,
             NotSpecified,
         }
+        impl Default for RemoteLoginPortPublicAccess {
+            fn default() -> Self {
+                Self::NotSpecified
+            }
+        }
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum AllocationState {
             Steady,

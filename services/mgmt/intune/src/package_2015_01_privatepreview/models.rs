@@ -33,12 +33,22 @@ pub mod android_mam_policy_properties {
         #[serde(rename = "block")]
         Block,
     }
+    impl Default for ScreenCapture {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FileEncryption {
         #[serde(rename = "required")]
         Required,
         #[serde(rename = "notRequired")]
         NotRequired,
+    }
+    impl Default for FileEncryption {
+        fn default() -> Self {
+            Self::Required
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -72,6 +82,11 @@ pub mod application_properties {
         Android,
         #[serde(rename = "windows")]
         Windows,
+    }
+    impl Default for Platform {
+        fn default() -> Self {
+            Self::Ios
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -258,6 +273,11 @@ pub mod mam_policy_properties {
         #[serde(rename = "allApps")]
         AllApps,
     }
+    impl Default for AppSharingFromLevel {
+        fn default() -> Self {
+            Self::None
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AppSharingToLevel {
         #[serde(rename = "none")]
@@ -267,12 +287,22 @@ pub mod mam_policy_properties {
         #[serde(rename = "allApps")]
         AllApps,
     }
+    impl Default for AppSharingToLevel {
+        fn default() -> Self {
+            Self::None
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Authentication {
         #[serde(rename = "required")]
         Required,
         #[serde(rename = "notRequired")]
         NotRequired,
+    }
+    impl Default for Authentication {
+        fn default() -> Self {
+            Self::Required
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ClipboardSharingLevel {
@@ -285,12 +315,22 @@ pub mod mam_policy_properties {
         #[serde(rename = "allApps")]
         AllApps,
     }
+    impl Default for ClipboardSharingLevel {
+        fn default() -> Self {
+            Self::Blocked
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataBackup {
         #[serde(rename = "allow")]
         Allow,
         #[serde(rename = "block")]
         Block,
+    }
+    impl Default for DataBackup {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FileSharingSaveAs {
@@ -299,12 +339,22 @@ pub mod mam_policy_properties {
         #[serde(rename = "block")]
         Block,
     }
+    impl Default for FileSharingSaveAs {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Pin {
         #[serde(rename = "required")]
         Required,
         #[serde(rename = "notRequired")]
         NotRequired,
+    }
+    impl Default for Pin {
+        fn default() -> Self {
+            Self::Required
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeviceCompliance {
@@ -313,6 +363,11 @@ pub mod mam_policy_properties {
         #[serde(rename = "disable")]
         Disable,
     }
+    impl Default for DeviceCompliance {
+        fn default() -> Self {
+            Self::Enable
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ManagedBrowser {
         #[serde(rename = "required")]
@@ -320,12 +375,22 @@ pub mod mam_policy_properties {
         #[serde(rename = "notRequired")]
         NotRequired,
     }
+    impl Default for ManagedBrowser {
+        fn default() -> Self {
+            Self::Required
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GroupStatus {
         #[serde(rename = "notTargeted")]
         NotTargeted,
         #[serde(rename = "targeted")]
         Targeted,
+    }
+    impl Default for GroupStatus {
+        fn default() -> Self {
+            Self::NotTargeted
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -435,12 +500,22 @@ pub mod i_osmam_policy_properties {
         #[serde(rename = "useDeviceSettings")]
         UseDeviceSettings,
     }
+    impl Default for FileEncryptionLevel {
+        fn default() -> Self {
+            Self::DeviceLocked
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TouchId {
         #[serde(rename = "enable")]
         Enable,
         #[serde(rename = "disable")]
         Disable,
+    }
+    impl Default for TouchId {
+        fn default() -> Self {
+            Self::Enable
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

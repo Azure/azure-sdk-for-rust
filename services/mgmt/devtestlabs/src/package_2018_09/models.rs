@@ -946,6 +946,11 @@ pub mod lab_properties {
         #[serde(rename = "StandardSSD")]
         StandardSsd,
     }
+    impl Default for LabStorageType {
+        fn default() -> Self {
+            Self::Premium
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PremiumDataDisks {
         Disabled,
@@ -1275,6 +1280,11 @@ pub mod notification_settings {
         Enabled,
         Disabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationSettingsFragment {}
@@ -1580,6 +1590,11 @@ pub mod schedule_creation_parameter_properties {
         Enabled,
         Disabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleCreationParameterPropertiesFragment {}
@@ -1626,6 +1641,11 @@ pub mod schedule_properties {
     pub enum Status {
         Enabled,
         Disabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
