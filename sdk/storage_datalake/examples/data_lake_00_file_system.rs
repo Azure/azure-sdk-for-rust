@@ -1,11 +1,8 @@
-use azure_identity::token_credentials::DefaultAzureCredential;
-use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
 use futures::stream::StreamExt;
 use std::error::Error;
-use std::num::NonZeroU32;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -41,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("getting file system properties...");
-    let get_fs_props_response = file_system_client.get_properties().execute().await?;
+    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
     println!(
         "get file system properties response == {:?}\n",
         get_fs_props_response
@@ -51,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     fs_properties.insert("ModifiedBy", "Iota");
     let set_fs_props_response = file_system_client
         .set_properties(Some(fs_properties))
-        .execute()
+        .into_future()
         .await?;
     println!(
         "set file system properties response == {:?}\n",
@@ -59,14 +56,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("getting file system properties...");
-    let get_fs_props_response = file_system_client.get_properties().execute().await?;
+    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
     println!(
         "get file system properties response == {:?}\n",
         get_fs_props_response
     );
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().execute().await?;
+    let delete_fs_response = file_system_client.delete().into_future().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())

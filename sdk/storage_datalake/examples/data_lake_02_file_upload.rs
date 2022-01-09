@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("flush file response == {:?}\n", flush_file_response);
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().execute().await?;
+    let delete_fs_response = file_system_client.delete().into_future().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())

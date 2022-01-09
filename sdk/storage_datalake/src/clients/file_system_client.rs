@@ -1,5 +1,4 @@
 use crate::operations::*;
-use crate::requests::*;
 use crate::Properties;
 use azure_core::prelude::IfMatchCondition;
 use azure_core::Pipeline;
@@ -7,6 +6,16 @@ use azure_core::{Context, HttpClient};
 use azure_storage::prelude::{ServiceType, StorageAccountClient};
 use bytes::Bytes;
 use url::Url;
+
+pub(crate) fn prepare_file_system_url(client: &StorageAccountClient, name: &str) -> Url {
+    let mut url = client.filesystem_url().clone();
+    url.path_segments_mut()
+        .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)
+        .unwrap()
+        .push(name);
+    url.query_pairs_mut().append_pair("resource", "filesystem");
+    url
+}
 
 #[derive(Debug, Clone)]
 pub struct FileSystemClient {
@@ -41,18 +50,28 @@ impl FileSystemClient {
     }
 
     pub fn delete(&self) -> DeleteFileSystemBuilder {
-        DeleteFileSystemBuilder::new(self)
+        DeleteFileSystemBuilder::new(
+            self.client.clone(),
+            self.name.clone(),
+            Some(self.context.clone()),
+        )
     }
 
     pub fn get_properties(&self) -> GetFileSystemPropertiesBuilder {
-        GetFileSystemPropertiesBuilder::new(self)
+        GetFileSystemPropertiesBuilder::new(
+            self.client.clone(),
+            self.name.clone(),
+            Some(self.context.clone()),
+        )
     }
 
-    pub fn set_properties<'a>(
-        &'a self,
-        properties: Option<Properties>,
-    ) -> SetFileSystemPropertiesBuilder {
-        SetFileSystemPropertiesBuilder::new(self, properties)
+    pub fn set_properties(&self, properties: Option<Properties>) -> SetFileSystemPropertiesBuilder {
+        SetFileSystemPropertiesBuilder::new(
+            self.client.clone(),
+            self.name.clone(),
+            properties,
+            Some(self.context.clone()),
+        )
     }
 
     pub async fn create_file(
