@@ -27,6 +27,11 @@ pub mod connected_cluster_identity {
         None,
         SystemAssigned,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::SystemAssigned
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedClusterList {

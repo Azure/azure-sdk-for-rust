@@ -1083,6 +1083,11 @@ pub mod backup_schedule {
         Day,
         Hour,
     }
+    impl Default for FrequencyUnit {
+        fn default() -> Self {
+            Self::Day
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingMeter {
@@ -2734,6 +2739,11 @@ pub mod file_system_application_logs_config {
         Information,
         Warning,
         Error,
+    }
+    impl Default for Level {
+        fn default() -> Self {
+            Self::Off
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -5010,6 +5020,11 @@ pub mod restore_request {
             Snapshot,
             #[serde(rename = "CloudFS")]
             CloudFs,
+        }
+        impl Default for OperationType {
+            fn default() -> Self {
+                Self::Default
+            }
         }
     }
 }

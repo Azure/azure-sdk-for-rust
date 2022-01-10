@@ -101,6 +101,11 @@ pub mod auto_storage_base_properties {
         StorageKeys,
         BatchAccountManagedIdentity,
     }
+    impl Default for AuthenticationMode {
+        fn default() -> Self {
+            Self::StorageKeys
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoStorageProperties {
@@ -1006,6 +1011,11 @@ pub struct PublicIpAddressConfiguration {
 pub enum PublicNetworkAccessType {
     Enabled,
     Disabled,
+}
+impl Default for PublicNetworkAccessType {
+    fn default() -> Self {
+        Self::Enabled
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResizeError {

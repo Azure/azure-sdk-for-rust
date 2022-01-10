@@ -264,6 +264,11 @@ pub mod disk_pool_volume {
         #[serde(rename = "ATTACH")]
         Attach,
     }
+    impl Default for MountOption {
+        fn default() -> Self {
+            Self::Mount
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
@@ -755,6 +760,11 @@ pub mod private_cloud_update_properties {
     pub enum Internet {
         Enabled,
         Disabled,
+    }
+    impl Default for Internet {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

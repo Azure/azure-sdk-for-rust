@@ -33,6 +33,11 @@ pub mod analysis_services_server_mutable_properties {
         All,
         ReadOnly,
     }
+    impl Default for QuerypoolConnectionMode {
+        fn default() -> Self {
+            Self::All
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ManagedMode {}
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

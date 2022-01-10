@@ -80,20 +80,40 @@ pub mod application_insights_component_properties {
         #[serde(rename = "other")]
         Other,
     }
+    impl Default for ApplicationType {
+        fn default() -> Self {
+            Self::Web
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FlowType {
         Bluefield,
+    }
+    impl Default for FlowType {
+        fn default() -> Self {
+            Self::Bluefield
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestSource {
         #[serde(rename = "rest")]
         Rest,
     }
+    impl Default for RequestSource {
+        fn default() -> Self {
+            Self::Rest
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IngestionMode {
         ApplicationInsights,
         ApplicationInsightsWithDiagnosticSettings,
         LogAnalytics,
+    }
+    impl Default for IngestionMode {
+        fn default() -> Self {
+            Self::LogAnalytics
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -179,6 +199,11 @@ pub struct PrivateLinkScopedResource {
 pub enum PublicNetworkAccessType {
     Enabled,
     Disabled,
+}
+impl Default for PublicNetworkAccessType {
+    fn default() -> Self {
+        Self::Enabled
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {

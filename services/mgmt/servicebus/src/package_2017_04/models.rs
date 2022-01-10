@@ -284,6 +284,11 @@ pub mod nw_rule_set_ip_rules {
     pub enum Action {
         Allow,
     }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NwRuleSetVirtualNetworkRules {

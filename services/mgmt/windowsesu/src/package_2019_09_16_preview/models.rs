@@ -57,6 +57,11 @@ pub mod multiple_activation_key {
             SupplementalServicing,
             PremiumAssurance,
         }
+        impl Default for SupportType {
+            fn default() -> Self {
+                Self::SupplementalServicing
+            }
+        }
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ProvisioningState {
             Succeeded,

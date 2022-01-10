@@ -5986,6 +5986,11 @@ pub mod packet_capture_filter {
         Udp,
         Any,
     }
+    impl Default for Protocol {
+        fn default() -> Self {
+            Self::Any
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureListResult {
@@ -7310,6 +7315,11 @@ pub mod sku {
         Basic,
         Standard,
     }
+    impl Default for Name {
+        fn default() -> Self {
+            Self::Standard
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StaticRoute {
@@ -7400,10 +7410,20 @@ pub mod subnet_properties_format {
         Enabled,
         Disabled,
     }
+    impl Default for PrivateEndpointNetworkPolicies {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateLinkServiceNetworkPolicies {
         Enabled,
         Disabled,
+    }
+    impl Default for PrivateLinkServiceNetworkPolicies {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -178,10 +178,20 @@ pub mod domain_properties {
         #[serde(rename = "CloudEventSchemaV1_0")]
         CloudEventSchemaV10,
     }
+    impl Default for InputSchema {
+        fn default() -> Self {
+            Self::EventGridSchema
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+    }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -248,6 +258,11 @@ pub mod domain_update_parameter_properties {
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+    }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -397,6 +412,11 @@ pub mod event_subscription_properties {
         CustomInputSchema,
         #[serde(rename = "CloudEventSchemaV1_0")]
         CloudEventSchemaV10,
+    }
+    impl Default for EventDeliverySchema {
+        fn default() -> Self {
+            Self::EventGridSchema
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -978,10 +998,20 @@ pub mod topic_properties {
         #[serde(rename = "CloudEventSchemaV1_0")]
         CloudEventSchemaV10,
     }
+    impl Default for InputSchema {
+        fn default() -> Self {
+            Self::EventGridSchema
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+    }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1059,6 +1089,11 @@ pub mod topic_update_parameter_properties {
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+    }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

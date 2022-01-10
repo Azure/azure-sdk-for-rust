@@ -179,6 +179,11 @@ pub mod container_service_network_profile {
         #[serde(rename = "kubenet")]
         Kubenet,
     }
+    impl Default for NetworkPlugin {
+        fn default() -> Self {
+            Self::Kubenet
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkPolicy {
         #[serde(rename = "calico")]
@@ -203,6 +208,11 @@ pub mod container_service_network_profile {
         ManagedNatGateway,
         #[serde(rename = "userAssignedNATGateway")]
         UserAssignedNatGateway,
+    }
+    impl Default for OutboundType {
+        fn default() -> Self {
+            Self::LoadBalancer
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LoadBalancerSku {
@@ -1292,6 +1302,11 @@ pub enum OsType {
     Linux,
     Windows,
 }
+impl Default for OsType {
+    fn default() -> Self {
+        Self::Linux
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1463,10 +1478,20 @@ pub enum ScaleSetEvictionPolicy {
     Delete,
     Deallocate,
 }
+impl Default for ScaleSetEvictionPolicy {
+    fn default() -> Self {
+        Self::Delete
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScaleSetPriority {
     Spot,
     Regular,
+}
+impl Default for ScaleSetPriority {
+    fn default() -> Self {
+        Self::Regular
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
@@ -1506,6 +1531,11 @@ pub struct SnapshotProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SnapshotType {
     NodePool,
+}
+impl Default for SnapshotType {
+    fn default() -> Self {
+        Self::NodePool
+    }
 }
 pub type SpotMaxPrice = f64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

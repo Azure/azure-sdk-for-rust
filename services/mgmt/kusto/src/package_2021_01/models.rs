@@ -336,6 +336,11 @@ pub mod cluster_properties {
         V2,
         V3,
     }
+    impl Default for EngineType {
+        fn default() -> Self {
+            Self::V3
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpdate {
@@ -356,6 +361,11 @@ pub struct ClusterUpdate {
 pub enum Compression {
     None,
     GZip,
+}
+impl Default for Compression {
+    fn default() -> Self {
+        Self::None
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnection {

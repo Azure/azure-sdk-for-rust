@@ -97,6 +97,11 @@ pub mod network_rule_set {
         Public,
         Private,
     }
+    impl Default for EndpointAccess {
+        fn default() -> Self {
+            Self::Public
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -264,6 +269,11 @@ pub mod search_service_properties {
         Default,
         #[serde(rename = "highDensity")]
         HighDensity,
+    }
+    impl Default for HostingMode {
+        fn default() -> Self {
+            Self::Default
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

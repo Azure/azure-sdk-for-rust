@@ -419,6 +419,11 @@ pub mod encryption {
         #[serde(rename = "Microsoft.Keyvault")]
         MicrosoftKeyvault,
     }
+    impl Default for KeySource {
+        fn default() -> Self {
+            Self::MicrosoftStorage
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionScope {
@@ -652,6 +657,11 @@ pub mod ip_rule {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
+    }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -967,10 +977,20 @@ pub mod network_rule_set {
         Metrics,
         AzureServices,
     }
+    impl Default for Bypass {
+        fn default() -> Self {
+            Self::AzureServices
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultAction {
         Allow,
         Deny,
+    }
+    impl Default for DefaultAction {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1821,6 +1841,11 @@ pub mod virtual_network_rule {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
+    }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {

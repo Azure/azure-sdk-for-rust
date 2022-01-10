@@ -18,6 +18,11 @@ pub mod backup {
         Enabled,
         Disabled,
     }
+    impl Default for GeoRedundantBackup {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilitiesListResult {
@@ -197,6 +202,11 @@ pub mod high_availability {
     pub enum Mode {
         Disabled,
         ZoneRedundant,
+    }
+    impl Default for Mode {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {

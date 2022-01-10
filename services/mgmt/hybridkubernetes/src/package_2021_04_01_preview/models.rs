@@ -27,6 +27,11 @@ pub mod connected_cluster_identity {
         None,
         SystemAssigned,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::SystemAssigned
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedClusterList {
@@ -105,6 +110,11 @@ pub mod connected_cluster_properties {
     pub enum PrivateLinkState {
         Enabled,
         Disabled,
+    }
+    impl Default for PrivateLinkState {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

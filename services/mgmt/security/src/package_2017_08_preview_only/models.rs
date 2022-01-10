@@ -494,6 +494,11 @@ pub mod io_t_security_solution_properties {
         Enabled,
         Disabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecuritySolutionsList {
@@ -631,6 +636,11 @@ pub mod recommendation_configuration_properties {
     pub enum Status {
         Disabled,
         Enabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

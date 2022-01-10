@@ -402,12 +402,22 @@ pub mod search_service_properties {
         #[serde(rename = "highDensity")]
         HighDensity,
     }
+    impl Default for HostingMode {
+        fn default() -> Self {
+            Self::Default
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         #[serde(rename = "enabled")]
         Enabled,
         #[serde(rename = "disabled")]
         Disabled,
+    }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {

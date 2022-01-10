@@ -116,6 +116,11 @@ pub mod backend_pools_settings {
         Enabled,
         Disabled,
     }
+    impl Default for EnforceCertificateNameCheck {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheConfiguration {
@@ -575,6 +580,11 @@ pub mod health_probe_settings_update_parameters {
         Get,
         #[serde(rename = "HEAD")]
         Head,
+    }
+    impl Default for HealthProbeMethod {
+        fn default() -> Self {
+            Self::Head
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnabledState {

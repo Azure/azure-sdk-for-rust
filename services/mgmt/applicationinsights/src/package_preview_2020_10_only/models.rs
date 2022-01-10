@@ -61,6 +61,11 @@ pub mod web_test {
         #[serde(rename = "multistep")]
         Multistep,
     }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Ping
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebTestGeolocation {
@@ -108,6 +113,11 @@ pub mod web_test_properties {
         Basic,
         #[serde(rename = "standard")]
         Standard,
+    }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Ping
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Configuration {

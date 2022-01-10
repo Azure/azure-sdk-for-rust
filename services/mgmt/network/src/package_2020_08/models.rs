@@ -5331,6 +5331,11 @@ pub mod network_interface_properties_format {
         Standard,
         Elastic,
     }
+    impl Default for NicType {
+        fn default() -> Self {
+            Self::Standard
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MigrationPhase {
         None,
@@ -5835,6 +5840,11 @@ pub mod packet_capture_filter {
         #[serde(rename = "UDP")]
         Udp,
         Any,
+    }
+    impl Default for Protocol {
+        fn default() -> Self {
+            Self::Any
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -7175,10 +7185,20 @@ pub mod subnet_properties_format {
         Enabled,
         Disabled,
     }
+    impl Default for PrivateEndpointNetworkPolicies {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateLinkServiceNetworkPolicies {
         Enabled,
         Disabled,
+    }
+    impl Default for PrivateLinkServiceNetworkPolicies {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

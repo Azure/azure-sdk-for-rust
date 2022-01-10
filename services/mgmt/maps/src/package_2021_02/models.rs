@@ -74,6 +74,11 @@ pub enum Kind {
     Gen1,
     Gen2,
 }
+impl Default for Kind {
+    fn default() -> Self {
+        Self::Gen1
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsAccount {
     #[serde(flatten)]

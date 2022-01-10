@@ -303,6 +303,11 @@ pub mod cluster_create_properties {
         Standard,
         Premium,
     }
+    impl Default for Tier {
+        fn default() -> Self {
+            Self::Standard
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterCreateRequestValidationParameters {

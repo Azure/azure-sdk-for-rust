@@ -1077,6 +1077,11 @@ pub mod notification {
         Actual,
         Forecasted,
     }
+    impl Default for ThresholdType {
+        fn default() -> Self {
+            Self::Actual
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Locale {
         #[serde(rename = "en-us")]

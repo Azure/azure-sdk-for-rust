@@ -403,20 +403,40 @@ pub mod application_insights_component_properties {
         #[serde(rename = "other")]
         Other,
     }
+    impl Default for ApplicationType {
+        fn default() -> Self {
+            Self::Web
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FlowType {
         Bluefield,
+    }
+    impl Default for FlowType {
+        fn default() -> Self {
+            Self::Bluefield
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestSource {
         #[serde(rename = "rest")]
         Rest,
     }
+    impl Default for RequestSource {
+        fn default() -> Self {
+            Self::Rest
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IngestionMode {
         ApplicationInsights,
         ApplicationInsightsWithDiagnosticSettings,
         LogAnalytics,
+    }
+    impl Default for IngestionMode {
+        fn default() -> Self {
+            Self::ApplicationInsights
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -638,6 +658,11 @@ pub mod web_test {
         #[serde(rename = "multistep")]
         Multistep,
     }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Ping
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebTestGeolocation {
@@ -677,6 +702,11 @@ pub mod web_test_properties {
         Ping,
         #[serde(rename = "multistep")]
         Multistep,
+    }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Ping
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Configuration {
@@ -790,6 +820,11 @@ pub mod workbook_properties {
         Shared,
         #[serde(rename = "user")]
         User,
+    }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Shared
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

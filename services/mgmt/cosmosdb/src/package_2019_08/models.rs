@@ -157,6 +157,11 @@ pub mod conflict_resolution_policy {
         LastWriterWins,
         Custom,
     }
+    impl Default for Mode {
+        fn default() -> Self {
+            Self::LastWriterWins
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConnectorOffer {
@@ -198,6 +203,11 @@ pub mod container_partition_key {
         Hash,
         Range,
     }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Hash
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateUpdateOptions {}
@@ -225,6 +235,11 @@ pub mod database_account_create_update_parameters {
         #[serde(rename = "MongoDB")]
         MongoDb,
         Parse,
+    }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::GlobalDocumentDb
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -308,6 +323,11 @@ pub mod database_account_get_results {
         #[serde(rename = "MongoDB")]
         MongoDb,
         Parse,
+    }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::GlobalDocumentDb
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -530,11 +550,21 @@ pub mod indexes {
         LineString,
         MultiPolygon,
     }
+    impl Default for DataType {
+        fn default() -> Self {
+            Self::String
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Hash,
         Range,
         Spatial,
+    }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Hash
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -559,6 +589,11 @@ pub mod indexing_policy {
         Consistent,
         Lazy,
         None,
+    }
+    impl Default for IndexingMode {
+        fn default() -> Self {
+            Self::Consistent
+        }
     }
 }
 pub type Key = String;

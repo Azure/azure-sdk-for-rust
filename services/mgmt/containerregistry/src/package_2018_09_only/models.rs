@@ -98,6 +98,11 @@ pub mod base_image_trigger {
         Disabled,
         Enabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseImageTriggerUpdateParameters {
@@ -118,6 +123,11 @@ pub mod base_image_trigger_update_parameters {
     pub enum Status {
         Disabled,
         Enabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -598,6 +608,11 @@ pub mod source_trigger {
         Disabled,
         Enabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceTriggerDescriptor {
@@ -632,6 +647,11 @@ pub mod source_trigger_update_parameters {
     pub enum Status {
         Disabled,
         Enabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

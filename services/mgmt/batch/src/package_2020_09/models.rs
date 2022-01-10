@@ -897,6 +897,11 @@ pub enum PublicNetworkAccessType {
     Enabled,
     Disabled,
 }
+impl Default for PublicNetworkAccessType {
+    fn default() -> Self {
+        Self::Enabled
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResizeError {
     pub code: String,

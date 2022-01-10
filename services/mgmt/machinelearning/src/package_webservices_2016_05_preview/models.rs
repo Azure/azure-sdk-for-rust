@@ -180,6 +180,11 @@ pub mod input_port {
     pub enum Type {
         Dataset,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::Dataset
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningWorkspace {
@@ -211,6 +216,11 @@ pub mod output_port {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Dataset,
+    }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::Dataset
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

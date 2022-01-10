@@ -180,6 +180,11 @@ pub mod encryption {
         #[serde(rename = "Microsoft.KeyVault")]
         MicrosoftKeyVault,
     }
+    impl Default for KeySource {
+        fn default() -> Self {
+            Self::MicrosoftKeyVault
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityStatus {
@@ -288,6 +293,11 @@ pub mod identity {
     pub enum Type {
         SystemAssigned,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::SystemAssigned
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpFilterRule {
@@ -385,6 +395,11 @@ pub mod nw_rule_set_ip_rules {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
+    }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -439,6 +439,11 @@ pub mod deployment_settings {
         #[serde(rename = "NetCore_31")]
         NetCore31,
     }
+    impl Default for RuntimeVersion {
+        fn default() -> Self {
+            Self::Java8
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ContainerProbeSettings {
         #[serde(rename = "disableProbe", default, skip_serializing_if = "Option::is_none")]

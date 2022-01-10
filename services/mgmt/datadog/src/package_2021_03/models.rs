@@ -325,6 +325,11 @@ pub enum MonitoringStatus {
     Enabled,
     Disabled,
 }
+impl Default for MonitoringStatus {
+    fn default() -> Self {
+        Self::Enabled
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringTagRules {
     #[serde(default, skip_serializing_if = "Option::is_none")]

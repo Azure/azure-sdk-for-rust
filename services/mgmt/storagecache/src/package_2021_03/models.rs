@@ -305,6 +305,11 @@ pub mod cache_username_download_settings {
         File,
         None,
     }
+    impl Default for UsernameSource {
+        fn default() -> Self {
+            Self::None
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UsernameDownloaded {
         Yes,

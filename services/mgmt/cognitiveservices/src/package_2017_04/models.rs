@@ -194,6 +194,11 @@ pub mod encryption {
         #[serde(rename = "Microsoft.KeyVault")]
         MicrosoftKeyVault,
     }
+    impl Default for KeySource {
+        fn default() -> Self {
+            Self::MicrosoftKeyVault
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {

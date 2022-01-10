@@ -313,6 +313,11 @@ pub mod encryption {
         #[serde(rename = "Microsoft.KeyVault")]
         MicrosoftKeyVault,
     }
+    impl Default for KeySource {
+        fn default() -> Self {
+            Self::MicrosoftKeyVault
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -384,6 +389,11 @@ pub mod identity {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
+    }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::SystemAssigned
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -355,6 +355,11 @@ pub enum ConditionalOperator {
     LessThan,
     Equal,
 }
+impl Default for ConditionalOperator {
+    fn default() -> Self {
+        Self::GreaterThanOrEqual
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationAccessEndpointSpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1380,6 +1385,11 @@ pub mod metric_trigger {
 pub enum MetricTriggerType {
     Consecutive,
     Total,
+}
+impl Default for MetricTriggerType {
+    fn default() -> Self {
+        Self::Consecutive
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricValue {

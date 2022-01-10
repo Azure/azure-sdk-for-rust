@@ -369,10 +369,20 @@ pub mod cluster_properties {
         Enabled,
         Disabled,
     }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EngineType {
         V2,
         V3,
+    }
+    impl Default for EngineType {
+        fn default() -> Self {
+            Self::V3
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RestrictOutboundNetworkAccess {
@@ -399,6 +409,11 @@ pub struct ClusterUpdate {
 pub enum Compression {
     None,
     GZip,
+}
+impl Default for Compression {
+    fn default() -> Self {
+        Self::None
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnection {

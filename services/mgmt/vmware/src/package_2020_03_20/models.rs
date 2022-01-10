@@ -367,6 +367,11 @@ pub mod private_cloud_update_properties {
         Enabled,
         Disabled,
     }
+    impl Default for Internet {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Quota {
