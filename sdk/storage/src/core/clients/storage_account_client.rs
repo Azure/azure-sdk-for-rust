@@ -63,7 +63,7 @@ pub struct StorageAccountClient {
 #[derive(Debug, Clone, Default)]
 pub struct StorageAccountOptions {
     options: ClientOptions,
-    custom_dns_suffix: Option<String>,
+    // custom_dns_suffix: Option<String>,
 }
 
 impl StorageAccountOptions {

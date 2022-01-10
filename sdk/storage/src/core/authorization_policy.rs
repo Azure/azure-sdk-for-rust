@@ -53,7 +53,7 @@ impl Policy for AuthorizationPolicy {
             StorageCredentials::BearerToken(token) => {
                 request
                     .headers_mut()
-                    .append(AUTHORIZATION, HeaderValue::from_str(&token)?);
+                    .append(AUTHORIZATION, HeaderValue::from_str(token)?);
             }
             // no headers to add here, the authentication is in the URL
             StorageCredentials::SASToken(_query_pairs) => (),
