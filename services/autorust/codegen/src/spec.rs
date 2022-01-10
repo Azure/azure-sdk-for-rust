@@ -87,16 +87,23 @@ impl Spec {
     }
 
     pub fn title(&self) -> Option<&str> {
-        let mut titles: Vec<_> = self
-            .docs
-            .values()
-            .map(|doc| &doc.info.title)
-            .filter(|t| t.is_some())
-            .flatten()
-            .collect();
-        titles.sort_unstable();
+        self.docs.values().find_map(|doc| doc.info.title.as_deref())
+    }
 
-        titles.get(0).map(|t| t.as_str())
+    pub fn host(&self) -> Option<&str> {
+        self.docs.values().find_map(|doc| doc.host.as_deref())
+    }
+
+    pub fn base_path(&self) -> Option<&str> {
+        self.docs.values().find_map(|doc| doc.base_path.as_deref())
+    }
+
+    pub fn endpoint(&self) -> Option<String> {
+        match (self.host(), self.base_path()) {
+            (Some(host), Some(base_path)) => Some(format!("https://{}{}", host, base_path).trim_end_matches('/').to_owned()),
+            (Some(host), None) => Some(format!("https://{}", host)),
+            _ => None,
+        }
     }
 
     pub fn consumes(&self) -> Vec<&String> {
@@ -107,7 +114,6 @@ impl Spec {
             .map(|api| &api.consumes)
             .flatten()
             .collect();
-
         versions.sort_unstable();
         versions
     }
