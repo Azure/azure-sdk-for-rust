@@ -67,7 +67,7 @@ pub struct IngestionConfiguration {
     #[serde(rename = "testTrajectory", default, skip_serializing_if = "Vec::is_empty")]
     pub test_trajectory: Vec<Pose>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionProperties {
     #[serde(rename = "clientErrorDetails", default, skip_serializing_if = "Option::is_none")]
     pub client_error_details: Option<String>,
@@ -90,7 +90,7 @@ pub struct IngestionProperties {
     #[serde(rename = "ingestionConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_configuration: Option<IngestionConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,

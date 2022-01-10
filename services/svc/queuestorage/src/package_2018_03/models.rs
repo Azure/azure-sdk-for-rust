@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
     #[serde(rename = "Start", default, skip_serializing_if = "Option::is_none")]
     pub start: Option<String>,
@@ -164,7 +164,7 @@ pub struct Logging {
     #[serde(rename = "RetentionPolicy")]
     pub retention_policy: RetentionPolicy,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Metadata {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
@@ -218,12 +218,12 @@ pub struct SignedIdentifier {
     pub access_policy: AccessPolicy,
 }
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceProperties {
     #[serde(rename = "Logging", default, skip_serializing_if = "Option::is_none")]
     pub logging: Option<Logging>,
@@ -234,7 +234,7 @@ pub struct StorageServiceProperties {
     #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
     pub cors: Vec<CorsRule>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceStats {
     #[serde(rename = "GeoReplication", default, skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,

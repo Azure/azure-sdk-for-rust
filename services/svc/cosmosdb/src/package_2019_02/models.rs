@@ -82,35 +82,35 @@ pub struct SignedIdentifier {
     pub access_policy: AccessPolicy,
 }
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableEntityProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableEntityQueryResponse {
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]
     pub odata_metadata: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TableEntityProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableProperties {
     #[serde(rename = "TableName", default, skip_serializing_if = "Option::is_none")]
     pub table_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableQueryResponse {
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]
     pub odata_metadata: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TableResponseProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableResponse {
     #[serde(flatten)]
     pub table_response_properties: TableResponseProperties,
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]
     pub odata_metadata: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableResponseProperties {
     #[serde(rename = "TableName", default, skip_serializing_if = "Option::is_none")]
     pub table_name: Option<String>,
@@ -121,12 +121,12 @@ pub struct TableResponseProperties {
     #[serde(rename = "odata.editLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_edit_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableServiceError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableServiceProperties {
     #[serde(rename = "Logging", default, skip_serializing_if = "Option::is_none")]
     pub logging: Option<Logging>,
@@ -137,7 +137,7 @@ pub struct TableServiceProperties {
     #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
     pub cors: Vec<CorsRule>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableServiceStats {
     #[serde(rename = "GeoReplication", default, skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,

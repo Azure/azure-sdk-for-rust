@@ -3,7 +3,7 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 pub type ArrayOfStrings = Vec<String>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Compatibility {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Deployment {
@@ -33,7 +33,7 @@ pub struct DeploymentDeviceState {
     #[serde(rename = "deviceState")]
     pub device_state: DeviceDeploymentState,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentDeviceStatesFilter {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
@@ -48,7 +48,7 @@ pub struct DeploymentDeviceStatesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -132,7 +132,7 @@ pub enum DeviceDeploymentState {
     Canceled,
     Incompatible,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceFilter {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
@@ -233,7 +233,7 @@ pub struct Group {
     #[serde(rename = "deviceClassId", default, skip_serializing_if = "Option::is_none")]
     pub device_class_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupBestUpdatesFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -285,7 +285,7 @@ pub struct InnerError {
     #[serde(rename = "errorDetail", default, skip_serializing_if = "Option::is_none")]
     pub error_detail: Option<String>,
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Option<InnerError>,
+    pub inner_error: Box<Option<InnerError>>,
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InstallResult {
@@ -317,7 +317,7 @@ pub struct LogCollectionOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogCollectionOperationDetailedStatus {
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
@@ -358,7 +358,7 @@ pub struct LogCollectionOperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationFilterStatus>,
@@ -383,7 +383,7 @@ pub enum OperationStatusWithoutUndefinedOption {
     Succeeded,
     Failed,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Step {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<step::Type>,
@@ -499,7 +499,7 @@ pub struct UpdateFile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateFilter {
     #[serde(rename = "isDeployable", default, skip_serializing_if = "Option::is_none")]
     pub is_deployable: Option<bool>,

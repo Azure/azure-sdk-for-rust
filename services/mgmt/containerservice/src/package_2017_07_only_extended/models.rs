@@ -46,7 +46,7 @@ pub struct ContainerServiceLinuxProfile {
     pub admin_username: String,
     pub ssh: ContainerServiceSshConfiguration,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,

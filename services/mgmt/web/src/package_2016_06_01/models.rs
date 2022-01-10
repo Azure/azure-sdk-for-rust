@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiConnectionDefinition {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
@@ -11,7 +11,7 @@ pub struct ApiConnectionDefinition {
 }
 pub mod api_connection_definition {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
         pub display_name: Option<String>,
@@ -33,19 +33,19 @@ pub mod api_connection_definition {
         pub test_links: Vec<ApiConnectionTestLink>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiConnectionDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApiConnectionDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiConnectionTestLink {
     #[serde(rename = "requestUri", default, skip_serializing_if = "Option::is_none")]
     pub request_uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiOAuthSettings {
     #[serde(rename = "identityProvider", default, skip_serializing_if = "Option::is_none")]
     pub identity_provider: Option<String>,
@@ -62,7 +62,7 @@ pub struct ApiOAuthSettings {
     #[serde(rename = "customParameters", default, skip_serializing_if = "Option::is_none")]
     pub custom_parameters: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiOAuthSettingsParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
@@ -71,7 +71,7 @@ pub struct ApiOAuthSettingsParameter {
     #[serde(rename = "uiDefinition", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiReference {
     #[serde(flatten)]
     pub resource_reference: ResourceReference,
@@ -88,19 +88,19 @@ pub struct ApiReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceBackendService {
     #[serde(rename = "serviceUrl", default, skip_serializing_if = "Option::is_none")]
     pub service_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceDefinitions {
     #[serde(rename = "originalSwaggerUrl", default, skip_serializing_if = "Option::is_none")]
     pub original_swagger_url: Option<String>,
     #[serde(rename = "modifiedSwaggerUrl", default, skip_serializing_if = "Option::is_none")]
     pub modified_swagger_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceGeneralInformation {
     #[serde(rename = "iconUrl", default, skip_serializing_if = "Option::is_none")]
     pub icon_url: Option<String>,
@@ -113,7 +113,7 @@ pub struct ApiResourceGeneralInformation {
     #[serde(rename = "releaseTag", default, skip_serializing_if = "Option::is_none")]
     pub release_tag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -132,14 +132,14 @@ pub struct ApiResourceMetadata {
     #[serde(rename = "connectionType", default, skip_serializing_if = "Option::is_none")]
     pub connection_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourcePolicies {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(rename = "contentLink", default, skip_serializing_if = "Option::is_none")]
     pub content_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -170,7 +170,7 @@ pub enum ApiType {
     Rest,
     Soap,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfirmConsentCodeDefinition {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -179,7 +179,7 @@ pub struct ConfirmConsentCodeDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionError {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
@@ -188,7 +188,7 @@ pub struct ConnectionError {
 }
 pub mod connection_error {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
@@ -196,7 +196,7 @@ pub mod connection_error {
         pub message: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayDefinition {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
@@ -205,7 +205,7 @@ pub struct ConnectionGatewayDefinition {
 }
 pub mod connection_gateway_definition {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "connectionGatewayInstallation", default, skip_serializing_if = "Option::is_none")]
         pub connection_gateway_installation: Option<ConnectionGatewayReference>,
@@ -223,12 +223,12 @@ pub mod connection_gateway_definition {
         pub backend_uri: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionGatewayDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayInstallationDefinition {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
@@ -237,7 +237,7 @@ pub struct ConnectionGatewayInstallationDefinition {
 }
 pub mod connection_gateway_installation_definition {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "connectionGateway", default, skip_serializing_if = "Option::is_none")]
         pub connection_gateway: Option<ConnectionGatewayReference>,
@@ -255,12 +255,12 @@ pub mod connection_gateway_installation_definition {
         pub backend_uri: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayInstallationDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionGatewayInstallationDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayReference {
     #[serde(flatten)]
     pub resource_reference: ResourceReference,
@@ -269,7 +269,7 @@ pub struct ConnectionGatewayReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionParameter {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_parameter::Type>,
@@ -300,7 +300,7 @@ pub mod connection_parameter {
         Connection,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionStatusDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -309,12 +309,12 @@ pub struct ConnectionStatusDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ConnectionError>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsentLinkCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConsentLinkDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsentLinkDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<String>,
@@ -334,7 +334,7 @@ pub mod consent_link_definition {
         Error,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsentLinkParameterDefinition {
     #[serde(rename = "parameterName", default, skip_serializing_if = "Option::is_none")]
     pub parameter_name: Option<String>,
@@ -345,19 +345,19 @@ pub struct ConsentLinkParameterDefinition {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomApiDefinition {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomApiPropertiesDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomApiDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomApiDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomApiPropertiesDefinition {
     #[serde(rename = "connectionParameters", default, skip_serializing_if = "Option::is_none")]
     pub connection_parameters: Option<serde_json::Value>,
@@ -384,14 +384,14 @@ pub struct CustomApiPropertiesDefinition {
     #[serde(rename = "wsdlDefinition", default, skip_serializing_if = "Option::is_none")]
     pub wsdl_definition: Option<WsdlDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomApiReference {
     #[serde(flatten)]
     pub api_reference: ApiReference,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListConnectionKeysDefinition {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
@@ -400,30 +400,30 @@ pub struct ListConnectionKeysDefinition {
 }
 pub mod list_connection_keys_definition {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "validityTimeSpan", default, skip_serializing_if = "Option::is_none")]
         pub validity_time_span: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListConsentLinksDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ConsentLinkParameterDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedApiDefinition {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiResourceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedApiDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedApiDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -438,16 +438,16 @@ pub struct ResourceDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<TagsDictionary>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsDictionary {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WsdlDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
@@ -471,7 +471,7 @@ pub struct WsdlService {
     #[serde(rename = "endpointQualifiedNames", default, skip_serializing_if = "Vec::is_empty")]
     pub endpoint_qualified_names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WsdlServiceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WsdlService>,

@@ -27,7 +27,7 @@ pub mod batch_query_request {
         Post,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchQueryResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -38,7 +38,7 @@ pub struct BatchQueryResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchQueryResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tables: Vec<Table>,
@@ -53,12 +53,12 @@ pub struct BatchQueryResults {
 pub struct BatchRequest {
     pub requests: Vec<BatchQueryRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub responses: Vec<BatchQueryResponse>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Column {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -128,7 +128,7 @@ pub struct MetadataApplication {
 }
 pub mod metadata_application {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tables: Vec<String>,
@@ -148,7 +148,7 @@ pub struct MetadataCategory {
 }
 pub mod metadata_category {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tables: Vec<String>,
@@ -182,7 +182,7 @@ pub struct MetadataFunction {
 }
 pub mod metadata_function {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tables: Vec<String>,
@@ -223,7 +223,7 @@ pub struct MetadataQuery {
 }
 pub mod metadata_query {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub categories: Vec<String>,
@@ -235,7 +235,7 @@ pub mod metadata_query {
         pub tables: Vec<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataResource {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataResourceType {
@@ -257,7 +257,7 @@ pub struct MetadataResourceType {
 }
 pub mod metadata_resource_type {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tables: Vec<String>,
@@ -273,7 +273,7 @@ pub mod metadata_resource_type {
         pub resources: Vec<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub categories: Vec<MetadataCategory>,
@@ -346,7 +346,7 @@ pub struct MetadataTable {
 }
 pub mod metadata_table {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub categories: Vec<String>,
@@ -374,7 +374,7 @@ pub struct MetadataWorkspace {
 }
 pub mod metadata_workspace {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub tables: Vec<String>,
@@ -413,7 +413,7 @@ pub struct Table {
     pub columns: Vec<Column>,
     pub rows: Vec<Vec<serde_json::Value>>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tags {}
 pub type TimespanParam = String;
 pub type WorkspacesParam = Vec<String>;

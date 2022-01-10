@@ -23,7 +23,7 @@ pub struct Alert {
     pub base_model: BaseModel,
     pub properties: AlertProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertErrorDetails {
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
@@ -32,7 +32,7 @@ pub struct AlertErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub occurences: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<alert_filter::Status>,
@@ -145,7 +145,7 @@ pub mod alert_settings_properties {
         Disabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -181,7 +181,7 @@ pub mod asymmetric_encrypted_secret {
         RsaesPkcs1V15,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProviderOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -192,7 +192,7 @@ pub struct AvailableProviderOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AvailableProviderOperationProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProviderOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -203,7 +203,7 @@ pub struct AvailableProviderOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProviderOperationProperties {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableProviderOperations {
@@ -242,7 +242,7 @@ pub mod backup_element_properties {
         Cloud,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupFilter {
     #[serde(rename = "initiatedBy", default, skip_serializing_if = "Option::is_none")]
     pub initiated_by: Option<backup_filter::InitiatedBy>,
@@ -304,7 +304,7 @@ pub struct BackupScheduleGroupProperties {
     #[serde(rename = "startTime")]
     pub start_time: Time,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaseModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -350,14 +350,14 @@ pub struct CloneRequestProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disk: Option<IscsiDisk>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Device {
     #[serde(flatten)]
     pub base_model: BaseModel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeviceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceDetails {
     #[serde(rename = "endpointCount", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_count: Option<i32>,
@@ -384,12 +384,12 @@ pub struct DeviceDetails {
 pub struct DeviceList {
     pub value: Vec<Device>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DevicePatch {
     #[serde(rename = "deviceDescription", default, skip_serializing_if = "Option::is_none")]
     pub device_description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceProperties {
     #[serde(rename = "activationTime", default, skip_serializing_if = "Option::is_none")]
     pub activation_time: Option<String>,
@@ -483,7 +483,7 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<Item>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverRequest {
     #[serde(rename = "accesspointIds", default, skip_serializing_if = "Vec::is_empty")]
     pub accesspoint_ids: Vec<String>,
@@ -796,7 +796,7 @@ pub mod job_stage {
         Scheduled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStats {
     #[serde(rename = "completedWorkItemCount", default, skip_serializing_if = "Option::is_none")]
     pub completed_work_item_count: Option<i32>,
@@ -853,12 +853,12 @@ pub mod manager_intrinsic_settings {
 pub struct ManagerList {
     pub value: Vec<Manager>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagerPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagerProperties {
     #[serde(rename = "cisIntrinsicSettings", default, skip_serializing_if = "Option::is_none")]
     pub cis_intrinsic_settings: Option<ManagerIntrinsicSettings>,
@@ -878,7 +878,7 @@ pub mod manager_sku {
         Standard,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Message {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
@@ -945,7 +945,7 @@ pub struct MetricDimension {
     pub name: String,
     pub value: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<MetricNameFilter>,
@@ -966,7 +966,7 @@ pub struct MetricName {
     #[serde(rename = "localizedValue")]
     pub localized_value: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricNameFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
@@ -1239,7 +1239,7 @@ pub struct TimeSettingsProperties {
     #[serde(rename = "secondaryTimeServer", default, skip_serializing_if = "Option::is_none")]
     pub secondary_time_server: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateDownloadProgress {
     #[serde(rename = "downloadPhase", default, skip_serializing_if = "Option::is_none")]
     pub download_phase: Option<update_download_progress::DownloadPhase>,
@@ -1264,7 +1264,7 @@ pub mod update_download_progress {
         Verifying,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateInstallProgress {
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
@@ -1273,14 +1273,14 @@ pub struct UpdateInstallProgress {
     #[serde(rename = "numberOfUpdatesInstalled", default, skip_serializing_if = "Option::is_none")]
     pub number_of_updates_installed: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Updates {
     #[serde(flatten)]
     pub base_model: BaseModel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdatesProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdatesProperties {
     #[serde(rename = "deviceVersion", default, skip_serializing_if = "Option::is_none")]
     pub device_version: Option<String>,

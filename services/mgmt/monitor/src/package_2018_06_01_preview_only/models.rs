@@ -18,7 +18,7 @@ pub mod data_source {
         WindowsEventLogs,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourceConfiguration {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub providers: Vec<EtwProviderConfiguration>,
@@ -27,7 +27,7 @@ pub struct DataSourceConfiguration {
     #[serde(rename = "eventLogs", default, skip_serializing_if = "Vec::is_empty")]
     pub event_logs: Vec<EventLogConfiguration>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -53,7 +53,7 @@ pub struct EventLogConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettings {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<guest_diagnostic_settings::OsType>,
@@ -75,7 +75,7 @@ pub struct GuestDiagnosticSettingsAssociation {
     #[serde(rename = "guestDiagnosticSettingsName")]
     pub guest_diagnostic_settings_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsAssociationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GuestDiagnosticSettingsAssociationResource>,
@@ -88,21 +88,21 @@ pub struct GuestDiagnosticSettingsAssociationResource {
     pub resource: Resource,
     pub properties: GuestDiagnosticSettingsAssociation,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsAssociationResourcePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GuestDiagnosticSettingsAssociation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GuestDiagnosticSettingsResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsPatchResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

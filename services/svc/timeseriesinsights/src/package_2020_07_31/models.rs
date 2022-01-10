@@ -22,7 +22,7 @@ pub struct AggregateVariable {
     pub variable: Variable,
     pub aggregation: Tsx,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Availability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<DateTimeRange>,
@@ -31,7 +31,7 @@ pub struct Availability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub distribution: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilityResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub availability: Option<Availability>,
@@ -53,14 +53,14 @@ pub struct DateTimeRange {
     pub from: String,
     pub to: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<PropertyType>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSchema {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub properties: Vec<EventProperty>,
@@ -83,14 +83,14 @@ pub struct GetEvents {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub take: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetHierarchiesPage {
     #[serde(flatten)]
     pub paged_response: PagedResponse,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub hierarchies: Vec<TimeSeriesHierarchy>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetInstancesPage {
     #[serde(flatten)]
     pub paged_response: PagedResponse,
@@ -112,14 +112,14 @@ pub struct GetSeries {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub take: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetTypesPage {
     #[serde(flatten)]
     pub paged_response: PagedResponse,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub types: Vec<TimeSeriesType>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchiesBatchRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub get: Option<HierarchiesRequestBatchGetDelete>,
@@ -128,7 +128,7 @@ pub struct HierarchiesBatchRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub delete: Option<HierarchiesRequestBatchGetDelete>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchiesBatchResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub get: Vec<TimeSeriesHierarchyOrError>,
@@ -137,7 +137,7 @@ pub struct HierarchiesBatchResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub delete: Vec<TsiErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchiesExpandParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<hierarchies_expand_parameter::Kind>,
@@ -150,14 +150,14 @@ pub mod hierarchies_expand_parameter {
         OneLevel,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchiesRequestBatchGetDelete {
     #[serde(rename = "hierarchyIds", default, skip_serializing_if = "Vec::is_empty")]
     pub hierarchy_ids: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchiesSortParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub by: Option<hierarchies_sort_parameter::By>,
@@ -170,7 +170,7 @@ pub mod hierarchies_sort_parameter {
         Name,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchyHit {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -179,7 +179,7 @@ pub struct HierarchyHit {
     #[serde(rename = "hierarchyNodes", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_nodes: Option<SearchHierarchyNodesResponse>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceHit {
     #[serde(rename = "timeSeriesId", default, skip_serializing_if = "Option::is_none")]
     pub time_series_id: Option<TimeSeriesId>,
@@ -194,7 +194,7 @@ pub struct InstanceHit {
 }
 pub mod instance_hit {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Highlights {
         #[serde(rename = "timeSeriesId", default, skip_serializing_if = "Vec::is_empty")]
         pub time_series_id: Vec<String>,
@@ -214,14 +214,14 @@ pub mod instance_hit {
         pub instance_field_values: Vec<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceOrError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instance: Option<TimeSeriesInstance>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<TsiErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancesBatchRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub get: Option<InstancesRequestBatchGetOrDelete>,
@@ -232,7 +232,7 @@ pub struct InstancesBatchRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub delete: Option<InstancesRequestBatchGetOrDelete>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancesBatchResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub get: Vec<InstanceOrError>,
@@ -243,21 +243,21 @@ pub struct InstancesBatchResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub delete: Vec<TsiErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancesRequestBatchGetOrDelete {
     #[serde(rename = "timeSeriesIds", default, skip_serializing_if = "Vec::is_empty")]
     pub time_series_ids: Vec<TimeSeriesId>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancesSearchStringSuggestion {
     #[serde(rename = "searchString", default, skip_serializing_if = "Option::is_none")]
     pub search_string: Option<String>,
     #[serde(rename = "highlightedSearchString", default, skip_serializing_if = "Option::is_none")]
     pub highlighted_search_string: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancesSortParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub by: Option<instances_sort_parameter::By>,
@@ -277,12 +277,12 @@ pub struct InstancesSuggestRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub take: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstancesSuggestResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub suggestions: Vec<InstancesSearchStringSuggestion>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Interpolation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<interpolation::Kind>,
@@ -296,13 +296,13 @@ pub mod interpolation {
         Linear,
         Step,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Boundary {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub span: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelSettingsResponse {
     #[serde(rename = "modelSettings", default, skip_serializing_if = "Option::is_none")]
     pub model_settings: Option<TimeSeriesModelSettings>,
@@ -316,7 +316,7 @@ pub struct NumericVariable {
     pub interpolation: Option<Interpolation>,
     pub aggregation: Tsx,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedResponse {
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
@@ -330,14 +330,14 @@ pub enum PropertyType {
     TimeSpan,
     Long,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PropertyValues {
     #[serde(flatten)]
     pub event_property: EventProperty,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryRequest {
     #[serde(rename = "getEvents", default, skip_serializing_if = "Option::is_none")]
     pub get_events: Option<GetEvents>,
@@ -346,7 +346,7 @@ pub struct QueryRequest {
     #[serde(rename = "aggregateSeries", default, skip_serializing_if = "Option::is_none")]
     pub aggregate_series: Option<AggregateSeries>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryResultPage {
     #[serde(flatten)]
     pub paged_response: PagedResponse,
@@ -357,7 +357,7 @@ pub struct QueryResultPage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub progress: Option<f64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchHierarchyNodesResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub hits: Vec<HierarchyHit>,
@@ -366,7 +366,7 @@ pub struct SearchHierarchyNodesResponse {
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchInstancesHierarchiesParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expand: Option<HierarchiesExpandParameter>,
@@ -375,7 +375,7 @@ pub struct SearchInstancesHierarchiesParameters {
     #[serde(rename = "pageSize", default, skip_serializing_if = "Option::is_none")]
     pub page_size: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchInstancesParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recursive: Option<bool>,
@@ -397,7 +397,7 @@ pub struct SearchInstancesRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hierarchies: Option<SearchInstancesHierarchiesParameters>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchInstancesResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub hits: Vec<InstanceHit>,
@@ -406,7 +406,7 @@ pub struct SearchInstancesResponse {
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchInstancesResponsePage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instances: Option<SearchInstancesResponse>,
@@ -431,13 +431,13 @@ pub struct TimeSeriesHierarchy {
 }
 pub mod time_series_hierarchy {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Source {
         #[serde(rename = "instanceFieldNames", default, skip_serializing_if = "Vec::is_empty")]
         pub instance_field_names: Vec<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesHierarchyOrError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hierarchy: Option<TimeSeriesHierarchy>,
@@ -446,7 +446,7 @@ pub struct TimeSeriesHierarchyOrError {
 }
 pub type TimeSeriesId = Vec<serde_json::Value>;
 pub type TimeSeriesIdProperties = Vec<TimeSeriesIdProperty>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesIdProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -475,7 +475,7 @@ pub struct TimeSeriesInstance {
     #[serde(rename = "instanceFields", default, skip_serializing_if = "Option::is_none")]
     pub instance_fields: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesModelSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -493,19 +493,19 @@ pub struct TimeSeriesType {
     pub description: Option<String>,
     pub variables: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesTypeOrError {
     #[serde(rename = "timeSeriesType", default, skip_serializing_if = "Option::is_none")]
     pub time_series_type: Option<TimeSeriesType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<TsiErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TsiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<TsiErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TsiErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -518,7 +518,7 @@ pub struct TsiErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<TsiErrorDetails>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TsiErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -529,7 +529,7 @@ pub struct TsiErrorDetails {
 pub struct Tsx {
     pub tsx: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TypesBatchRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub get: Option<TypesRequestBatchGetOrDelete>,
@@ -538,7 +538,7 @@ pub struct TypesBatchRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub delete: Option<TypesRequestBatchGetOrDelete>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TypesBatchResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub get: Vec<TimeSeriesTypeOrError>,
@@ -547,14 +547,14 @@ pub struct TypesBatchResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub delete: Vec<TsiErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TypesRequestBatchGetOrDelete {
     #[serde(rename = "typeIds", default, skip_serializing_if = "Vec::is_empty")]
     pub type_ids: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub names: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateModelSettingsRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

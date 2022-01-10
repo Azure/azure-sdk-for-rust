@@ -9,12 +9,12 @@ pub struct ConfidentialLedgerEnclaves {
     #[serde(rename = "enclaveQuotes")]
     pub enclave_quotes: EnclaveQuotes,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfidentialLedgerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ConfidentialLedgerErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfidentialLedgerErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -47,7 +47,7 @@ pub struct EnclaveQuote {
     pub quote_version: String,
     pub raw: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnclaveQuotes {}
 pub type EntityId = String;
 pub type LedgerEntries = Vec<LedgerEntry>;
@@ -89,7 +89,7 @@ pub struct LedgerWriteResult {
     pub sub_ledger_id: SubLedgerId,
 }
 pub type MerkleProof = Vec<MerkleProofElement>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MerkleProofElement {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub left: Option<String>,

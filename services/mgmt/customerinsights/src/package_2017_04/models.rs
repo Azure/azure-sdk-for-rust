@@ -21,14 +21,14 @@ pub struct AuthorizationPolicy {
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationPolicyListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AuthorizationPolicyResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationPolicyResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -40,7 +40,7 @@ pub struct AzureBlobConnectorProperties {
     #[serde(rename = "connectionKeyVaultUrl")]
     pub connection_key_vault_url: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanonicalProfileDefinition {
     #[serde(rename = "canonicalProfileId", default, skip_serializing_if = "Option::is_none")]
     pub canonical_profile_id: Option<i64>,
@@ -84,7 +84,7 @@ pub mod connector {
         Failed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectorResourceFormat>,
@@ -161,7 +161,7 @@ pub mod connector_mapping_availability {
         Month,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorMappingCompleteOperation {
     #[serde(rename = "completionOperationType", default, skip_serializing_if = "Option::is_none")]
     pub completion_operation_type: Option<connector_mapping_complete_operation::CompletionOperationType>,
@@ -215,7 +215,7 @@ pub mod connector_mapping_format {
         TextFormat,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorMappingListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectorMappingResourceFormat>,
@@ -238,7 +238,7 @@ pub struct ConnectorMappingProperties {
     #[serde(rename = "completeOperation")]
     pub complete_operation: ConnectorMappingCompleteOperation,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorMappingResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -256,7 +256,7 @@ pub struct ConnectorMappingStructure {
     #[serde(rename = "isEncrypted", default, skip_serializing_if = "Option::is_none")]
     pub is_encrypted: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectorResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -294,7 +294,7 @@ pub struct CrmConnectorProperties {
     #[serde(rename = "accessToken", default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -322,7 +322,7 @@ pub mod data_source {
         Deleted,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourcePrecedence {
     #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
     pub data_source: Option<DataSource>,
@@ -334,7 +334,7 @@ pub struct EnrichingKpi {
     #[serde(flatten)]
     pub kpi_definition: KpiDefinition,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityTypeDefinition {
     #[serde(flatten)]
     pub metadata_definition_base: MetadataDefinitionBase,
@@ -369,7 +369,7 @@ pub mod entity_type_definition {
         Relationship,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetImageUploadUrlInput {
     #[serde(rename = "entityType", default, skip_serializing_if = "Option::is_none")]
     pub entity_type: Option<String>,
@@ -378,14 +378,14 @@ pub struct GetImageUploadUrlInput {
     #[serde(rename = "relativePath", default, skip_serializing_if = "Option::is_none")]
     pub relative_path: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Hub {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HubPropertiesFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubBillingInfoFormat {
     #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
     pub sku_name: Option<String>,
@@ -394,14 +394,14 @@ pub struct HubBillingInfoFormat {
     #[serde(rename = "maxUnits", default, skip_serializing_if = "Option::is_none")]
     pub max_units: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Hub>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HubPropertiesFormat {
     #[serde(rename = "apiEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub api_endpoint: Option<String>,
@@ -414,7 +414,7 @@ pub struct HubPropertiesFormat {
     #[serde(rename = "hubBillingInfo", default, skip_serializing_if = "Option::is_none")]
     pub hub_billing_info: Option<HubBillingInfoFormat>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageDefinition {
     #[serde(rename = "imageExists", default, skip_serializing_if = "Option::is_none")]
     pub image_exists: Option<bool>,
@@ -423,21 +423,21 @@ pub struct ImageDefinition {
     #[serde(rename = "relativePath", default, skip_serializing_if = "Option::is_none")]
     pub relative_path: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InteractionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<InteractionResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InteractionResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InteractionTypeDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InteractionTypeDefinition {
     #[serde(flatten)]
     pub entity_type_definition: EntityTypeDefinition,
@@ -534,7 +534,7 @@ pub struct KpiExtract {
     pub extract_name: String,
     pub expression: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KpiGroupByMetadata {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<serde_json::Value>,
@@ -543,7 +543,7 @@ pub struct KpiGroupByMetadata {
     #[serde(rename = "fieldType", default, skip_serializing_if = "Option::is_none")]
     pub field_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KpiListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<KpiResourceFormat>,
@@ -555,7 +555,7 @@ pub struct KpiParticipantProfilesMetadata {
     #[serde(rename = "typeName")]
     pub type_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KpiResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -622,21 +622,21 @@ pub mod link_definition {
         Delete,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LinkResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LinkDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataDefinitionBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<serde_json::Value>,
@@ -653,7 +653,7 @@ pub struct MetadataDefinitionBase {
     #[serde(rename = "largeImage", default, skip_serializing_if = "Option::is_none")]
     pub large_image: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -662,7 +662,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -672,7 +672,7 @@ pub mod operation {
         pub operation: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -758,7 +758,7 @@ pub mod prediction {
         pub grade: String,
         pub reason: String,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct SystemGeneratedEntities {
         #[serde(rename = "generatedInteractionTypes", default, skip_serializing_if = "Vec::is_empty")]
         pub generated_interaction_types: Vec<String>,
@@ -768,7 +768,7 @@ pub mod prediction {
         pub generated_kpis: Option<serde_json::Value>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PredictionDistributionDefinition {
     #[serde(rename = "totalPositives", default, skip_serializing_if = "Option::is_none")]
     pub total_positives: Option<i64>,
@@ -777,7 +777,7 @@ pub struct PredictionDistributionDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub distributions: Vec<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PredictionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PredictionResourceFormat>,
@@ -832,14 +832,14 @@ pub mod prediction_model_status {
         Failed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PredictionResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Prediction>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PredictionTrainingResults {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
@@ -852,28 +852,28 @@ pub struct PredictionTrainingResults {
     #[serde(rename = "primaryProfileInstanceCount", default, skip_serializing_if = "Option::is_none")]
     pub primary_profile_instance_count: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileEnumValidValuesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<i64>,
     #[serde(rename = "localizedValueNames", default, skip_serializing_if = "Option::is_none")]
     pub localized_value_names: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProfileResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProfileTypeDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileTypeDefinition {
     #[serde(flatten)]
     pub entity_type_definition: EntityTypeDefinition,
@@ -924,7 +924,7 @@ pub enum ProvisioningState {
     HumanIntervention,
     Failed,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1011,28 +1011,28 @@ pub mod relationship_link_field_mapping {
         CopyIfNull,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelationshipLinkListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RelationshipLinkResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelationshipLinkResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RelationshipLinkDefinition>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelationshipListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RelationshipResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelationshipResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -1051,7 +1051,7 @@ pub struct RelationshipTypeMapping {
     #[serde(rename = "fieldMappings")]
     pub field_mappings: Vec<RelationshipTypeFieldMapping>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelationshipsLookup {
     #[serde(rename = "profileName", default, skip_serializing_if = "Option::is_none")]
     pub profile_name: Option<String>,
@@ -1064,7 +1064,7 @@ pub struct RelationshipsLookup {
     #[serde(rename = "existingRelationshipName", default, skip_serializing_if = "Option::is_none")]
     pub existing_relationship_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1077,14 +1077,14 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSetDescription {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub elements: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exceptions: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Role {
     #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
     pub role_name: Option<String>,
@@ -1144,28 +1144,28 @@ pub mod role_assignment {
         DataReader,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignmentResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignment>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -1206,7 +1206,7 @@ pub struct StrongId {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SuggestRelationshipLinksResponse {
     #[serde(rename = "interactionName", default, skip_serializing_if = "Option::is_none")]
     pub interaction_name: Option<String>,
@@ -1246,14 +1246,14 @@ pub struct View {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ViewListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ViewResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ViewResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
@@ -1280,14 +1280,14 @@ pub struct WidgetType {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WidgetTypeListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WidgetTypeResourceFormat>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WidgetTypeResourceFormat {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
