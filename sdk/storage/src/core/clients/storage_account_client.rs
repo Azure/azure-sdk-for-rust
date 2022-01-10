@@ -434,7 +434,7 @@ impl StorageAccountClient {
     }
 
     /// Convert into a [`StorageClient`]
-    pub fn into_storage_client<S: Into<String>>(self) -> StorageClient {
+    pub fn into_storage_client(self) -> StorageClient {
         StorageClient::new(self)
     }
 
