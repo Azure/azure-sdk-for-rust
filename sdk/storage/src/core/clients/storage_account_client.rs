@@ -81,7 +81,7 @@ impl StorageAccountOptions {
     }
 }
 
-/// Create a Pipeline from CosmosOptions
+/// Create a Pipeline from StorageAccountOptions
 fn new_pipeline_from_options(
     options: StorageAccountOptions,
     storage_credentials: StorageCredentials,
