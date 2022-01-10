@@ -59,6 +59,11 @@ pub mod drive_status {
         CompletedMoreInfo,
         ShippedBack,
     }
+    impl Default for State {
+        fn default() -> Self {
+            Self::Specified
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionKeyDetails {
@@ -75,6 +80,11 @@ pub mod encryption_key_details {
     pub enum KekType {
         MicrosoftManaged,
         CustomerManaged,
+    }
+    impl Default for KekType {
+        fn default() -> Self {
+            Self::MicrosoftManaged
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -136,6 +146,11 @@ pub mod identity_details {
         None,
         SystemAssigned,
         UserAssigned,
+    }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::None
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

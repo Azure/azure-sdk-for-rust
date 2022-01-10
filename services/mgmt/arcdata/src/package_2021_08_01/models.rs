@@ -63,6 +63,11 @@ pub mod data_controller_properties {
         #[serde(rename = "other")]
         Other,
     }
+    impl Default for Infrastructure {
+        fn default() -> Self {
+            Self::Other
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataControllerResource {
@@ -310,6 +315,11 @@ pub mod sql_managed_instance_properties {
         BasePrice,
         LicenseIncluded,
     }
+    impl Default for LicenseType {
+        fn default() -> Self {
+            Self::BasePrice
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlManagedInstanceSku {
@@ -336,6 +346,11 @@ pub mod sql_managed_instance_sku {
     pub enum Tier {
         GeneralPurpose,
         BusinessCritical,
+    }
+    impl Default for Tier {
+        fn default() -> Self {
+            Self::GeneralPurpose
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

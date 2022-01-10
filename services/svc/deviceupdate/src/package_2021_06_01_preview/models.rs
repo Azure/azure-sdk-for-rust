@@ -407,6 +407,11 @@ pub mod step {
         #[serde(rename = "reference")]
         Reference,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::Inline
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StepResult {

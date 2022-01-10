@@ -94,6 +94,11 @@ pub mod aml_compute {
             Linux,
             Windows,
         }
+        impl Default for OsType {
+            fn default() -> Self {
+                Self::Linux
+            }
+        }
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum VmPriority {
             Dedicated,
@@ -104,6 +109,11 @@ pub mod aml_compute {
             Enabled,
             Disabled,
             NotSpecified,
+        }
+        impl Default for RemoteLoginPortPublicAccess {
+            fn default() -> Self {
+                Self::NotSpecified
+            }
         }
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum AllocationState {
@@ -257,10 +267,20 @@ pub mod compute_instance {
             Personal,
             Shared,
         }
+        impl Default for ApplicationSharingPolicy {
+            fn default() -> Self {
+                Self::Shared
+            }
+        }
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ComputeInstanceAuthorizationType {
             #[serde(rename = "personal")]
             Personal,
+        }
+        impl Default for ComputeInstanceAuthorizationType {
+            fn default() -> Self {
+                Self::Personal
+            }
         }
     }
 }
@@ -336,6 +356,11 @@ pub mod compute_instance_ssh_settings {
     pub enum SshPublicAccess {
         Enabled,
         Disabled,
+    }
+    impl Default for SshPublicAccess {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

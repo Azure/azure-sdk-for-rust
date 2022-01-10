@@ -255,6 +255,11 @@ pub mod data_account_details {
         StorageAccount,
         ManagedDisk,
     }
+    impl Default for DataAccountType {
+        fn default() -> Self {
+            Self::StorageAccount
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxAccountCopyLogDetails {
@@ -413,6 +418,11 @@ pub mod data_export_details {
         Error,
         Verbose,
     }
+    impl Default for LogCollectionLevel {
+        fn default() -> Self {
+            Self::Error
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataImportDetails {
@@ -513,6 +523,11 @@ pub mod encryption_preferences {
     pub enum DoubleEncryption {
         Enabled,
         Disabled,
+    }
+    impl Default for DoubleEncryption {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -661,6 +676,11 @@ pub mod job_properties {
         NonScheduled,
         Scheduled,
     }
+    impl Default for DeliveryType {
+        fn default() -> Self {
+            Self::NonScheduled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobResource {
@@ -779,6 +799,11 @@ pub mod key_encryption_key {
     pub enum KekType {
         MicrosoftManaged,
         CustomerManaged,
+    }
+    impl Default for KekType {
+        fn default() -> Self {
+            Self::MicrosoftManaged
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1024,6 +1049,11 @@ pub mod shipping_address {
         Residential,
         Commercial,
     }
+    impl Default for AddressType {
+        fn default() -> Self {
+            Self::None
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
@@ -1181,6 +1211,11 @@ pub mod transfer_all_details {
         StorageAccount,
         ManagedDisk,
     }
+    impl Default for DataAccountType {
+        fn default() -> Self {
+            Self::StorageAccount
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransferConfiguration {
@@ -1226,6 +1261,11 @@ pub mod transfer_filter_details {
     pub enum DataAccountType {
         StorageAccount,
         ManagedDisk,
+    }
+    impl Default for DataAccountType {
+        fn default() -> Self {
+            Self::StorageAccount
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -208,6 +208,11 @@ pub mod zone_properties {
         Public,
         Private,
     }
+    impl Default for ZoneType {
+        fn default() -> Self {
+            Self::Public
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ZoneUpdate {

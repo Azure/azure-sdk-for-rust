@@ -321,4 +321,9 @@ pub mod task_properties {
         Global,
         Resource,
     }
+    impl Default for TaskScope {
+        fn default() -> Self {
+            Self::Global
+        }
+    }
 }

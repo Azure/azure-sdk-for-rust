@@ -276,6 +276,11 @@ pub mod role_assignment_properties {
         ForeignGroup,
         Device,
     }
+    impl Default for PrincipalType {
+        fn default() -> Self {
+            Self::User
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentSchedule {

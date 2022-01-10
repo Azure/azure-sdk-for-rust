@@ -142,6 +142,11 @@ pub mod additional_workspaces_properties {
     pub enum Type {
         Sentinel,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::Sentinel
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvancedThreatProtectionProperties {
@@ -1500,10 +1505,20 @@ pub mod io_t_security_solution_properties {
         Enabled,
         Disabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UnmaskedIpLoggingStatus {
         Disabled,
         Enabled,
+    }
+    impl Default for UnmaskedIpLoggingStatus {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1909,6 +1924,11 @@ pub mod recommendation_configuration_properties {
     pub enum Status {
         Disabled,
         Enabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

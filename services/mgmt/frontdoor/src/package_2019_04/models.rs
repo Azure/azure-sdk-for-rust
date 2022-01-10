@@ -96,6 +96,11 @@ pub mod backend_pools_settings {
         Enabled,
         Disabled,
     }
+    impl Default for EnforceCertificateNameCheck {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheConfiguration {

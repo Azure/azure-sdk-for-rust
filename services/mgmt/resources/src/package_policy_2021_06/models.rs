@@ -287,6 +287,11 @@ pub mod policy_assignment_properties {
         Default,
         DoNotEnforce,
     }
+    impl Default for EnforcementMode {
+        fn default() -> Self {
+            Self::Default
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyAssignmentUpdate {

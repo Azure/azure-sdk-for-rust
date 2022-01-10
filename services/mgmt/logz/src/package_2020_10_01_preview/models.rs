@@ -145,6 +145,11 @@ pub enum MarketplaceSubscriptionStatus {
     Active,
     Suspended,
 }
+impl Default for MarketplaceSubscriptionStatus {
+    fn default() -> Self {
+        Self::Active
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -195,6 +200,11 @@ pub struct MonitoredResourceListResponse {
 pub enum MonitoringStatus {
     Enabled,
     Disabled,
+}
+impl Default for MonitoringStatus {
+    fn default() -> Self {
+        Self::Enabled
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringTagRules {

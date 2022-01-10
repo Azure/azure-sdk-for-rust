@@ -280,6 +280,11 @@ pub mod pool_patch_properties {
         Premium,
         Ultra,
     }
+    impl Default for ServiceLevel {
+        fn default() -> Self {
+            Self::Premium
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolProperties {
@@ -298,6 +303,11 @@ pub mod pool_properties {
         Standard,
         Premium,
         Ultra,
+    }
+    impl Default for ServiceLevel {
+        fn default() -> Self {
+            Self::Premium
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -446,6 +456,11 @@ pub mod volume_patch_properties {
         Premium,
         Ultra,
     }
+    impl Default for ServiceLevel {
+        fn default() -> Self {
+            Self::Premium
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ExportPolicy {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -492,6 +507,11 @@ pub mod volume_properties {
         Standard,
         Premium,
         Ultra,
+    }
+    impl Default for ServiceLevel {
+        fn default() -> Self {
+            Self::Premium
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ExportPolicy {

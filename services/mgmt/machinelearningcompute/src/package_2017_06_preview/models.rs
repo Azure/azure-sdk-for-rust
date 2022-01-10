@@ -120,6 +120,11 @@ pub mod acs_cluster_properties {
         #[serde(rename = "Standard_GS5")]
         StandardGs5,
     }
+    impl Default for AgentVmSize {
+        fn default() -> Self {
+            Self::StandardD2V2
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppInsightsCredentials {
@@ -186,6 +191,11 @@ pub mod auto_scale_configuration {
     pub enum Status {
         Enabled,
         Disabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -393,6 +403,11 @@ pub mod ssl_configuration {
     pub enum Status {
         Enabled,
         Disabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

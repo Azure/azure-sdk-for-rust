@@ -122,6 +122,11 @@ pub mod container_service_network_profile {
         #[serde(rename = "kubenet")]
         Kubenet,
     }
+    impl Default for NetworkPlugin {
+        fn default() -> Self {
+            Self::Kubenet
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkPolicy {
         #[serde(rename = "calico")]
@@ -709,6 +714,11 @@ pub struct NetworkProfile {
 pub enum OsType {
     Linux,
     Windows,
+}
+impl Default for OsType {
+    fn default() -> Self {
+        Self::Linux
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OpenShiftAgentPoolProfileRole {

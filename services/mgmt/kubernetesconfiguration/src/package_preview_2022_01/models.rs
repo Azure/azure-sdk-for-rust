@@ -198,6 +198,11 @@ pub mod extension_status {
         Warning,
         Information,
     }
+    impl Default for Level {
+        fn default() -> Self {
+            Self::Information
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtensionType {
@@ -255,6 +260,11 @@ pub enum FluxComplianceStateDefinition {
     Pending,
     Suspended,
     Unknown,
+}
+impl Default for FluxComplianceStateDefinition {
+    fn default() -> Self {
+        Self::Unknown
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluxConfiguration {
@@ -448,6 +458,11 @@ pub enum KustomizationValidationDefinition {
     #[serde(rename = "server")]
     Server,
 }
+impl Default for KustomizationValidationDefinition {
+    fn default() -> Self {
+        Self::None
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectReferenceDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -510,6 +525,11 @@ pub enum OperatorScopeDefinition {
     Cluster,
     #[serde(rename = "namespace")]
     Namespace,
+}
+impl Default for OperatorScopeDefinition {
+    fn default() -> Self {
+        Self::Cluster
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperatorTypeDefinition {
@@ -599,6 +619,11 @@ pub enum ScopeDefinition {
     Cluster,
     #[serde(rename = "namespace")]
     Namespace,
+}
+impl Default for ScopeDefinition {
+    fn default() -> Self {
+        Self::Cluster
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeNamespace {

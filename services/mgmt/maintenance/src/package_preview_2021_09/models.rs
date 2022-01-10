@@ -80,6 +80,11 @@ pub mod input_patch_configuration {
         Never,
         Always,
     }
+    impl Default for RebootSetting {
+        fn default() -> Self {
+            Self::IfRequired
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputWindowsParameters {
@@ -320,5 +325,10 @@ pub mod task_properties {
     pub enum TaskScope {
         Global,
         Resource,
+    }
+    impl Default for TaskScope {
+        fn default() -> Self {
+            Self::Global
+        }
     }
 }

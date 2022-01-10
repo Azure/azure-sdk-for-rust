@@ -180,6 +180,11 @@ pub mod base_image_trigger {
         Disabled,
         Enabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseImageTriggerUpdateParameters {
@@ -209,6 +214,11 @@ pub mod base_image_trigger_update_parameters {
     pub enum Status {
         Disabled,
         Enabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -558,6 +568,11 @@ pub mod ip_rule {
     pub enum Action {
         Allow,
     }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProperties {
@@ -618,6 +633,11 @@ pub mod import_image_parameters {
         NoForce,
         Force,
     }
+    impl Default for Mode {
+        fn default() -> Self {
+            Self::NoForce
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportPipeline {
@@ -674,6 +694,11 @@ pub mod import_pipeline_source_properties {
     pub enum Type {
         AzureStorageBlobContainer,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::AzureStorageBlobContainer
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportSource {
@@ -727,6 +752,11 @@ pub mod network_rule_set {
     pub enum DefaultAction {
         Allow,
         Deny,
+    }
+    impl Default for DefaultAction {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -895,6 +925,11 @@ pub mod pipeline_run_source_properties {
     pub enum Type {
         AzureStorageBlob,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::AzureStorageBlob
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineRunTargetProperties {
@@ -908,6 +943,11 @@ pub mod pipeline_run_target_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         AzureStorageBlob,
+    }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::AzureStorageBlob
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -925,6 +965,11 @@ pub mod pipeline_source_trigger_properties {
     pub enum Status {
         Enabled,
         Disabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1144,6 +1189,11 @@ pub mod quarantine_policy {
         #[serde(rename = "disabled")]
         Disabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Disabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateCredentialParameters {
@@ -1268,10 +1318,20 @@ pub mod registry_properties {
         Enabled,
         Disabled,
     }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkRuleBypassOptions {
         AzureServices,
         None,
+    }
+    impl Default for NetworkRuleBypassOptions {
+        fn default() -> Self {
+            Self::AzureServices
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1302,6 +1362,11 @@ pub mod registry_properties_update_parameters {
     pub enum NetworkRuleBypassOptions {
         AzureServices,
         None,
+    }
+    impl Default for NetworkRuleBypassOptions {
+        fn default() -> Self {
+            Self::AzureServices
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1430,6 +1495,11 @@ pub mod retention_policy {
         Enabled,
         #[serde(rename = "disabled")]
         Disabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1739,6 +1809,11 @@ pub mod source_trigger {
         Disabled,
         Enabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceTriggerDescriptor {
@@ -1773,6 +1848,11 @@ pub mod source_trigger_update_parameters {
     pub enum Status {
         Disabled,
         Enabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2081,6 +2161,11 @@ pub mod timer_trigger {
         Disabled,
         Enabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimerTriggerDescriptor {
@@ -2103,6 +2188,11 @@ pub mod timer_trigger_update_parameters {
     pub enum Status {
         Disabled,
         Enabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2257,12 +2347,22 @@ pub mod trust_policy {
     pub enum Type {
         Notary,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::Notary
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "enabled")]
         Enabled,
         #[serde(rename = "disabled")]
         Disabled,
+    }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Disabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2283,6 +2383,11 @@ pub mod virtual_network_rule {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
+    }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

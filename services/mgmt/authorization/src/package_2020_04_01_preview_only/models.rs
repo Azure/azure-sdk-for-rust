@@ -84,6 +84,11 @@ pub mod role_assignment_properties {
         ServicePrincipal,
         ForeignGroup,
     }
+    impl Default for PrincipalType {
+        fn default() -> Self {
+            Self::User
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentPropertiesWithScope {

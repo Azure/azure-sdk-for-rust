@@ -912,6 +912,11 @@ pub mod export_request {
         #[serde(rename = "ADPassword")]
         AdPassword,
     }
+    impl Default for AuthenticationType {
+        fn default() -> Self {
+            Self::Sql
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverGroup {

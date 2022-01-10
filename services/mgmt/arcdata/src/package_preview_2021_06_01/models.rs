@@ -226,6 +226,11 @@ pub mod postgres_instance_sku {
     pub enum Tier {
         Hyperscale,
     }
+    impl Default for Tier {
+        fn default() -> Self {
+            Self::Hyperscale
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PostgresInstanceUpdate {
@@ -310,6 +315,11 @@ pub mod sql_managed_instance_sku {
     pub enum Tier {
         GeneralPurpose,
         BusinessCritical,
+    }
+    impl Default for Tier {
+        fn default() -> Self {
+            Self::GeneralPurpose
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

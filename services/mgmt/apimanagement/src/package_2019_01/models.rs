@@ -267,6 +267,11 @@ pub mod api_management_service_base_properties {
         External,
         Internal,
     }
+    impl Default for VirtualNetworkType {
+        fn default() -> Self {
+            Self::None
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementServiceCheckNameAvailabilityParameters {
@@ -1720,6 +1725,11 @@ pub mod policy_contract_properties {
         #[serde(rename = "rawxml-link")]
         RawxmlLink,
     }
+    impl Default for Format {
+        fn default() -> Self {
+            Self::Xml
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicySnippetContract {
@@ -2623,6 +2633,11 @@ pub mod user_entity_base_parameters {
         #[serde(rename = "deleted")]
         Deleted,
     }
+    impl Default for State {
+        fn default() -> Self {
+            Self::Active
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentityCollection {
@@ -2654,6 +2669,11 @@ pub mod user_token_parameter_properties {
         Primary,
         #[serde(rename = "secondary")]
         Secondary,
+    }
+    impl Default for KeyType {
+        fn default() -> Self {
+            Self::Primary
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

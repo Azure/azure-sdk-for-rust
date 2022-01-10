@@ -4853,6 +4853,11 @@ pub mod packet_capture_filter {
         Udp,
         Any,
     }
+    impl Default for Protocol {
+        fn default() -> Self {
+            Self::Any
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCaptureListResult {

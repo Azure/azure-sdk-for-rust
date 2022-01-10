@@ -48,6 +48,11 @@ pub enum ConditionalOperator {
     LessThan,
     Equal,
 }
+impl Default for ConditionalOperator {
+    fn default() -> Self {
+        Self::GreaterThanOrEqual
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Criteria {
     #[serde(rename = "metricName")]
@@ -174,6 +179,11 @@ pub struct LogToMetricAction {
 pub enum MetricTriggerType {
     Consecutive,
     Total,
+}
+impl Default for MetricTriggerType {
+    fn default() -> Self {
+        Self::Consecutive
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryType {

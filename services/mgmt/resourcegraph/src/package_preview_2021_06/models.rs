@@ -82,6 +82,11 @@ pub mod facet_request_options {
         #[serde(rename = "desc")]
         Desc,
     }
+    impl Default for SortOrder {
+        fn default() -> Self {
+            Self::Desc
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetResult {
@@ -156,12 +161,22 @@ pub mod query_request_options {
         #[serde(rename = "objectArray")]
         ObjectArray,
     }
+    impl Default for ResultFormat {
+        fn default() -> Self {
+            Self::ObjectArray
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthorizationScopeFilter {
         AtScopeAndBelow,
         AtScopeAndAbove,
         AtScopeExact,
         AtScopeAboveAndBelow,
+    }
+    impl Default for AuthorizationScopeFilter {
+        fn default() -> Self {
+            Self::AtScopeAndBelow
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

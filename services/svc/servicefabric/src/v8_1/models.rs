@@ -2553,6 +2553,11 @@ pub enum EnvironmentVariableType {
     KeyVaultReference,
     SecretValueReference,
 }
+impl Default for EnvironmentVariableType {
+    fn default() -> Self {
+        Self::ClearText
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Epoch {
     #[serde(rename = "ConfigurationVersion", default, skip_serializing_if = "Option::is_none")]
@@ -3235,6 +3240,11 @@ pub enum ImageRegistryPasswordType {
     ClearText,
     KeyVaultReference,
     SecretValueReference,
+}
+impl Default for ImageRegistryPasswordType {
+    fn default() -> Self {
+        Self::ClearText
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageStoreContent {
@@ -4107,6 +4117,11 @@ pub enum OperationType {
 pub enum Ordering {
     Desc,
     Asc,
+}
+impl Default for Ordering {
+    fn default() -> Self {
+        Self::Desc
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PackageSharingPolicyInfo {
@@ -5239,6 +5254,11 @@ pub mod restart_node_description {
         False,
         True,
     }
+    impl Default for CreateFabricDump {
+        fn default() -> Self {
+            Self::False
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestartPartitionResult {
@@ -5309,6 +5329,11 @@ pub enum RollingUpgradeMode {
     UnmonitoredAuto,
     UnmonitoredManual,
     Monitored,
+}
+impl Default for RollingUpgradeMode {
+    fn default() -> Self {
+        Self::Monitored
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RollingUpgradeUpdateDescription {
@@ -6090,6 +6115,11 @@ pub enum SettingType {
     KeyVaultReference,
     SecretValueReference,
 }
+impl Default for SettingType {
+    fn default() -> Self {
+        Self::ClearText
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SingletonPartitionInformation {
     #[serde(flatten)]
@@ -6610,12 +6640,22 @@ pub enum UpgradeKind {
     Invalid,
     Rolling,
 }
+impl Default for UpgradeKind {
+    fn default() -> Self {
+        Self::Rolling
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UpgradeMode {
     Invalid,
     UnmonitoredAuto,
     UnmonitoredManual,
     Monitored,
+}
+impl Default for UpgradeMode {
+    fn default() -> Self {
+        Self::UnmonitoredAuto
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpgradeOrchestrationServiceState {
@@ -6645,6 +6685,11 @@ pub enum UpgradeSortOrder {
     ReverseNumeric,
     ReverseLexicographical,
 }
+impl Default for UpgradeSortOrder {
+    fn default() -> Self {
+        Self::Default
+    }
+}
 pub type UpgradeStartTimeUtcString = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UpgradeState {
@@ -6663,6 +6708,11 @@ pub enum UpgradeType {
     Rolling,
     #[serde(rename = "Rolling_ForceRestart")]
     RollingForceRestart,
+}
+impl Default for UpgradeType {
+    fn default() -> Self {
+        Self::Rolling
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadChunkRange {

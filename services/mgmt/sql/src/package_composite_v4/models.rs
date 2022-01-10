@@ -1913,6 +1913,11 @@ pub mod job_schedule {
         Once,
         Recurring,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::Once
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStep {
@@ -1935,9 +1940,19 @@ pub mod job_step_action {
     pub enum Type {
         TSql,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::TSql
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {
         Inline,
+    }
+    impl Default for Source {
+        fn default() -> Self {
+            Self::Inline
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1984,6 +1999,11 @@ pub mod job_step_output {
     pub enum Type {
         SqlDatabase,
     }
+    impl Default for Type {
+        fn default() -> Self {
+            Self::SqlDatabase
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStepProperties {
@@ -2021,6 +2041,11 @@ pub mod job_target {
     pub enum MembershipType {
         Include,
         Exclude,
+    }
+    impl Default for MembershipType {
+        fn default() -> Self {
+            Self::Include
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {

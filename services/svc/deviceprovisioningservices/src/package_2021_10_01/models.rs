@@ -199,6 +199,11 @@ pub mod enrollment_group {
         #[serde(rename = "disabled")]
         Disabled,
     }
+    impl Default for ProvisioningStatus {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllocationPolicy {
         #[serde(rename = "hashed")]
@@ -253,6 +258,11 @@ pub mod individual_enrollment {
         Enabled,
         #[serde(rename = "disabled")]
         Disabled,
+    }
+    impl Default for ProvisioningStatus {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllocationPolicy {

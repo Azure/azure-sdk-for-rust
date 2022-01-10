@@ -329,6 +329,11 @@ pub mod api_management_service_backup_restore_parameters {
         SystemAssignedManagedIdentity,
         UserAssignedManagedIdentity,
     }
+    impl Default for AccessType {
+        fn default() -> Self {
+            Self::AccessKey
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementServiceBaseProperties {
@@ -397,6 +402,11 @@ pub mod api_management_service_base_properties {
         None,
         External,
         Internal,
+    }
+    impl Default for VirtualNetworkType {
+        fn default() -> Self {
+            Self::None
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PlatformVersion {
@@ -1809,6 +1819,11 @@ pub mod gateway_token_request_contract {
         #[serde(rename = "secondary")]
         Secondary,
     }
+    impl Default for KeyType {
+        fn default() -> Self {
+            Self::Primary
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenerateSsoUrlResult {
@@ -2682,6 +2697,11 @@ pub mod policy_contract_properties {
         Rawxml,
         #[serde(rename = "rawxml-link")]
         RawxmlLink,
+    }
+    impl Default for Format {
+        fn default() -> Self {
+            Self::Xml
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3799,6 +3819,11 @@ pub mod user_entity_base_parameters {
         #[serde(rename = "deleted")]
         Deleted,
     }
+    impl Default for State {
+        fn default() -> Self {
+            Self::Active
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentityCollection {
@@ -3837,6 +3862,11 @@ pub mod user_token_parameter_properties {
         Primary,
         #[serde(rename = "secondary")]
         Secondary,
+    }
+    impl Default for KeyType {
+        fn default() -> Self {
+            Self::Primary
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

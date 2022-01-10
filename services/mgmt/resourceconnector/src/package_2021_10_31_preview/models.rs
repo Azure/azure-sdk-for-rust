@@ -162,6 +162,11 @@ pub mod appliance_properties {
         #[serde(rename = "AKSEdge")]
         AksEdge,
     }
+    impl Default for Distro {
+        fn default() -> Self {
+            Self::AksEdge
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct InfrastructureConfig {
         #[serde(default, skip_serializing_if = "Option::is_none")]

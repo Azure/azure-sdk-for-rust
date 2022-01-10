@@ -359,6 +359,11 @@ pub mod gen2_environment_creation_properties {
         #[serde(rename = "disabled")]
         Disabled,
     }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Gen2EnvironmentMutableProperties {
@@ -396,6 +401,11 @@ pub mod gen2_environment_resource_properties {
         Enabled,
         #[serde(rename = "disabled")]
         Disabled,
+    }
+    impl Default for PublicNetworkAccess {
+        fn default() -> Self {
+            Self::Enabled
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -44,6 +44,11 @@ pub mod a2a_container_mapping_input {
         RunAsAccount,
         SystemAssignedIdentity,
     }
+    impl Default for AutomationAccountAuthenticationType {
+        fn default() -> Self {
+            Self::RunAsAccount
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aCreateProtectionIntentInput {
@@ -124,6 +129,11 @@ pub mod a2a_create_protection_intent_input {
     pub enum AutomationAccountAuthenticationType {
         RunAsAccount,
         SystemAssignedIdentity,
+    }
+    impl Default for AutomationAccountAuthenticationType {
+        fn default() -> Self {
+            Self::RunAsAccount
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -402,6 +412,11 @@ pub mod a2a_protection_container_mapping_details {
         RunAsAccount,
         SystemAssignedIdentity,
     }
+    impl Default for AutomationAccountAuthenticationType {
+        fn default() -> Self {
+            Self::RunAsAccount
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aProtectionIntentDiskInputDetails {
@@ -659,6 +674,11 @@ pub mod a2a_replication_intent_details {
         RunAsAccount,
         SystemAssignedIdentity,
     }
+    impl Default for AutomationAccountAuthenticationType {
+        fn default() -> Self {
+            Self::RunAsAccount
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aReprotectInput {
@@ -763,6 +783,11 @@ pub mod a2a_update_container_mapping_input {
     pub enum AutomationAccountAuthenticationType {
         RunAsAccount,
         SystemAssignedIdentity,
+    }
+    impl Default for AutomationAccountAuthenticationType {
+        fn default() -> Self {
+            Self::RunAsAccount
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
