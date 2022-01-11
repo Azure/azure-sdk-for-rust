@@ -7,7 +7,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct GetAttachmentBuilder<'a, 'b> {
     attachment_client: &'a AttachmentClient,
-    if_match_condition: Option<IfMatchCondition<'b>>,
+    if_match_condition: Option<IfMatchCondition>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -28,7 +28,7 @@ impl<'a, 'b> GetAttachmentBuilder<'a, 'b> {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
     }
 
     pub async fn execute(&self) -> crate::Result<crate::responses::GetAttachmentResponse> {

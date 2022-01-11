@@ -152,7 +152,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             &doc.document,
             ReplaceDocumentOptions::new()
                 .consistency_level(ConsistencyLevel::from(&response))
-                .if_match_condition(IfMatchCondition::Match(&doc.etag)), // use optimistic concurrency check
+                .if_match_condition(IfMatchCondition::Match(doc.etag)), // use optimistic concurrency check
         )
         .await?;
 

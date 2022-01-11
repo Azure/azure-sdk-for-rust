@@ -6,11 +6,11 @@ use std::convert::TryInto;
 use azure_core::{Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone, Default)]
-pub struct FileDeleteOptions<'a> {
-    if_match_condition: Option<IfMatchCondition<'a>>,
+pub struct FileDeleteOptions {
+    if_match_condition: Option<IfMatchCondition>,
 }
 
-impl<'a> FileDeleteOptions<'a> {
+impl FileDeleteOptions {
     pub fn new() -> Self {
         Self {
             if_match_condition: None,
@@ -18,7 +18,7 @@ impl<'a> FileDeleteOptions<'a> {
     }
 
     setters! {
-        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
     }
 
     pub(crate) fn decorate_request(&self, req: &mut HttpRequest) -> Result<(), crate::Error> {

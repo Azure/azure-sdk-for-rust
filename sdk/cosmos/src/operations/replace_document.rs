@@ -15,7 +15,7 @@ use serde::Serialize;
 pub struct ReplaceDocumentOptions<'a> {
     partition_key: Option<String>,
     indexing_directive: IndexingDirective,
-    if_match_condition: Option<IfMatchCondition<'a>>,
+    if_match_condition: Option<IfMatchCondition>,
     if_modified_since: Option<IfModifiedSince<'a>>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TentativeWritesAllowance,
@@ -37,7 +37,7 @@ impl<'a> ReplaceDocumentOptions<'a> {
 impl<'a> ReplaceDocumentOptions<'a> {
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
         if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
         allow_tentative_writes: TentativeWritesAllowance,
         indexing_directive: IndexingDirective,

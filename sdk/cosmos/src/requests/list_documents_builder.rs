@@ -10,7 +10,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListDocumentsBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
-    if_match_condition: Option<IfMatchCondition<'b>>,
+    if_match_condition: Option<IfMatchCondition>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -42,7 +42,7 @@ impl<'a, 'b> ListDocumentsBuilder<'a, 'b> {
         continuation: &'b str => Some(Continuation::new(continuation)),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
         a_im: ChangeFeed,
-        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
         partition_range_id: &'b str => Some(PartitionRangeId::new(partition_range_id)),
     }
 
