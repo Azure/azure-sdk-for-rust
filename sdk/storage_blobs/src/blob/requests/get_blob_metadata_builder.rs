@@ -9,7 +9,7 @@ pub struct GetBlobMetadataBuilder<'a> {
     blob_client: &'a BlobClient,
     blob_versioning: Option<&'a BlobVersioning>,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -28,7 +28,7 @@ impl<'a> GetBlobMetadataBuilder<'a> {
         blob_versioning: &'a BlobVersioning => Some(blob_versioning),
         lease_id: &'a LeaseId => Some(lease_id),
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

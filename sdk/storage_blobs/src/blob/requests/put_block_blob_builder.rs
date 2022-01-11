@@ -18,7 +18,7 @@ pub struct PutBlockBlobBuilder<'a> {
     access_tier: Option<AccessTier>,
     // TODO: Support tags
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -49,7 +49,7 @@ impl<'a> PutBlockBlobBuilder<'a> {
         metadata: &'a Metadata => Some(metadata),
         access_tier: AccessTier => Some(access_tier),
         lease_id: &'a LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

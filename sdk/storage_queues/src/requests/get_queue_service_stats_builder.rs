@@ -10,7 +10,7 @@ use std::convert::TryInto;
 pub struct GetQueueServiceStatsBuilder<'a> {
     storage_client: &'a StorageClient,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> GetQueueServiceStatsBuilder<'a> {
@@ -24,7 +24,7 @@ impl<'a> GetQueueServiceStatsBuilder<'a> {
 
     setters! {
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

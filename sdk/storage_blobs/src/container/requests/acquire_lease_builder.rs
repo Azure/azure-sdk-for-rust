@@ -11,7 +11,7 @@ use http::status::StatusCode;
 pub struct AcquireLeaseBuilder<'a> {
     container_client: &'a ContainerClient,
     lease_duration: LeaseDuration,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
     lease_id: Option<&'a LeaseId>,
     proposed_lease_id: Option<&'a ProposedLeaseId>,
@@ -35,7 +35,7 @@ impl<'a> AcquireLeaseBuilder<'a> {
     setters! {
         lease_id: &'a LeaseId => Some(lease_id),
         proposed_lease_id: &'a ProposedLeaseId => Some(proposed_lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

@@ -10,10 +10,10 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListFileSystemsBuilder<'a> {
     data_lake_client: &'a DataLakeClient,
-    prefix: Option<Prefix<'a>>,
+    prefix: Option<Prefix>,
     next_marker: Option<NextMarker>,
     max_results: Option<MaxResults>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -30,10 +30,10 @@ impl<'a> ListFileSystemsBuilder<'a> {
     }
 
     setters! {
-        prefix: Prefix<'a> => Some(prefix),
+        prefix: Prefix => Some(prefix),
         next_marker: NextMarker => Some(next_marker),
         max_results: MaxResults => Some(max_results),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

@@ -12,7 +12,7 @@ pub struct InsertEntityBuilder<'a> {
     table_client: &'a TableClient,
     return_entity: ReturnEntity,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> InsertEntityBuilder<'a> {
@@ -28,7 +28,7 @@ impl<'a> InsertEntityBuilder<'a> {
     setters! {
         return_entity: ReturnEntity => return_entity,
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute<E>(

@@ -9,7 +9,7 @@ pub struct GetBlockListBuilder<'a> {
     block_list_type: BlockListType,
     blob_versioning: Option<&'a BlobVersioning>,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -29,7 +29,7 @@ impl<'a> GetBlockListBuilder<'a> {
         block_list_type: BlockListType => block_list_type,
         blob_versioning: &'a BlobVersioning => Some(blob_versioning),
         lease_id: &'a LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

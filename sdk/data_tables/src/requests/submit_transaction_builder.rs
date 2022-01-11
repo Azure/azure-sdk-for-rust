@@ -9,7 +9,7 @@ use std::convert::TryInto;
 pub struct SubmitTransactionBuilder<'a> {
     partition_key_client: &'a PartitionKeyClient,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> SubmitTransactionBuilder<'a> {
@@ -23,7 +23,7 @@ impl<'a> SubmitTransactionBuilder<'a> {
 
     setters! {
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(
