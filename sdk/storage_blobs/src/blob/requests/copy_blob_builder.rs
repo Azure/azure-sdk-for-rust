@@ -20,7 +20,7 @@ pub struct CopyBlobBuilder<'a> {
     lease_id: Option<&'a LeaseId>,
     client_request_id: Option<ClientRequestId>,
     if_source_since_condition: Option<IfSourceModifiedSinceCondition>,
-    if_source_match_condition: Option<IfSourceMatchCondition<'a>>,
+    if_source_match_condition: Option<IfSourceMatchCondition>,
     source_lease_id: Option<&'a SourceLeaseId>,
     rehydrate_priority: RehydratePriority,
 }
@@ -55,7 +55,7 @@ impl<'a> CopyBlobBuilder<'a> {
         lease_id: &'a LeaseId => Some(lease_id),
         client_request_id: ClientRequestId => Some(client_request_id),
         if_source_since_condition: IfSourceModifiedSinceCondition => Some(if_source_since_condition),
-        if_source_match_condition: IfSourceMatchCondition<'a> => Some(if_source_match_condition),
+        if_source_match_condition: IfSourceMatchCondition => Some(if_source_match_condition),
         source_lease_id: &'a SourceLeaseId => Some(source_lease_id),
         rehydrate_priority: RehydratePriority => rehydrate_priority,
     }
