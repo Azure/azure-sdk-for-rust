@@ -9,7 +9,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct GetPropertiesBuilder<'a> {
     container_client: &'a ContainerClient,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
     lease_id: Option<&'a LeaseId>,
 }
@@ -25,7 +25,7 @@ impl<'a> GetPropertiesBuilder<'a> {
     }
 
     setters! {
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
         lease_id: &'a LeaseId => Some(lease_id),
     }

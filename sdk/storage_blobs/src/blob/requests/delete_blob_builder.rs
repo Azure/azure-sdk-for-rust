@@ -9,7 +9,7 @@ pub struct DeleteBlobBuilder<'a> {
     delete_snapshots_method: DeleteSnapshotsMethod,
     timeout: Option<Timeout>,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> DeleteBlobBuilder<'a> {
@@ -27,7 +27,7 @@ impl<'a> DeleteBlobBuilder<'a> {
         delete_snapshots_method: DeleteSnapshotsMethod => delete_snapshots_method,
         timeout: Timeout => Some(timeout),
         lease_id: &'a LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

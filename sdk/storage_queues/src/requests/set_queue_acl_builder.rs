@@ -10,7 +10,7 @@ use std::convert::TryInto;
 pub struct SetQueueACLBuilder<'a> {
     queue_client: &'a QueueClient,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> SetQueueACLBuilder<'a> {
@@ -24,7 +24,7 @@ impl<'a> SetQueueACLBuilder<'a> {
 
     setters! {
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     /// Pass the requested polices here.

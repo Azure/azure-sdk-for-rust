@@ -20,7 +20,7 @@ pub struct UpdateOrMergeEntityBuilder<'a> {
     operation: Operation,
     #[allow(unused)]
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> UpdateOrMergeEntityBuilder<'a> {
@@ -35,7 +35,7 @@ impl<'a> UpdateOrMergeEntityBuilder<'a> {
 
     setters! {
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute<E>(

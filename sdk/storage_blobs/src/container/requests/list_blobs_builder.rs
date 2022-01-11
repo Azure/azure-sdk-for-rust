@@ -10,7 +10,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListBlobsBuilder<'a> {
     container_client: &'a ContainerClient,
-    prefix: Option<Prefix<'a>>,
+    prefix: Option<Prefix>,
     delimiter: Option<Delimiter<'a>>,
     next_marker: Option<NextMarker>,
     max_results: Option<MaxResults>,
@@ -21,7 +21,7 @@ pub struct ListBlobsBuilder<'a> {
     include_deleted: bool,
     include_tags: bool,
     include_versions: bool,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -46,7 +46,7 @@ impl<'a> ListBlobsBuilder<'a> {
     }
 
     setters! {
-        prefix: Prefix<'a> => Some(prefix),
+        prefix: Prefix => Some(prefix),
         delimiter: Delimiter<'a> => Some(delimiter),
         next_marker: NextMarker => Some(next_marker),
         max_results: MaxResults => Some(max_results),
@@ -57,7 +57,7 @@ impl<'a> ListBlobsBuilder<'a> {
         include_deleted: bool => include_deleted,
         include_tags: bool => include_tags,
         include_versions: bool => include_versions,
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

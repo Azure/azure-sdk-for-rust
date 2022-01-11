@@ -10,7 +10,7 @@ pub struct PutMessageBuilder<'a> {
     visibility_timeout: Option<VisibilityTimeout>,
     ttl: Option<MessageTTL>,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> PutMessageBuilder<'a> {
@@ -28,7 +28,7 @@ impl<'a> PutMessageBuilder<'a> {
         visibility_timeout: VisibilityTimeout => Some(visibility_timeout),
         ttl: MessageTTL => Some(ttl),
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

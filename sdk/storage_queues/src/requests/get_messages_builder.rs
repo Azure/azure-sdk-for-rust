@@ -11,7 +11,7 @@ pub struct GetMessagesBuilder<'a> {
     number_of_messages: Option<NumberOfMessages>,
     visibility_timeout: Option<VisibilityTimeout>,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> GetMessagesBuilder<'a> {
@@ -29,7 +29,7 @@ impl<'a> GetMessagesBuilder<'a> {
         number_of_messages: NumberOfMessages => Some(number_of_messages),
         visibility_timeout: VisibilityTimeout => Some(visibility_timeout),
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

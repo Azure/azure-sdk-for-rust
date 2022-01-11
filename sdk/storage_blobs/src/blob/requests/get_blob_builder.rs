@@ -1,9 +1,45 @@
 use crate::blob::responses::GetBlobResponse;
 use crate::prelude::*;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
+use crate::AddAsHeader;
+use azure_core::headers::{add_optional_header, add_optional_header_ref, CLIENT_REQUEST_ID};
 use azure_core::prelude::*;
 use futures::stream::Stream;
+use http::request::Builder;
 use std::convert::TryInto;
+
+// TODO Copy trait is required for current stream approach, once migrated to new approach with
+// pipelines, we can use the ClientRequestId from core again which does not implement Copy.
+#[derive(Debug, Clone, Copy)]
+pub struct ClientRequestId<'a>(&'a str);
+
+impl<'a> ClientRequestId<'a> {
+    pub fn new(client_request_id: &'a str) -> Self {
+        Self(client_request_id)
+    }
+}
+
+impl<'a> From<&'a str> for ClientRequestId<'a> {
+    fn from(client_request_id: &'a str) -> Self {
+        Self::new(client_request_id)
+    }
+}
+
+impl<'a> AddAsHeader for ClientRequestId<'a> {
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(CLIENT_REQUEST_ID, self.0)
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut azure_core::Request,
+    ) -> Result<(), azure_core::HTTPHeaderError> {
+        request
+            .headers_mut()
+            .append(CLIENT_REQUEST_ID, http::HeaderValue::from_str(self.0)?);
+
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct GetBlobBuilder<'a> {

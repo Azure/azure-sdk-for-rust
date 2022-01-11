@@ -8,7 +8,7 @@ use http::status::StatusCode;
 #[derive(Debug, Clone)]
 pub struct RenewLeaseBuilder<'a> {
     container_lease_client: &'a ContainerLeaseClient,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 

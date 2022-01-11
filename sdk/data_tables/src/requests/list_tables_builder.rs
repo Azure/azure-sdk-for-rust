@@ -17,7 +17,7 @@ pub struct ListTablesBuilder<'a> {
     select: Option<Select<'a>>,
     top: Option<Top>,
     continuation_next_table_name: Option<ContinuationNextTableName>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> ListTablesBuilder<'a> {
@@ -37,7 +37,7 @@ impl<'a> ListTablesBuilder<'a> {
         select: Select<'a> => Some(select),
         top: Top => Some(top),
         continuation_next_table_name: ContinuationNextTableName => Some(continuation_next_table_name),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

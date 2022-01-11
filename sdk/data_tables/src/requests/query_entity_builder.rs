@@ -15,7 +15,7 @@ pub struct QueryEntityBuilder<'a> {
     select: Option<Select<'a>>,
     top: Option<Top>,
     continuation_next_partition_and_row_key: Option<ContinuationNextPartitionAndRowKey>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> QueryEntityBuilder<'a> {
@@ -35,7 +35,7 @@ impl<'a> QueryEntityBuilder<'a> {
         select: Select<'a> => Some(select),
         top: Top => Some(top),
         continuation_next_partition_and_row_key: ContinuationNextPartitionAndRowKey => Some(continuation_next_partition_and_row_key),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute<E>(

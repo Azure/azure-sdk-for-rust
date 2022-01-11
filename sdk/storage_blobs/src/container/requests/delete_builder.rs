@@ -8,7 +8,7 @@ use http::status::StatusCode;
 pub struct DeleteBuilder<'a> {
     container_client: &'a ContainerClient,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     #[allow(unused)]
     timeout: Option<Timeout>,
 }
@@ -25,7 +25,7 @@ impl<'a> DeleteBuilder<'a> {
 
     setters! {
         lease_id: &'a LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 
