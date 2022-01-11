@@ -252,7 +252,10 @@ async fn replace_document() {
             ReplaceDocumentOptions::new()
                 .consistency_level(ConsistencyLevel::from(&documents))
                 .if_match_condition(IfMatchCondition::Match(
-                    &documents.documents[0].document_attributes.etag(),
+                    documents.documents[0]
+                        .document_attributes
+                        .etag()
+                        .to_string(),
                 )),
         )
         .await
