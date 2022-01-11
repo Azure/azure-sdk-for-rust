@@ -2,9 +2,8 @@
 // #![cfg(feature = "mock_transport_framework")]
 
 use azure_core::prelude::*;
-use azure_identity::token_credentials::DefaultAzureCredential;
-use azure_identity::token_credentials::TokenCredential;
 use azure_storage::core::prelude::*;
+use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
 use futures::stream::StreamExt;
@@ -107,6 +106,8 @@ async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Err
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
     );
+
+    // TODO: CoreError(PolicyError(RelativeUrlWithoutBase))
 
     let file_path = "some/path/e2etest-file.txt";
 
@@ -232,17 +233,21 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
 }
 
 async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Send + Sync>> {
-    let account = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
+    let account_name = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
-    let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
+    let account_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let resource_id = "https://storage.azure.com/";
-    println!("getting bearer token for '{}'...", resource_id);
-    let bearer_token = DefaultAzureCredential::default()
-        .get_token(resource_id)
-        .await?;
-    println!("token expires on {}\n", bearer_token.expires_on);
+    let http_client = azure_core::new_http_client();
 
-    Ok(DataLakeClient::new(account, bearer_token.token.secret().to_owned(), None).unwrap())
+    let storage_account_client =
+        StorageAccountClient::new_access_key(http_client.clone(), &account_name, &account_key);
+
+    let storage_client = storage_account_client.as_storage_client();
+
+    Ok(DataLakeClient::new(
+        storage_client,
+        StorageSharedKeyCredential::new(account_name, account_key),
+        None,
+    ))
 }

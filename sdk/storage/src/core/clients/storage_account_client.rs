@@ -26,10 +26,9 @@ pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
-pub(crate) const HEADER_VERSION: &str = "x-ms-version";
+const HEADER_VERSION: &str = "x-ms-version";
 
-pub(crate) const AZURE_VERSION: &str = "2019-12-12";
-//pub(crate) const SAS_VERSION: &str = "2019-02-02";
+const AZURE_VERSION: &str = "2019-12-12";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StorageCredentials {

@@ -1,11 +1,8 @@
-use crate::authorization_policy::AuthorizationPolicy;
 use crate::clients::FileSystemClient;
-use crate::operations::*;
-use azure_core::{ClientOptions, Context, HttpClient, Pipeline, Result};
-use azure_storage::clients::ServiceType;
-use azure_storage::core::prelude::*;
-use bytes::Bytes;
-use http::method::Method;
+use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
+use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
+use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
+use azure_storage::core::{clients::ServiceType, prelude::*, Result};
 use http::request::{Builder, Request};
 use std::sync::Arc;
 
@@ -14,8 +11,7 @@ const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
     pipeline: Pipeline,
-    #[allow(unused)]
-    account: String,
+    storage_client: Arc<StorageClient>,
     custom_dns_suffix: Option<String>,
     url: String, // TODO: Use CloudLocation similar to CosmosClient
     pub(crate) context: Context,
@@ -23,8 +19,8 @@ pub struct DataLakeClient {
 
 impl DataLakeClient {
     pub(crate) fn new_with_options(
-        account: String,
-        bearer_token: String,
+        storage_client: Arc<StorageClient>,
+        credential: StorageSharedKeyCredential,
         custom_dns_suffix: Option<String>,
         options: ClientOptions,
     ) -> Result<Self> {
@@ -32,7 +28,7 @@ impl DataLakeClient {
         // so we do not have to do it at every request.
         let url = format!(
             "https://{}.{}",
-            account,
+            credential.account_name,
             match custom_dns_suffix.as_ref() {
                 Some(custom_dns_suffix) => custom_dns_suffix,
                 None => DEFAULT_DNS_SUFFIX,
@@ -41,7 +37,9 @@ impl DataLakeClient {
 
         let per_call_policies = Vec::new();
         let auth_policy: Arc<dyn azure_core::Policy> =
-            Arc::new(AuthorizationPolicy::new(bearer_token));
+            // TODO: Allow caller to choose auth policy, follow pattern of other clients
+			// Arc::new(BearerTokenAuthorizationPolicy::new(bearer_token));
+			Arc::new(SharedKeyAuthorizationPolicy::new(url.to_owned(), credential));
 
         // take care of adding the AuthorizationPolicy as **last** retry policy.
         // Policies can change the url and/or the headers and the AuthorizationPolicy
@@ -61,7 +59,7 @@ impl DataLakeClient {
 
         Ok(Self {
             pipeline,
-            account,
+            storage_client,
             custom_dns_suffix,
             url,
             context,
@@ -69,31 +67,15 @@ impl DataLakeClient {
     }
 
     pub fn new(
-        account: String,
-        bearer_token: String,
+        storage_client: Arc<StorageClient>,
+        credential: StorageSharedKeyCredential,
         custom_dns_suffix: Option<String>,
     ) -> Result<Self> {
         Self::new_with_options(
-            account,
-            bearer_token,
+            storage_client,
+            credential,
             custom_dns_suffix,
             ClientOptions::default(),
-        )
-    }
-
-    #[cfg(feature = "mock_transport_framework")]
-    pub fn new_with_transaction(
-        storage_client: Arc<StorageClient>,
-        account: String,
-        bearer_token: String,
-        transaction_name: impl Into<String>,
-    ) -> DataLakeClient {
-        Self::new_with_options(
-            storage_client,
-            account,
-            bearer_token,
-            None,
-            ClientOptions::new_with_transaction_name(transaction_name.into()),
         )
     }
 

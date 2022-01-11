@@ -16,6 +16,7 @@ pub mod headers;
 pub use copy_id::{copy_id_from_headers, CopyId};
 pub use copy_progress::CopyProgress;
 pub mod parsing_xml;
+pub mod storage_shared_key_credential;
 mod stored_access_policy;
 pub use errors::{Error, Result};
 pub mod util;
