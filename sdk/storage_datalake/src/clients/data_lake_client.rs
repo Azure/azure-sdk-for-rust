@@ -3,8 +3,8 @@ use crate::operations::ListFileSystems;
 use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
 use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
-use azure_storage::core::{clients::ServiceType, prelude::*, Result};
-use http::request::{Builder, Request};
+use azure_storage::core::{clients::ServiceType, Result};
+use http::request::Builder;
 use std::sync::Arc;
 
 const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
@@ -12,7 +12,6 @@ const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
     pipeline: Pipeline,
-    storage_client: Arc<StorageClient>,
     custom_dns_suffix: Option<String>,
     url: String, // TODO: Use CloudLocation similar to CosmosClient
     pub(crate) context: Context,
@@ -20,7 +19,6 @@ pub struct DataLakeClient {
 
 impl DataLakeClient {
     pub(crate) fn new_with_options(
-        storage_client: Arc<StorageClient>,
         credential: StorageSharedKeyCredential,
         custom_dns_suffix: Option<String>,
         options: ClientOptions,
@@ -60,7 +58,6 @@ impl DataLakeClient {
 
         Ok(Self {
             pipeline,
-            storage_client,
             custom_dns_suffix,
             url,
             context,
@@ -68,16 +65,10 @@ impl DataLakeClient {
     }
 
     pub fn new(
-        storage_client: Arc<StorageClient>,
         credential: StorageSharedKeyCredential,
         custom_dns_suffix: Option<String>,
     ) -> Result<Self> {
-        Self::new_with_options(
-            storage_client,
-            credential,
-            custom_dns_suffix,
-            ClientOptions::default(),
-        )
+        Self::new_with_options(credential, custom_dns_suffix, ClientOptions::default())
     }
 
     pub fn custom_dns_suffix(&self) -> Option<&str> {
