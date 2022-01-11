@@ -9,7 +9,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListUserDefinedFunctionsBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
-    if_match_condition: Option<IfMatchCondition<'b>>,
+    if_match_condition: Option<IfMatchCondition>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -36,7 +36,7 @@ impl<'a, 'b> ListUserDefinedFunctionsBuilder<'a, 'b> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         continuation: &'b str => Some(Continuation::new(continuation)),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
-        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
     }
 
     pub async fn execute(&self) -> crate::Result<ListUserDefinedFunctionsResponse> {

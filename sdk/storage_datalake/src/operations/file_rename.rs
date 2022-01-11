@@ -7,11 +7,11 @@ use std::convert::TryInto;
 use azure_core::{HTTPHeaderError, Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone, Default)]
-pub struct FileRenameOptions<'a> {
-    if_match_condition: Option<IfMatchCondition<'a>>,
+pub struct FileRenameOptions {
+    if_match_condition: Option<IfMatchCondition>,
 }
 
-impl<'a> FileRenameOptions<'a> {
+impl FileRenameOptions {
     pub fn new() -> Self {
         Self {
             if_match_condition: None,
@@ -19,7 +19,7 @@ impl<'a> FileRenameOptions<'a> {
     }
 
     setters! {
-        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
     }
 
     pub(crate) fn decorate_request(

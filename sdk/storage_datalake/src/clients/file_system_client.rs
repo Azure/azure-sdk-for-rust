@@ -52,7 +52,7 @@ impl FileSystemClient {
         &self,
         ctx: Context,
         file_path: &str,
-        options: FileCreateOptions<'_>,
+        options: FileCreateOptions,
     ) -> Result<FileCreateResponse, crate::Error> {
         let mut request = self.prepare_file_create_request(file_path);
 
@@ -67,7 +67,8 @@ impl FileSystemClient {
         ctx: Context,
         file_path: &str,
     ) -> Result<FileCreateResponse, crate::Error> {
-        let options = FileCreateOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
+        let options = FileCreateOptions::new()
+            .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
 
         let mut request = self.prepare_file_create_request(file_path);
 
@@ -81,7 +82,7 @@ impl FileSystemClient {
         &self,
         ctx: Context,
         file_path: &str,
-        options: FileDeleteOptions<'_>,
+        options: FileDeleteOptions,
     ) -> Result<FileDeleteResponse, crate::Error> {
         let mut request = self.prepare_file_delete_request(file_path);
 
@@ -96,7 +97,7 @@ impl FileSystemClient {
         ctx: Context,
         source_file_path: &str,
         destination_file_path: &str,
-        options: FileRenameOptions<'_>,
+        options: FileRenameOptions,
     ) -> Result<FileRenameResponse, crate::Error> {
         let mut request = self.prepare_file_rename_request(destination_file_path);
 
@@ -113,7 +114,8 @@ impl FileSystemClient {
         source_file_path: &str,
         destination_file_path: &str,
     ) -> Result<FileRenameResponse, crate::Error> {
-        let options = FileRenameOptions::new().if_match_condition(IfMatchCondition::NotMatch("*"));
+        let options = FileRenameOptions::new()
+            .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
 
         let mut request = self.prepare_file_rename_request(destination_file_path);
 
@@ -130,7 +132,7 @@ impl FileSystemClient {
         file_path: &str,
         bytes: Bytes,
         position: i64,
-        options: FileAppendOptions<'_>,
+        options: FileAppendOptions,
     ) -> Result<FileAppendResponse, crate::Error> {
         let mut request = self.prepare_file_append_request(file_path, position);
 
@@ -146,7 +148,7 @@ impl FileSystemClient {
         file_path: &str,
         position: i64,
         close: bool,
-        options: FileFlushOptions<'_>,
+        options: FileFlushOptions,
     ) -> Result<FileFlushResponse, crate::Error> {
         let mut request = self.prepare_file_flush_request(file_path, position, close);
         options.decorate_request(&mut request)?;

@@ -13,12 +13,12 @@ pub struct CopyBlobFromUrlBuilder<'a> {
     is_synchronous: bool,
     metadata: Option<&'a Metadata>,
     if_modified_since_condition: Option<IfModifiedSinceCondition>,
-    if_match_condition: Option<IfMatchCondition<'a>>,
+    if_match_condition: Option<IfMatchCondition>,
     timeout: Option<Timeout>,
     lease_id: Option<&'a LeaseId>,
     client_request_id: Option<ClientRequestId>,
     if_source_since_condition: Option<IfSourceModifiedSinceCondition>,
-    if_source_match_condition: Option<IfSourceMatchCondition<'a>>,
+    if_source_match_condition: Option<IfSourceMatchCondition>,
     source_content_md5: Option<&'a SourceContentMD5>,
 }
 
@@ -44,12 +44,12 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
         is_synchronous: bool => is_synchronous,
         metadata: &'a Metadata => Some(metadata),
         if_modified_since_condition: IfModifiedSinceCondition => Some(if_modified_since_condition),
-        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
         timeout: Timeout => Some(timeout),
         lease_id: &'a LeaseId => Some(lease_id),
         client_request_id: ClientRequestId => Some(client_request_id),
         if_source_since_condition: IfSourceModifiedSinceCondition => Some(if_source_since_condition),
-        if_source_match_condition: IfSourceMatchCondition<'a> => Some(if_source_match_condition),
+        if_source_match_condition: IfSourceMatchCondition => Some(if_source_match_condition),
         source_content_md5: &'a SourceContentMD5 => Some(source_content_md5),
     }
 

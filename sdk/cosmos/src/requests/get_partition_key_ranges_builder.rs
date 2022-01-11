@@ -9,8 +9,8 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct GetPartitionKeyRangesBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
-    if_match_condition: Option<IfMatchCondition<'b>>,
-    if_modified_since: Option<IfModifiedSince<'b>>,
+    if_match_condition: Option<IfMatchCondition>,
+    if_modified_since: Option<IfModifiedSince>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -32,8 +32,8 @@ impl<'a, 'b> GetPartitionKeyRangesBuilder<'a, 'b> {
         user_agent: &'b str => Some(UserAgent::new(user_agent)),
         activity_id: &'b str => Some(ActivityId::new(activity_id)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition<'b> => Some(if_match_condition),
-        if_modified_since: &'b DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
+        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
     pub async fn execute(&self) -> crate::Result<GetPartitionKeyRangesResponse> {

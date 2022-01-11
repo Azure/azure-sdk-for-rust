@@ -4,15 +4,15 @@ use http::header::IF_MODIFIED_SINCE;
 use http::request::Builder;
 
 #[derive(Debug, Clone, Copy)]
-pub struct IfModifiedSince<'a>(&'a DateTime<Utc>);
+pub struct IfModifiedSince(DateTime<Utc>);
 
-impl<'a> IfModifiedSince<'a> {
-    pub fn new(time: &'a DateTime<Utc>) -> Self {
+impl IfModifiedSince {
+    pub fn new(time: DateTime<Utc>) -> Self {
         Self(time)
     }
 }
 
-impl AddAsHeader for IfModifiedSince<'_> {
+impl AddAsHeader for IfModifiedSince {
     fn add_as_header(&self, builder: Builder) -> Builder {
         builder.header(IF_MODIFIED_SINCE, self.0.to_rfc2822())
     }

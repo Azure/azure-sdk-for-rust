@@ -105,7 +105,7 @@ impl CollectionClient {
         &self,
         ctx: Context,
         document: &'a D,
-        options: CreateDocumentOptions<'_>,
+        options: CreateDocumentOptions,
     ) -> crate::Result<CreateDocumentResponse> {
         let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
 

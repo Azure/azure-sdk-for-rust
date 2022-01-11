@@ -62,7 +62,7 @@ impl DocumentClient {
     pub async fn get_document<T>(
         &self,
         ctx: Context,
-        options: GetDocumentOptions<'_>,
+        options: GetDocumentOptions,
     ) -> crate::Result<GetDocumentResponse<T>>
     where
         T: DeserializeOwned,
@@ -85,7 +85,7 @@ impl DocumentClient {
         &self,
         ctx: Context,
         document: &T,
-        options: ReplaceDocumentOptions<'_>,
+        options: ReplaceDocumentOptions,
     ) -> crate::Result<ReplaceDocumentResponse> {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::PUT);
 
@@ -104,7 +104,7 @@ impl DocumentClient {
     pub async fn delete_document(
         &self,
         ctx: Context,
-        options: DeleteDocumentOptions<'_>,
+        options: DeleteDocumentOptions,
     ) -> crate::Result<DeleteDocumentResponse> {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::DELETE);
 

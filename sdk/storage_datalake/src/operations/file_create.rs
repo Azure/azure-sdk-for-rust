@@ -7,11 +7,11 @@ use std::convert::TryInto;
 use azure_core::{Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone, Default)]
-pub struct FileCreateOptions<'a> {
-    if_match_condition: Option<IfMatchCondition<'a>>,
+pub struct FileCreateOptions {
+    if_match_condition: Option<IfMatchCondition>,
 }
 
-impl<'a> FileCreateOptions<'a> {
+impl FileCreateOptions {
     pub fn new() -> Self {
         Self {
             if_match_condition: None,
@@ -19,7 +19,7 @@ impl<'a> FileCreateOptions<'a> {
     }
 
     setters! {
-        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
     }
 
     pub(crate) fn decorate_request(&self, req: &mut HttpRequest) -> Result<(), crate::Error> {
