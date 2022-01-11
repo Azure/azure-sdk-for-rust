@@ -174,7 +174,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // changes every time the document is updated. If the passed etag is different in
         // CosmosDB it means something else updated the document before us!
         let options = ReplaceDocumentOptions::new()
-            .if_match_condition(IfMatchCondition::Match(&document.etag));
+            .if_match_condition(IfMatchCondition::Match(document.etag));
         let replace_document_response = collection_client
             .clone()
             .into_document_client(doc.id.clone(), &doc.id)?

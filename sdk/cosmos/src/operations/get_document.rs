@@ -12,13 +12,13 @@ use http::{HeaderMap, StatusCode};
 use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
-pub struct GetDocumentOptions<'a> {
-    if_match_condition: Option<IfMatchCondition<'a>>,
-    if_modified_since: Option<IfModifiedSince<'a>>,
+pub struct GetDocumentOptions {
+    if_match_condition: Option<IfMatchCondition>,
+    if_modified_since: Option<IfModifiedSince>,
     consistency_level: Option<ConsistencyLevel>,
 }
 
-impl<'a> GetDocumentOptions<'a> {
+impl GetDocumentOptions {
     pub fn new() -> Self {
         Self {
             if_match_condition: None,
@@ -29,8 +29,8 @@ impl<'a> GetDocumentOptions<'a> {
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
-        if_match_condition: IfMatchCondition<'a> => Some(if_match_condition),
-        if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
+        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
     pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {

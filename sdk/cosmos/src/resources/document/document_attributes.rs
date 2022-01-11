@@ -59,8 +59,8 @@ impl std::convert::TryFrom<bytes::Bytes> for DocumentAttributes {
     }
 }
 
-impl<'a> std::convert::From<&'a DocumentAttributes> for IfMatchCondition<'a> {
+impl<'a> std::convert::From<&'a DocumentAttributes> for IfMatchCondition {
     fn from(document_attributes: &'a DocumentAttributes) -> Self {
-        IfMatchCondition::Match(&document_attributes.etag)
+        IfMatchCondition::Match(document_attributes.etag.clone())
     }
 }
