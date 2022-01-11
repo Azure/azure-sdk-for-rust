@@ -12,16 +12,16 @@ use chrono::{DateTime, Utc};
 use serde::Serialize;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceDocumentOptions<'a> {
+pub struct ReplaceDocumentOptions {
     partition_key: Option<String>,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince<'a>>,
+    if_modified_since: Option<IfModifiedSince>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TentativeWritesAllowance,
 }
 
-impl<'a> ReplaceDocumentOptions<'a> {
+impl ReplaceDocumentOptions {
     pub fn new() -> Self {
         Self {
             partition_key: None,
@@ -34,11 +34,11 @@ impl<'a> ReplaceDocumentOptions<'a> {
     }
 }
 
-impl<'a> ReplaceDocumentOptions<'a> {
+impl ReplaceDocumentOptions {
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
         allow_tentative_writes: TentativeWritesAllowance,
         indexing_directive: IndexingDirective,
     }

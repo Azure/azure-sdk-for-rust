@@ -13,7 +13,7 @@ use std::convert::TryInto;
 pub struct QueryDocumentsBuilder<'a, 'b> {
     collection_client: &'a CollectionClient,
     if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince<'b>>,
+    if_modified_since: Option<IfModifiedSince>,
     user_agent: Option<UserAgent<'b>>,
     activity_id: Option<ActivityId<'b>>,
     consistency_level: Option<ConsistencyLevel>,
@@ -52,7 +52,7 @@ impl<'a, 'b> QueryDocumentsBuilder<'a, 'b> {
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         continuation: &'b str => Some(Continuation::new(continuation)),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
-        if_modified_since: &'b DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
         query_cross_partition: bool => if query_cross_partition { QueryCrossPartition::Yes } else { QueryCrossPartition::No },
         parallelize_cross_partition_query: bool => if parallelize_cross_partition_query { ParallelizeCrossPartition::Yes } else { ParallelizeCrossPartition::No },
     }

@@ -5,15 +5,15 @@ use azure_core::{Request as HttpRequest, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct DeleteDocumentOptions<'a> {
+pub struct DeleteDocumentOptions {
     if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince<'a>>,
+    if_modified_since: Option<IfModifiedSince>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TentativeWritesAllowance,
 }
 
-impl<'a> DeleteDocumentOptions<'a> {
-    pub fn new() -> DeleteDocumentOptions<'a> {
+impl DeleteDocumentOptions {
+    pub fn new() -> DeleteDocumentOptions {
         Self {
             if_match_condition: None,
             if_modified_since: None,
@@ -26,7 +26,7 @@ impl<'a> DeleteDocumentOptions<'a> {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         allow_tentative_writes: TentativeWritesAllowance,
-        if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
     pub fn decorate_request(

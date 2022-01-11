@@ -13,17 +13,17 @@ use std::convert::TryFrom;
 use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone)]
-pub struct CreateDocumentOptions<'a> {
+pub struct CreateDocumentOptions {
     is_upsert: IsUpsert,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition>,
-    if_modified_since: Option<IfModifiedSince<'a>>,
+    if_modified_since: Option<IfModifiedSince>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TentativeWritesAllowance,
     partition_key: Option<String>,
 }
 
-impl<'a> CreateDocumentOptions<'a> {
+impl CreateDocumentOptions {
     pub fn new() -> Self {
         Self {
             is_upsert: IsUpsert::No,
@@ -39,7 +39,7 @@ impl<'a> CreateDocumentOptions<'a> {
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
-        if_modified_since: &'a DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
         allow_tentative_writes: TentativeWritesAllowance,
         is_upsert: bool => if is_upsert { IsUpsert::Yes } else { IsUpsert::No },
         indexing_directive: IndexingDirective,
