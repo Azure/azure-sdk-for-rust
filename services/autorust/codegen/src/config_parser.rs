@@ -1,6 +1,30 @@
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error("Received AutoRest configuration file did not contain an expected extension (e.g. '.md'): '{0}'")]
+    ExpectedMd(PathBuf),
+    #[error("Error reading the received CommonMark configuration file")]
+    ReadingConfig,
+    #[error("Configuration heading did not contain a tag.")]
+    NoTagInHeading,
+    #[error("Expected configuration tag to contain a YAML code block.")]
+    ExpectedYamlCodeBlock,
+    #[error("Error reading configuration block yaml")]
+    ConfigurationBlockYaml,
+    #[error("No `## Configuration` heading in the AutoRest literate configuration file")]
+    NoConfigurationHeading,
+    #[error("Received AutoRest configuration extension not supported: '{extension}' (in configuration file '{config_file}')")]
+    NotSupportedExtension { extension: String, config_file: PathBuf },
+    #[error("Markdown ended unexpectedly after configuration tag heading")]
+    MarkdownEnded,
+    #[error("Code block info did not contain UTF-8 characters.")]
+    CodeBlockNotUtf8,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
     #[serde(rename(deserialize = "input-file"))]
@@ -19,34 +43,28 @@ impl Configuration {
 /// Receives the AutoRest configuration file and parses it to its various configurations (by tags/API versions),
 /// according to its extension.
 /// e.g. for "path/to/config.md", it will get parsed as CommonMark [Literate Configuration](http://azure.github.io/autorest/user/literate-file-formats/configuration.html).
-pub fn parse_configurations_from_autorest_config_file(config_file: &Path) -> Vec<Configuration> {
-    let extension = config_file.extension().unwrap_or_else(|| {
-        panic!(
-            "Received AutoRest configuration file did not contain an expected extension (e.g. '.md'): '{0}'",
-            config_file.to_str().unwrap()
-        )
-    });
-    let extension = extension.to_str().unwrap();
+pub fn parse_configurations_from_autorest_config_file(config_file: &Path) -> Result<Vec<Configuration>> {
+    let extension = config_file
+        .extension()
+        .ok_or_else(|| Error::ExpectedMd(config_file.to_path_buf()))?;
+    let extension = extension.to_str().ok_or_else(|| Error::ExpectedMd(config_file.to_path_buf()))?;
     match extension.to_lowercase().as_str() {
         "md" => {
             use literate_config::*;
-
-            let cmark_content =
-                std::fs::read_to_string(config_file).expect("Unexpected error when reading the received CommonMark configuration file");
-            parse_configurations_from_cmark_config(&cmark_content)
+            let cmark_content = std::fs::read_to_string(config_file).map_err(|_| Error::ReadingConfig)?;
+            Ok(parse_configurations_from_cmark_config(&cmark_content)?)
         }
-        _ => panic!(
-            "Received AutoRest configuration extension not supported: '{0}' (in configuration file '{1}')",
-            extension,
-            config_file.to_str().unwrap()
-        ),
+        _ => Err(Error::NotSupportedExtension {
+            extension: extension.to_owned(),
+            config_file: config_file.to_path_buf(),
+        }),
     }
 }
 
 mod literate_config {
     use super::*;
     use comrak::{
-        nodes::{AstNode, NodeCodeBlock, NodeHeading, NodeValue},
+        nodes::{AstNode, NodeCode, NodeCodeBlock, NodeValue},
         parse_document, Arena, ComrakOptions,
     };
 
@@ -59,13 +77,12 @@ mod literate_config {
 
     /// Receives the configurations for all tags/versions from the received
     /// [Literate Configuration](http://azure.github.io/autorest/user/literate-file-formats/configuration.html) [CommonMark](https://commonmark.org/) file.
-    pub(crate) fn parse_configurations_from_cmark_config(cmark_content: &str) -> Vec<Configuration> {
+    pub(crate) fn parse_configurations_from_cmark_config(cmark_content: &str) -> Result<Vec<Configuration>> {
         let arena = Arena::new();
         let root = parse_document(&arena, cmark_content, &ComrakOptions::default());
 
         // Get the AST node corresponding with "## Configuration".
-        let configuration_heading_node = get_configuration_section_heading_node(root)
-            .expect("No `## Configuration` heading in the AutoRest literate configuration file");
+        let configuration_heading_node = get_configuration_section_heading_node(root).ok_or(Error::NoConfigurationHeading)?;
 
         let mut configurations = Vec::new();
 
@@ -73,77 +90,93 @@ mod literate_config {
         // in search of level-3 headings representing tags (e.g. "### Tag: package-2020-01") to parse the configuration from.
         let mut current_node = configuration_heading_node.next_sibling();
         while let Some(node) = current_node {
-            if is_configuration_tag_heading_node(node) {
+            if let Some(tag) = get_tag(node) {
                 // Extract the configuration from the first node inside the tag heading ("Tag: ..."),
                 // by looking at the first YAML code block.
-                let code_block = extract_configuration_code_block_node(node).unwrap_or_else(|| {
-                    panic!(
-                        "Expected configuration tag ('{0}'...) to contain a YAML code block.",
-                        LITERATE_CONFIGURATION_TAG_PREFIX
-                    )
-                });
-                let mut configuration: Configuration = serde_yaml::from_str(&code_block).expect("TODO(PR)");
-                configuration.tag = extract_configuration_tag_from_heading_node(node);
+                let code_block = extract_configuration_code_block_node(node)?.ok_or(Error::ExpectedYamlCodeBlock)?;
+                let mut configuration: Configuration = serde_yaml::from_str(&code_block).map_err(|_| Error::ConfigurationBlockYaml)?;
+                configuration.tag = tag;
                 configurations.push(configuration);
-            } else {
-                let node_data = node.data.borrow();
-                if matches!(node_data.value, NodeValue::Heading(NodeHeading { level, .. }) if level == 2) {
-                    // Encountered another heading of level 2 - stop traversal.
-                    break;
-                }
+            } else if is_header_at_level(node, 2) {
+                break;
             }
             current_node = node.next_sibling();
         }
 
-        configurations
+        Ok(configurations)
+    }
+
+    // based on https://github.com/kivikakk/comrak/blob/main/examples/headers.rs
+    fn is_header_at_level<'a>(node: &'a AstNode<'a>, level: u32) -> bool {
+        match node.data.clone().into_inner().value {
+            NodeValue::Heading(heading) => heading.level == level,
+            _ => false,
+        }
+    }
+
+    // from https://github.com/kivikakk/comrak/blob/main/examples/headers.rs
+    fn collect_text<'a>(node: &'a AstNode<'a>, output: &mut Vec<u8>) {
+        match node.data.borrow().value {
+            NodeValue::Text(ref literal) | NodeValue::Code(NodeCode { ref literal, .. }) => output.extend_from_slice(literal),
+            NodeValue::LineBreak | NodeValue::SoftBreak => output.push(b' '),
+            _ => {
+                for n in node.children() {
+                    collect_text(n, output);
+                }
+            }
+        }
     }
 
     /// Returns the first "## Configuration" AST Node.
     /// There should only be one per Literate Configuration file.
     fn get_configuration_section_heading_node<'a>(root: &'a AstNode<'a>) -> Option<&'a AstNode<'a>> {
         root.children().find(|node| {
-            let node_data = node.data.borrow();
-            matches!(node_data.value, NodeValue::Heading(NodeHeading { level, .. })
-                if level == 2 && std::str::from_utf8(&node_data.content).unwrap_or("").trim() == LITERATE_CONFIGURATION_HEADING_TEXT)
+            if is_header_at_level(node, 2) {
+                let mut text = Vec::new();
+                collect_text(node, &mut text);
+                if let Ok(text) = std::str::from_utf8(&text) {
+                    text.trim() == LITERATE_CONFIGURATION_HEADING_TEXT
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
         })
     }
 
-    /// Returns whether the received AST node represents a heading of a configuration for a tag.
+    /// Returns the node tag if it is one.
     /// (e.g. "### Tag: package-2020-01")
-    fn is_configuration_tag_heading_node<'a>(node: &'a AstNode<'a>) -> bool {
-        let node_data = node.data.borrow();
-        matches!(node_data.value, NodeValue::Heading(NodeHeading { level, .. })
-                if level == 3 && std::str::from_utf8(&node_data.content).unwrap_or("").starts_with(LITERATE_CONFIGURATION_TAG_PREFIX))
-    }
-
-    /// Returns the tag (API version) from the AST node which represents the heading of a configuration for a tag
-    /// (e.g. ""### Tag: package-2020-01"")
-    fn extract_configuration_tag_from_heading_node<'a>(node: &'a AstNode<'a>) -> String {
-        let node_data = node.data.borrow();
-        let heading = std::str::from_utf8(&node_data.content).unwrap_or("");
-        let tag_start_index = heading
-            .find(LITERATE_CONFIGURATION_TAG_PREFIX)
-            .expect("Configuration heading did not contain a tag.");
-        heading[tag_start_index + LITERATE_CONFIGURATION_TAG_PREFIX.len()..].to_owned()
+    fn get_tag<'a>(node: &'a AstNode<'a>) -> Option<String> {
+        if is_header_at_level(node, 3) {
+            let mut text = Vec::new();
+            collect_text(node, &mut text);
+            if let Ok(text) = std::str::from_utf8(&text) {
+                text.find(LITERATE_CONFIGURATION_TAG_PREFIX)
+                    .map(|start| text[start + LITERATE_CONFIGURATION_TAG_PREFIX.len()..].to_owned())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     /// Extracts the configuration code block for the received node.
-    fn extract_configuration_code_block_node<'a>(configuration_tag_heading_node: &'a AstNode<'a>) -> Option<String> {
-        let mut current_node = configuration_tag_heading_node
-            .next_sibling()
-            .expect("Markdown configuration ended unexpectedly after configuration tag heading");
+    fn extract_configuration_code_block_node<'a>(configuration_tag_heading_node: &'a AstNode<'a>) -> Result<Option<String>> {
+        let mut current_node = configuration_tag_heading_node.next_sibling().ok_or(Error::MarkdownEnded)?;
         loop {
             if let NodeValue::CodeBlock(NodeCodeBlock { info, literal, fenced, .. }) = &current_node.data.borrow().value {
                 if !fenced {
                     continue;
                 }
-                let info = std::str::from_utf8(info).expect("Code block info did not contain UTF-8 characters.");
+                let info = std::str::from_utf8(info).map_err(|_| Error::CodeBlockNotUtf8)?;
                 if info.trim_start().to_lowercase().starts_with("yaml") {
-                    let literal = std::str::from_utf8(literal).expect("Code block content did not contain UTF-8 characters.");
-                    return Some(literal.to_owned());
+                    let literal = std::str::from_utf8(literal).map_err(|_| Error::CodeBlockNotUtf8)?;
+                    return Ok(Some(literal.to_owned()));
                 }
             }
-            current_node = current_node.next_sibling()?;
+            current_node = current_node.next_sibling().ok_or(Error::MarkdownEnded)?;
         }
     }
 }
@@ -189,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    fn literate_config_should_parse_one_configuration() {
+    fn literate_config_should_parse_one_configuration() -> Result<()> {
         let input = "
 ## Configuration
 
@@ -206,16 +239,17 @@ input-file:
 - Microsoft.Storage/stable/2019-06-01/table.json
 ```
 ";
-        let configurations = parse_configurations_from_cmark_config(input);
+        let configurations = parse_configurations_from_cmark_config(input)?;
         assert_eq!(1, configurations.len());
         assert_eq!("package-2019-06", configurations[0].tag);
         assert_eq!(5, configurations[0].input_files.len());
         assert_eq!("Microsoft.Storage/stable/2019-06-01/storage.json", configurations[0].input_files[0]);
         assert_eq!("Microsoft.Storage/stable/2019-06-01/blob.json", configurations[0].input_files[1]);
+        Ok(())
     }
 
     #[test]
-    fn literate_config_should_parse_multiple_configuration() {
+    fn literate_config_should_parse_multiple_configuration() -> Result<()> {
         let input = "
 ## Configuration
 
@@ -241,7 +275,7 @@ input-file:
 - Microsoft.Storage/preview/2015-05-01-preview/storage.json
 ```
 ";
-        let configurations = parse_configurations_from_cmark_config(input);
+        let configurations = parse_configurations_from_cmark_config(input)?;
         assert_eq!(2, configurations.len());
         assert_eq!("package-2019-06", configurations[0].tag);
         assert_eq!(5, configurations[0].input_files.len());
@@ -254,11 +288,11 @@ input-file:
             "Microsoft.Storage/preview/2015-05-01-preview/storage.json",
             configurations[1].input_files[0]
         );
+        Ok(())
     }
 
     #[test]
-    #[should_panic]
-    fn literate_config_should_fail_for_invalid_heading() {
+    fn literate_config_should_fail_for_invalid_heading() -> Result<()> {
         let invalid_input = "
 ## INVALID_HEADING
 
@@ -271,11 +305,15 @@ input-file:
 - Microsoft.Storage/stable/2019-06-01/storage.json
 ```
 ";
-        parse_configurations_from_cmark_config(invalid_input);
+        assert!(matches!(
+            parse_configurations_from_cmark_config(invalid_input),
+            Err(Error::NoConfigurationHeading)
+        ));
+        Ok(())
     }
 
     #[test]
-    fn should_ignore_invalid_tag_headings() {
+    fn should_ignore_invalid_tag_headings() -> Result<()> {
         let invalid_input = "
 ## Configuration
 
@@ -288,11 +326,12 @@ input-file:
 - Microsoft.Storage/stable/2019-06-01/storage.json
 ```
 ";
-        assert!(parse_configurations_from_cmark_config(invalid_input).is_empty());
+        assert!(parse_configurations_from_cmark_config(invalid_input)?.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn literate_config_should_ignore_code_blocks_after_configuration_heading() {
+    fn literate_config_should_ignore_code_blocks_after_configuration_heading() -> Result<()> {
         let input = "
 ## Configuration
 
@@ -317,8 +356,9 @@ input-file:
 ```
 ";
 
-        let configurations = parse_configurations_from_cmark_config(input);
+        let configurations = parse_configurations_from_cmark_config(input)?;
         assert_eq!(1, configurations.len());
         assert_eq!("package-2019-06", configurations[0].tag);
+        Ok(())
     }
 }

@@ -166,28 +166,22 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error(transparent)]
+    CodegenError(#[from] autorust_codegen::Error),
     #[error("file name was not utf-8")]
     FileNameNotUtf8Error {},
     #[error("IoError")]
     IoError { source: std::io::Error },
     #[error("PathError")]
     PathError { source: path::Error },
-    #[error("CodegenError")]
-    CodegenError { source: autorust_codegen::Error },
     #[error("CargoTomlError")]
     CargoTomlError { source: cargo_toml::Error },
     #[error("LibRsError")]
     LibRsError { source: lib_rs::Error },
-    #[error("GetSpecFoldersError")]
-    GetSpecFoldersError { source: autorust_codegen::Error },
 }
 
 fn main() -> Result<()> {
-    for (i, spec) in get_svc_readmes()
-        .map_err(|source| Error::GetSpecFoldersError { source })?
-        .iter()
-        .enumerate()
-    {
+    for (i, spec) in get_svc_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {
                 println!("{} {}", i + 1, spec.spec());
@@ -204,7 +198,7 @@ fn main() -> Result<()> {
 fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
     let has_no_configs = spec
-        .configs()
+        .configs()?
         .iter()
         .all(|x| skip_service_tags.contains(&(spec.spec(), x.tag.as_str())));
     if has_no_configs {
@@ -246,7 +240,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         });
     }
 
-    for config in spec.configs() {
+    for config in spec.configs()? {
         let tag = config.tag.as_str();
         if skip_service_tags.contains(&(spec.spec(), tag)) {
             // println!("  skipping {}", tag);
@@ -278,8 +272,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             invalid_types: invalid_types.clone(),
             print_writing_file: false,
             ..Config::default()
-        })
-        .map_err(|source| Error::CodegenError { source })?;
+        })?;
     }
     if feature_mod_names.is_empty() {
         return Ok(());

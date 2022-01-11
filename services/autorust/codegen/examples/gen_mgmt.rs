@@ -291,28 +291,22 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error(transparent)]
+    CodegenError(#[from] autorust_codegen::Error),
     #[error("file name was not utf-8")]
     FileNameNotUtf8Error {},
     #[error("IoError")]
     IoError { source: std::io::Error },
     #[error("PathError")]
     PathError { source: path::Error },
-    #[error("CodegenError")]
-    CodegenError { source: autorust_codegen::Error },
     #[error("CargoTomlError")]
     CargoTomlError { source: cargo_toml::Error },
     #[error("LibRsError")]
     LibRsError { source: lib_rs::Error },
-    #[error("GetSpecFoldersError")]
-    GetSpecFoldersError { source: autorust_codegen::Error },
 }
 
 fn main() -> Result<()> {
-    for (i, spec) in get_mgmt_readmes()
-        .map_err(|source| Error::GetSpecFoldersError { source })?
-        .iter()
-        .enumerate()
-    {
+    for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {
                 println!("{} {}", i + 1, spec.spec());
@@ -357,7 +351,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         });
     }
 
-    for config in spec.configs() {
+    for config in spec.configs()? {
         let tag = config.tag.as_str();
         if skip_service_tags.contains(&(spec.spec(), tag)) {
             println!("  skipping {}", tag);
@@ -389,8 +383,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             optional_properties: optional_properties.clone(),
             print_writing_file: false,
             ..Config::default()
-        })
-        .map_err(|source| Error::CodegenError { source })?;
+        })?;
     }
     if feature_mod_names.is_empty() {
         return Ok(());
