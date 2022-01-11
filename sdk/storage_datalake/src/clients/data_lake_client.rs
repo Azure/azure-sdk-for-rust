@@ -1,7 +1,8 @@
 use crate::authorization_policy::AuthorizationPolicy;
 use crate::clients::FileSystemClient;
-use crate::requests::*;
-use azure_core::{ClientOptions, HttpClient, Pipeline};
+use crate::operations::*;
+use azure_core::{ClientOptions, Context, HttpClient, Pipeline, Result};
+use azure_storage::clients::ServiceType;
 use azure_storage::core::prelude::*;
 use bytes::Bytes;
 use http::method::Method;
@@ -13,21 +14,20 @@ const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 #[derive(Debug, Clone)]
 pub struct DataLakeClient {
     pipeline: Pipeline,
-    storage_client: Arc<StorageClient>,
     #[allow(unused)]
     account: String,
     custom_dns_suffix: Option<String>,
     url: String, // TODO: Use CloudLocation similar to CosmosClient
+    pub(crate) context: Context,
 }
 
 impl DataLakeClient {
     pub(crate) fn new_with_options(
-        storage_client: Arc<StorageClient>,
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,
         options: ClientOptions,
-    ) -> Self {
+    ) -> Result<Self> {
         // we precalculate the url once in the constructor
         // so we do not have to do it at every request.
         let url = format!(
@@ -56,23 +56,24 @@ impl DataLakeClient {
             per_retry_policies,
         );
 
-        Self {
+        let mut context = Context::new();
+        context.insert(ServiceType::Blob);
+
+        Ok(Self {
             pipeline,
-            storage_client,
             account,
             custom_dns_suffix,
             url,
-        }
+            context,
+        })
     }
 
     pub fn new(
-        storage_client: Arc<StorageClient>,
         account: String,
         bearer_token: String,
         custom_dns_suffix: Option<String>,
-    ) -> DataLakeClient {
+    ) -> Result<Self> {
         Self::new_with_options(
-            storage_client,
             account,
             bearer_token,
             custom_dns_suffix,
@@ -100,34 +101,56 @@ impl DataLakeClient {
         self.custom_dns_suffix.as_deref()
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.storage_client.storage_account_client().http_client()
-    }
-
     pub(crate) fn url(&self) -> &str {
         &self.url
     }
 
-    pub fn list(&self) -> ListFileSystemsBuilder {
-        ListFileSystemsBuilder::new(self)
+    pub fn list_file_systems(&self) -> ListFileSystems {
+        ListFileSystems::new(self.clone(), Some(self.context.clone()))
     }
 
     pub fn into_file_system_client(self, file_system_name: String) -> FileSystemClient {
         FileSystemClient::new(self, file_system_name)
     }
 
-    pub(crate) fn prepare_request(
+    // pub(crate) fn prepare_request(
+    //     &self,
+    //     url: &str,
+    //     method: &Method,
+    //     http_header_adder: &dyn Fn(Builder) -> Builder,
+    //     request_body: Option<Bytes>,
+    // ) -> crate::Result<(Request<Bytes>, url::Url)> {
+    //     self.storage_client
+    //         .prepare_request(url, method, http_header_adder, request_body)
+    // }
+
+    /// Prepares' an `azure_core::Request`. This function will
+    /// add the cloud location to the URI suffix and generate
+    /// a Request with the specified HTTP Method.
+    /// It will also set the body to an empty Bytes instance.
+    /// *Note*: This call does not handle authorization as
+    /// it will be done by the `AuthorizationPolicy`.
+    ///
+    /// Note: Eventually this method will replace `prepare_request` fully.
+    pub(crate) fn prepare_request_pipeline(
         &self,
-        url: &str,
-        method: &Method,
-        http_header_adder: &dyn Fn(Builder) -> Builder,
-        request_body: Option<Bytes>,
-    ) -> crate::Result<(Request<Bytes>, url::Url)> {
-        self.storage_client
-            .prepare_request(url, method, http_header_adder, request_body)
+        uri: &str,
+        http_method: http::Method,
+    ) -> azure_core::Request {
+        // let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
+        Builder::new()
+            .method(http_method)
+            .uri(uri)
+            .body(bytes::Bytes::new())
+            .unwrap()
+            .into()
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline {
+    pub fn pipeline(&self) -> &Pipeline {
         &self.pipeline
+    }
+
+    pub fn http_client(&self) -> &dyn HttpClient {
+        self.pipeline.http_client()
     }
 }

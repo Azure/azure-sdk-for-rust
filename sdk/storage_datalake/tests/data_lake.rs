@@ -28,8 +28,8 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     let create_fs_response = file_system_client
         .create()
-        .properties(&fs_properties)
-        .execute()
+        .properties(fs_properties.clone())
+        .into_future()
         .await?;
     assert!(
         create_fs_response.namespace_enabled,
@@ -38,9 +38,9 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     let mut stream = Box::pin(
         data_lake_client
-            .list()
+            .list_file_systems()
             .max_results(NonZeroU32::new(3).unwrap())
-            .stream(),
+            .into_stream(),
     );
     let mut found = false;
     while let Some(list_fs_response) = stream.next().await {
@@ -53,7 +53,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     }
     assert!(found, "did not find created file system");
 
-    let get_fs_props_response = file_system_client.get_properties().execute().await?;
+    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
     let properties_hashmap = get_fs_props_response.properties.hash_map();
     let added_via_option = properties_hashmap.get("AddedVia");
     assert!(
@@ -68,11 +68,11 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     fs_properties.insert("ModifiedBy", "Iota");
     file_system_client
-        .set_properties(Some(&fs_properties))
-        .execute()
+        .set_properties(Some(fs_properties))
+        .into_future()
         .await?;
 
-    let get_fs_props_response = file_system_client.get_properties().execute().await?;
+    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
     let properties_hashmap = get_fs_props_response.properties.hash_map();
     let modified_by_option = properties_hashmap.get("ModifiedBy");
     assert!(
@@ -85,7 +85,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
         "did not find expected property value for: ModifiedBy"
     );
 
-    file_system_client.delete().execute().await?;
+    file_system_client.delete().into_future().await?;
 
     Ok(())
 }
@@ -102,7 +102,7 @@ async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Err
         .clone()
         .into_file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().execute().await?;
+    let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -127,7 +127,7 @@ async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Err
         .delete_file(Context::default(), file_path, FileDeleteOptions::default())
         .await?;
 
-    file_system_client.delete().execute().await?;
+    file_system_client.delete().into_future().await?;
 
     Ok(())
 }
@@ -144,7 +144,7 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
         .clone()
         .into_file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().execute().await?;
+    let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -178,7 +178,7 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
         )
         .await?;
 
-    file_system_client.delete().execute().await?;
+    file_system_client.delete().into_future().await?;
 
     Ok(())
 }
@@ -195,7 +195,7 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
         .clone()
         .into_file_system_client(file_system_name.to_string());
 
-    let create_fs_response = file_system_client.create().execute().await?;
+    let create_fs_response = file_system_client.create().into_future().await?;
     assert!(
         create_fs_response.namespace_enabled,
         "namespace should be enabled"
@@ -226,7 +226,7 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
         )
         .await?;
 
-    file_system_client.delete().execute().await?;
+    file_system_client.delete().into_future().await?;
 
     Ok(())
 }
@@ -237,11 +237,6 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
     let master_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let http_client = azure_core::new_http_client();
-
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account, &master_key);
-
     let resource_id = "https://storage.azure.com/";
     println!("getting bearer token for '{}'...", resource_id);
     let bearer_token = DefaultAzureCredential::default()
@@ -249,12 +244,5 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
         .await?;
     println!("token expires on {}\n", bearer_token.expires_on);
 
-    let storage_client = storage_account_client.as_storage_client();
-
-    Ok(DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
-    ))
+    Ok(DataLakeClient::new(account, bearer_token.token.secret().to_owned(), None).unwrap())
 }

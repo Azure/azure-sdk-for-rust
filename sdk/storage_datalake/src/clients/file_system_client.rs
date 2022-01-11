@@ -1,9 +1,8 @@
 use crate::operations::*;
-use crate::requests::*;
 use crate::{clients::DataLakeClient, Properties};
 use azure_core::prelude::IfMatchCondition;
+use azure_core::Context;
 use azure_core::Pipeline;
-use azure_core::{Context, HttpClient};
 use bytes::Bytes;
 use url::Url;
 
@@ -12,6 +11,7 @@ pub struct FileSystemClient {
     data_lake_client: DataLakeClient,
     name: String,
     url: Url,
+    pub(crate) context: Context,
 }
 
 impl FileSystemClient {
@@ -22,30 +22,30 @@ impl FileSystemClient {
             .unwrap()
             .push(&name);
 
+        let context = data_lake_client.context.clone();
+
         Self {
             data_lake_client,
             name,
             url,
+            context,
         }
     }
 
     pub fn create(&self) -> CreateFileSystemBuilder {
-        CreateFileSystemBuilder::new(self)
+        CreateFileSystemBuilder::new(self.clone())
     }
 
     pub fn delete(&self) -> DeleteFileSystemBuilder {
-        DeleteFileSystemBuilder::new(self)
+        DeleteFileSystemBuilder::new(self.clone())
     }
 
     pub fn get_properties(&self) -> GetFileSystemPropertiesBuilder {
-        GetFileSystemPropertiesBuilder::new(self)
+        GetFileSystemPropertiesBuilder::new(self.clone())
     }
 
-    pub fn set_properties<'a>(
-        &'a self,
-        properties: Option<&'a Properties<'a, 'a>>,
-    ) -> SetFileSystemPropertiesBuilder {
-        SetFileSystemPropertiesBuilder::new(self, properties)
+    pub fn set_properties(&self, properties: Option<Properties>) -> SetFileSystemPropertiesBuilder {
+        SetFileSystemPropertiesBuilder::new(self.clone(), properties)
     }
 
     pub async fn create_file(
@@ -157,24 +157,21 @@ impl FileSystemClient {
         Ok(FileFlushResponse::try_from(response).await?)
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.data_lake_client.http_client()
-    }
-
     pub(crate) fn url(&self) -> &Url {
         &self.url
     }
 
-    /// Note: This is part of the old (non-pipeline) architecture. Eventually this method will disappear.
-    pub(crate) fn prepare_request(
+    pub(crate) fn prepare_request_pipeline(
         &self,
-        url: &str,
-        method: &http::method::Method,
-        http_header_adder: &dyn Fn(http::request::Builder) -> http::request::Builder,
-        request_body: Option<Bytes>,
-    ) -> crate::Result<(http::request::Request<Bytes>, url::Url)> {
-        self.data_lake_client
-            .prepare_request(url, method, http_header_adder, request_body)
+        uri: &str,
+        http_method: http::Method,
+    ) -> azure_core::Request {
+        http::request::Builder::new()
+            .method(http_method)
+            .uri(uri)
+            .body(bytes::Bytes::new())
+            .unwrap()
+            .into()
     }
 
     pub(crate) fn prepare_file_create_request(&self, file_path: &str) -> azure_core::Request {

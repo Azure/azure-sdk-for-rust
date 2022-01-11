@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_file_system_client(file_system_name.to_string());
 
     println!("creating file system '{}'...", &file_system_name);
-    let create_fs_response = file_system_client.create().execute().await?;
+    let create_fs_response = file_system_client.create().into_future().await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path1 = "some/path/example-file1.txt";
@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("rename file response == {:?}\n", rename_file_response);
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().execute().await?;
+    let delete_fs_response = file_system_client.delete().into_future().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())
@@ -82,12 +82,5 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
         .await?;
     println!("token expires on {}\n", bearer_token.expires_on);
 
-    let storage_client = storage_account_client.as_storage_client();
-
-    Ok(DataLakeClient::new(
-        storage_client,
-        account,
-        bearer_token.token.secret().to_owned(),
-        None,
-    ))
+    Ok(DataLakeClient::new(account, bearer_token.token.secret().to_owned(), None).unwrap())
 }
