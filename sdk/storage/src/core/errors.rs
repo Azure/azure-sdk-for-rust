@@ -87,6 +87,12 @@ impl From<azure_core::StreamError> for Error {
     }
 }
 
+impl From<azure_core::StreamError> for Error {
+    fn from(error: azure_core::StreamError) -> Self {
+        Self::CoreError(azure_core::Error::StreamError(error))
+    }
+}
+
 #[non_exhaustive]
 #[derive(Debug, PartialEq, thiserror::Error)]
 pub enum AzurePathParseError {
