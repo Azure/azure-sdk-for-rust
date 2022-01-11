@@ -1,4 +1,5 @@
 use azure_core::{Context, Policy, PolicyResult, Request, Response};
+use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use http::{HeaderMap, HeaderValue, Method};
 use ring::hmac;
 use std::sync::Arc;
@@ -6,17 +7,15 @@ use std::sync::Arc;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SharedKeyAuthorizationPolicy {
     base_url: String,
-    shared_key: String,
-    storage_account_name: String,
+    credential: StorageSharedKeyCredential,
 }
 
 impl SharedKeyAuthorizationPolicy {
     #[allow(unused)]
-    pub(crate) fn new(base_url: String, shared_key: String, storage_account_name: String) -> Self {
+    pub(crate) fn new(base_url: String, credential: StorageSharedKeyCredential) -> Self {
         Self {
             base_url,
-            shared_key,
-            storage_account_name,
+            credential,
         }
     }
 }
@@ -59,8 +58,8 @@ impl Policy for SharedKeyAuthorizationPolicy {
             request.headers(),
             &url,
             &request.method(),
-            &self.storage_account_name,
-            &self.shared_key,
+            &self.credential.account_name,
+            &self.credential.account_key,
         );
 
         request
