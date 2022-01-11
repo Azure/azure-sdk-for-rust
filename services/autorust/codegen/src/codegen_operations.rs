@@ -9,17 +9,17 @@ use crate::{
     CodeGen,
 };
 use autorust_openapi::{CollectionFormat, ParameterType, Response};
-use heck::CamelCase;
-use heck::SnakeCase;
+use heck::ToPascalCase;
+use heck::ToSnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::{BTreeSet, HashSet};
 
 fn error_variant(operation: &WebOperationGen) -> Result<TokenStream, Error> {
-    let function = operation.rust_function_name().to_camel_case();
+    let function = operation.rust_function_name().to_pascal_case();
     if let Some(module) = operation.rust_module_name() {
-        let module = module.to_camel_case();
+        let module = module.to_pascal_case();
         ident(&format!("{}_{}", module, function)).map_err(Error::EnumVariantName)
     } else {
         ident(&function).map_err(Error::ModuleName)
