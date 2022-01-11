@@ -166,7 +166,7 @@ fn canonicalize_header(h: &HeaderMap) -> String {
 }
 
 fn canonicalized_resource(account: &str, u: &url::Url) -> String {
-    let mut can_res: String = String::new();
+    let mut can_res = String::new();
     can_res += "/";
     can_res += account;
 
