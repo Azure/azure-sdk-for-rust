@@ -7,12 +7,13 @@ extern crate azure_core;
 
 pub use azure_storage::{Error, Result};
 
-mod authorization_policy;
+mod bearer_token_authorization_policy;
 pub mod clients;
 mod file_system;
 pub mod operations;
 pub mod requests;
 pub mod responses;
+mod shared_key_authorization_policy;
 pub use file_system::FileSystem;
 mod properties;
 mod util;
