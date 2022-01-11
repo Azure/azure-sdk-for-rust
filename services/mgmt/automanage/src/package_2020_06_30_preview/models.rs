@@ -9,7 +9,7 @@ pub struct Account {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<AccountIdentity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -26,26 +26,26 @@ pub mod account_identity {
         None,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Account>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountUpdate {
     #[serde(flatten)]
     pub update_resource: UpdateResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<AccountIdentity>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignment {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfileAssignmentProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignmentCompliance {
     #[serde(rename = "updateStatus", default, skip_serializing_if = "Option::is_none")]
     pub update_status: Option<configuration_profile_assignment_compliance::UpdateStatus>,
@@ -59,12 +59,12 @@ pub mod configuration_profile_assignment_compliance {
         Created,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignmentList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationProfileAssignment>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignmentProperties {
     #[serde(rename = "configurationProfile", default, skip_serializing_if = "Option::is_none")]
     pub configuration_profile: Option<configuration_profile_assignment_properties::ConfigurationProfile>,
@@ -102,7 +102,7 @@ pub struct ConfigurationProfilePreference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfilePreferenceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfilePreferenceAntiMalware {
     #[serde(rename = "enableRealTimeProtection", default, skip_serializing_if = "Option::is_none")]
     pub enable_real_time_protection: Option<configuration_profile_preference_anti_malware::EnableRealTimeProtection>,
@@ -135,26 +135,26 @@ pub mod configuration_profile_preference_anti_malware {
         Full,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfilePreferenceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationProfilePreference>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfilePreferenceProperties {
     #[serde(rename = "vmBackup", default, skip_serializing_if = "Option::is_none")]
     pub vm_backup: Option<ConfigurationProfilePreferenceVmBackup>,
     #[serde(rename = "antiMalware", default, skip_serializing_if = "Option::is_none")]
     pub anti_malware: Option<ConfigurationProfilePreferenceAntiMalware>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfilePreferenceUpdate {
     #[serde(flatten)]
     pub update_resource: UpdateResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfilePreferenceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfilePreferenceVmBackup {
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
@@ -165,14 +165,14 @@ pub struct ConfigurationProfilePreferenceVmBackup {
     #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
     pub schedule_policy: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -185,12 +185,12 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -203,7 +203,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -214,23 +214,23 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
         pub status_code: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -247,7 +247,7 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

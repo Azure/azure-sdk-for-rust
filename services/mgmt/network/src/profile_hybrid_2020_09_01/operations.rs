@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -380,7 +380,7 @@ pub enum Error {
     Operations_List(#[from] operations::list::Error),
 }
 pub mod virtual_network_gateways {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -629,7 +629,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -675,7 +675,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -701,7 +701,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::VirtualNetworkGateway),
@@ -753,7 +753,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -786,7 +786,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -833,7 +833,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -860,7 +860,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -912,7 +912,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -935,7 +935,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -981,7 +981,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1007,7 +1007,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod list_connections {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1056,7 +1056,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1082,7 +1082,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod reset {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1138,7 +1138,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(gateway_vip) = &self.gateway_vip {
                         url.query_pairs_mut().append_pair("gatewayVip", gateway_vip);
                     }
@@ -1169,7 +1169,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod reset_vpn_client_shared_key {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -1214,7 +1214,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -1237,7 +1237,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod generatevpnclientpackage {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(String),
@@ -1283,7 +1283,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -1311,7 +1311,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod generate_vpn_profile {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(String),
@@ -1363,7 +1363,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -1391,7 +1391,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_vpn_profile_package_url {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(String),
@@ -1436,7 +1436,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -1464,7 +1464,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_bgp_peer_status {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::BgpPeerStatusListResult),
@@ -1520,7 +1520,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(peer) = &self.peer {
                         url.query_pairs_mut().append_pair("peer", peer);
                     }
@@ -1551,7 +1551,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod supported_vpn_devices {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1597,7 +1597,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -1624,7 +1624,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_learned_routes {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::GatewayRouteListResult),
@@ -1675,7 +1675,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -1703,7 +1703,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_advertised_routes {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::GatewayRouteListResult),
@@ -1755,7 +1755,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let peer = &self.peer;
                     url.query_pairs_mut().append_pair("peer", peer);
                     let req_body = azure_core::EMPTY_BODY;
@@ -1785,7 +1785,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod set_vpnclient_ipsec_parameters {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -1831,7 +1831,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.vpnclient_ipsec_params).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -1859,7 +1859,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod get_vpnclient_ipsec_parameters {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1899,7 +1899,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -1926,7 +1926,7 @@ pub mod virtual_network_gateways {
         }
     }
     pub mod vpn_device_configuration_script {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -1973,7 +1973,7 @@ pub mod virtual_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -2001,7 +2001,7 @@ pub mod virtual_network_gateways {
     }
 }
 pub mod virtual_network_gateway_connections {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -2112,7 +2112,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2160,7 +2160,7 @@ pub mod virtual_network_gateway_connections {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2186,7 +2186,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::VirtualNetworkGatewayConnection),
@@ -2238,7 +2238,7 @@ pub mod virtual_network_gateway_connections {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -2271,7 +2271,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2320,7 +2320,7 @@ pub mod virtual_network_gateway_connections {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -2347,7 +2347,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -2399,7 +2399,7 @@ pub mod virtual_network_gateway_connections {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2422,7 +2422,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod get_shared_key {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2468,7 +2468,7 @@ pub mod virtual_network_gateway_connections {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2494,7 +2494,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod set_shared_key {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::ConnectionSharedKey),
@@ -2546,7 +2546,7 @@ pub mod virtual_network_gateway_connections {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -2579,7 +2579,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2626,7 +2626,7 @@ pub mod virtual_network_gateway_connections {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2652,7 +2652,7 @@ pub mod virtual_network_gateway_connections {
         }
     }
     pub mod reset_shared_key {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ConnectionResetSharedKey),
@@ -2704,7 +2704,7 @@ pub mod virtual_network_gateway_connections {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -2733,7 +2733,7 @@ pub mod virtual_network_gateway_connections {
     }
 }
 pub mod local_network_gateways {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -2801,7 +2801,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -2847,7 +2847,7 @@ pub mod local_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -2873,7 +2873,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::LocalNetworkGateway),
@@ -2925,7 +2925,7 @@ pub mod local_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -2958,7 +2958,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3005,7 +3005,7 @@ pub mod local_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -3032,7 +3032,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -3084,7 +3084,7 @@ pub mod local_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3107,7 +3107,7 @@ pub mod local_network_gateways {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3153,7 +3153,7 @@ pub mod local_network_gateways {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3180,7 +3180,7 @@ pub mod local_network_gateways {
     }
 }
 pub mod virtual_networks {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -3283,7 +3283,7 @@ pub mod virtual_networks {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3334,7 +3334,7 @@ pub mod virtual_networks {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -3363,7 +3363,7 @@ pub mod virtual_networks {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::VirtualNetwork),
@@ -3415,7 +3415,7 @@ pub mod virtual_networks {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -3448,7 +3448,7 @@ pub mod virtual_networks {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3495,7 +3495,7 @@ pub mod virtual_networks {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -3522,7 +3522,7 @@ pub mod virtual_networks {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -3574,7 +3574,7 @@ pub mod virtual_networks {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3597,7 +3597,7 @@ pub mod virtual_networks {
         }
     }
     pub mod list_all {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3639,7 +3639,7 @@ pub mod virtual_networks {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3665,7 +3665,7 @@ pub mod virtual_networks {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3709,7 +3709,7 @@ pub mod virtual_networks {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3735,7 +3735,7 @@ pub mod virtual_networks {
         }
     }
     pub mod check_ip_address_availability {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3784,7 +3784,7 @@ pub mod virtual_networks {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let ip_address = &self.ip_address;
                     url.query_pairs_mut().append_pair("ipAddress", ip_address);
                     let req_body = azure_core::EMPTY_BODY;
@@ -3812,7 +3812,7 @@ pub mod virtual_networks {
         }
     }
     pub mod list_usage {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -3860,7 +3860,7 @@ pub mod virtual_networks {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -3887,7 +3887,7 @@ pub mod virtual_networks {
     }
 }
 pub mod subnets {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -3953,7 +3953,7 @@ pub mod subnets {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4006,7 +4006,7 @@ pub mod subnets {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -4035,7 +4035,7 @@ pub mod subnets {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Subnet),
@@ -4089,7 +4089,7 @@ pub mod subnets {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.subnet_parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -4122,7 +4122,7 @@ pub mod subnets {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4176,7 +4176,7 @@ pub mod subnets {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4199,7 +4199,7 @@ pub mod subnets {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4245,7 +4245,7 @@ pub mod subnets {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4272,7 +4272,7 @@ pub mod subnets {
     }
 }
 pub mod virtual_network_peerings {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -4337,7 +4337,7 @@ pub mod virtual_network_peerings {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4385,7 +4385,7 @@ pub mod virtual_network_peerings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4411,7 +4411,7 @@ pub mod virtual_network_peerings {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::VirtualNetworkPeering),
@@ -4465,7 +4465,7 @@ pub mod virtual_network_peerings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.virtual_network_peering_parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -4498,7 +4498,7 @@ pub mod virtual_network_peerings {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -4552,7 +4552,7 @@ pub mod virtual_network_peerings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4575,7 +4575,7 @@ pub mod virtual_network_peerings {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4623,7 +4623,7 @@ pub mod virtual_network_peerings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -4650,7 +4650,7 @@ pub mod virtual_network_peerings {
     }
 }
 pub mod network_security_groups {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -4725,7 +4725,7 @@ pub mod network_security_groups {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4776,7 +4776,7 @@ pub mod network_security_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -4805,7 +4805,7 @@ pub mod network_security_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::NetworkSecurityGroup),
@@ -4857,7 +4857,7 @@ pub mod network_security_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -4890,7 +4890,7 @@ pub mod network_security_groups {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -4937,7 +4937,7 @@ pub mod network_security_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -4964,7 +4964,7 @@ pub mod network_security_groups {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -5016,7 +5016,7 @@ pub mod network_security_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5039,7 +5039,7 @@ pub mod network_security_groups {
         }
     }
     pub mod list_all {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5083,7 +5083,7 @@ pub mod network_security_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5109,7 +5109,7 @@ pub mod network_security_groups {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5155,7 +5155,7 @@ pub mod network_security_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5182,7 +5182,7 @@ pub mod network_security_groups {
     }
 }
 pub mod security_rules {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -5247,7 +5247,7 @@ pub mod security_rules {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5295,7 +5295,7 @@ pub mod security_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5321,7 +5321,7 @@ pub mod security_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::SecurityRule),
@@ -5375,7 +5375,7 @@ pub mod security_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.security_rule_parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -5408,7 +5408,7 @@ pub mod security_rules {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -5462,7 +5462,7 @@ pub mod security_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5485,7 +5485,7 @@ pub mod security_rules {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5531,7 +5531,7 @@ pub mod security_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5558,7 +5558,7 @@ pub mod security_rules {
     }
 }
 pub mod default_security_rules {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -5591,7 +5591,7 @@ pub mod default_security_rules {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5637,7 +5637,7 @@ pub mod default_security_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5663,7 +5663,7 @@ pub mod default_security_rules {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5704,7 +5704,7 @@ pub mod default_security_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -5731,7 +5731,7 @@ pub mod default_security_rules {
     }
 }
 pub mod network_interfaces {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -5832,7 +5832,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -5883,7 +5883,7 @@ pub mod network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -5912,7 +5912,7 @@ pub mod network_interfaces {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::NetworkInterface),
@@ -5964,7 +5964,7 @@ pub mod network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -5997,7 +5997,7 @@ pub mod network_interfaces {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6044,7 +6044,7 @@ pub mod network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -6071,7 +6071,7 @@ pub mod network_interfaces {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -6123,7 +6123,7 @@ pub mod network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6146,7 +6146,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_all {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6190,7 +6190,7 @@ pub mod network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6216,7 +6216,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6262,7 +6262,7 @@ pub mod network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6288,7 +6288,7 @@ pub mod network_interfaces {
         }
     }
     pub mod get_effective_route_table {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::EffectiveRouteListResult),
@@ -6339,7 +6339,7 @@ pub mod network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -6367,7 +6367,7 @@ pub mod network_interfaces {
         }
     }
     pub mod list_effective_network_security_groups {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::EffectiveNetworkSecurityGroupListResult),
@@ -6412,7 +6412,7 @@ pub mod network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -6441,7 +6441,7 @@ pub mod network_interfaces {
     }
 }
 pub mod network_interface_ip_configurations {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -6474,7 +6474,7 @@ pub mod network_interface_ip_configurations {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6523,7 +6523,7 @@ pub mod network_interface_ip_configurations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6549,7 +6549,7 @@ pub mod network_interface_ip_configurations {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6599,7 +6599,7 @@ pub mod network_interface_ip_configurations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6626,7 +6626,7 @@ pub mod network_interface_ip_configurations {
     }
 }
 pub mod network_interface_load_balancers {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -6644,7 +6644,7 @@ pub mod network_interface_load_balancers {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6693,7 +6693,7 @@ pub mod network_interface_load_balancers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6720,7 +6720,7 @@ pub mod network_interface_load_balancers {
     }
 }
 pub mod network_interface_tap_configurations {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -6785,7 +6785,7 @@ pub mod network_interface_tap_configurations {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -6835,7 +6835,7 @@ pub mod network_interface_tap_configurations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -6861,7 +6861,7 @@ pub mod network_interface_tap_configurations {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::NetworkInterfaceTapConfiguration),
@@ -6915,7 +6915,7 @@ pub mod network_interface_tap_configurations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.tap_configuration_parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -6948,7 +6948,7 @@ pub mod network_interface_tap_configurations {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -7002,7 +7002,7 @@ pub mod network_interface_tap_configurations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7025,7 +7025,7 @@ pub mod network_interface_tap_configurations {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7074,7 +7074,7 @@ pub mod network_interface_tap_configurations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7101,7 +7101,7 @@ pub mod network_interface_tap_configurations {
     }
 }
 pub mod load_balancers {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -7176,7 +7176,7 @@ pub mod load_balancers {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7227,7 +7227,7 @@ pub mod load_balancers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -7256,7 +7256,7 @@ pub mod load_balancers {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::LoadBalancer),
@@ -7308,7 +7308,7 @@ pub mod load_balancers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -7341,7 +7341,7 @@ pub mod load_balancers {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7388,7 +7388,7 @@ pub mod load_balancers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -7415,7 +7415,7 @@ pub mod load_balancers {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -7467,7 +7467,7 @@ pub mod load_balancers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7490,7 +7490,7 @@ pub mod load_balancers {
         }
     }
     pub mod list_all {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7532,7 +7532,7 @@ pub mod load_balancers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7558,7 +7558,7 @@ pub mod load_balancers {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7602,7 +7602,7 @@ pub mod load_balancers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7629,7 +7629,7 @@ pub mod load_balancers {
     }
 }
 pub mod load_balancer_backend_address_pools {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -7662,7 +7662,7 @@ pub mod load_balancer_backend_address_pools {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7711,7 +7711,7 @@ pub mod load_balancer_backend_address_pools {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7737,7 +7737,7 @@ pub mod load_balancer_backend_address_pools {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7785,7 +7785,7 @@ pub mod load_balancer_backend_address_pools {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7812,7 +7812,7 @@ pub mod load_balancer_backend_address_pools {
     }
 }
 pub mod load_balancer_frontend_ip_configurations {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -7845,7 +7845,7 @@ pub mod load_balancer_frontend_ip_configurations {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7894,7 +7894,7 @@ pub mod load_balancer_frontend_ip_configurations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7920,7 +7920,7 @@ pub mod load_balancer_frontend_ip_configurations {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -7968,7 +7968,7 @@ pub mod load_balancer_frontend_ip_configurations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -7995,7 +7995,7 @@ pub mod load_balancer_frontend_ip_configurations {
     }
 }
 pub mod inbound_nat_rules {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -8061,7 +8061,7 @@ pub mod inbound_nat_rules {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8107,7 +8107,7 @@ pub mod inbound_nat_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8133,7 +8133,7 @@ pub mod inbound_nat_rules {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8186,7 +8186,7 @@ pub mod inbound_nat_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -8215,7 +8215,7 @@ pub mod inbound_nat_rules {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::InboundNatRule),
@@ -8269,7 +8269,7 @@ pub mod inbound_nat_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.inbound_nat_rule_parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -8302,7 +8302,7 @@ pub mod inbound_nat_rules {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -8356,7 +8356,7 @@ pub mod inbound_nat_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8380,7 +8380,7 @@ pub mod inbound_nat_rules {
     }
 }
 pub mod load_balancer_load_balancing_rules {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -8413,7 +8413,7 @@ pub mod load_balancer_load_balancing_rules {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8462,7 +8462,7 @@ pub mod load_balancer_load_balancing_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8488,7 +8488,7 @@ pub mod load_balancer_load_balancing_rules {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8536,7 +8536,7 @@ pub mod load_balancer_load_balancing_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8563,7 +8563,7 @@ pub mod load_balancer_load_balancing_rules {
     }
 }
 pub mod load_balancer_outbound_rules {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -8596,7 +8596,7 @@ pub mod load_balancer_outbound_rules {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8644,7 +8644,7 @@ pub mod load_balancer_outbound_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8670,7 +8670,7 @@ pub mod load_balancer_outbound_rules {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8718,7 +8718,7 @@ pub mod load_balancer_outbound_rules {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8745,7 +8745,7 @@ pub mod load_balancer_outbound_rules {
     }
 }
 pub mod load_balancer_network_interfaces {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -8763,7 +8763,7 @@ pub mod load_balancer_network_interfaces {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8811,7 +8811,7 @@ pub mod load_balancer_network_interfaces {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8838,7 +8838,7 @@ pub mod load_balancer_network_interfaces {
     }
 }
 pub mod load_balancer_probes {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -8871,7 +8871,7 @@ pub mod load_balancer_probes {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8919,7 +8919,7 @@ pub mod load_balancer_probes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -8945,7 +8945,7 @@ pub mod load_balancer_probes {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -8993,7 +8993,7 @@ pub mod load_balancer_probes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9020,7 +9020,7 @@ pub mod load_balancer_probes {
     }
 }
 pub mod public_ip_addresses {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -9095,7 +9095,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9146,7 +9146,7 @@ pub mod public_ip_addresses {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -9175,7 +9175,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Created201(models::PublicIpAddress),
@@ -9227,7 +9227,7 @@ pub mod public_ip_addresses {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -9260,7 +9260,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9307,7 +9307,7 @@ pub mod public_ip_addresses {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -9334,7 +9334,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -9386,7 +9386,7 @@ pub mod public_ip_addresses {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9409,7 +9409,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list_all {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9451,7 +9451,7 @@ pub mod public_ip_addresses {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9477,7 +9477,7 @@ pub mod public_ip_addresses {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9521,7 +9521,7 @@ pub mod public_ip_addresses {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9548,7 +9548,7 @@ pub mod public_ip_addresses {
     }
 }
 pub mod route_tables {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -9623,7 +9623,7 @@ pub mod route_tables {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9674,7 +9674,7 @@ pub mod route_tables {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -9703,7 +9703,7 @@ pub mod route_tables {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::RouteTable),
@@ -9755,7 +9755,7 @@ pub mod route_tables {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -9788,7 +9788,7 @@ pub mod route_tables {
         }
     }
     pub mod update_tags {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9835,7 +9835,7 @@ pub mod route_tables {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -9862,7 +9862,7 @@ pub mod route_tables {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             NoContent204,
@@ -9914,7 +9914,7 @@ pub mod route_tables {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -9937,7 +9937,7 @@ pub mod route_tables {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -9981,7 +9981,7 @@ pub mod route_tables {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10007,7 +10007,7 @@ pub mod route_tables {
         }
     }
     pub mod list_all {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10049,7 +10049,7 @@ pub mod route_tables {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10076,7 +10076,7 @@ pub mod route_tables {
     }
 }
 pub mod routes {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(
@@ -10141,7 +10141,7 @@ pub mod routes {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10189,7 +10189,7 @@ pub mod routes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10215,7 +10215,7 @@ pub mod routes {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::Route),
@@ -10269,7 +10269,7 @@ pub mod routes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.route_parameters).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -10302,7 +10302,7 @@ pub mod routes {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Accepted202,
@@ -10356,7 +10356,7 @@ pub mod routes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10379,7 +10379,7 @@ pub mod routes {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10425,7 +10425,7 @@ pub mod routes {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -10452,7 +10452,7 @@ pub mod routes {
     }
 }
 pub mod operations {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -10460,7 +10460,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Unexpected HTTP status code {}", status_code)]
@@ -10497,7 +10497,7 @@ pub mod operations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-11-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;

@@ -70,21 +70,21 @@ pub mod account_sas_parameters {
         Https,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureEntityResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobContainer {
     #[serde(flatten)]
     pub azure_entity_resource: AzureEntityResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContainerProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
@@ -101,7 +101,7 @@ pub mod check_name_availability_result {
         AlreadyExists,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerProperties {
     #[serde(rename = "publicAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_access: Option<container_properties::PublicAccess>,
@@ -157,7 +157,7 @@ pub struct CustomDomain {
     #[serde(rename = "useSubDomainName", default, skip_serializing_if = "Option::is_none")]
     pub use_sub_domain_name: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -182,15 +182,20 @@ pub mod encryption {
         #[serde(rename = "Microsoft.Keyvault")]
         MicrosoftKeyvault,
     }
+    impl Default for KeySource {
+        fn default() -> Self {
+            Self::MicrosoftStorage
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionService {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[serde(rename = "lastEnabledTime", default, skip_serializing_if = "Option::is_none")]
     pub last_enabled_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionServices {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub blob: Option<EncryptionService>,
@@ -201,7 +206,7 @@ pub struct EncryptionServices {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub queue: Option<EncryptionService>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoints {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub blob: Option<String>,
@@ -228,6 +233,11 @@ pub mod ip_rule {
     pub enum Action {
         Allow,
     }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
@@ -251,7 +261,7 @@ pub struct ImmutabilityPolicy {
     pub azure_entity_resource: AzureEntityResource,
     pub properties: ImmutabilityPolicyProperty,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImmutabilityPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImmutabilityPolicyProperty>,
@@ -275,7 +285,7 @@ pub mod immutability_policy_property {
         Unlocked,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keyname: Option<String>,
@@ -307,7 +317,7 @@ pub mod lease_container_request {
         Break,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LeaseContainerResponse {
     #[serde(rename = "leaseId", default, skip_serializing_if = "Option::is_none")]
     pub lease_id: Option<String>,
@@ -320,46 +330,46 @@ pub struct LegalHold {
     pub has_legal_hold: Option<bool>,
     pub tags: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LegalHoldProperties {
     #[serde(rename = "hasLegalHold", default, skip_serializing_if = "Option::is_none")]
     pub has_legal_hold: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<TagProperty>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListAccountSasResponse {
     #[serde(rename = "accountSasToken", default, skip_serializing_if = "Option::is_none")]
     pub account_sas_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContainerItem {
     #[serde(flatten)]
     pub azure_entity_resource: AzureEntityResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContainerProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContainerItems {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ListContainerItem>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListServiceSasResponse {
     #[serde(rename = "serviceSasToken", default, skip_serializing_if = "Option::is_none")]
     pub service_sas_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementPoliciesRules {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementPoliciesRulesSetParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementPoliciesRules>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -400,13 +410,23 @@ pub mod network_rule_set {
         Metrics,
         AzureServices,
     }
+    impl Default for Bypass {
+        fn default() -> Self {
+            Self::AzureServices
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultAction {
         Allow,
         Deny,
     }
+    impl Default for DefaultAction {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -419,7 +439,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -431,17 +451,17 @@ pub mod operation {
         pub description: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -450,7 +470,7 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Restriction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -467,7 +487,7 @@ pub mod restriction {
         NotAvailableForSubscription,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -553,7 +573,7 @@ pub mod service_sas_parameters {
         Https,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
@@ -658,7 +678,7 @@ pub mod storage_account_create_parameters {
         BlobStorage,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountKey {
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
@@ -675,31 +695,31 @@ pub mod storage_account_key {
         Full,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountListKeysResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<StorageAccountKey>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageAccount>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountManagementPolicies {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountManagementPoliciesRulesProperty>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountManagementPoliciesRulesProperty {
     #[serde(flatten)]
     pub management_policies_rules: ManagementPoliciesRules,
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<storage_account_properties::ProvisioningState>,
@@ -761,7 +781,7 @@ pub mod storage_account_properties {
         Cool,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
@@ -784,7 +804,7 @@ pub mod storage_account_properties_create_parameters {
         Cool,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
@@ -810,7 +830,7 @@ pub struct StorageAccountRegenerateKeyParameters {
     #[serde(rename = "keyName")]
     pub key_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
@@ -832,12 +852,12 @@ pub mod storage_account_update_parameters {
         BlobStorage,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSkuListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Sku>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
@@ -858,7 +878,7 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateHistoryProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub update: Option<update_history_property::Update>,
@@ -885,7 +905,7 @@ pub mod update_history_property {
         Extend,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<usage::Unit>,
@@ -908,12 +928,12 @@ pub mod usage {
         BytesPerSecond,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
@@ -933,6 +953,11 @@ pub mod virtual_network_rule {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
+    }
+    impl Default for Action {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {

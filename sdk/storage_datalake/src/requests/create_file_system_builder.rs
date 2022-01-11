@@ -11,7 +11,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct CreateFileSystemBuilder<'a> {
     file_system_client: &'a FileSystemClient,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
     properties: Option<&'a Properties<'a, 'a>>,
 }
@@ -27,7 +27,7 @@ impl<'a> CreateFileSystemBuilder<'a> {
     }
 
     setters! {
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
         properties: &'a Properties<'a, 'a> => Some(properties),
     }

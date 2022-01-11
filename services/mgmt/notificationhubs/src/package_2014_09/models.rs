@@ -2,12 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdmCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdmCredentialProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdmCredentialProperties {
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
@@ -16,12 +16,12 @@ pub struct AdmCredentialProperties {
     #[serde(rename = "authTokenUrl", default, skip_serializing_if = "Option::is_none")]
     pub auth_token_url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApnsCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApnsCredentialProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApnsCredentialProperties {
     #[serde(rename = "apnsCertificate", default, skip_serializing_if = "Option::is_none")]
     pub apns_certificate: Option<String>,
@@ -32,12 +32,12 @@ pub struct ApnsCredentialProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaiduCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaiduCredentialProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaiduCredentialProperties {
     #[serde(rename = "baiduApiKey", default, skip_serializing_if = "Option::is_none")]
     pub baidu_api_key: Option<String>,
@@ -56,7 +56,7 @@ pub struct CheckAvailabilityParameters {
     #[serde(rename = "isAvailiable", default, skip_serializing_if = "Option::is_none")]
     pub is_availiable: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckAvailabilityResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -71,24 +71,24 @@ pub struct CheckAvailabilityResource {
     #[serde(rename = "isAvailiable", default, skip_serializing_if = "Option::is_none")]
     pub is_availiable: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GcmCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GcmCredentialProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GcmCredentialProperties {
     #[serde(rename = "gcmEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub gcm_endpoint: Option<String>,
     #[serde(rename = "googleApiKey", default, skip_serializing_if = "Option::is_none")]
     pub google_api_key: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MpnsCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MpnsCredentialProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MpnsCredentialProperties {
     #[serde(rename = "mpnsCertificate", default, skip_serializing_if = "Option::is_none")]
     pub mpns_certificate: Option<String>,
@@ -104,14 +104,14 @@ pub struct NamespaceCreateOrUpdateParameters {
     pub tags: Option<serde_json::Value>,
     pub properties: NamespaceProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NamespaceResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -144,7 +144,7 @@ pub mod namespace_properties {
         NotificationHub,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -166,14 +166,14 @@ pub struct NotificationHubCreateOrUpdateParameters {
     pub tags: Option<serde_json::Value>,
     pub properties: NotificationHubProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationHubListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NotificationHubResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationHubProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -194,7 +194,7 @@ pub struct NotificationHubProperties {
     #[serde(rename = "baiduCredential", default, skip_serializing_if = "Option::is_none")]
     pub baidu_credential: Option<BaiduCredential>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationHubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -221,7 +221,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceListKeys {
     #[serde(rename = "primaryConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub primary_connection_string: Option<String>,
@@ -236,14 +236,14 @@ pub struct SharedAccessAuthorizationRuleCreateOrUpdateParameters {
     pub name: Option<String>,
     pub properties: SharedAccessAuthorizationRuleProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SharedAccessAuthorizationRuleResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleProperties {
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
@@ -264,7 +264,7 @@ pub struct SharedAccessAuthorizationRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub revision: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -279,17 +279,17 @@ pub struct SharedAccessAuthorizationRuleResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedAccessAuthorizationRuleProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WnsCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WnsCredentialProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WnsCredentialProperties {
     #[serde(rename = "packageSid", default, skip_serializing_if = "Option::is_none")]
     pub package_sid: Option<String>,

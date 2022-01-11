@@ -12,7 +12,7 @@ pub struct DeleteEntityBuilder<'a> {
     entity_client: &'a EntityClient,
     if_match: IfMatchCondition,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> DeleteEntityBuilder<'a> {
@@ -28,7 +28,7 @@ impl<'a> DeleteEntityBuilder<'a> {
     setters! {
         if_match: IfMatchCondition => if_match,
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

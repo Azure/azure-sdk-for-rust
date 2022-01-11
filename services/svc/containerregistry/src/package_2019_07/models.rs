@@ -2,12 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessToken {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -16,12 +16,12 @@ pub struct AcrErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrErrors {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<AcrErrorInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrManifestAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
@@ -30,7 +30,7 @@ pub struct AcrManifestAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub manifest: Option<AcrManifestAttributesBase>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrManifestAttributesBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
@@ -53,7 +53,7 @@ pub struct AcrManifestAttributesBase {
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrManifests {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
@@ -62,7 +62,7 @@ pub struct AcrManifests {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub manifests: Vec<AcrManifestAttributesBase>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrRepositoryTags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
@@ -71,7 +71,7 @@ pub struct AcrRepositoryTags {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<AcrTagAttributesBase>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrTagAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
@@ -80,7 +80,7 @@ pub struct AcrTagAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<AcrTagAttributesBase>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrTagAttributesBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -95,7 +95,7 @@ pub struct AcrTagAttributesBase {
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChangeableAttributes {
     #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
     pub delete_enabled: Option<bool>,
@@ -106,24 +106,24 @@ pub struct ChangeableAttributes {
     #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
     pub read_enabled: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedRepository {
     #[serde(rename = "manifestsDeleted", default, skip_serializing_if = "Vec::is_empty")]
     pub manifests_deleted: Vec<String>,
     #[serde(rename = "tagsDeleted", default, skip_serializing_if = "Vec::is_empty")]
     pub tags_deleted: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FsLayer {
     #[serde(rename = "blobSum", default, skip_serializing_if = "Option::is_none")]
     pub blob_sum: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct History {
     #[serde(rename = "v1Compatibility", default, skip_serializing_if = "Option::is_none")]
     pub v1_compatibility: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageSignature {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub header: Option<Jwk>,
@@ -132,14 +132,14 @@ pub struct ImageSignature {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protected: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Jwk {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub jwk: Option<JwkHeader>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alg: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JwkHeader {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crv: Option<String>,
@@ -152,7 +152,7 @@ pub struct JwkHeader {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub y: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Manifest {
     #[serde(rename = "schemaVersion", default, skip_serializing_if = "Option::is_none")]
     pub schema_version: Option<i64>,
@@ -175,14 +175,14 @@ pub struct Manifest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub signatures: Vec<ImageSignature>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManifestAttributesManifest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub references: Vec<ManifestAttributesManifestReferences>,
     #[serde(rename = "quarantineTag", default, skip_serializing_if = "Option::is_none")]
     pub quarantine_tag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManifestAttributesManifestReferences {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
@@ -191,7 +191,7 @@ pub struct ManifestAttributesManifestReferences {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub os: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManifestChangeableAttributes {
     #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
     pub delete_enabled: Option<bool>,
@@ -206,17 +206,17 @@ pub struct ManifestChangeableAttributes {
     #[serde(rename = "quarantineDetails", default, skip_serializing_if = "Option::is_none")]
     pub quarantine_details: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RefreshToken {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Repositories {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub repositories: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RepositoryAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
@@ -233,14 +233,14 @@ pub struct RepositoryAttributes {
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RepositoryTags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
@@ -249,12 +249,12 @@ pub struct TagAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<TagAttributesTag>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagAttributesTag {
     #[serde(rename = "signatureRecord", default, skip_serializing_if = "Option::is_none")]
     pub signature_record: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct V2Descriptor {
     #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,

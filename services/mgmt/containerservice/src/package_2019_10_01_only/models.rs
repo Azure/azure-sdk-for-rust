@@ -2,12 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessProfile {
     #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub kube_config: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
@@ -24,12 +24,12 @@ pub struct AgentPoolAvailableVersions {
     pub type_: Option<String>,
     pub properties: AgentPoolAvailableVersionsProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolAvailableVersionsProperties {
     #[serde(rename = "agentPoolVersions", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_versions: Vec<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AgentPool>,
@@ -60,12 +60,12 @@ pub struct AgentPoolUpgradeProfileProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -111,7 +111,7 @@ pub mod container_service_master_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Count {}
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceNetworkProfile {
     #[serde(rename = "networkPlugin", default, skip_serializing_if = "Option::is_none")]
     pub network_plugin: Option<container_service_network_profile::NetworkPlugin>,
@@ -138,6 +138,11 @@ pub mod container_service_network_profile {
         Azure,
         #[serde(rename = "kubenet")]
         Kubenet,
+    }
+    impl Default for NetworkPlugin {
+        fn default() -> Self {
+            Self::Kubenet
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkPolicy {
@@ -528,14 +533,14 @@ pub enum ContainerServiceVmSize {
     StandardNv6,
 }
 pub type ContainerServiceVnetSubnetId = String;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub kubeconfigs: Vec<CredentialResult>,
@@ -560,7 +565,7 @@ pub struct ManagedClusterAadProfile {
     #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterApiServerAccessProfile {
     #[serde(rename = "authorizedIPRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub authorized_ip_ranges: Vec<String>,
@@ -586,7 +591,7 @@ pub struct ManagedClusterAgentPoolProfile {
     pub managed_cluster_agent_pool_profile_properties: ManagedClusterAgentPoolProfileProperties,
     pub name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterAgentPoolProfileProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
@@ -623,7 +628,7 @@ pub struct ManagedClusterAgentPoolProfileProperties {
     #[serde(rename = "nodeTaints", default, skip_serializing_if = "Vec::is_empty")]
     pub node_taints: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -640,14 +645,14 @@ pub mod managed_cluster_identity {
         None,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedCluster>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterLoadBalancerProfile {
     #[serde(rename = "managedOutboundIPs", default, skip_serializing_if = "Option::is_none")]
     pub managed_outbound_i_ps: Option<managed_cluster_load_balancer_profile::ManagedOutboundIPs>,
@@ -660,17 +665,17 @@ pub struct ManagedClusterLoadBalancerProfile {
 }
 pub mod managed_cluster_load_balancer_profile {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ManagedOutboundIPs {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub count: Option<i32>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct OutboundIpPrefixes {
         #[serde(rename = "publicIPPrefixes", default, skip_serializing_if = "Vec::is_empty")]
         pub public_ip_prefixes: Vec<ResourceReference>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct OutboundIPs {
         #[serde(rename = "publicIPs", default, skip_serializing_if = "Vec::is_empty")]
         pub public_i_ps: Vec<ResourceReference>,
@@ -687,7 +692,7 @@ pub struct ManagedClusterPoolUpgradeProfile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -760,12 +765,17 @@ pub enum OsType {
     Linux,
     Windows,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+impl Default for OsType {
+    fn default() -> Self {
+        Self::Linux
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationValue>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
@@ -774,7 +784,7 @@ pub struct OperationValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationValueDisplay>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationValueDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
@@ -797,7 +807,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -807,12 +817,22 @@ pub enum ScaleSetEvictionPolicy {
     Delete,
     Deallocate,
 }
+impl Default for ScaleSetEvictionPolicy {
+    fn default() -> Self {
+        Self::Delete
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScaleSetPriority {
     Low,
     Regular,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+impl Default for ScaleSetPriority {
+    fn default() -> Self {
+        Self::Regular
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -821,7 +841,7 @@ pub struct SubResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

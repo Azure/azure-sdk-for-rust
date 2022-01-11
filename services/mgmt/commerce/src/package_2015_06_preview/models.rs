@@ -2,19 +2,19 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InfoField {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub project: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MeterInfo {
     #[serde(rename = "MeterId", default, skip_serializing_if = "Option::is_none")]
     pub meter_id: Option<String>,
@@ -92,7 +92,7 @@ pub struct RecurringCharge {
     #[serde(rename = "RecurringCharge", default, skip_serializing_if = "Option::is_none")]
     pub recurring_charge: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceRateCardInfo {
     #[serde(rename = "Currency", default, skip_serializing_if = "Option::is_none")]
     pub currency: Option<String>,
@@ -105,7 +105,7 @@ pub struct ResourceRateCardInfo {
     #[serde(rename = "Meters", default, skip_serializing_if = "Vec::is_empty")]
     pub meters: Vec<MeterInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageAggregation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -116,14 +116,14 @@ pub struct UsageAggregation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UsageSample>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageAggregationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UsageAggregation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageSample {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,

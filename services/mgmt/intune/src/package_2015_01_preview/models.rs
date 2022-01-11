@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AndroidMamPolicy {
     #[serde(flatten)]
     pub resource: Resource,
@@ -33,6 +33,11 @@ pub mod android_mam_policy_properties {
         #[serde(rename = "block")]
         Block,
     }
+    impl Default for ScreenCapture {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FileEncryption {
         #[serde(rename = "required")]
@@ -40,8 +45,13 @@ pub mod android_mam_policy_properties {
         #[serde(rename = "notRequired")]
         NotRequired,
     }
+    impl Default for FileEncryption {
+        fn default() -> Self {
+            Self::Required
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Application {
     #[serde(flatten)]
     pub resource: Resource,
@@ -73,8 +83,13 @@ pub mod application_properties {
         #[serde(rename = "windows")]
         Windows,
     }
+    impl Default for Platform {
+        fn default() -> Self {
+            Self::Ios
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Device {
     #[serde(flatten)]
     pub resource: Resource,
@@ -104,7 +119,7 @@ pub struct Error {
     pub code: String,
     pub message: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedEnrolledApp {
     #[serde(flatten)]
     pub resource: Resource,
@@ -117,14 +132,14 @@ pub struct FlaggedEnrolledAppCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedEnrolledAppError {
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedEnrolledAppProperties {
     #[serde(rename = "deviceType", default, skip_serializing_if = "Option::is_none")]
     pub device_type: Option<String>,
@@ -137,7 +152,7 @@ pub struct FlaggedEnrolledAppProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<FlaggedEnrolledAppError>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedUser {
     #[serde(flatten)]
     pub resource: Resource,
@@ -150,14 +165,14 @@ pub struct FlaggedUserCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlaggedUserProperties {
     #[serde(rename = "errorCount", default, skip_serializing_if = "Option::is_none")]
     pub error_count: Option<i64>,
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupItem {
     #[serde(flatten)]
     pub resource: Resource,
@@ -181,7 +196,7 @@ pub struct IosmamPolicyCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Location {
     #[serde(flatten)]
     pub resource: Resource,
@@ -199,7 +214,7 @@ pub struct LocationProperties {
     #[serde(rename = "hostName")]
     pub host_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MamPolicyAppIdOrGroupIdPayload {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MamPolicyAppOrGroupIdProperties>,
@@ -258,6 +273,11 @@ pub mod mam_policy_properties {
         #[serde(rename = "allApps")]
         AllApps,
     }
+    impl Default for AppSharingFromLevel {
+        fn default() -> Self {
+            Self::None
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AppSharingToLevel {
         #[serde(rename = "none")]
@@ -267,12 +287,22 @@ pub mod mam_policy_properties {
         #[serde(rename = "allApps")]
         AllApps,
     }
+    impl Default for AppSharingToLevel {
+        fn default() -> Self {
+            Self::None
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Authentication {
         #[serde(rename = "required")]
         Required,
         #[serde(rename = "notRequired")]
         NotRequired,
+    }
+    impl Default for Authentication {
+        fn default() -> Self {
+            Self::Required
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ClipboardSharingLevel {
@@ -285,12 +315,22 @@ pub mod mam_policy_properties {
         #[serde(rename = "allApps")]
         AllApps,
     }
+    impl Default for ClipboardSharingLevel {
+        fn default() -> Self {
+            Self::Blocked
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataBackup {
         #[serde(rename = "allow")]
         Allow,
         #[serde(rename = "block")]
         Block,
+    }
+    impl Default for DataBackup {
+        fn default() -> Self {
+            Self::Allow
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FileSharingSaveAs {
@@ -299,12 +339,22 @@ pub mod mam_policy_properties {
         #[serde(rename = "block")]
         Block,
     }
+    impl Default for FileSharingSaveAs {
+        fn default() -> Self {
+            Self::Allow
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Pin {
         #[serde(rename = "required")]
         Required,
         #[serde(rename = "notRequired")]
         NotRequired,
+    }
+    impl Default for Pin {
+        fn default() -> Self {
+            Self::Required
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeviceCompliance {
@@ -313,12 +363,22 @@ pub mod mam_policy_properties {
         #[serde(rename = "disable")]
         Disable,
     }
+    impl Default for DeviceCompliance {
+        fn default() -> Self {
+            Self::Enable
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ManagedBrowser {
         #[serde(rename = "required")]
         Required,
         #[serde(rename = "notRequired")]
         NotRequired,
+    }
+    impl Default for ManagedBrowser {
+        fn default() -> Self {
+            Self::Required
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GroupStatus {
@@ -327,8 +387,13 @@ pub mod mam_policy_properties {
         #[serde(rename = "targeted")]
         Targeted,
     }
+    impl Default for GroupStatus {
+        fn default() -> Self {
+            Self::NotTargeted
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResult {
     #[serde(flatten)]
     pub resource: Resource,
@@ -354,7 +419,7 @@ pub struct OperationResultProperties {
     #[serde(rename = "operationMetadata")]
     pub operation_metadata: Vec<OperationMetadataProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -367,7 +432,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatusesDefault {
     #[serde(flatten)]
     pub resource: Resource,
@@ -376,7 +441,7 @@ pub struct StatusesDefault {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nextlink: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatusesProperties {
     #[serde(rename = "deployedPolicies", default, skip_serializing_if = "Option::is_none")]
     pub deployed_policies: Option<i64>,
@@ -397,7 +462,7 @@ pub struct StatusesProperties {
     #[serde(rename = "wipeSucceededApps", default, skip_serializing_if = "Option::is_none")]
     pub wipe_succeeded_apps: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WipeDeviceOperationResult {
     #[serde(flatten)]
     pub resource: Resource,
@@ -408,7 +473,7 @@ pub struct WipeDeviceOperationResult {
 pub struct WipeDeviceOperationResultProperties {
     pub value: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IOsmamPolicy {
     #[serde(flatten)]
     pub resource: Resource,
@@ -437,12 +502,22 @@ pub mod i_osmam_policy_properties {
         #[serde(rename = "useDeviceSettings")]
         UseDeviceSettings,
     }
+    impl Default for FileEncryptionLevel {
+        fn default() -> Self {
+            Self::DeviceLocked
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TouchId {
         #[serde(rename = "enable")]
         Enable,
         #[serde(rename = "disable")]
         Disable,
+    }
+    impl Default for TouchId {
+        fn default() -> Self {
+            Self::Enable
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -22,6 +22,7 @@ const SKIP_SERVICES: &[&str] = &[
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("applicationinsights", "package-preview-2020-06"), // defines operation `list` multiple times
+    ("applicationinsights", "package-2021-11-01"), // duplicate Operations_List https://github.com/Azure/azure-rest-api-specs/issues/17215
     ("analysisservices", "package-2017-08"),
     ("authorization", "package-2020-10-01-preview"),
     ("authorization", "package-2018-05-01-preview"),
@@ -48,6 +49,8 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("marketplace", "package-2020-12-01"),
     ("marketplace", "package-composite-v1"),             // mixing versions
     ("marketplace", "package-composite-v2"),             // mixing versions
+    ("monitor", "package-2021-09"),                      // AzureResource defined in 2021-09-01/actionGroups_API.json is different
+    ("monitor", "package-2021-07"),                      // also AzureResource difference
     ("recoveryservicesbackup", "package-2020-07"),       // duplicate fn get_operation_status
     ("recoveryservicesbackup", "package-2020-10"),       // duplicate fn get_operation_status
     ("recoveryservicessiterecovery", "package-2016-08"), // duplicate package-2016-08 https://github.com/Azure/azure-rest-api-specs/pull/11287
@@ -182,6 +185,7 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-02-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-06-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-10-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
+    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-12-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     // hardwaresecuritymodels
     ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/preview/2018-10-31-preview/dedicatedhsm.json", "Error", "innererror"),
     // logic
@@ -287,28 +291,22 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error(transparent)]
+    CodegenError(#[from] autorust_codegen::Error),
     #[error("file name was not utf-8")]
     FileNameNotUtf8Error {},
     #[error("IoError")]
     IoError { source: std::io::Error },
     #[error("PathError")]
     PathError { source: path::Error },
-    #[error("CodegenError")]
-    CodegenError { source: autorust_codegen::Error },
     #[error("CargoTomlError")]
     CargoTomlError { source: cargo_toml::Error },
     #[error("LibRsError")]
     LibRsError { source: lib_rs::Error },
-    #[error("GetSpecFoldersError")]
-    GetSpecFoldersError { source: autorust_codegen::Error },
 }
 
 fn main() -> Result<()> {
-    for (i, spec) in get_mgmt_readmes()
-        .map_err(|source| Error::GetSpecFoldersError { source })?
-        .iter()
-        .enumerate()
-    {
+    for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
             if ONLY_SERVICES.contains(&spec.spec()) {
                 println!("{} {}", i + 1, spec.spec());
@@ -353,7 +351,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         });
     }
 
-    for config in spec.configs() {
+    for config in spec.configs()? {
         let tag = config.tag.as_str();
         if skip_service_tags.contains(&(spec.spec(), tag)) {
             println!("  skipping {}", tag);
@@ -385,8 +383,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             optional_properties: optional_properties.clone(),
             print_writing_file: false,
             ..Config::default()
-        })
-        .map_err(|source| Error::CodegenError { source })?;
+        })?;
     }
     if feature_mod_names.is_empty() {
         return Ok(());

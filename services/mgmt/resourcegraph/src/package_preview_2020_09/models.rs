@@ -60,7 +60,7 @@ pub struct FacetRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<FacetRequestOptions>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FacetRequestOptions {
     #[serde(rename = "sortBy", default, skip_serializing_if = "Option::is_none")]
     pub sort_by: Option<String>,
@@ -80,6 +80,11 @@ pub mod facet_request_options {
         #[serde(rename = "desc")]
         Desc,
     }
+    impl Default for SortOrder {
+        fn default() -> Self {
+            Self::Desc
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetResult {
@@ -90,7 +95,7 @@ pub struct FacetResult {
     pub count: i32,
     pub data: serde_json::Value,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -101,7 +106,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -113,7 +118,7 @@ pub mod operation {
         pub description: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
@@ -130,7 +135,7 @@ pub struct QueryRequest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub facets: Vec<FacetRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryRequestOptions {
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
@@ -206,7 +211,7 @@ pub struct ResourceChangeDetailsRequestParameters {
     #[serde(rename = "changeIds")]
     pub change_ids: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceChangeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub changes: Vec<ResourceChangeData>,
@@ -266,7 +271,7 @@ pub struct ResourceSnapshotData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourcesHistoryRequest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subscriptions: Vec<String>,
@@ -277,7 +282,7 @@ pub struct ResourcesHistoryRequest {
     #[serde(rename = "managementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub management_group_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourcesHistoryRequestOptions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<DateTimeInterval>,

@@ -2,7 +2,165 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Amount {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<f64>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingSubscription {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BillingSubscriptionProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingSubscriptionAlias {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BillingSubscriptionAliasProperties>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingSubscriptionAliasListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BillingSubscriptionAlias>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingSubscriptionAliasProperties {
+    #[serde(flatten)]
+    pub billing_subscription_properties: BillingSubscriptionProperties,
+    #[serde(rename = "billingSubscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub billing_subscription_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingSubscriptionMergeRequest {
+    #[serde(rename = "targetBillingSubscriptionName", default, skip_serializing_if = "Option::is_none")]
+    pub target_billing_subscription_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i32>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingSubscriptionProperties {
+    #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
+    pub auto_renew: Option<billing_subscription_properties::AutoRenew>,
+    #[serde(rename = "beneficiaryTenantId", default, skip_serializing_if = "Option::is_none")]
+    pub beneficiary_tenant_id: Option<String>,
+    #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub billing_frequency: Option<String>,
+    #[serde(rename = "billingProfileId", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile_id: Option<String>,
+    #[serde(rename = "billingPolicies", default, skip_serializing_if = "Option::is_none")]
+    pub billing_policies: Option<serde_json::Value>,
+    #[serde(rename = "billingProfileDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile_display_name: Option<String>,
+    #[serde(rename = "billingProfileName", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile_name: Option<String>,
+    #[serde(rename = "consumptionCostCenter", default, skip_serializing_if = "Option::is_none")]
+    pub consumption_cost_center: Option<String>,
+    #[serde(rename = "customerId", default, skip_serializing_if = "Option::is_none")]
+    pub customer_id: Option<String>,
+    #[serde(rename = "customerDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub customer_display_name: Option<String>,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[serde(rename = "enrollmentAccountId", default, skip_serializing_if = "Option::is_none")]
+    pub enrollment_account_id: Option<String>,
+    #[serde(rename = "enrollmentAccountDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub enrollment_account_display_name: Option<String>,
+    #[serde(rename = "enrollmentAccountSubscriptionDetails", default, skip_serializing_if = "Option::is_none")]
+    pub enrollment_account_subscription_details: Option<EnrollmentAccountSubscriptionDetails>,
+    #[serde(rename = "invoiceSectionId", default, skip_serializing_if = "Option::is_none")]
+    pub invoice_section_id: Option<String>,
+    #[serde(rename = "invoiceSectionDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub invoice_section_display_name: Option<String>,
+    #[serde(rename = "invoiceSectionName", default, skip_serializing_if = "Option::is_none")]
+    pub invoice_section_name: Option<String>,
+    #[serde(rename = "lastMonthCharges", default, skip_serializing_if = "Option::is_none")]
+    pub last_month_charges: Option<Amount>,
+    #[serde(rename = "monthToDateCharges", default, skip_serializing_if = "Option::is_none")]
+    pub month_to_date_charges: Option<Amount>,
+    #[serde(rename = "nextBillingCycleDetails", default, skip_serializing_if = "Option::is_none")]
+    pub next_billing_cycle_details: Option<NextBillingCycleDetails>,
+    #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
+    pub offer_id: Option<String>,
+    #[serde(rename = "productCategory", default, skip_serializing_if = "Option::is_none")]
+    pub product_category: Option<String>,
+    #[serde(rename = "productType", default, skip_serializing_if = "Option::is_none")]
+    pub product_type: Option<String>,
+    #[serde(rename = "productTypeId", default, skip_serializing_if = "Option::is_none")]
+    pub product_type_id: Option<String>,
+    #[serde(rename = "purchaseDate", default, skip_serializing_if = "Option::is_none")]
+    pub purchase_date: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reseller: Option<Reseller>,
+    #[serde(rename = "renewalTermDetails", default, skip_serializing_if = "Option::is_none")]
+    pub renewal_term_details: Option<RenewalTermDetails>,
+    #[serde(rename = "skuDescription", default, skip_serializing_if = "Option::is_none")]
+    pub sku_description: Option<String>,
+    #[serde(rename = "skuId", default, skip_serializing_if = "Option::is_none")]
+    pub sku_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<billing_subscription_properties::Status>,
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[serde(rename = "suspensionReasons", default, skip_serializing_if = "Vec::is_empty")]
+    pub suspension_reasons: Vec<String>,
+    #[serde(rename = "termDuration", default, skip_serializing_if = "Option::is_none")]
+    pub term_duration: Option<String>,
+    #[serde(rename = "termStartDate", default, skip_serializing_if = "Option::is_none")]
+    pub term_start_date: Option<String>,
+    #[serde(rename = "termEndDate", default, skip_serializing_if = "Option::is_none")]
+    pub term_end_date: Option<String>,
+}
+pub mod billing_subscription_properties {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AutoRenew {
+        Off,
+        On,
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Unknown,
+        Active,
+        Disabled,
+        Deleted,
+        Warned,
+        Expiring,
+        Expired,
+        AutoRenew,
+        Cancelled,
+        Suspended,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingSubscriptionSplitRequest {
+    #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub billing_frequency: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i32>,
+    #[serde(rename = "targetProductTypeId", default, skip_serializing_if = "Option::is_none")]
+    pub target_product_type_id: Option<String>,
+    #[serde(rename = "targetSkuId", default, skip_serializing_if = "Option::is_none")]
+    pub target_sku_id: Option<String>,
+    #[serde(rename = "termDuration", default, skip_serializing_if = "Option::is_none")]
+    pub term_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingSubscriptionsListResult {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<BillingSubscription>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DetachPaymentMethodEligibilityError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -19,19 +177,38 @@ pub enum DetachPaymentMethodEligibilityErrorCode {
     OutstandingCharges,
     PendingCharges,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DetachPaymentMethodEligibilityResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<DetachPaymentMethodEligibilityError>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DetachPaymentMethodErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<DetachPaymentMethodEligibilityErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EnrollmentAccountSubscriptionDetails {
+    #[serde(rename = "subscriptionEnrollmentAccountStatus", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_enrollment_account_status: Option<enrollment_account_subscription_details::SubscriptionEnrollmentAccountStatus>,
+    #[serde(rename = "enrollmentAccountStartDate", default, skip_serializing_if = "Option::is_none")]
+    pub enrollment_account_start_date: Option<String>,
+}
+pub mod enrollment_account_subscription_details {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum SubscriptionEnrollmentAccountStatus {
+        Active,
+        Cancelled,
+        Expired,
+        Deleted,
+        TransferredOut,
+        Transferring,
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -42,13 +219,52 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<ErrorSubDetails>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
 pub type ErrorSubDetails = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum MoveBillingSubscriptionEligibilityErrorCode {
+    AccountIsLocked,
+    AssetNotActive,
+    AssetHasCap,
+    BillingAccountInactive,
+    BillingProfilePastDue,
+    CrossBillingAccountNotAllowed,
+    DestinationBillingProfileNotFound,
+    DestinationBillingProfileInactive,
+    DestinationBillingProfilePastDue,
+    DestinationInvoiceSectionNotFound,
+    DestinationInvoiceSectionInactive,
+    InvalidDestination,
+    InvalidSource,
+    InvoiceSectionIsRestricted,
+    InsufficientPermissionOnDestination,
+    InsufficientPermissionOnSource,
+    MarketplaceNotEnabledOnDestination,
+    ProductNotFound,
+    ProductInactive,
+    ProductTypeNotSupported,
+    SourceBillingProfilePastDue,
+    SourceInvoiceSectionInactive,
+    SubscriptionNotActive,
+    SubscriptionTypeNotSupported,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MoveBillingSubscriptionRequest {
+    #[serde(rename = "destinationEnrollmentAccountId", default, skip_serializing_if = "Option::is_none")]
+    pub destination_enrollment_account_id: Option<String>,
+    #[serde(rename = "destinationInvoiceSectionId", default, skip_serializing_if = "Option::is_none")]
+    pub destination_invoice_section_id: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NextBillingCycleDetails {
+    #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub billing_frequency: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -59,7 +275,7 @@ pub struct Operation {
 }
 pub mod operation {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
@@ -71,47 +287,47 @@ pub mod operation {
         pub description: Option<String>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethod {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PaymentMethodProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodLink {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PaymentMethodLinkProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodLinkProperties {
     #[serde(rename = "paymentMethod", default, skip_serializing_if = "Option::is_none")]
     pub payment_method: Option<PaymentMethodProjectionProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodLinksListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PaymentMethodLink>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodLogo {
     #[serde(rename = "mimeType", default, skip_serializing_if = "Option::is_none")]
     pub mime_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodProjectionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -147,7 +363,7 @@ pub mod payment_method_projection_properties {
         Inactive,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<payment_method_properties::Family>,
@@ -181,19 +397,39 @@ pub mod payment_method_properties {
         Inactive,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodResource {
     #[serde(rename = "paymentMethodId", default, skip_serializing_if = "Option::is_none")]
     pub payment_method_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PaymentMethod>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RenewalTermDetails {
+    #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub billing_frequency: Option<String>,
+    #[serde(rename = "productTypeId", default, skip_serializing_if = "Option::is_none")]
+    pub product_type_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i64>,
+    #[serde(rename = "skuId", default, skip_serializing_if = "Option::is_none")]
+    pub sku_id: Option<String>,
+    #[serde(rename = "termDuration", default, skip_serializing_if = "Option::is_none")]
+    pub term_duration: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Reseller {
+    #[serde(rename = "resellerId", default, skip_serializing_if = "Option::is_none")]
+    pub reseller_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -201,4 +437,20 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ValidateMoveBillingSubscriptionEligibilityError {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<MoveBillingSubscriptionEligibilityErrorCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ValidateMoveBillingSubscriptionEligibilityResult {
+    #[serde(rename = "isMoveEligible", default, skip_serializing_if = "Option::is_none")]
+    pub is_move_eligible: Option<bool>,
+    #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<ValidateMoveBillingSubscriptionEligibilityError>,
 }

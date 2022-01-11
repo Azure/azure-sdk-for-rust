@@ -9,7 +9,7 @@ pub struct AdlsGen1CredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdlsGen1CredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -30,12 +30,12 @@ pub struct AdlsGen1MsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdlsGen1MsiScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdlsGen1Properties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -49,7 +49,7 @@ pub struct AdlsGen1ScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdlsGen1ScanRulesetProperties {
     #[serde(flatten)]
     pub scanning_rule_scan_ruleset_properties: ScanningRuleScanRulesetProperties,
@@ -68,7 +68,7 @@ pub struct AdlsGen2CredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdlsGen2CredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -89,12 +89,12 @@ pub struct AdlsGen2MsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdlsGen2MsiScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdlsGen2Properties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -108,7 +108,7 @@ pub struct AdlsGen2ScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdlsGen2ScanRulesetProperties {
     #[serde(flatten)]
     pub scanning_rule_scan_ruleset_properties: ScanningRuleScanRulesetProperties,
@@ -127,7 +127,7 @@ pub struct AmazonAccountCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonAccountCredentialScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
@@ -139,7 +139,7 @@ pub struct AmazonAccountDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonAccountProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -155,7 +155,7 @@ pub struct AmazonAccountScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonAccountScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -174,7 +174,7 @@ pub struct AmazonPostgreSqlCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonPostgreSqlCredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -194,7 +194,7 @@ pub struct AmazonPostgreSqlDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonPostgreSqlProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -210,7 +210,7 @@ pub struct AmazonPostgreSqlScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonPostgreSqlScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -229,7 +229,7 @@ pub struct AmazonS3CredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonS3CredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -245,7 +245,7 @@ pub struct AmazonS3DataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonS3Properties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -261,7 +261,7 @@ pub struct AmazonS3RoleArnScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonS3RoleArnScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -275,7 +275,7 @@ pub struct AmazonS3ScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonS3ScanRulesetProperties {
     #[serde(flatten)]
     pub scanning_rule_scan_ruleset_properties: ScanningRuleScanRulesetProperties,
@@ -294,7 +294,7 @@ pub struct AmazonSqlCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonSqlCredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -312,7 +312,7 @@ pub struct AmazonSqlDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonSqlProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -326,7 +326,7 @@ pub struct AmazonSqlScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmazonSqlScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -345,7 +345,7 @@ pub struct AzureCosmosDbCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureCosmosDbCredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -361,7 +361,7 @@ pub struct AzureCosmosDbDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureCosmosDbProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -375,7 +375,7 @@ pub struct AzureCosmosDbScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureCosmosDbScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -394,7 +394,7 @@ pub struct AzureDataExplorerCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDataExplorerCredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -417,14 +417,14 @@ pub struct AzureDataExplorerMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDataExplorerMsiScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub database: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDataExplorerProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -438,7 +438,7 @@ pub struct AzureDataExplorerScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDataExplorerScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -450,7 +450,7 @@ pub struct AzureDataExplorerSystemScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDataSourceProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -470,7 +470,7 @@ pub struct AzureFileServiceCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFileServiceCredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -486,7 +486,7 @@ pub struct AzureFileServiceDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFileServiceProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -500,7 +500,7 @@ pub struct AzureFileServiceScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFileServiceScanRulesetProperties {
     #[serde(flatten)]
     pub scanning_rule_scan_ruleset_properties: ScanningRuleScanRulesetProperties,
@@ -512,14 +512,14 @@ pub struct AzureFileServiceSystemScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureKeyVault {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureKeyVaultList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureKeyVault>,
@@ -528,7 +528,7 @@ pub struct AzureKeyVaultList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureKeyVaultProperties {
     #[serde(rename = "baseUrl", default, skip_serializing_if = "Option::is_none")]
     pub base_url: Option<String>,
@@ -542,7 +542,7 @@ pub struct AzureMySqlCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureMySqlCredentialScanProperties {
     #[serde(flatten)]
     pub azure_my_sql_scan_properties: AzureMySqlScanProperties,
@@ -554,7 +554,7 @@ pub struct AzureMySqlDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureMySqlProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -563,7 +563,7 @@ pub struct AzureMySqlProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureMySqlScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -583,7 +583,7 @@ pub struct AzureMySqlScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureMySqlScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -602,7 +602,7 @@ pub struct AzurePostgreSqlCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzurePostgreSqlCredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -624,7 +624,7 @@ pub struct AzurePostgreSqlDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzurePostgreSqlProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -640,7 +640,7 @@ pub struct AzurePostgreSqlScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzurePostgreSqlScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -659,7 +659,7 @@ pub struct AzureResourceGroupCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceGroupCredentialScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
@@ -678,12 +678,12 @@ pub struct AzureResourceGroupMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceGroupMsiScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceGroupProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -699,7 +699,7 @@ pub struct AzureResourceGroupScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceGroupScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -711,7 +711,7 @@ pub struct AzureResourceGroupSystemScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlCredentialScanProperties {
     #[serde(flatten)]
     pub azure_sql_scan_properties: AzureSqlScanProperties,
@@ -725,7 +725,7 @@ pub struct AzureSqlDataWarehouseCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDataWarehouseCredentialScanProperties {
     #[serde(flatten)]
     pub azure_sql_credential_scan_properties: AzureSqlCredentialScanProperties,
@@ -744,12 +744,12 @@ pub struct AzureSqlDataWarehouseMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDataWarehouseMsiScanProperties {
     #[serde(flatten)]
     pub azure_sql_scan_properties: AzureSqlScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDataWarehouseProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -763,7 +763,7 @@ pub struct AzureSqlDataWarehouseScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDataWarehouseScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -782,7 +782,7 @@ pub struct AzureSqlDatabaseCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseCredentialScanProperties {
     #[serde(flatten)]
     pub azure_sql_credential_scan_properties: AzureSqlCredentialScanProperties,
@@ -801,7 +801,7 @@ pub struct AzureSqlDatabaseManagedInstanceCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseManagedInstanceCredentialScanProperties {
     #[serde(flatten)]
     pub azure_sql_credential_scan_properties: AzureSqlCredentialScanProperties,
@@ -820,12 +820,12 @@ pub struct AzureSqlDatabaseManagedInstanceMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseManagedInstanceMsiScanProperties {
     #[serde(flatten)]
     pub azure_sql_scan_properties: AzureSqlScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseManagedInstanceProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -839,7 +839,7 @@ pub struct AzureSqlDatabaseManagedInstanceScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseManagedInstanceScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -858,12 +858,12 @@ pub struct AzureSqlDatabaseMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseMsiScanProperties {
     #[serde(flatten)]
     pub azure_sql_scan_properties: AzureSqlScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -877,7 +877,7 @@ pub struct AzureSqlDatabaseScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlDatabaseScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -889,7 +889,7 @@ pub struct AzureSqlDatabaseSystemScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -905,7 +905,7 @@ pub struct AzureStorageCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureStorageCredentialScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -926,12 +926,12 @@ pub struct AzureStorageMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureStorageMsiScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureStorageProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -945,7 +945,7 @@ pub struct AzureStorageScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureStorageScanRulesetProperties {
     #[serde(flatten)]
     pub scanning_rule_scan_ruleset_properties: ScanningRuleScanRulesetProperties,
@@ -964,7 +964,7 @@ pub struct AzureSubscriptionCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSubscriptionCredentialScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
@@ -983,12 +983,12 @@ pub struct AzureSubscriptionMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSubscriptionMsiScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSubscriptionProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -1002,7 +1002,7 @@ pub struct AzureSubscriptionScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSubscriptionScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -1021,7 +1021,7 @@ pub struct AzureSynapseCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSynapseCredentialScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
@@ -1040,12 +1040,12 @@ pub struct AzureSynapseMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSynapseMsiScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSynapseProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -1061,7 +1061,7 @@ pub struct AzureSynapseScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSynapseScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -1080,7 +1080,7 @@ pub struct AzureSynapseWorkspaceCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSynapseWorkspaceCredentialScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
@@ -1099,12 +1099,12 @@ pub struct AzureSynapseWorkspaceMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSynapseWorkspaceMsiScanProperties {
     #[serde(flatten)]
     pub expanding_resource_scan_properties: ExpandingResourceScanProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSynapseWorkspaceProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -1120,7 +1120,7 @@ pub struct AzureSynapseWorkspaceScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSynapseWorkspaceScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -1146,7 +1146,7 @@ pub mod classification_rule {
         Custom,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClassificationRuleList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ClassificationRule>,
@@ -1166,7 +1166,7 @@ pub mod classification_rule_pattern {
         Regex,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectionReference {
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
@@ -1175,12 +1175,12 @@ pub struct CollectionReference {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedVia {
     #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
     pub reference_name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialReference {
     #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
     pub reference_name: Option<String>,
@@ -1206,7 +1206,7 @@ pub struct CustomClassificationRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomClassificationRuleProperties {
     #[serde(rename = "minimumPercentageMatch", default, skip_serializing_if = "Option::is_none")]
     pub minimum_percentage_match: Option<f64>,
@@ -1242,7 +1242,7 @@ pub mod custom_classification_rule_properties {
         Disabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomFileExtension {
     #[serde(rename = "customFileType", default, skip_serializing_if = "Option::is_none")]
     pub custom_file_type: Option<serde_json::Value>,
@@ -1253,7 +1253,7 @@ pub struct CustomFileExtension {
     #[serde(rename = "fileExtension", default, skip_serializing_if = "Option::is_none")]
     pub file_extension: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomFileType {
     #[serde(rename = "builtInType", default, skip_serializing_if = "Option::is_none")]
     pub built_in_type: Option<custom_file_type::BuiltInType>,
@@ -1370,7 +1370,7 @@ pub mod data_source {
         PowerBi,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataSource>,
@@ -1379,7 +1379,7 @@ pub struct DataSourceList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourceProperties {
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
@@ -1388,7 +1388,7 @@ pub struct DataSourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collection: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1399,7 +1399,7 @@ pub struct ErrorInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -1410,12 +1410,12 @@ pub struct ErrorModel {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorModel>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpandingResourceScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -1426,7 +1426,7 @@ pub struct ExpandingResourceScanProperties {
 }
 pub mod expanding_resource_scan_properties {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ResourceTypes {
         #[serde(rename = "None", default, skip_serializing_if = "Option::is_none")]
         pub none: Option<ResourceTypeFilter>,
@@ -1482,21 +1482,21 @@ pub mod expanding_resource_scan_properties {
         pub power_bi: Option<ResourceTypeFilter>,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filter {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FilterProperties {
     #[serde(rename = "excludeUriPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub exclude_uri_prefixes: Vec<String>,
     #[serde(rename = "includeUriPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub include_uri_prefixes: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MitiScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -1505,14 +1505,14 @@ pub struct MitiScanProperties {
     #[serde(rename = "mitiCache", default, skip_serializing_if = "Option::is_none")]
     pub miti_cache: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Notification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResponse {
     #[serde(rename = "scanResultId", default, skip_serializing_if = "Option::is_none")]
     pub scan_result_id: Option<String>,
@@ -1551,7 +1551,7 @@ pub struct OracleOracleCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OracleOracleCredentialScanProperties {
     #[serde(flatten)]
     pub miti_scan_properties: MitiScanProperties,
@@ -1569,7 +1569,7 @@ pub struct OracleOracleUserPassScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OracleOracleUserPassScanProperties {
     #[serde(flatten)]
     pub miti_scan_properties: MitiScanProperties,
@@ -1582,7 +1582,7 @@ pub struct OracleOracleUserPassScanProperties {
     #[serde(rename = "driverLocation", default, skip_serializing_if = "Option::is_none")]
     pub driver_location: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OracleProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -1600,7 +1600,7 @@ pub struct OracleScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OracleScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -1626,7 +1626,7 @@ pub struct PowerBiDelegatedScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PowerBiDelegatedScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -1650,14 +1650,14 @@ pub struct PowerBiMsiScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PowerBiMsiScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
     #[serde(rename = "includePersonalWorkspaces", default, skip_serializing_if = "Option::is_none")]
     pub include_personal_workspaces: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PowerBiProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -1671,7 +1671,7 @@ pub struct PowerBiScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PowerBiScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -1683,14 +1683,14 @@ pub struct PowerBiSystemScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecurrenceSchedule {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
@@ -1705,7 +1705,7 @@ pub struct RecurrenceSchedule {
     #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
     pub monthly_occurrences: Vec<RecurrenceScheduleOccurrence>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecurrenceScheduleOccurrence {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
@@ -1734,7 +1734,7 @@ pub struct RegexClassificationRulePattern {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceNameFilter {
     #[serde(rename = "excludePrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub exclude_prefixes: Vec<String>,
@@ -1743,7 +1743,7 @@ pub struct ResourceNameFilter {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeFilter {
     #[serde(rename = "scanRulesetName", default, skip_serializing_if = "Option::is_none")]
     pub scan_ruleset_name: Option<String>,
@@ -1769,7 +1769,7 @@ pub struct SapEccDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapEccProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -1785,7 +1785,7 @@ pub struct SapEccSapEccCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapEccSapEccCredentialScanProperties {
     #[serde(flatten)]
     pub miti_scan_properties: MitiScanProperties,
@@ -1803,7 +1803,7 @@ pub struct SapEccSapEccUserPassScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapEccSapEccUserPassScanProperties {
     #[serde(flatten)]
     pub miti_scan_properties: MitiScanProperties,
@@ -1823,7 +1823,7 @@ pub struct SapEccScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapEccScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -1842,7 +1842,7 @@ pub struct SapS4HanaDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapS4HanaProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -1858,7 +1858,7 @@ pub struct SapS4HanaSapS4HanaCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapS4HanaSapS4HanaCredentialScanProperties {
     #[serde(flatten)]
     pub miti_scan_properties: MitiScanProperties,
@@ -1876,7 +1876,7 @@ pub struct SapS4HanaSapS4HanaUserPassScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapS4HanaSapS4HanaUserPassScanProperties {
     #[serde(flatten)]
     pub miti_scan_properties: MitiScanProperties,
@@ -1896,7 +1896,7 @@ pub struct SapS4HanaScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapS4HanaScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -1968,14 +1968,14 @@ pub mod scan {
         PowerBiMsi,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanDiagnostics {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub notifications: Vec<Notification>,
     #[serde(rename = "exceptionCountMap", default, skip_serializing_if = "Option::is_none")]
     pub exception_count_map: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanHistoryList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScanResult>,
@@ -1984,7 +1984,7 @@ pub struct ScanHistoryList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Scan>,
@@ -1993,7 +1993,7 @@ pub struct ScanList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanProperties {
     #[serde(rename = "scanRulesetName", default, skip_serializing_if = "Option::is_none")]
     pub scan_ruleset_name: Option<String>,
@@ -2018,7 +2018,7 @@ pub mod scan_properties {
         System,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanResult {
     #[serde(rename = "parentId", default, skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
@@ -2139,7 +2139,7 @@ pub mod scan_ruleset {
         PowerBi,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanRulesetList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScanRuleset>,
@@ -2148,7 +2148,7 @@ pub struct ScanRulesetList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanRulesetProperties {
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
@@ -2161,14 +2161,14 @@ pub struct ScanRulesetProperties {
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanningRule {
     #[serde(rename = "fileExtensions", default, skip_serializing_if = "Vec::is_empty")]
     pub file_extensions: Vec<String>,
     #[serde(rename = "customFileExtensions", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_file_extensions: Vec<CustomFileExtension>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanningRuleScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -2182,7 +2182,7 @@ pub struct SqlServerDatabaseCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlServerDatabaseCredentialScanProperties {
     #[serde(flatten)]
     pub azure_sql_credential_scan_properties: AzureSqlCredentialScanProperties,
@@ -2194,7 +2194,7 @@ pub struct SqlServerDatabaseDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlServerDatabaseProperties {
     #[serde(flatten)]
     pub azure_data_source_properties: AzureDataSourceProperties,
@@ -2208,7 +2208,7 @@ pub struct SqlServerDatabaseScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlServerDatabaseScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -2227,7 +2227,7 @@ pub struct SystemClassificationRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemClassificationRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -2289,7 +2289,7 @@ pub mod system_scan_ruleset {
         PowerBi,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemScanRulesetList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SystemScanRuleset>,
@@ -2305,7 +2305,7 @@ pub struct TeradataDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TeradataProperties {
     #[serde(flatten)]
     pub data_source_properties: DataSourceProperties,
@@ -2319,7 +2319,7 @@ pub struct TeradataScanRuleset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TeradataScanRulesetProperties {
     #[serde(flatten)]
     pub scan_ruleset_properties: ScanRulesetProperties,
@@ -2338,7 +2338,7 @@ pub struct TeradataTeradataCredentialScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TeradataTeradataCredentialScanProperties {
     #[serde(flatten)]
     pub miti_scan_properties: MitiScanProperties,
@@ -2356,7 +2356,7 @@ pub struct TeradataTeradataUserPassScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TeradataTeradataUserPassScanProperties {
     #[serde(flatten)]
     pub miti_scan_properties: MitiScanProperties,
@@ -2376,7 +2376,7 @@ pub struct TeradataUserPassScan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TeradataUserPassScanProperties {
     #[serde(flatten)]
     pub scan_properties: ScanProperties,
@@ -2385,14 +2385,14 @@ pub struct TeradataUserPassScanProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Trigger {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recurrence: Option<serde_json::Value>,
@@ -2417,7 +2417,7 @@ pub mod trigger_properties {
         Incremental,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerRecurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<trigger_recurrence::Frequency>,
@@ -2440,7 +2440,7 @@ pub mod trigger_recurrence {
         Month,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VersionedScanRuleset {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,

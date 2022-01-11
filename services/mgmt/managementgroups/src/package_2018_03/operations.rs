@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -119,7 +119,7 @@ pub enum Error {
     TenantBackfillStatus(#[from] tenant_backfill_status::Error),
 }
 pub mod management_groups {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -180,7 +180,7 @@ pub mod management_groups {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -230,7 +230,7 @@ pub mod management_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(cache_control) = &self.cache_control {
                         req_builder = req_builder.header("Cache-Control", cache_control);
                     }
@@ -264,7 +264,7 @@ pub mod management_groups {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -329,7 +329,7 @@ pub mod management_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(expand) = &self.expand {
                         url.query_pairs_mut().append_pair("$expand", expand);
                     }
@@ -369,7 +369,7 @@ pub mod management_groups {
         }
     }
     pub mod create_or_update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::ManagementGroup),
@@ -425,7 +425,7 @@ pub mod management_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(cache_control) = &self.cache_control {
                         req_builder = req_builder.header("Cache-Control", cache_control);
                     }
@@ -463,7 +463,7 @@ pub mod management_groups {
         }
     }
     pub mod update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -514,7 +514,7 @@ pub mod management_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(cache_control) = &self.cache_control {
                         req_builder = req_builder.header("Cache-Control", cache_control);
                     }
@@ -546,7 +546,7 @@ pub mod management_groups {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Accepted202(models::OperationResults),
@@ -601,7 +601,7 @@ pub mod management_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(cache_control) = &self.cache_control {
                         req_builder = req_builder.header("Cache-Control", cache_control);
                     }
@@ -633,7 +633,7 @@ pub mod management_groups {
         }
     }
     pub mod get_descendants {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -688,7 +688,7 @@ pub mod management_groups {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(skiptoken) = &self.skiptoken {
                         url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
                     }
@@ -723,7 +723,7 @@ pub mod management_groups {
     }
 }
 pub mod management_group_subscriptions {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn create(&self, group_id: impl Into<String>, subscription_id: impl Into<String>) -> create::Builder {
@@ -744,7 +744,7 @@ pub mod management_group_subscriptions {
         }
     }
     pub mod create {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -796,7 +796,7 @@ pub mod management_group_subscriptions {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(cache_control) = &self.cache_control {
                         req_builder = req_builder.header("Cache-Control", cache_control);
                     }
@@ -822,7 +822,7 @@ pub mod management_group_subscriptions {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -874,7 +874,7 @@ pub mod management_group_subscriptions {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(cache_control) = &self.cache_control {
                         req_builder = req_builder.header("Cache-Control", cache_control);
                     }
@@ -901,7 +901,7 @@ pub mod management_group_subscriptions {
     }
 }
 pub mod operations {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -909,7 +909,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -949,7 +949,7 @@ pub mod operations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -995,7 +995,7 @@ impl Client {
     }
 }
 pub mod check_name_availability {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1036,7 +1036,7 @@ pub mod check_name_availability {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                 req_builder = req_builder.header("content-type", "application/json");
                 let req_body = azure_core::to_json(&self.check_name_availability_request).map_err(Error::Serialize)?;
                 req_builder = req_builder.uri(url.as_str());
@@ -1065,7 +1065,7 @@ pub mod check_name_availability {
     }
 }
 pub mod start_tenant_backfill {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1105,7 +1105,7 @@ pub mod start_tenant_backfill {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                 let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
@@ -1134,7 +1134,7 @@ pub mod start_tenant_backfill {
     }
 }
 pub mod tenant_backfill_status {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1174,7 +1174,7 @@ pub mod tenant_backfill_status {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                 let req_body = azure_core::EMPTY_BODY;
                 req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                 req_builder = req_builder.uri(url.as_str());
@@ -1203,7 +1203,7 @@ pub mod tenant_backfill_status {
     }
 }
 pub mod entities {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -1222,7 +1222,7 @@ pub mod entities {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1307,7 +1307,7 @@ pub mod entities {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-03-01-preview");
                     if let Some(skiptoken) = &self.skiptoken {
                         url.query_pairs_mut().append_pair("$skiptoken", skiptoken);
                     }

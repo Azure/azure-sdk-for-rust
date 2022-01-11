@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -16,7 +16,7 @@ pub struct ClientBuilder {
     endpoint: Option<String>,
     scopes: Option<Vec<String>>,
 }
-pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+pub const DEFAULT_ENDPOINT: &str = "https://169.254.169.254/metadata";
 impl ClientBuilder {
     pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
         Self {
@@ -98,7 +98,7 @@ pub enum Error {
     Identity_GetInfo(#[from] identity::get_info::Error),
 }
 pub mod instances {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get_metadata(&self, metadata: impl Into<String>) -> get_metadata::Builder {
@@ -109,7 +109,7 @@ pub mod instances {
         }
     }
     pub mod get_metadata {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -164,7 +164,7 @@ pub mod instances {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
                     req_builder = req_builder.header("Metadata", &self.metadata);
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
@@ -236,7 +236,7 @@ pub mod instances {
     }
 }
 pub mod attested {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get_document(&self, metadata: impl Into<String>) -> get_document::Builder {
@@ -248,7 +248,7 @@ pub mod attested {
         }
     }
     pub mod get_document {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -308,7 +308,7 @@ pub mod attested {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
                     if let Some(nonce) = &self.nonce {
                         url.query_pairs_mut().append_pair("nonce", nonce);
                     }
@@ -383,7 +383,7 @@ pub mod attested {
     }
 }
 pub mod identity {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get_token(&self, metadata: impl Into<String>, resource: impl Into<String>) -> get_token::Builder {
@@ -406,7 +406,7 @@ pub mod identity {
         }
     }
     pub mod get_token {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -483,7 +483,7 @@ pub mod identity {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
                     req_builder = req_builder.header("Metadata", &self.metadata);
                     let resource = &self.resource;
                     url.query_pairs_mut().append_pair("resource", resource);
@@ -559,7 +559,7 @@ pub mod identity {
         }
     }
     pub mod get_info {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -610,7 +610,7 @@ pub mod identity {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2018-10-01");
                     req_builder = req_builder.header("Metadata", &self.metadata);
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());

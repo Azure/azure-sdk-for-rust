@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessProfile {
     #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub kube_config: Option<String>,
@@ -42,7 +42,7 @@ pub mod container_service_master_profile {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Count {}
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceNetworkProfile {
     #[serde(rename = "networkPlugin", default, skip_serializing_if = "Option::is_none")]
     pub network_plugin: Option<container_service_network_profile::NetworkPlugin>,
@@ -65,6 +65,11 @@ pub mod container_service_network_profile {
         Azure,
         #[serde(rename = "kubenet")]
         Kubenet,
+    }
+    impl Default for NetworkPlugin {
+        fn default() -> Self {
+            Self::Kubenet
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkPolicy {
@@ -453,14 +458,14 @@ pub struct ContainerServiceWindowsProfile {
     #[serde(rename = "adminPassword")]
     pub admin_password: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub kubeconfigs: Vec<CredentialResult>,
@@ -514,7 +519,7 @@ pub struct ManagedClusterAgentPoolProfile {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedCluster>,
@@ -532,7 +537,7 @@ pub struct ManagedClusterPoolUpgradeProfile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -588,12 +593,17 @@ pub enum OsType {
     Linux,
     Windows,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+impl Default for OsType {
+    fn default() -> Self {
+        Self::Linux
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationValue>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
@@ -602,7 +612,7 @@ pub struct OperationValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationValueDisplay>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationValueDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
@@ -632,7 +642,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

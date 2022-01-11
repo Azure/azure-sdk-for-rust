@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoscaleErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<autoscale_error_response::Error>,
@@ -11,7 +11,7 @@ pub struct AutoscaleErrorResponse {
 }
 pub mod autoscale_error_response {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
@@ -85,14 +85,14 @@ pub struct AutoscaleSettingResourceCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoscaleSettingResourcePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutoscaleSetting>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettings {
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_id: Option<String>,
@@ -113,7 +113,7 @@ pub struct DiagnosticSettings {
     #[serde(rename = "logAnalyticsDestinationType", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_destination_type: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategory {
     #[serde(rename = "categoryType", default, skip_serializing_if = "Option::is_none")]
     pub category_type: Option<diagnostic_settings_category::CategoryType>,
@@ -128,7 +128,7 @@ pub mod diagnostic_settings_category {
         Logs,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategoryResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -137,12 +137,12 @@ pub struct DiagnosticSettingsCategoryResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategoryResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiagnosticSettingsCategoryResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -151,12 +151,12 @@ pub struct DiagnosticSettingsResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiagnosticSettingsResource>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailNotification {
     #[serde(rename = "sendToSubscriptionAdministrator", default, skip_serializing_if = "Option::is_none")]
     pub send_to_subscription_administrator: Option<bool>,
@@ -165,7 +165,7 @@ pub struct EmailNotification {
     #[serde(rename = "customEmails", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_emails: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -182,7 +182,7 @@ pub struct LogSettings {
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettings {
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_id: Option<String>,
@@ -199,7 +199,7 @@ pub struct ManagementGroupDiagnosticSettings {
     #[serde(rename = "marketplacePartnerId", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_partner_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettingsResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -208,7 +208,7 @@ pub struct ManagementGroupDiagnosticSettingsResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementGroupDiagnosticSettingsResource>,
@@ -300,7 +300,7 @@ pub mod predictive_autoscale_policy {
         Enabled,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PredictiveResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timespan: Option<String>,
@@ -346,7 +346,7 @@ pub struct RecurrentSchedule {
     pub hours: Vec<i32>,
     pub minutes: Vec<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -415,7 +415,7 @@ pub mod scale_rule_metric_dimension {
         NotEquals,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDiagnosticSettings {
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_id: Option<String>,
@@ -432,7 +432,7 @@ pub struct SubscriptionDiagnosticSettings {
     #[serde(rename = "marketplacePartnerId", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_partner_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDiagnosticSettingsResource {
     #[serde(flatten)]
     pub resource: Resource,
@@ -441,7 +441,7 @@ pub struct SubscriptionDiagnosticSettingsResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubscriptionDiagnosticSettingsResource>,
@@ -461,14 +461,14 @@ pub struct TimeWindow {
     pub start: String,
     pub end: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookNotification {
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,

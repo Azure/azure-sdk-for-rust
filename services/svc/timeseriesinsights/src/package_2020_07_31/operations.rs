@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -122,7 +122,7 @@ pub enum Error {
     TimeSeriesHierarchies_ExecuteBatch(#[from] time_series_hierarchies::execute_batch::Error),
 }
 pub mod query {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get_availability(&self) -> get_availability::Builder {
@@ -154,7 +154,7 @@ pub mod query {
         }
     }
     pub mod get_availability {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -209,7 +209,7 @@ pub mod query {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     if let Some(store_type) = &self.store_type {
                         url.query_pairs_mut().append_pair("storeType", store_type);
                     }
@@ -246,7 +246,7 @@ pub mod query {
         }
     }
     pub mod get_event_schema {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -302,7 +302,7 @@ pub mod query {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     if let Some(store_type) = &self.store_type {
                         url.query_pairs_mut().append_pair("storeType", store_type);
                     }
@@ -340,7 +340,7 @@ pub mod query {
         }
     }
     pub mod execute {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -401,7 +401,7 @@ pub mod query {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     if let Some(store_type) = &self.store_type {
                         url.query_pairs_mut().append_pair("storeType", store_type);
                     }
@@ -443,7 +443,7 @@ pub mod query {
     }
 }
 pub mod model_settings {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(&self) -> get::Builder {
@@ -463,7 +463,7 @@ pub mod model_settings {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -513,7 +513,7 @@ pub mod model_settings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
                         req_builder = req_builder.header("x-ms-client-request-id", x_ms_client_request_id);
                     }
@@ -547,7 +547,7 @@ pub mod model_settings {
         }
     }
     pub mod update {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -598,7 +598,7 @@ pub mod model_settings {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
@@ -634,7 +634,7 @@ pub mod model_settings {
     }
 }
 pub mod time_series_instances {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -672,7 +672,7 @@ pub mod time_series_instances {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -727,7 +727,7 @@ pub mod time_series_instances {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     if let Some(x_ms_continuation) = &self.x_ms_continuation {
                         req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
                     }
@@ -764,7 +764,7 @@ pub mod time_series_instances {
         }
     }
     pub mod execute_batch {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -815,7 +815,7 @@ pub mod time_series_instances {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
@@ -850,7 +850,7 @@ pub mod time_series_instances {
         }
     }
     pub mod suggest {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -901,7 +901,7 @@ pub mod time_series_instances {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
@@ -936,7 +936,7 @@ pub mod time_series_instances {
         }
     }
     pub mod search {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -994,7 +994,7 @@ pub mod time_series_instances {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     if let Some(x_ms_continuation) = &self.x_ms_continuation {
                         req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
                     }
@@ -1033,7 +1033,7 @@ pub mod time_series_instances {
     }
 }
 pub mod time_series_types {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -1054,7 +1054,7 @@ pub mod time_series_types {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1109,7 +1109,7 @@ pub mod time_series_types {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     if let Some(x_ms_continuation) = &self.x_ms_continuation {
                         req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
                     }
@@ -1146,7 +1146,7 @@ pub mod time_series_types {
         }
     }
     pub mod execute_batch {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1197,7 +1197,7 @@ pub mod time_series_types {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {
@@ -1233,7 +1233,7 @@ pub mod time_series_types {
     }
 }
 pub mod time_series_hierarchies {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -1254,7 +1254,7 @@ pub mod time_series_hierarchies {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1309,7 +1309,7 @@ pub mod time_series_hierarchies {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     if let Some(x_ms_continuation) = &self.x_ms_continuation {
                         req_builder = req_builder.header("x-ms-continuation", x_ms_continuation);
                     }
@@ -1346,7 +1346,7 @@ pub mod time_series_hierarchies {
         }
     }
     pub mod execute_batch {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1397,7 +1397,7 @@ pub mod time_series_hierarchies {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2020-07-31");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
                     if let Some(x_ms_client_request_id) = &self.x_ms_client_request_id {

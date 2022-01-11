@@ -5,6 +5,7 @@ use autorust_openapi::{
 };
 use indexmap::{IndexMap, IndexSet};
 use std::{
+    collections::BTreeSet,
     ffi::OsStr,
     fs,
     path::{Path, PathBuf},
@@ -81,17 +82,28 @@ impl Spec {
         &self.docs
     }
 
-    pub fn title(&self) -> Option<&str> {
-        let mut titles: Vec<_> = self
-            .docs
-            .values()
-            .map(|doc| &doc.info.title)
-            .filter(|t| t.is_some())
-            .flatten()
-            .collect();
-        titles.sort_unstable();
+    pub fn doc(&self, doc_file: &Path) -> Result<&OpenAPI> {
+        self.docs.get(doc_file).ok_or_else(|| Error::KeyNotFound(doc_file.to_path_buf()))
+    }
 
-        titles.get(0).map(|t| t.as_str())
+    pub fn title(&self) -> Option<&str> {
+        self.docs.values().find_map(|doc| doc.info.title.as_deref())
+    }
+
+    pub fn host(&self) -> Option<&str> {
+        self.docs.values().find_map(|doc| doc.host.as_deref())
+    }
+
+    pub fn base_path(&self) -> Option<&str> {
+        self.docs.values().find_map(|doc| doc.base_path.as_deref())
+    }
+
+    pub fn endpoint(&self) -> Option<String> {
+        match (self.host(), self.base_path()) {
+            (Some(host), Some(base_path)) => Some(format!("https://{}{}", host, base_path).trim_end_matches('/').to_owned()),
+            (Some(host), None) => Some(format!("https://{}", host)),
+            _ => None,
+        }
     }
 
     pub fn consumes(&self) -> Vec<&String> {
@@ -102,21 +114,19 @@ impl Spec {
             .map(|api| &api.consumes)
             .flatten()
             .collect();
-
         versions.sort_unstable();
         versions
     }
 
-    /// Look for specs with operations and return the last one sorted alphabetically
-    pub fn api_version(&self) -> Option<String> {
-        let mut versions: Vec<&str> = self
+    /// get a list of `api-version`s used
+    pub fn api_versions(&self) -> Vec<&str> {
+        let versions: BTreeSet<&str> = self
             .docs()
             .values()
             .filter(|doc| !doc.paths().is_empty())
             .filter_map(|api| api.info.version.as_deref())
             .collect();
-        versions.sort_unstable();
-        versions.last().map(|version| version.to_string())
+        versions.into_iter().collect()
     }
 
     pub fn input_docs(&self) -> impl Iterator<Item = (&PathBuf, &OpenAPI)> {
@@ -253,6 +263,7 @@ impl Spec {
                         responses: op.responses,
                         examples: op.examples,
                         summary: op.summary,
+                        api_version: self.doc(&op.doc_file)?.version()?.to_owned(),
                     })
                 }
             })
@@ -260,34 +271,38 @@ impl Spec {
     }
 }
 
-type Result<T, E = Error> = std::result::Result<T, E>;
+type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error(transparent)]
+    OpenApi(#[from] autorust_openapi::Error),
     #[error("PathJoin")]
     PathJoin { source: path::Error },
     #[error("SchemaNotFound {} {}", ref_key.file_path.display(), ref_key.name)]
     SchemaNotFound { ref_key: RefKey },
-    #[error("NoNameInReference")]
+    #[error("no name in reference")]
     NoNameInReference,
-    #[error("ParameterNotFound")]
+    #[error("parameter not found {} {}", ref_key.file_path.display(), ref_key.name)]
     ParameterNotFound { ref_key: RefKey },
-    #[error("NotImplemented")]
+    #[error("not implemented")]
     NotImplemented,
-    #[error("ReadFile")]
+    #[error("unable to read file {:?} {}", path, source)]
     ReadFile { source: std::io::Error, path: PathBuf },
-    #[error("DeserializeYaml")]
+    #[error("unable to deserialize yaml {:?} {}", path, source)]
     DeserializeYaml { source: serde_yaml::Error, path: PathBuf },
-    #[error("DeserializeJson")]
+    #[error("unable to deserialize json {:?} {}", path, source)]
     DeserializeJson { source: serde_json::Error, path: PathBuf },
     #[error("TypeName {0}")]
     TypeName(#[source] Box<crate::codegen::Error>),
     #[error("creating function name: {0}")]
     FunctionName(#[source] crate::identifier::Error),
-    #[error("ArrayExpectedToHaveItems")]
+    #[error("array expected to have items")]
     ArrayExpectedToHaveItems,
-    #[error("NoNameForRef")]
+    #[error("no name in ref")]
     NoNameForRef,
+    #[error("key not found {0:?}")]
+    KeyNotFound(PathBuf),
 }
 
 /// a qualified reference
@@ -429,6 +444,7 @@ pub struct WebOperation {
     pub responses: IndexMap<StatusCode, Response>,
     pub examples: MsExamples,
     pub summary: Option<String>,
+    pub api_version: String,
 }
 
 impl Default for WebOperation {
@@ -441,6 +457,7 @@ impl Default for WebOperation {
             responses: Default::default(),
             examples: Default::default(),
             summary: Default::default(),
+            api_version: Default::default(),
         }
     }
 }
@@ -480,7 +497,7 @@ impl WebParameter {
         matches!(self.data_type(), Some(DataType::String))
     }
 
-    pub fn type_name(&self) -> Result<TypeName, Error> {
+    pub fn type_name(&self) -> Result<TypeName> {
         Ok(if let Some(_data_type) = self.data_type() {
             get_type_name_for_schema(&self.0.common)?
         } else if let Some(schema) = &self.0.schema {
@@ -491,7 +508,7 @@ impl WebParameter {
         })
     }
 
-    pub fn type_is_ref(&self) -> Result<bool, Error> {
+    pub fn type_is_ref(&self) -> Result<bool> {
         Ok(if let Some(data_type) = self.data_type() {
             matches!(data_type, DataType::String | DataType::Object | DataType::File)
         } else {
@@ -678,7 +695,7 @@ pub enum TypeName {
     String,
 }
 
-pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName, Error> {
+pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName> {
     Ok(if let Some(schema_type) = &schema.type_ {
         let format = schema.format.as_deref();
         match schema_type {
@@ -715,7 +732,7 @@ pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName, Error
     })
 }
 
-pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>) -> Result<TypeName, Error> {
+pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>) -> Result<TypeName> {
     Ok(match schema {
         ReferenceOr::Reference { reference, .. } => {
             let name = reference.name.as_ref().ok_or(Error::NoNameForRef)?;
@@ -725,6 +742,6 @@ pub fn get_type_name_for_schema_ref(schema: &ReferenceOr<Schema>) -> Result<Type
     })
 }
 
-pub fn get_schema_array_items(schema: &SchemaCommon) -> Result<&ReferenceOr<Schema>, Error> {
+pub fn get_schema_array_items(schema: &SchemaCommon) -> Result<&ReferenceOr<Schema>> {
     schema.items.as_ref().as_ref().ok_or(Error::ArrayExpectedToHaveItems)
 }

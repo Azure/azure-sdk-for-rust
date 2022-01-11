@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessProfile {
     #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub kube_config: Option<String>,
@@ -477,7 +477,7 @@ pub struct ManagedClusterAccessProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessProfile>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedCluster>,
@@ -495,7 +495,7 @@ pub struct ManagedClusterPoolUpgradeProfile {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
@@ -533,6 +533,11 @@ pub struct ManagedClusterUpgradeProfileProperties {
 pub enum OsType {
     Linux,
     Windows,
+}
+impl Default for OsType {
+    fn default() -> Self {
+        Self::Linux
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorProfile {

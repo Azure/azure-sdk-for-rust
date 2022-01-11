@@ -21,14 +21,14 @@ pub mod baseline {
         High,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineMetadataValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timespan: Option<String>,
@@ -43,7 +43,7 @@ pub struct BaselineProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<BaselineMetadataValue>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -62,7 +62,7 @@ pub struct CalculateBaselineResponse {
     pub timestamps: Vec<String>,
     pub baseline: Vec<Baseline>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,

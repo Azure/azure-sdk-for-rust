@@ -9,7 +9,7 @@ pub struct GetBlobPropertiesBuilder<'a> {
     blob_versioning: Option<&'a BlobVersioning>,
     timeout: Option<Timeout>,
     lease_id: Option<&'a LeaseId>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> GetBlobPropertiesBuilder<'a> {
@@ -27,7 +27,7 @@ impl<'a> GetBlobPropertiesBuilder<'a> {
         blob_versioning: &'a BlobVersioning => Some(blob_versioning),
         timeout: Timeout => Some(timeout),
         lease_id: &'a LeaseId => Some(lease_id),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

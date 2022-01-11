@@ -12,7 +12,7 @@ pub struct AvailableProviderOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AvailableProviderOperationProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProviderOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -23,9 +23,9 @@ pub struct AvailableProviderOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProviderOperationProperties {}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableProviderOperations {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AvailableProviderOperation>,
@@ -59,14 +59,14 @@ pub struct DataManager {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataManagerList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataManager>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataManagerUpdateParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
@@ -79,7 +79,7 @@ pub struct DataService {
     pub dms_base_object: DmsBaseObject,
     pub properties: DataServiceProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataServiceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataService>,
@@ -109,12 +109,12 @@ pub struct DataStore {
     pub dms_base_object: DmsBaseObject,
     pub properties: DataStoreProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataStoreFilter {
     #[serde(rename = "dataStoreTypeId", default, skip_serializing_if = "Option::is_none")]
     pub data_store_type_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataStoreList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataStore>,
@@ -148,7 +148,7 @@ pub struct DataStoreType {
     pub dms_base_object: DmsBaseObject,
     pub properties: DataStoreTypeProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataStoreTypeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataStoreType>,
@@ -174,7 +174,7 @@ pub mod data_store_type_properties {
         Supported,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DmsBaseObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -189,7 +189,7 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
@@ -249,7 +249,7 @@ pub mod job_definition_filter {
         Supported,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDefinitionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobDefinition>,
@@ -346,8 +346,13 @@ pub mod job_definition_properties {
         NotRequired,
         Required,
     }
+    impl Default for UserConfirmation {
+        fn default() -> Self {
+            Self::NotRequired
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDetails {
     #[serde(rename = "jobStages", default, skip_serializing_if = "Vec::is_empty")]
     pub job_stages: Vec<JobStages>,
@@ -377,7 +382,7 @@ pub mod job_filter {
         Cancelling,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Job>,
@@ -450,7 +455,7 @@ pub struct PublicKey {
     pub dms_base_object: DmsBaseObject,
     pub properties: PublicKeyProperties,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicKeyList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PublicKey>,
@@ -478,7 +483,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunParameters {
     #[serde(rename = "userConfirmation", default, skip_serializing_if = "Option::is_none")]
     pub user_confirmation: Option<run_parameters::UserConfirmation>,
@@ -494,15 +499,20 @@ pub mod run_parameters {
         NotRequired,
         Required,
     }
+    impl Default for UserConfirmation {
+        fn default() -> Self {
+            Self::NotRequired
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Schedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "policyList", default, skip_serializing_if = "Vec::is_empty")]
     pub policy_list: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

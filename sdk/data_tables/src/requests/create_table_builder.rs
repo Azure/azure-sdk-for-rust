@@ -9,7 +9,7 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct CreateTableBuilder<'a> {
     table_client: &'a TableClient,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> CreateTableBuilder<'a> {
@@ -21,7 +21,7 @@ impl<'a> CreateTableBuilder<'a> {
     }
 
     setters! {
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

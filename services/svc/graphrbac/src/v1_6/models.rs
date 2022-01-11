@@ -21,7 +21,7 @@ pub struct AdGroup {
 pub struct AddOwnerParameters {
     pub url: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppRole {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -53,7 +53,7 @@ pub struct AppRoleAssignment {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppRoleAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AppRoleAssignment>,
@@ -129,7 +129,7 @@ pub struct Application {
     #[serde(rename = "wwwHomepage", default, skip_serializing_if = "Option::is_none")]
     pub www_homepage: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationBase {
     #[serde(rename = "allowGuestsSignIn", default, skip_serializing_if = "Option::is_none")]
     pub allow_guests_sign_in: Option<bool>,
@@ -199,14 +199,14 @@ pub struct ApplicationCreateParameters {
     #[serde(rename = "identifierUris", default, skip_serializing_if = "Vec::is_empty")]
     pub identifier_uris: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Application>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationUpdateParameters {
     #[serde(flatten)]
     pub application_base: ApplicationBase,
@@ -222,7 +222,7 @@ pub struct CheckGroupMembershipParameters {
     #[serde(rename = "memberId")]
     pub member_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckGroupMembershipResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<bool>,
@@ -236,7 +236,7 @@ pub struct DirectoryObject {
     #[serde(rename = "deletionTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub deletion_timestamp: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DirectoryObjectListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DirectoryObject>,
@@ -253,17 +253,17 @@ pub struct Domain {
     pub is_verified: Option<bool>,
     pub name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Domain>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorMessage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetObjectsParameters {
     #[serde(rename = "objectIds", default, skip_serializing_if = "Vec::is_empty")]
     pub object_ids: Vec<String>,
@@ -272,7 +272,7 @@ pub struct GetObjectsParameters {
     #[serde(rename = "includeDirectoryObjectReferences", default, skip_serializing_if = "Option::is_none")]
     pub include_directory_object_references: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphError {
     #[serde(rename = "odata.error", default, skip_serializing_if = "Option::is_none")]
     pub odata_error: Option<OdataError>,
@@ -304,12 +304,12 @@ pub struct GroupGetMemberGroupsParameters {
     #[serde(rename = "securityEnabledOnly")]
     pub security_enabled_only: bool,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupGetMemberGroupsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AdGroup>,
@@ -322,7 +322,7 @@ pub enum GroupMembershipClaims {
     SecurityGroup,
     All,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationalUrl {
     #[serde(rename = "termsOfService", default, skip_serializing_if = "Option::is_none")]
     pub terms_of_service: Option<String>,
@@ -333,7 +333,7 @@ pub struct InformationalUrl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub support: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyCredential {
     #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
     pub start_date: Option<String>,
@@ -350,7 +350,7 @@ pub struct KeyCredential {
     #[serde(rename = "customKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub custom_key_identifier: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyCredentialListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<KeyCredential>,
@@ -359,7 +359,7 @@ pub struct KeyCredentialListResult {
 pub struct KeyCredentialsUpdateParameters {
     pub value: Vec<KeyCredential>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OAuth2Permission {
     #[serde(rename = "adminConsentDescription", default, skip_serializing_if = "Option::is_none")]
     pub admin_consent_description: Option<String>,
@@ -378,7 +378,7 @@ pub struct OAuth2Permission {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OAuth2PermissionGrant {
     #[serde(rename = "odata.type", default, skip_serializing_if = "Option::is_none")]
     pub odata_type: Option<String>,
@@ -407,21 +407,21 @@ pub mod o_auth2_permission_grant {
         Principal,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OAuth2PermissionGrantListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OAuth2PermissionGrant>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OdataError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<ErrorMessage>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OptionalClaim {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -432,7 +432,7 @@ pub struct OptionalClaim {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OptionalClaims {
     #[serde(rename = "idToken", default, skip_serializing_if = "Vec::is_empty")]
     pub id_token: Vec<OptionalClaim>,
@@ -441,7 +441,7 @@ pub struct OptionalClaims {
     #[serde(rename = "samlToken", default, skip_serializing_if = "Vec::is_empty")]
     pub saml_token: Vec<OptionalClaim>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PasswordCredential {
     #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
     pub start_date: Option<String>,
@@ -454,7 +454,7 @@ pub struct PasswordCredential {
     #[serde(rename = "customKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub custom_key_identifier: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PasswordCredentialListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PasswordCredential>,
@@ -469,7 +469,7 @@ pub struct PasswordProfile {
     #[serde(rename = "forceChangePasswordNextLogin", default, skip_serializing_if = "Option::is_none")]
     pub force_change_password_next_login: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreAuthorizedApplication {
     #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
@@ -478,12 +478,12 @@ pub struct PreAuthorizedApplication {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<PreAuthorizedApplicationExtension>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreAuthorizedApplicationExtension {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub conditions: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreAuthorizedApplicationPermission {
     #[serde(rename = "directAccessGrant", default, skip_serializing_if = "Option::is_none")]
     pub direct_access_grant: Option<bool>,
@@ -550,7 +550,7 @@ pub struct ServicePrincipal {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicePrincipalBase {
     #[serde(rename = "accountEnabled", default, skip_serializing_if = "Option::is_none")]
     pub account_enabled: Option<bool>,
@@ -572,26 +572,26 @@ pub struct ServicePrincipalCreateParameters {
     #[serde(rename = "appId")]
     pub app_id: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicePrincipalListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServicePrincipal>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicePrincipalObjectResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]
     pub odata_metadata: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicePrincipalUpdateParameters {
     #[serde(flatten)]
     pub service_principal_base: ServicePrincipalBase,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignInName {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -633,7 +633,7 @@ pub mod user {
         Guest,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserBase {
     #[serde(rename = "immutableId", default, skip_serializing_if = "Option::is_none")]
     pub immutable_id: Option<String>,
@@ -676,19 +676,19 @@ pub struct UserGetMemberGroupsParameters {
     #[serde(rename = "securityEnabledOnly")]
     pub security_enabled_only: bool,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserGetMemberGroupsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<User>,
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserUpdateParameters {
     #[serde(flatten)]
     pub user_base: UserBase,

@@ -10,12 +10,12 @@ use std::convert::TryInto;
 #[derive(Debug, Clone)]
 pub struct ListQueuesBuilder<'a> {
     storage_client: &'a StorageClient,
-    prefix: Option<Prefix<'a>>,
+    prefix: Option<Prefix>,
     next_marker: Option<NextMarker>,
     max_results: Option<MaxResults>,
     include_metadata: bool,
     timeout: Option<Timeout>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
 }
 
 impl<'a> ListQueuesBuilder<'a> {
@@ -32,12 +32,12 @@ impl<'a> ListQueuesBuilder<'a> {
     }
 
     setters! {
-        prefix: Prefix<'a> => Some(prefix),
+        prefix: Prefix => Some(prefix),
         next_marker: NextMarker => Some(next_marker),
         max_results: MaxResults => Some(max_results),
         include_metadata: bool => include_metadata,
         timeout: Timeout => Some(timeout),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
     }
 
     pub async fn execute(

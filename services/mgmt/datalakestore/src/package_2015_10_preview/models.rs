@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAsyncOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<azure_async_operation_result::Status>,
@@ -18,7 +18,7 @@ pub mod azure_async_operation_result {
         Failed,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -35,7 +35,7 @@ pub struct DataLakeStoreAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataLakeStoreAccountProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataLakeStoreAccount>,
@@ -44,7 +44,7 @@ pub struct DataLakeStoreAccountListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreAccountProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<data_lake_store_account_properties::ProvisioningState>,
@@ -97,7 +97,7 @@ pub mod data_lake_store_account_properties {
         Succeeded,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreFirewallRuleListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FirewallRule>,
@@ -106,7 +106,7 @@ pub struct DataLakeStoreFirewallRuleListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionConfig {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<encryption_config::Type>,
@@ -121,7 +121,7 @@ pub mod encryption_config {
         ServiceManaged,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionIdentity {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<encryption_identity::Type>,
@@ -137,7 +137,7 @@ pub mod encryption_identity {
         SystemAssigned,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -150,7 +150,7 @@ pub struct Error {
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<InnerError>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -159,7 +159,7 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -172,21 +172,21 @@ pub struct FirewallRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FirewallRuleProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleProperties {
     #[serde(rename = "startIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub start_ip_address: Option<String>,
     #[serde(rename = "endIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub end_ip_address: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultMetaInfo {
     #[serde(rename = "keyVaultResourceId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_resource_id: Option<String>,

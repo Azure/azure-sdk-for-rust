@@ -76,6 +76,10 @@ impl SchemaGen {
         self.schema.required.iter().map(String::as_str).collect()
     }
 
+    fn has_required(&self) -> bool {
+        !self.schema.required.is_empty()
+    }
+
     fn all_of(&self) -> Vec<&SchemaGen> {
         self.all_of.iter().collect()
     }
@@ -90,6 +94,23 @@ impl SchemaGen {
 
     fn properties(&self) -> Vec<&PropertyGen> {
         self.properties.iter().collect()
+    }
+
+    fn default(&self) -> Option<&str> {
+        self.schema.common.default.as_ref().map(|v| v.as_str()).flatten()
+    }
+
+    /// If the type should implement Default
+    fn implement_default(&self) -> bool {
+        if self.has_required() {
+            return false;
+        }
+        for schema in self.all_of() {
+            if !schema.implement_default() {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -178,6 +199,7 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
                     .get(&ref_key)
                     .ok_or_else(|| Error::RefKeyNotFound { ref_key: ref_key.clone() })?
                     .clone();
+                let schema = resolve_all_of(all_schemas, &schema, spec)?;
                 Ok(Some(schema))
             }
         })
@@ -292,8 +314,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
             file.extend(create_vec_alias(schema)?);
         } else if schema.is_local_enum() {
             let no_namespace = TokenStream::new();
-            let (_tp_name, tp) = create_enum(&no_namespace, schema, schema_name, false)?;
-            file.extend(tp);
+            let TypeCode { inner_types, .. } = create_enum(&no_namespace, schema, schema_name, false)?;
+            file.extend(inner_types);
         } else if schema.is_basic_type() {
             let (id, value) = create_basic_type_alias(schema_name, schema)?;
             file.extend(quote! { pub type #id = #value;});
@@ -326,12 +348,7 @@ fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_
     Ok(())
 }
 
-fn create_enum(
-    namespace: &TokenStream,
-    property: &SchemaGen,
-    property_name: &str,
-    lowercase_workaround: bool,
-) -> Result<(TokenStream, TokenStream), Error> {
+fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<TypeCode, Error> {
     let enum_values = property.enum_values_as_strings();
     let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
@@ -361,14 +378,30 @@ fn create_enum(
         source,
         property: property_name.to_owned(),
     })?;
-    let tp = quote! {
+    let default_code = if let Some(default_name) = property.default() {
+        let default_name = default_name.to_camel_case_ident().map_err(|source| Error::EnumName {
+            source,
+            property: default_name.to_owned(),
+        })?;
+        quote! {
+            impl Default for #id {
+                fn default() -> Self {
+                    Self::#default_name
+                }
+            }
+        }
+    } else {
+        quote! {}
+    };
+    let inner_types = vec![quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum #nm {
             #values
         }
-    };
-    let tp_name = quote! {#namespace::#id};
-    Ok((tp_name, tp))
+        #default_code
+    }];
+    let type_name = quote! {#namespace::#id};
+    Ok(TypeCode { type_name, inner_types })
 }
 
 fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
@@ -455,8 +488,15 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         });
     }
 
+    let default_code = if schema.implement_default() {
+        quote! { #[derive(Default)] }
+    } else {
+        quote! {}
+    };
+
     let st = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #default_code
         pub struct #nm {
             #props
         }
@@ -501,11 +541,7 @@ fn create_struct_field_code(
         }
         None => {
             if property.is_local_enum() {
-                let (tp_name, tp) = create_enum(namespace, property, property_name, lowercase_workaround)?;
-                Ok(TypeCode {
-                    type_name: tp_name,
-                    inner_types: vec![tp],
-                })
+                create_enum(namespace, property, property_name, lowercase_workaround)
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
                 let tp_name = quote! {#namespace::#id};

@@ -17,7 +17,7 @@ pub struct PutPageBlobBuilder<'a> {
     // TODO: Support tags
     lease_id: Option<&'a LeaseId>,
     sequence_number: Option<SequenceNumber>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -46,7 +46,7 @@ impl<'a> PutPageBlobBuilder<'a> {
         metadata: &'a Metadata => Some(metadata),
         lease_id: &'a LeaseId => Some(lease_id),
         sequence_number: SequenceNumber => Some(sequence_number),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

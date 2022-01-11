@@ -28,19 +28,19 @@ pub struct ActionGroup {
     #[serde(rename = "armRoleReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub arm_role_receivers: Vec<ArmRoleReceiver>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActionGroupResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatchBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -133,7 +133,7 @@ pub struct EnableRequest {
     #[serde(rename = "receiverName")]
     pub receiver_name: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -169,7 +169,7 @@ pub struct MetricBaselinesProperties {
     pub namespace: Option<String>,
     pub baselines: Vec<TimeSeriesBaseline>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricBaselinesResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SingleMetricBaseline>,

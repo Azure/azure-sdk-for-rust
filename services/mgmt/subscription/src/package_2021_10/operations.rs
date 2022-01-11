@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -89,11 +89,25 @@ impl Client {
     pub fn subscription_policy(&self) -> subscription_policy::Client {
         subscription_policy::Client(self.clone())
     }
+    pub fn subscriptions(&self) -> subscriptions::Client {
+        subscriptions::Client(self.clone())
+    }
+    pub fn tenants(&self) -> tenants::Client {
+        tenants::Client(self.clone())
+    }
 }
 #[non_exhaustive]
 #[derive(Debug, thiserror :: Error)]
 #[allow(non_camel_case_types)]
 pub enum Error {
+    #[error(transparent)]
+    Subscriptions_ListLocations(#[from] subscriptions::list_locations::Error),
+    #[error(transparent)]
+    Subscriptions_Get(#[from] subscriptions::get::Error),
+    #[error(transparent)]
+    Subscriptions_List(#[from] subscriptions::list::Error),
+    #[error(transparent)]
+    Tenants_List(#[from] tenants::list::Error),
     #[error(transparent)]
     Subscription_Cancel(#[from] subscription::cancel::Error),
     #[error(transparent)]
@@ -123,8 +137,293 @@ pub enum Error {
     #[error(transparent)]
     BillingAccount_GetPolicy(#[from] billing_account::get_policy::Error),
 }
+pub mod subscriptions {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Gets all available geo-locations."]
+        pub fn list_locations(&self, subscription_id: impl Into<String>) -> list_locations::Builder {
+            list_locations::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn get(&self, subscription_id: impl Into<String>) -> get::Builder {
+            get::Builder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+            }
+        }
+        pub fn list(&self) -> list::Builder {
+            list::Builder { client: self.0.clone() }
+        }
+    }
+    pub mod list_locations {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrl(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequest(http::Error),
+            #[error("Failed to serialize request body: {0}")]
+            Serialize(serde_json::Error),
+            #[error("Failed to get access token: {0}")]
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::LocationListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/subscriptions/{}/locations", self.client.endpoint(), &self.subscription_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-06-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::LocationListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrl(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequest(http::Error),
+            #[error("Failed to serialize request body: {0}")]
+            Serialize(serde_json::Error),
+            #[error("Failed to get access token: {0}")]
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Subscription, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/subscriptions/{}", self.client.endpoint(), &self.subscription_id);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-06-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::Subscription =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrl(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequest(http::Error),
+            #[error("Failed to serialize request body: {0}")]
+            Serialize(serde_json::Error),
+            #[error("Failed to get access token: {0}")]
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SubscriptionListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/subscriptions", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-06-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::SubscriptionListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod tenants {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn list(&self) -> list::Builder {
+            list::Builder { client: self.0.clone() }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("Unexpected HTTP status code {}", status_code)]
+            UnexpectedResponse { status_code: http::StatusCode, body: bytes::Bytes },
+            #[error("Failed to parse request URL: {0}")]
+            ParseUrl(url::ParseError),
+            #[error("Failed to build request: {0}")]
+            BuildRequest(http::Error),
+            #[error("Failed to serialize request body: {0}")]
+            Serialize(serde_json::Error),
+            #[error("Failed to get access token: {0}")]
+            GetToken(azure_core::Error),
+            #[error("Failed to execute request: {0}")]
+            SendRequest(azure_core::Error),
+            #[error("Failed to get response bytes: {0}")]
+            ResponseBytes(azure_core::StreamError),
+            #[error("Failed to deserialize response: {0}, body: {1:?}")]
+            Deserialize(serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::TenantListResult, Error>> {
+                Box::pin(async move {
+                    let url_str = &format!("{}/tenants", self.client.endpoint(),);
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::GET);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2016-06-01");
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::TenantListResult =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(rsp_value)
+                        }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            Err(Error::UnexpectedResponse {
+                                status_code,
+                                body: rsp_body,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
 pub mod subscription {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn cancel(&self, subscription_id: impl Into<String>) -> cancel::Builder {
@@ -165,7 +464,7 @@ pub mod subscription {
         }
     }
     pub mod cancel {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -210,7 +509,7 @@ pub mod subscription {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -239,7 +538,7 @@ pub mod subscription {
         }
     }
     pub mod rename {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -285,7 +584,7 @@ pub mod subscription {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -314,7 +613,7 @@ pub mod subscription {
         }
     }
     pub mod enable {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -359,7 +658,7 @@ pub mod subscription {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
                     req_builder = req_builder.uri(url.as_str());
@@ -388,7 +687,7 @@ pub mod subscription {
         }
     }
     pub mod accept_ownership {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -421,7 +720,7 @@ pub mod subscription {
             pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<(), Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/providers/Microsoft.Subscription/{}/acceptOwnership",
+                        "{}/providers/Microsoft.Subscription/subscriptions/{}/acceptOwnership",
                         self.client.endpoint(),
                         &self.subscription_id
                     );
@@ -434,7 +733,7 @@ pub mod subscription {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -458,7 +757,7 @@ pub mod subscription {
         }
     }
     pub mod accept_ownership_status {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -492,7 +791,7 @@ pub mod subscription {
             ) -> futures::future::BoxFuture<'static, std::result::Result<models::AcceptOwnershipStatusResponse, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
-                        "{}/providers/Microsoft.Subscription/{}/acceptOwnershipStatus",
+                        "{}/providers/Microsoft.Subscription/subscriptions/{}/acceptOwnershipStatus",
                         self.client.endpoint(),
                         &self.subscription_id
                     );
@@ -505,7 +804,7 @@ pub mod subscription {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -534,7 +833,7 @@ pub mod subscription {
     }
 }
 pub mod operations {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(&self) -> list::Builder {
@@ -542,7 +841,7 @@ pub mod operations {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -582,7 +881,7 @@ pub mod operations {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -611,7 +910,7 @@ pub mod operations {
     }
 }
 pub mod alias {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(&self, alias_name: impl Into<String>) -> get::Builder {
@@ -638,7 +937,7 @@ pub mod alias {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -683,7 +982,7 @@ pub mod alias {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -711,7 +1010,7 @@ pub mod alias {
         }
     }
     pub mod create {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200(models::SubscriptionAliasResponse),
@@ -762,7 +1061,7 @@ pub mod alias {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -797,7 +1096,7 @@ pub mod alias {
         }
     }
     pub mod delete {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug)]
         pub enum Response {
             Ok200,
@@ -847,7 +1146,7 @@ pub mod alias {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -871,7 +1170,7 @@ pub mod alias {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -913,7 +1212,7 @@ pub mod alias {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -942,7 +1241,7 @@ pub mod alias {
     }
 }
 pub mod subscription_policy {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get_policy_for_tenant(&self) -> get_policy_for_tenant::Builder {
@@ -962,7 +1261,7 @@ pub mod subscription_policy {
         }
     }
     pub mod get_policy_for_tenant {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1002,7 +1301,7 @@ pub mod subscription_policy {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1030,7 +1329,7 @@ pub mod subscription_policy {
         }
     }
     pub mod add_update_policy_for_tenant {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1071,7 +1370,7 @@ pub mod subscription_policy {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.body).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
@@ -1079,7 +1378,7 @@ pub mod subscription_policy {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::CREATED => {
+                        http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::GetTenantPolicyResponse =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
@@ -1100,7 +1399,7 @@ pub mod subscription_policy {
         }
     }
     pub mod list_policy_for_tenant {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1142,7 +1441,7 @@ pub mod subscription_policy {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
@@ -1171,7 +1470,7 @@ pub mod subscription_policy {
     }
 }
 pub mod billing_account {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get_policy(&self, billing_account_id: impl Into<String>) -> get_policy::Builder {
@@ -1182,7 +1481,7 @@ pub mod billing_account {
         }
     }
     pub mod get_policy {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -1229,7 +1528,7 @@ pub mod billing_account {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     let req_body = azure_core::EMPTY_BODY;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;

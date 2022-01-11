@@ -2,12 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessUri {
     #[serde(rename = "accessSAS", default, skip_serializing_if = "Option::is_none")]
     pub access_sas: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ApiErrorBase>,
@@ -20,7 +20,7 @@ pub struct ApiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiErrorBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -29,7 +29,7 @@ pub struct ApiErrorBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
@@ -96,14 +96,14 @@ pub struct DiskEncryptionSetList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskEncryptionSetUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskEncryptionSetUpdateProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskEncryptionSetUpdateProperties {
     #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
     pub active_key: Option<KeyVaultAndKeyReference>,
@@ -174,7 +174,7 @@ pub mod disk_properties {
         ActiveUpload,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<disk_sku::Name>,
@@ -195,7 +195,7 @@ pub mod disk_sku {
         UltraSsdLrs,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskUpdateProperties>,
@@ -204,7 +204,7 @@ pub struct DiskUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<DiskSku>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskUpdateProperties {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<disk_update_properties::OsType>,
@@ -233,7 +233,7 @@ pub mod disk_update_properties {
         Linux,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_set_id: Option<String>,
@@ -248,7 +248,7 @@ pub mod encryption {
         EncryptionAtRestWithCustomerKey,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSetIdentity {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<encryption_set_identity::Type>,
@@ -264,7 +264,7 @@ pub mod encryption_set_identity {
         SystemAssigned,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSetProperties {
     #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
     pub active_key: Option<KeyVaultAndKeyReference>,
@@ -281,7 +281,7 @@ pub struct EncryptionSettingsCollection {
     #[serde(rename = "encryptionSettingsVersion", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings_version: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSettingsElement {
     #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_key: Option<KeyVaultAndSecretReference>,
@@ -309,7 +309,7 @@ pub struct ImageDiskReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exceptiontype: Option<String>,
@@ -342,7 +342,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareInfoElement {
     #[serde(rename = "vmUri", default, skip_serializing_if = "Option::is_none")]
     pub vm_uri: Option<String>,
@@ -402,7 +402,7 @@ pub mod snapshot_properties {
         V2,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<snapshot_sku::Name>,
@@ -421,7 +421,7 @@ pub mod snapshot_sku {
         StandardZrs,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SnapshotUpdateProperties>,
@@ -430,7 +430,7 @@ pub struct SnapshotUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<SnapshotSku>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotUpdateProperties {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<snapshot_update_properties::OsType>,
@@ -449,7 +449,7 @@ pub mod snapshot_update_properties {
         Linux,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceVault {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

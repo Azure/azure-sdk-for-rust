@@ -10,7 +10,7 @@ pub struct CreateBuilder<'a> {
     container_client: &'a ContainerClient,
     public_access: PublicAccess,
     metadata: Option<&'a Metadata>,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
 }
 
@@ -28,7 +28,7 @@ impl<'a> CreateBuilder<'a> {
     setters! {
         public_access: PublicAccess => public_access,
         metadata: &'a Metadata => Some(metadata),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

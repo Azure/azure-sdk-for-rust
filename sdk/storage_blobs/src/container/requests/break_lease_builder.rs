@@ -8,7 +8,7 @@ use http::status::StatusCode;
 #[derive(Debug, Clone)]
 pub struct BreakLeaseBuilder<'a> {
     container_client: &'a ContainerClient,
-    client_request_id: Option<ClientRequestId<'a>>,
+    client_request_id: Option<ClientRequestId>,
     timeout: Option<Timeout>,
     lease_break_period: Option<LeaseBreakPeriod>,
     lease_id: Option<&'a LeaseId>,
@@ -28,7 +28,7 @@ impl<'a> BreakLeaseBuilder<'a> {
     setters! {
         lease_id: &'a LeaseId => Some(lease_id),
         lease_break_period: LeaseBreakPeriod => Some(lease_break_period),
-        client_request_id: ClientRequestId<'a> => Some(client_request_id),
+        client_request_id: ClientRequestId => Some(client_request_id),
         timeout: Timeout => Some(timeout),
     }
 

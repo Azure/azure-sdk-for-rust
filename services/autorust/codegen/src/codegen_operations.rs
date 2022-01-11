@@ -36,7 +36,7 @@ fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream, Error> {
     }
 }
 
-pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
+pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<TokenStream, Error> {
     let mut clients = TokenStream::new();
     for md in modules {
         let md = md.to_snake_case_ident().map_err(Error::ModuleName)?;
@@ -46,6 +46,21 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
             }
         });
     }
+
+    let public_cloud = quote! {
+        pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+    };
+    let default_endpoint_code = if let Some(endpoint) = endpoint {
+        if endpoint == "https://management.azure.com" {
+            public_cloud
+        } else {
+            quote! {
+                pub const DEFAULT_ENDPOINT: &str = #endpoint;
+            }
+        }
+    } else {
+        public_cloud
+    };
 
     let mut code = TokenStream::new();
     code.extend(quote! {
@@ -65,7 +80,7 @@ pub fn create_client(modules: &[String]) -> Result<TokenStream, Error> {
             scopes: Option<Vec<String>>,
         }
 
-        pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+        #default_endpoint_code
 
         impl ClientBuilder {
             pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
@@ -138,7 +153,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
         #![allow(unused_mut)]
         #![allow(unused_variables)]
         #![allow(unused_imports)]
-        use super::{API_VERSION, models};
+        use super::models;
     });
     let mut operations_code: IndexMap<Option<String>, OperationCode> = IndexMap::new();
     // println!("input_files {:?}", cg.input_files());
@@ -146,7 +161,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
     let operations: Vec<_> = cg.spec.operations()?.into_iter().map(WebOperationGen).collect();
     let module_names: BTreeSet<_> = operations.iter().flat_map(|op| op.rust_module_name()).collect();
     let module_names: Vec<_> = module_names.into_iter().collect();
-    file.extend(create_client(&module_names)?);
+    file.extend(create_client(&module_names, cg.spec.endpoint().as_deref())?);
 
     let mut errors = TokenStream::new();
     for operation in &operations {
@@ -196,7 +211,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream, Error> {
                 let name = ident(&module_name).map_err(Error::ModuleName)?;
                 file.extend(quote! {
                     pub mod #name {
-                        use super::{API_VERSION, models};
+                        use super::models;
                         pub struct Client(pub(crate) super::Client);
                         impl Client {
                             #builder_instance_code
@@ -256,6 +271,10 @@ impl WebOperationGen {
     pub fn function_name(&self) -> Result<TokenStream, Error> {
         ident(&self.rust_function_name()).map_err(Error::FunctionName)
     }
+
+    fn api_version(&self) -> &str {
+        self.0.api_version.as_str()
+    }
 }
 
 /// Creating a function name from the path and verb when an operationId is not specified.
@@ -286,9 +305,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let param_names: HashSet<_> = parameters.iter().map(|p| p.name()).collect();
     let has_param_api_version = param_names.contains("api-version");
     let mut skip = HashSet::new();
-    if cg.spec.api_version().is_some() {
-        skip.insert("api-version");
-    }
+    skip.insert("api-version");
     let parameters: Vec<_> = parameters.clone().into_iter().filter(|p| !skip.contains(p.name())).collect();
 
     let mut ts_request_builder = TokenStream::new();
@@ -320,11 +337,10 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
 
     // api-version param
     if has_param_api_version {
-        if let Some(_api_version) = cg.spec.api_version() {
-            ts_request_builder.extend(quote! {
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
-            });
-        }
+        let api_version = operation.api_version();
+        ts_request_builder.extend(quote! {
+            url.query_pairs_mut().append_pair("api-version", #api_version);
+        });
     }
 
     let has_content_type_header = parameters
@@ -664,7 +680,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let module_code = quote! {
 
         pub mod #fname {
-            use super::{API_VERSION, models};
+            use super::models;
 
             #response_enum
 

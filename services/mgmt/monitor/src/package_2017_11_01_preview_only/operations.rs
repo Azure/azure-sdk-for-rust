@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -88,7 +88,7 @@ pub enum Error {
     MetricBaseline_CalculateBaseline(#[from] metric_baseline::calculate_baseline::Error),
 }
 pub mod metric_baseline {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(&self, resource_uri: impl Into<String>, metric_name: impl Into<String>) -> get::Builder {
@@ -116,7 +116,7 @@ pub mod metric_baseline {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -188,7 +188,7 @@ pub mod metric_baseline {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2017-11-01-preview");
                     if let Some(timespan) = &self.timespan {
                         url.query_pairs_mut().append_pair("timespan", timespan);
                     }
@@ -231,7 +231,7 @@ pub mod metric_baseline {
         }
     }
     pub mod calculate_baseline {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -277,7 +277,7 @@ pub mod metric_baseline {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2017-11-01-preview");
                     req_builder = req_builder.header("content-type", "application/json");
                     let req_body = azure_core::to_json(&self.time_series_information).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());

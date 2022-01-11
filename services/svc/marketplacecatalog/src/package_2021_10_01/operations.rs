@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -16,7 +16,7 @@ pub struct ClientBuilder {
     endpoint: Option<String>,
     scopes: Option<Vec<String>>,
 }
-pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+pub const DEFAULT_ENDPOINT: &str = "https://catalogapi.azure.com";
 impl ClientBuilder {
     pub fn new(credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>) -> Self {
         Self {
@@ -88,7 +88,7 @@ pub enum Error {
     PublicOffers_List(#[from] public_offers::list::Error),
 }
 pub mod public_offers {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get a public offer by id"]
@@ -112,7 +112,7 @@ pub mod public_offers {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -172,7 +172,7 @@ pub mod public_offers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     if let Some(language) = &self.language {
                         url.query_pairs_mut().append_pair("language", language);
                     }
@@ -218,7 +218,7 @@ pub mod public_offers {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("Error response #response_type")]
@@ -267,7 +267,7 @@ pub mod public_offers {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
                     if let Some(language) = &self.language {
                         url.query_pairs_mut().append_pair("language", language);
                     }

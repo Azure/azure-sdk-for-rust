@@ -2,18 +2,17 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ExtendedErrorInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<ErrorResponseCode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum ErrorResponseCode {
-    NotFound,
-    Conflict,
-    BadRequest,
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub type ErrorResponseCode = String;
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<ErrorResponseCode>,
@@ -25,7 +24,7 @@ pub enum ManagementPartnerState {
     Active,
     Deleted,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -36,14 +35,14 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationResponse>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -52,7 +51,7 @@ pub struct OperationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerProperties {
     #[serde(rename = "partnerId", default, skip_serializing_if = "Option::is_none")]
     pub partner_id: Option<String>,
@@ -71,7 +70,7 @@ pub struct PartnerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ManagementPartnerState>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<i64>,

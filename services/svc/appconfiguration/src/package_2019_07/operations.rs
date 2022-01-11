@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -271,7 +271,7 @@ impl Client {
     }
 }
 pub mod get_keys {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -331,7 +331,7 @@ pub mod get_keys {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(name) = &self.name {
                     url.query_pairs_mut().append_pair("name", name);
                 }
@@ -371,7 +371,7 @@ pub mod get_keys {
     }
 }
 pub mod check_keys {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -428,7 +428,7 @@ pub mod check_keys {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(name) = &self.name {
                     url.query_pairs_mut().append_pair("name", name);
                 }
@@ -455,7 +455,7 @@ pub mod check_keys {
     }
 }
 pub mod get_key_values {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -525,7 +525,7 @@ pub mod get_key_values {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(key) = &self.key {
                     url.query_pairs_mut().append_pair("key", key);
                 }
@@ -568,7 +568,7 @@ pub mod get_key_values {
     }
 }
 pub mod check_key_values {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -635,7 +635,7 @@ pub mod check_key_values {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(key) = &self.key {
                     url.query_pairs_mut().append_pair("key", key);
                 }
@@ -665,7 +665,7 @@ pub mod check_key_values {
     }
 }
 pub mod get_key_value {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -736,7 +736,7 @@ pub mod get_key_value {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(label) = &self.label {
                     url.query_pairs_mut().append_pair("label", label);
                 }
@@ -779,7 +779,7 @@ pub mod get_key_value {
     }
 }
 pub mod put_key_value {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -845,7 +845,7 @@ pub mod put_key_value {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(label) = &self.label {
                     url.query_pairs_mut().append_pair("label", label);
                 }
@@ -890,7 +890,7 @@ pub mod put_key_value {
     }
 }
 pub mod delete_key_value {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug)]
     pub enum Response {
         Ok200(models::KeyValue),
@@ -951,7 +951,7 @@ pub mod delete_key_value {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(label) = &self.label {
                     url.query_pairs_mut().append_pair("label", label);
                 }
@@ -989,7 +989,7 @@ pub mod delete_key_value {
     }
 }
 pub mod check_key_value {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1057,7 +1057,7 @@ pub mod check_key_value {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(label) = &self.label {
                     url.query_pairs_mut().append_pair("label", label);
                 }
@@ -1087,7 +1087,7 @@ pub mod check_key_value {
     }
 }
 pub mod get_labels {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1152,7 +1152,7 @@ pub mod get_labels {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(name) = &self.name {
                     url.query_pairs_mut().append_pair("name", name);
                 }
@@ -1192,7 +1192,7 @@ pub mod get_labels {
     }
 }
 pub mod check_labels {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1254,7 +1254,7 @@ pub mod check_labels {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(name) = &self.name {
                     url.query_pairs_mut().append_pair("name", name);
                 }
@@ -1281,7 +1281,7 @@ pub mod check_labels {
     }
 }
 pub mod put_lock {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1342,7 +1342,7 @@ pub mod put_lock {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(label) = &self.label {
                     url.query_pairs_mut().append_pair("label", label);
                 }
@@ -1382,7 +1382,7 @@ pub mod put_lock {
     }
 }
 pub mod delete_lock {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1443,7 +1443,7 @@ pub mod delete_lock {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(label) = &self.label {
                     url.query_pairs_mut().append_pair("label", label);
                 }
@@ -1483,7 +1483,7 @@ pub mod delete_lock {
     }
 }
 pub mod get_revisions {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1553,7 +1553,7 @@ pub mod get_revisions {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(key) = &self.key {
                     url.query_pairs_mut().append_pair("key", key);
                 }
@@ -1596,7 +1596,7 @@ pub mod get_revisions {
     }
 }
 pub mod check_revisions {
-    use super::{models, API_VERSION};
+    use super::models;
     #[derive(Debug, thiserror :: Error)]
     pub enum Error {
         #[error("HTTP status code {}", status_code)]
@@ -1663,7 +1663,7 @@ pub mod check_revisions {
                     .await
                     .map_err(Error::GetToken)?;
                 req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                url.query_pairs_mut().append_pair("api-version", "1.0");
                 if let Some(key) = &self.key {
                     url.query_pairs_mut().append_pair("key", key);
                 }

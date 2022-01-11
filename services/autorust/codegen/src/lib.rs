@@ -22,7 +22,7 @@ pub use self::{
     spec::{ResolvedSchema, Spec, WebOperation},
 };
 
-pub type Result<T, E = Error> = std::result::Result<T, E>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -44,6 +44,8 @@ pub enum Error {
     Io(#[source] std::io::Error),
     #[error("file name was not utf-8")]
     FileNameNotUtf8,
+    #[error(transparent)]
+    ConfigParser(#[from] config_parser::Error),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -114,13 +116,9 @@ pub fn run(config: Config) -> Result<()> {
         let operations_path = path::join(&config.output_folder, "operations.rs").map_err(Error::Path)?;
         write_file(&operations_path, &operations, config.print_writing_file)?;
 
-        if let Some(api_version) = cg.spec.api_version() {
-            let operations = create_mod(&api_version);
-            let operations_path = path::join(&config.output_folder, "mod.rs").map_err(Error::Path)?;
-            write_file(&operations_path, &operations, config.print_writing_file)?;
-        } else {
-            println!("    no api-version");
-        }
+        let operations = create_mod();
+        let operations_path = path::join(&config.output_folder, "mod.rs").map_err(Error::Path)?;
+        write_file(&operations_path, &operations, config.print_writing_file)?;
     }
 
     Ok(())
@@ -142,7 +140,7 @@ fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream, print_writing_file:
 const SPEC_FOLDER: &str = "../../../azure-rest-api-specs/specification";
 
 // gets a sorted list of folders in azure-rest-api-specs/specification
-fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, Error> {
+fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>> {
     let paths = fs::read_dir(spec_folder).map_err(Error::Io)?;
     let mut spec_folders = Vec::new();
     for path in paths {
@@ -186,8 +184,8 @@ impl SpecReadme {
     pub fn readme(&self) -> &Path {
         self.readme.as_path()
     }
-    pub fn configs(&self) -> Vec<Configuration> {
-        config_parser::parse_configurations_from_autorest_config_file(&self.readme)
+    pub fn configs(&self) -> Result<Vec<Configuration>> {
+        Ok(config_parser::parse_configurations_from_autorest_config_file(&self.readme)?)
     }
 }
 

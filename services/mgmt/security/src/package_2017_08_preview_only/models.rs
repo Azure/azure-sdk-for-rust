@@ -7,12 +7,12 @@ pub struct ActiveConnectionsNotInAllowedRange {
     #[serde(flatten)]
     pub time_window_custom_alert_rule: TimeWindowCustomAlertRule,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvancedThreatProtectionProperties {
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvancedThreatProtectionSetting {
     #[serde(flatten)]
     pub resource: Resource,
@@ -41,14 +41,14 @@ pub struct AmqpD2cMessagesNotInAllowedRange {
     #[serde(flatten)]
     pub time_window_custom_alert_rule: TimeWindowCustomAlertRule,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoProvisioningSetting {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutoProvisioningSettingProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoProvisioningSettingList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AutoProvisioningSetting>,
@@ -68,12 +68,12 @@ pub mod auto_provisioning_setting_properties {
         Off,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -86,21 +86,21 @@ pub struct CloudErrorBody {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Compliance {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ComplianceProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Compliance>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceProperties {
     #[serde(rename = "assessmentTimestampUtcDate", default, skip_serializing_if = "Option::is_none")]
     pub assessment_timestamp_utc_date: Option<String>,
@@ -109,7 +109,7 @@ pub struct ComplianceProperties {
     #[serde(rename = "assessmentResult", default, skip_serializing_if = "Vec::is_empty")]
     pub assessment_result: Vec<ComplianceSegment>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceSegment {
     #[serde(rename = "segmentType", default, skip_serializing_if = "Option::is_none")]
     pub segment_type: Option<String>,
@@ -150,21 +150,21 @@ pub struct DenylistCustomAlertRule {
     #[serde(rename = "denylistValues")]
     pub denylist_values: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceSecurityGroup {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeviceSecurityGroupProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceSecurityGroupList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeviceSecurityGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceSecurityGroupProperties {
     #[serde(rename = "thresholdRules", default, skip_serializing_if = "Vec::is_empty")]
     pub threshold_rules: Vec<ThresholdCustomAlertRule>,
@@ -180,7 +180,7 @@ pub struct DirectMethodInvokesNotInAllowedRange {
     #[serde(flatten)]
     pub time_window_custom_alert_rule: TimeWindowCustomAlertRule,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -212,7 +212,7 @@ pub struct HttpD2cMessagesNotInAllowedRange {
     #[serde(flatten)]
     pub time_window_custom_alert_rule: TimeWindowCustomAlertRule,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionKeyword {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pattern: Option<String>,
@@ -223,21 +223,21 @@ pub struct InformationProtectionKeyword {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub excluded: Option<bool>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionPolicy {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InformationProtectionPolicyProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionPolicyList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<InformationProtectionPolicy>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionPolicyProperties {
     #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
@@ -248,7 +248,7 @@ pub struct InformationProtectionPolicyProperties {
     #[serde(rename = "informationTypes", default, skip_serializing_if = "Option::is_none")]
     pub information_types: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationType {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -265,7 +265,7 @@ pub struct InformationType {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keywords: Vec<InformationProtectionKeyword>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAggregatedAlert {
     #[serde(flatten)]
     pub resource: Resource,
@@ -280,7 +280,7 @@ pub struct IoTSecurityAggregatedAlertList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAggregatedAlertProperties {
     #[serde(rename = "alertType", default, skip_serializing_if = "Option::is_none")]
     pub alert_type: Option<String>,
@@ -317,7 +317,7 @@ pub mod io_t_security_aggregated_alert_properties {
         High,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAggregatedRecommendation {
     #[serde(flatten)]
     pub resource: Resource,
@@ -332,7 +332,7 @@ pub struct IoTSecurityAggregatedRecommendationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAggregatedRecommendationProperties {
     #[serde(rename = "recommendationName", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_name: Option<String>,
@@ -365,7 +365,7 @@ pub mod io_t_security_aggregated_recommendation_properties {
         High,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityAlertedDevice {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
@@ -378,7 +378,7 @@ pub struct IoTSecurityAlertedDevicesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityDeviceAlert {
     #[serde(rename = "alertDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub alert_display_name: Option<String>,
@@ -403,7 +403,7 @@ pub struct IoTSecurityDeviceAlertsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecurityDeviceRecommendation {
     #[serde(rename = "recommendationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_display_name: Option<String>,
@@ -428,7 +428,7 @@ pub struct IoTSecurityDeviceRecommendationsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecuritySolutionAnalyticsModel {
     #[serde(flatten)]
     pub resource: Resource,
@@ -441,7 +441,7 @@ pub struct IoTSecuritySolutionAnalyticsModelList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecuritySolutionAnalyticsModelProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<IoTSeverityMetrics>,
@@ -456,7 +456,7 @@ pub struct IoTSecuritySolutionAnalyticsModelProperties {
     #[serde(rename = "mostPrevalentDeviceRecommendations", default, skip_serializing_if = "Option::is_none")]
     pub most_prevalent_device_recommendations: Option<IoTSecurityDeviceRecommendationsList>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSecuritySolutionModel {
     #[serde(flatten)]
     pub resource: Resource,
@@ -494,6 +494,11 @@ pub mod io_t_security_solution_properties {
         Enabled,
         Disabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTSecuritySolutionsList {
@@ -501,7 +506,7 @@ pub struct IoTSecuritySolutionsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTSeverityMetrics {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub high: Option<i64>,
@@ -545,7 +550,7 @@ pub struct MqttD2cMessagesNotInAllowedRange {
     #[serde(flatten)]
     pub time_window_custom_alert_rule: TimeWindowCustomAlertRule,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pricing {
     #[serde(flatten)]
     pub resource: Resource,
@@ -632,8 +637,13 @@ pub mod recommendation_configuration_properties {
         Disabled,
         Enabled,
     }
+    impl Default for Status {
+        fn default() -> Self {
+            Self::Enabled
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -642,14 +652,14 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityContact {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityContactProperties>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityContactList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityContact>,
@@ -679,7 +689,7 @@ pub mod security_contact_properties {
         Off,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabel {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -717,14 +727,14 @@ pub mod setting {
         AlertSuppressionSetting,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SettingsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Setting>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -755,7 +765,7 @@ pub struct UnauthorizedOperationsNotInAllowedRange {
     #[serde(flatten)]
     pub time_window_custom_alert_rule: TimeWindowCustomAlertRule,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateIotSecuritySolutionData {
     #[serde(flatten)]
     pub tags_resource: TagsResource,
@@ -770,7 +780,7 @@ pub struct UserDefinedResourcesProperties {
     #[serde(rename = "querySubscriptions")]
     pub query_subscriptions: Vec<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceSetting {
     #[serde(flatten)]
     pub resource: Resource,

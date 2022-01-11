@@ -16,7 +16,7 @@ pub struct ApplicationInsightsComponentListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationInsightsComponentProactiveDetectionConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -31,7 +31,7 @@ pub struct ApplicationInsightsComponentProactiveDetectionConfiguration {
 }
 pub type ApplicationInsightsComponentProactiveDetectionConfigurationListResult =
     Vec<ApplicationInsightsComponentProactiveDetectionConfiguration>;
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationInsightsComponentProactiveDetectionConfigurationProperties {
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -48,7 +48,7 @@ pub struct ApplicationInsightsComponentProactiveDetectionConfigurationProperties
 }
 pub mod application_insights_component_proactive_detection_configuration_properties {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct RuleDefinitions {
         #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
@@ -120,14 +120,29 @@ pub mod application_insights_component_properties {
         #[serde(rename = "other")]
         Other,
     }
+    impl Default for ApplicationType {
+        fn default() -> Self {
+            Self::Web
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FlowType {
         Bluefield,
+    }
+    impl Default for FlowType {
+        fn default() -> Self {
+            Self::Bluefield
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestSource {
         #[serde(rename = "rest")]
         Rest,
+    }
+    impl Default for RequestSource {
+        fn default() -> Self {
+            Self::Rest
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IngestionMode {
@@ -135,13 +150,18 @@ pub mod application_insights_component_properties {
         ApplicationInsightsWithDiagnosticSettings,
         LogAnalytics,
     }
+    impl Default for IngestionMode {
+        fn default() -> Self {
+            Self::ApplicationInsights
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentPurgeBody {
     pub table: String,
     pub filters: Vec<ComponentPurgeBodyFilters>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComponentPurgeBodyFilters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub column: Option<String>,
@@ -183,14 +203,14 @@ pub struct ComponentsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeaderField {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -201,7 +221,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
@@ -212,14 +232,14 @@ pub struct OperationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkScopedResource {
     #[serde(rename = "ResourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
@@ -231,7 +251,12 @@ pub enum PublicNetworkAccessType {
     Enabled,
     Disabled,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+impl Default for PublicNetworkAccessType {
+    fn default() -> Self {
+        Self::Enabled
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -254,8 +279,13 @@ pub mod web_test {
         #[serde(rename = "multistep")]
         Multistep,
     }
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Ping
+        }
+    }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebTestGeolocation {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -302,12 +332,17 @@ pub mod web_test_properties {
         #[serde(rename = "standard")]
         Standard,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    impl Default for Kind {
+        fn default() -> Self {
+            Self::Ping
+        }
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Configuration {
         #[serde(rename = "WebTest", default, skip_serializing_if = "Option::is_none")]
         pub web_test: Option<String>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Request {
         #[serde(rename = "RequestUrl", default, skip_serializing_if = "Option::is_none")]
         pub request_url: Option<String>,
@@ -322,7 +357,7 @@ pub mod web_test_properties {
         #[serde(rename = "FollowRedirects", default, skip_serializing_if = "Option::is_none")]
         pub follow_redirects: Option<bool>,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ValidationRules {
         #[serde(rename = "ContentValidation", default, skip_serializing_if = "Option::is_none")]
         pub content_validation: Option<validation_rules::ContentValidation>,
@@ -337,7 +372,7 @@ pub mod web_test_properties {
     }
     pub mod validation_rules {
         use super::*;
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct ContentValidation {
             #[serde(rename = "ContentMatch", default, skip_serializing_if = "Option::is_none")]
             pub content_match: Option<String>,

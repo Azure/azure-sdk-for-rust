@@ -2,14 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -22,12 +22,12 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridConnectionConfig {
     #[serde(rename = "expirationTime", default, skip_serializing_if = "Option::is_none")]
     pub expiration_time: Option<i64>,
@@ -38,7 +38,7 @@ pub struct HybridConnectionConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -55,7 +55,7 @@ pub mod identity {
         None,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -83,7 +83,7 @@ pub struct Appliance {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceCredentialKubeconfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<appliance_credential_kubeconfig::Name>,
@@ -98,21 +98,21 @@ pub mod appliance_credential_kubeconfig {
         ClusterUser,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceListCredentialResults {
     #[serde(rename = "hybridConnectionConfig", default, skip_serializing_if = "Option::is_none")]
     pub hybrid_connection_config: Option<HybridConnectionConfig>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub kubeconfigs: Vec<ApplianceCredentialKubeconfig>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Appliance>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<ApplianceOperationValueDisplay>,
@@ -123,7 +123,7 @@ pub struct ApplianceOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceOperationValueDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -140,7 +140,7 @@ pub struct ApplianceOperationsList {
     pub next_link: Option<String>,
     pub value: Vec<ApplianceOperation>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplianceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub distro: Option<appliance_properties::Distro>,
@@ -162,7 +162,12 @@ pub mod appliance_properties {
         #[serde(rename = "AKSEdge")]
         AksEdge,
     }
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    impl Default for Distro {
+        fn default() -> Self {
+            Self::AksEdge
+        }
+    }
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct InfrastructureConfig {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<infrastructure_config::Provider>,
@@ -187,12 +192,12 @@ pub mod appliance_properties {
         Running,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchableAppliance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,

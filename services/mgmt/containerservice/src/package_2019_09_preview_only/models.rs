@@ -2,12 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -18,7 +18,7 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
     #[serde(rename = "vnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub vnet_cidr: Option<String>,
@@ -31,6 +31,11 @@ pub struct NetworkProfile {
 pub enum OsType {
     Linux,
     Windows,
+}
+impl Default for OsType {
+    fn default() -> Self {
+        Self::Linux
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OpenShiftAgentPoolProfileRole {
@@ -143,7 +148,7 @@ pub struct OpenShiftManagedClusterAgentPoolProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<OpenShiftAgentPoolProfileRole>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterAuthProfile {
     #[serde(rename = "identityProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub identity_providers: Vec<OpenShiftManagedClusterIdentityProvider>,
@@ -152,14 +157,14 @@ pub struct OpenShiftManagedClusterAuthProfile {
 pub struct OpenShiftManagedClusterBaseIdentityProvider {
     pub kind: String,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterIdentityProvider {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<OpenShiftManagedClusterBaseIdentityProvider>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OpenShiftManagedCluster>,
@@ -178,7 +183,7 @@ pub struct OpenShiftManagedClusterMasterPoolProfile {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterMonitorProfile {
     #[serde(rename = "workspaceResourceID", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
@@ -210,7 +215,7 @@ pub struct OpenShiftManagedClusterProperties {
     #[serde(rename = "monitorProfile", default, skip_serializing_if = "Option::is_none")]
     pub monitor_profile: Option<OpenShiftManagedClusterMonitorProfile>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftRouterProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -219,7 +224,7 @@ pub struct OpenShiftRouterProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PurchasePlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -242,7 +247,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,

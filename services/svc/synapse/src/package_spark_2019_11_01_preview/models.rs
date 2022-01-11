@@ -95,7 +95,7 @@ pub struct SparkBatchJobOptions {
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
     pub num_executors: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkBatchJobState {
     #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
     pub not_started_at: Option<String>,
@@ -116,7 +116,7 @@ pub struct SparkBatchJobState {
     #[serde(rename = "jobCreationRequest", default, skip_serializing_if = "Option::is_none")]
     pub job_creation_request: Option<SparkRequest>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -147,7 +147,7 @@ pub struct SparkRequest {
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
     pub num_executors: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkScheduler {
     #[serde(rename = "submittedAt", default, skip_serializing_if = "Option::is_none")]
     pub submitted_at: Option<String>,
@@ -169,7 +169,7 @@ pub mod spark_scheduler {
         Ended,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkServiceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -188,7 +188,7 @@ pub mod spark_service_error {
         Dependency,
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkServicePlugin {
     #[serde(rename = "preparationStartedAt", default, skip_serializing_if = "Option::is_none")]
     pub preparation_started_at: Option<String>,
@@ -310,7 +310,7 @@ pub struct SparkSessionOptions {
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
     pub num_executors: Option<i32>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkSessionState {
     #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
     pub not_started_at: Option<String>,
@@ -345,7 +345,7 @@ pub struct SparkStatement {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<SparkStatementOutput>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkStatementCancellationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub msg: Option<String>,
@@ -356,7 +356,7 @@ pub struct SparkStatementCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statements: Vec<SparkStatement>,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkStatementOptions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,

@@ -2,7 +2,7 @@
 #![allow(unused_mut)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-use super::{models, API_VERSION};
+use super::models;
 #[derive(Clone)]
 pub struct Client {
     endpoint: String,
@@ -91,7 +91,7 @@ pub enum Error {
     RateCard_Get(#[from] rate_card::get::Error),
 }
 pub mod usage_aggregates {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn list(
@@ -112,7 +112,7 @@ pub mod usage_aggregates {
         }
     }
     pub mod list {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -176,7 +176,7 @@ pub mod usage_aggregates {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2015-06-01-preview");
                     let reported_start_time = &self.reported_start_time;
                     url.query_pairs_mut().append_pair("reportedStartTime", reported_start_time);
                     let reported_end_time = &self.reported_end_time;
@@ -218,7 +218,7 @@ pub mod usage_aggregates {
     }
 }
 pub mod rate_card {
-    use super::{models, API_VERSION};
+    use super::models;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         pub fn get(&self, filter: impl Into<String>, subscription_id: impl Into<String>) -> get::Builder {
@@ -230,7 +230,7 @@ pub mod rate_card {
         }
     }
     pub mod get {
-        use super::{models, API_VERSION};
+        use super::models;
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -276,7 +276,7 @@ pub mod rate_card {
                         .await
                         .map_err(Error::GetToken)?;
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                    url.query_pairs_mut().append_pair("api-version", super::API_VERSION);
+                    url.query_pairs_mut().append_pair("api-version", "2015-06-01-preview");
                     let filter = &self.filter;
                     url.query_pairs_mut().append_pair("$filter", filter);
                     let req_body = azure_core::EMPTY_BODY;
