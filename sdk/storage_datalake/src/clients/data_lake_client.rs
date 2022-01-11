@@ -31,7 +31,7 @@ impl DataLakeClient {
         // so we do not have to do it at every request.
         let url = format!(
             "https://{}.{}",
-            credential.account_name.to_owned(),
+            credential.account_name,
             match custom_dns_suffix.as_ref() {
                 Some(custom_dns_suffix) => custom_dns_suffix,
                 None => DEFAULT_DNS_SUFFIX,
@@ -42,7 +42,7 @@ impl DataLakeClient {
         let auth_policy: Arc<dyn azure_core::Policy> =
             // TODO: Allow caller to choose auth policy, follow pattern of other clients
 			// Arc::new(BearerTokenAuthorizationPolicy::new(bearer_token));
-			Arc::new(SharedKeyAuthorizationPolicy::new(url.to_owned(), credential.to_owned()));
+			Arc::new(SharedKeyAuthorizationPolicy::new(url.to_owned(), credential));
 
         // take care of adding the AuthorizationPolicy as **last** retry policy.
         // Policies can change the url and/or the headers and the AuthorizationPolicy
