@@ -1,4 +1,3 @@
-// use crate::bearer_token_authorization_policy::BearerTokenAuthorizationPolicy;
 use crate::clients::FileSystemClient;
 use crate::requests::*;
 use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
