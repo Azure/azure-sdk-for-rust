@@ -1,5 +1,5 @@
-use azure_core::{Context, Policy, PolicyResult, Request, Response, Result};
-use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
+use azure_core::{Context, Policy, PolicyResult, Request, Response};
+use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use http::{HeaderMap, HeaderValue, Method};
 use ring::hmac;
 use std::sync::Arc;

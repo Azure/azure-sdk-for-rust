@@ -1,4 +1,5 @@
 use crate::clients::FileSystemClient;
+use crate::operations::ListFileSystems;
 use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
 use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
@@ -95,25 +96,6 @@ impl DataLakeClient {
         FileSystemClient::new(self, file_system_name)
     }
 
-    // pub(crate) fn prepare_request(
-    //     &self,
-    //     url: &str,
-    //     method: &Method,
-    //     http_header_adder: &dyn Fn(Builder) -> Builder,
-    //     request_body: Option<Bytes>,
-    // ) -> crate::Result<(Request<Bytes>, url::Url)> {
-    //     self.storage_client
-    //         .prepare_request(url, method, http_header_adder, request_body)
-    // }
-
-    /// Prepares' an `azure_core::Request`. This function will
-    /// add the cloud location to the URI suffix and generate
-    /// a Request with the specified HTTP Method.
-    /// It will also set the body to an empty Bytes instance.
-    /// *Note*: This call does not handle authorization as
-    /// it will be done by the `AuthorizationPolicy`.
-    ///
-    /// Note: Eventually this method will replace `prepare_request` fully.
     pub(crate) fn prepare_request_pipeline(
         &self,
         uri: &str,

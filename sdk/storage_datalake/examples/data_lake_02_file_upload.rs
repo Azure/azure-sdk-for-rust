@@ -93,5 +93,6 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
         storage_client,
         StorageSharedKeyCredential::new(account_name, account_key),
         None,
-    ))
+    )
+    .unwrap())
 }
