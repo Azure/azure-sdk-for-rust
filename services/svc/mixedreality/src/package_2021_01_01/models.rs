@@ -158,7 +158,7 @@ impl Error {
             message,
             details: Vec::new(),
             target: None,
-            inner_error: None,
+            inner_error: Box::new(None),
         }
     }
 }

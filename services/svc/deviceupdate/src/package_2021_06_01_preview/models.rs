@@ -494,7 +494,7 @@ impl InnerError {
             code,
             message: None,
             error_detail: None,
-            inner_error: None,
+            inner_error: Box::new(None),
         }
     }
 }

@@ -56,7 +56,7 @@ impl ErrorInfo {
             code,
             message,
             details: Vec::new(),
-            innererror: None,
+            innererror: Box::new(None),
             additional_properties: None,
         }
     }
