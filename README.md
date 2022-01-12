@@ -11,8 +11,14 @@ These crates are available from in (sdk):
 - azure_core
 - azure_identity
 - azure_cosmos
-- azure_storage
+- azure_data_tables
+- azure_iot_hub
+- azure_messaging_eventgrid
+- azure_messaging_servicebus
 - azure_security_keyvault
+- azure_storage_blobs
+- azure_storage_datalake
+- azure_storage_queues
 
 ### Services
 More than 200 Azure service crates are available in [services](services). They are generated from the [Azure REST API Specifications](https://github.com/Azure/azure-rest-api-specs).
@@ -27,7 +33,7 @@ Additionally, this project is the logical successor to the previous Azure SDK cr
 
 ## Project Structure
 
-Each supported Azure service is its own separate crate. If a particular service provides logically separate sub-services (e.g., Azure Storage offers blob, queue, and table storage), these are exposed as cargo features of the service's crate.
+Each supported Azure service is its own separate crate.
 
 Building each crate should be as straight forward as `cargo build`, but check each crate's README for more specific information.
 
