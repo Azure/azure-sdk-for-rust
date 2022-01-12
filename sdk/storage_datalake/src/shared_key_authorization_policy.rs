@@ -45,14 +45,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
             HeaderValue::from_str("2019-12-12")?,
         ); // TODO: Remove duplication with storage_account_client.rs
 
-        let uri_path = &request.uri().path_and_query().unwrap().to_string()[1..];
-        let full_url = format!("{}/{}", self.base_url, uri_path);
-        // println!(
-        //     "full_url used by SharedKeyAuthorizationPolicy == {:#?}",
-        //     full_url
-        // );
-        let url = url::Url::parse(full_url.as_str())?;
-
+        let url = url::Url::parse(&request.uri().to_string()).unwrap();
         let auth = generate_authorization(
             request.headers(),
             &url,
