@@ -9,6 +9,11 @@ pub struct AzureAsyncOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
+impl AzureAsyncOperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod azure_async_operation_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -35,6 +40,11 @@ pub struct DataLakeStoreAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataLakeStoreAccountProperties>,
 }
+impl DataLakeStoreAccount {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -43,6 +53,11 @@ pub struct DataLakeStoreAccountListResult {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl DataLakeStoreAccountListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataLakeStoreAccountProperties {
@@ -64,6 +79,11 @@ pub struct DataLakeStoreAccountProperties {
     pub endpoint: Option<String>,
     #[serde(rename = "defaultGroup", default, skip_serializing_if = "Option::is_none")]
     pub default_group: Option<String>,
+}
+impl DataLakeStoreAccountProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod data_lake_store_account_properties {
     use super::*;
@@ -106,12 +126,22 @@ pub struct DataLakeStoreFirewallRuleListResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl DataLakeStoreFirewallRuleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionConfig {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<encryption_config::Type>,
     #[serde(rename = "keyVaultMetaInfo", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_meta_info: Option<KeyVaultMetaInfo>,
+}
+impl EncryptionConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod encryption_config {
     use super::*;
@@ -129,6 +159,11 @@ pub struct EncryptionIdentity {
     pub principal_id: Option<String>,
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+impl EncryptionIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod encryption_identity {
     use super::*;
@@ -150,6 +185,11 @@ pub struct Error {
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<InnerError>,
 }
+impl Error {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -158,6 +198,11 @@ pub struct ErrorDetails {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+}
+impl ErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRule {
@@ -172,6 +217,11 @@ pub struct FirewallRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FirewallRuleProperties>,
 }
+impl FirewallRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleProperties {
     #[serde(rename = "startIpAddress", default, skip_serializing_if = "Option::is_none")]
@@ -179,12 +229,22 @@ pub struct FirewallRuleProperties {
     #[serde(rename = "endIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub end_ip_address: Option<String>,
 }
+impl FirewallRuleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context: Option<String>,
+}
+impl InnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultMetaInfo {
@@ -194,4 +254,9 @@ pub struct KeyVaultMetaInfo {
     pub encryption_key_name: Option<String>,
     #[serde(rename = "encryptionKeyVersion", default, skip_serializing_if = "Option::is_none")]
     pub encryption_key_version: Option<String>,
+}
+impl KeyVaultMetaInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

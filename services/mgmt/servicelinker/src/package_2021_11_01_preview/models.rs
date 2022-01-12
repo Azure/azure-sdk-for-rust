@@ -7,6 +7,11 @@ pub struct AuthInfoBase {
     #[serde(rename = "authType")]
     pub auth_type: AuthType,
 }
+impl AuthInfoBase {
+    pub fn new(auth_type: AuthType) -> Self {
+        Self { auth_type }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AuthType {
     #[serde(rename = "systemAssignedIdentity")]
@@ -27,6 +32,11 @@ pub struct ErrorAdditionalInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -40,10 +50,20 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkerList {
@@ -52,10 +72,20 @@ pub struct LinkerList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LinkerResource>,
 }
+impl LinkerList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkerPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LinkerProperties>,
+}
+impl LinkerPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkerProperties {
@@ -67,6 +97,11 @@ pub struct LinkerProperties {
     pub client_type: Option<linker_properties::ClientType>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+}
+impl LinkerProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod linker_properties {
     use super::*;
@@ -102,6 +137,15 @@ pub struct LinkerResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl LinkerResource {
+    pub fn new(properties: LinkerProperties) -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+            system_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -115,6 +159,11 @@ pub struct Operation {
     #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -127,6 +176,11 @@ pub mod operation {
         pub operation: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
+    }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -149,10 +203,20 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
+}
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -163,6 +227,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretAuthInfo {
     #[serde(flatten)]
@@ -171,6 +240,15 @@ pub struct SecretAuthInfo {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
+}
+impl SecretAuthInfo {
+    pub fn new(auth_info_base: AuthInfoBase) -> Self {
+        Self {
+            auth_info_base,
+            name: None,
+            secret: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalCertificateAuthInfo {
@@ -182,6 +260,16 @@ pub struct ServicePrincipalCertificateAuthInfo {
     pub principal_id: String,
     pub certificate: String,
 }
+impl ServicePrincipalCertificateAuthInfo {
+    pub fn new(auth_info_base: AuthInfoBase, client_id: String, principal_id: String, certificate: String) -> Self {
+        Self {
+            auth_info_base,
+            client_id,
+            principal_id,
+            certificate,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalSecretAuthInfo {
     #[serde(flatten)]
@@ -192,6 +280,16 @@ pub struct ServicePrincipalSecretAuthInfo {
     pub principal_id: String,
     pub secret: String,
 }
+impl ServicePrincipalSecretAuthInfo {
+    pub fn new(auth_info_base: AuthInfoBase, client_id: String, principal_id: String, secret: String) -> Self {
+        Self {
+            auth_info_base,
+            client_id,
+            principal_id,
+            secret,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -199,15 +297,30 @@ pub struct SourceConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl SourceConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceConfigurationResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub configurations: Vec<SourceConfiguration>,
 }
+impl SourceConfigurationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemAssignedIdentityAuthInfo {
     #[serde(flatten)]
     pub auth_info_base: AuthInfoBase,
+}
+impl SystemAssignedIdentityAuthInfo {
+    pub fn new(auth_info_base: AuthInfoBase) -> Self {
+        Self { auth_info_base }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentityAuthInfo {
@@ -217,6 +330,15 @@ pub struct UserAssignedIdentityAuthInfo {
     pub client_id: String,
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
+}
+impl UserAssignedIdentityAuthInfo {
+    pub fn new(auth_info_base: AuthInfoBase, client_id: String, subscription_id: String) -> Self {
+        Self {
+            auth_info_base,
+            client_id,
+            subscription_id,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateResult {
@@ -234,6 +356,11 @@ pub struct ValidateResult {
     pub target_id: Option<String>,
     #[serde(rename = "authType", default, skip_serializing_if = "Option::is_none")]
     pub auth_type: Option<AuthType>,
+}
+impl ValidateResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod validate_result {
     use super::*;
@@ -258,6 +385,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

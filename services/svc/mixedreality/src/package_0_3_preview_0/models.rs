@@ -44,9 +44,25 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
 }
+impl ErrorDetail {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            target: None,
+            details: Vec::new(),
+            innererror: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: ErrorDetail,
+}
+impl ErrorResponse {
+    pub fn new(error: ErrorDetail) -> Self {
+        Self { error }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IngestionConfiguration {
@@ -66,6 +82,21 @@ pub struct IngestionConfiguration {
     pub supporting_plane: Option<Vector4>,
     #[serde(rename = "testTrajectory", default, skip_serializing_if = "Vec::is_empty")]
     pub test_trajectory: Vec<Pose>,
+}
+impl IngestionConfiguration {
+    pub fn new(gravity: Vector3, scale: f32) -> Self {
+        Self {
+            dimensions: None,
+            bounding_box_center: None,
+            gravity,
+            key_frame_indexes: Vec::new(),
+            gt_trajectory: Vec::new(),
+            principal_axis: None,
+            scale,
+            supporting_plane: None,
+            test_trajectory: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionProperties {
@@ -90,12 +121,22 @@ pub struct IngestionProperties {
     #[serde(rename = "ingestionConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_configuration: Option<IngestionConfiguration>,
 }
+impl IngestionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<InnerError>>,
+}
+impl InnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum JobStatus {
@@ -110,6 +151,11 @@ pub struct Pose {
     pub rotation: Quaternion,
     pub translation: Vector3,
 }
+impl Pose {
+    pub fn new(rotation: Quaternion, translation: Vector3) -> Self {
+        Self { rotation, translation }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Quaternion {
     pub x: f32,
@@ -119,10 +165,26 @@ pub struct Quaternion {
     #[serde(rename = "isIdentity", default, skip_serializing_if = "Option::is_none")]
     pub is_identity: Option<bool>,
 }
+impl Quaternion {
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
+        Self {
+            x,
+            y,
+            z,
+            w,
+            is_identity: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UploadLocation {
     #[serde(rename = "inputAssetUri")]
     pub input_asset_uri: String,
+}
+impl UploadLocation {
+    pub fn new(input_asset_uri: String) -> Self {
+        Self { input_asset_uri }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Vector3 {
@@ -130,10 +192,20 @@ pub struct Vector3 {
     pub y: f32,
     pub z: f32,
 }
+impl Vector3 {
+    pub fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Vector4 {
     pub x: f32,
     pub y: f32,
     pub z: f32,
     pub w: f32,
+}
+impl Vector4 {
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
+        Self { x, y, z, w }
+    }
 }

@@ -9,10 +9,20 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod error_response {
     use super::*;
@@ -25,6 +35,11 @@ pub mod error_response {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub details: Vec<ErrorDetails>,
     }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitor {
@@ -33,12 +48,22 @@ pub struct HealthMonitor {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HealthMonitorProperties>,
 }
+impl HealthMonitor {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HealthMonitor>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl HealthMonitorList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorProperties {
@@ -65,6 +90,11 @@ pub struct HealthMonitorProperties {
     #[serde(rename = "monitorConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub monitor_configuration: Option<serde_json::Value>,
 }
+impl HealthMonitorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorStateChange {
     #[serde(flatten)]
@@ -72,12 +102,22 @@ pub struct HealthMonitorStateChange {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HealthMonitorStateChangeProperties>,
 }
+impl HealthMonitorStateChange {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorStateChangeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HealthMonitorStateChange>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl HealthMonitorStateChangeList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorStateChangeProperties {
@@ -100,6 +140,11 @@ pub struct HealthMonitorStateChangeProperties {
     #[serde(rename = "monitorConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub monitor_configuration: Option<serde_json::Value>,
 }
+impl HealthMonitorStateChangeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum HealthState {
     Healthy,
@@ -115,6 +160,11 @@ pub struct Operation {
     pub display: operation::Display,
     pub origin: String,
 }
+impl Operation {
+    pub fn new(name: String, display: operation::Display, origin: String) -> Self {
+        Self { name, display, origin }
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -124,6 +174,16 @@ pub mod operation {
         pub operation: String,
         pub description: String,
     }
+    impl Display {
+        pub fn new(provider: String, resource: String, operation: String, description: String) -> Self {
+            Self {
+                provider,
+                resource,
+                operation,
+                description,
+            }
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
@@ -131,6 +191,11 @@ pub struct OperationList {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -140,4 +205,9 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

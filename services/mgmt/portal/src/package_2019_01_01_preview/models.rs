@@ -9,6 +9,11 @@ pub struct Configuration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProperties>,
 }
+impl Configuration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -16,10 +21,20 @@ pub struct ConfigurationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ConfigurationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProperties {
     #[serde(rename = "enforcePrivateMarkdownStorage", default, skip_serializing_if = "Option::is_none")]
     pub enforce_private_markdown_storage: Option<bool>,
+}
+impl ConfigurationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dashboard {
@@ -35,12 +50,33 @@ pub struct Dashboard {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Dashboard {
+    pub fn new(location: String) -> Self {
+        Self {
+            properties: None,
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DashboardLens {
     pub order: i32,
     pub parts: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+}
+impl DashboardLens {
+    pub fn new(order: i32, parts: serde_json::Value) -> Self {
+        Self {
+            order,
+            parts,
+            metadata: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DashboardListResult {
@@ -49,13 +85,28 @@ pub struct DashboardListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl DashboardListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DashboardPartMetadata {}
+impl DashboardPartMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DashboardParts {
     pub position: dashboard_parts::Position,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<DashboardPartMetadata>,
+}
+impl DashboardParts {
+    pub fn new(position: dashboard_parts::Position) -> Self {
+        Self { position, metadata: None }
+    }
 }
 pub mod dashboard_parts {
     use super::*;
@@ -70,6 +121,17 @@ pub mod dashboard_parts {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub metadata: Option<serde_json::Value>,
     }
+    impl Position {
+        pub fn new(x: i32, y: i32, row_span: i32, col_span: i32) -> Self {
+            Self {
+                x,
+                y,
+                row_span,
+                col_span,
+                metadata: None,
+            }
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DashboardProperties {
@@ -77,6 +139,11 @@ pub struct DashboardProperties {
     pub lenses: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+}
+impl DashboardProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
@@ -87,10 +154,20 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
+impl ErrorDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchableDashboard {
@@ -99,10 +176,20 @@ pub struct PatchableDashboard {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl PatchableDashboard {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
+}
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -113,6 +200,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -121,6 +213,11 @@ pub struct ResourceProviderOperation {
     pub is_data_action: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
+}
+impl ResourceProviderOperation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_provider_operation {
     use super::*;
@@ -135,6 +232,11 @@ pub mod resource_provider_operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
@@ -142,4 +244,9 @@ pub struct ResourceProviderOperationList {
     pub value: Vec<ResourceProviderOperation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ResourceProviderOperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

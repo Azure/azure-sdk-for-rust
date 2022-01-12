@@ -9,6 +9,11 @@ pub struct ApiConnectionDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<api_connection_definition::Properties>,
 }
+impl ApiConnectionDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod api_connection_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -32,11 +37,21 @@ pub mod api_connection_definition {
         #[serde(rename = "testLinks", default, skip_serializing_if = "Vec::is_empty")]
         pub test_links: Vec<ApiConnectionTestLink>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiConnectionDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApiConnectionDefinition>,
+}
+impl ApiConnectionDefinitionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiConnectionTestLink {
@@ -44,6 +59,11 @@ pub struct ApiConnectionTestLink {
     pub request_uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
+}
+impl ApiConnectionTestLink {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiOAuthSettings {
@@ -62,6 +82,11 @@ pub struct ApiOAuthSettings {
     #[serde(rename = "customParameters", default, skip_serializing_if = "Option::is_none")]
     pub custom_parameters: Option<serde_json::Value>,
 }
+impl ApiOAuthSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiOAuthSettingsParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -70,6 +95,11 @@ pub struct ApiOAuthSettingsParameter {
     pub options: Option<serde_json::Value>,
     #[serde(rename = "uiDefinition", default, skip_serializing_if = "Option::is_none")]
     pub ui_definition: Option<serde_json::Value>,
+}
+impl ApiOAuthSettingsParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiReference {
@@ -88,10 +118,20 @@ pub struct ApiReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl ApiReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceBackendService {
     #[serde(rename = "serviceUrl", default, skip_serializing_if = "Option::is_none")]
     pub service_url: Option<String>,
+}
+impl ApiResourceBackendService {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceDefinitions {
@@ -99,6 +139,11 @@ pub struct ApiResourceDefinitions {
     pub original_swagger_url: Option<String>,
     #[serde(rename = "modifiedSwaggerUrl", default, skip_serializing_if = "Option::is_none")]
     pub modified_swagger_url: Option<String>,
+}
+impl ApiResourceDefinitions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceGeneralInformation {
@@ -112,6 +157,11 @@ pub struct ApiResourceGeneralInformation {
     pub terms_of_use_url: Option<String>,
     #[serde(rename = "releaseTag", default, skip_serializing_if = "Option::is_none")]
     pub release_tag: Option<String>,
+}
+impl ApiResourceGeneralInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceMetadata {
@@ -132,12 +182,22 @@ pub struct ApiResourceMetadata {
     #[serde(rename = "connectionType", default, skip_serializing_if = "Option::is_none")]
     pub connection_type: Option<String>,
 }
+impl ApiResourceMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourcePolicies {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(rename = "contentLink", default, skip_serializing_if = "Option::is_none")]
     pub content_link: Option<String>,
+}
+impl ApiResourcePolicies {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceProperties {
@@ -164,6 +224,11 @@ pub struct ApiResourceProperties {
     #[serde(rename = "apiDefinitions", default, skip_serializing_if = "Option::is_none")]
     pub api_definitions: Option<ApiResourceDefinitions>,
 }
+impl ApiResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApiType {
     NotSpecified,
@@ -179,12 +244,22 @@ pub struct ConfirmConsentCodeDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 }
+impl ConfirmConsentCodeDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionError {
     #[serde(flatten)]
     pub resource_definition: ResourceDefinition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<connection_error::Properties>,
+}
+impl ConnectionError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod connection_error {
     use super::*;
@@ -195,6 +270,11 @@ pub mod connection_error {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayDefinition {
@@ -202,6 +282,11 @@ pub struct ConnectionGatewayDefinition {
     pub resource_definition: ResourceDefinition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<connection_gateway_definition::Properties>,
+}
+impl ConnectionGatewayDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod connection_gateway_definition {
     use super::*;
@@ -222,11 +307,21 @@ pub mod connection_gateway_definition {
         #[serde(rename = "backendUri", default, skip_serializing_if = "Option::is_none")]
         pub backend_uri: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionGatewayDefinition>,
+}
+impl ConnectionGatewayDefinitionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayInstallationDefinition {
@@ -234,6 +329,11 @@ pub struct ConnectionGatewayInstallationDefinition {
     pub resource_definition: ResourceDefinition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<connection_gateway_installation_definition::Properties>,
+}
+impl ConnectionGatewayInstallationDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod connection_gateway_installation_definition {
     use super::*;
@@ -254,11 +354,21 @@ pub mod connection_gateway_installation_definition {
         #[serde(rename = "backendUri", default, skip_serializing_if = "Option::is_none")]
         pub backend_uri: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayInstallationDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionGatewayInstallationDefinition>,
+}
+impl ConnectionGatewayInstallationDefinitionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionGatewayReference {
@@ -269,12 +379,22 @@ pub struct ConnectionGatewayReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl ConnectionGatewayReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionParameter {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<connection_parameter::Type>,
     #[serde(rename = "oAuthSettings", default, skip_serializing_if = "Option::is_none")]
     pub o_auth_settings: Option<ApiOAuthSettings>,
+}
+impl ConnectionParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod connection_parameter {
     use super::*;
@@ -309,10 +429,20 @@ pub struct ConnectionStatusDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ConnectionError>,
 }
+impl ConnectionStatusDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsentLinkCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConsentLinkDefinition>,
+}
+impl ConsentLinkCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsentLinkDefinition {
@@ -324,6 +454,11 @@ pub struct ConsentLinkDefinition {
     pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<consent_link_definition::Status>,
+}
+impl ConsentLinkDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod consent_link_definition {
     use super::*;
@@ -345,6 +480,11 @@ pub struct ConsentLinkParameterDefinition {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
+impl ConsentLinkParameterDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomApiDefinition {
     #[serde(flatten)]
@@ -352,10 +492,20 @@ pub struct CustomApiDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomApiPropertiesDefinition>,
 }
+impl CustomApiDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomApiDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomApiDefinition>,
+}
+impl CustomApiDefinitionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomApiPropertiesDefinition {
@@ -384,12 +534,22 @@ pub struct CustomApiPropertiesDefinition {
     #[serde(rename = "wsdlDefinition", default, skip_serializing_if = "Option::is_none")]
     pub wsdl_definition: Option<WsdlDefinition>,
 }
+impl CustomApiPropertiesDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomApiReference {
     #[serde(flatten)]
     pub api_reference: ApiReference,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl CustomApiReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListConnectionKeysDefinition {
@@ -398,6 +558,11 @@ pub struct ListConnectionKeysDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<list_connection_keys_definition::Properties>,
 }
+impl ListConnectionKeysDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod list_connection_keys_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -405,11 +570,21 @@ pub mod list_connection_keys_definition {
         #[serde(rename = "validityTimeSpan", default, skip_serializing_if = "Option::is_none")]
         pub validity_time_span: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListConsentLinksDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ConsentLinkParameterDefinition>,
+}
+impl ListConsentLinksDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedApiDefinition {
@@ -418,10 +593,20 @@ pub struct ManagedApiDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiResourceProperties>,
 }
+impl ManagedApiDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedApiDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedApiDefinition>,
+}
+impl ManagedApiDefinitionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceDefinition {
@@ -438,6 +623,11 @@ pub struct ResourceDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<TagsDictionary>,
 }
+impl ResourceDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -445,8 +635,18 @@ pub struct ResourceReference {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl ResourceReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsDictionary {}
+impl TagsDictionary {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WsdlDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -457,6 +657,11 @@ pub struct WsdlDefinition {
     pub service: Option<WsdlService>,
     #[serde(rename = "importMethod", default, skip_serializing_if = "Option::is_none")]
     pub import_method: Option<WsdlImportMethod>,
+}
+impl WsdlDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum WsdlImportMethod {
@@ -471,8 +676,21 @@ pub struct WsdlService {
     #[serde(rename = "endpointQualifiedNames", default, skip_serializing_if = "Vec::is_empty")]
     pub endpoint_qualified_names: Vec<String>,
 }
+impl WsdlService {
+    pub fn new(qualified_name: String) -> Self {
+        Self {
+            qualified_name,
+            endpoint_qualified_names: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WsdlServiceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WsdlService>,
+}
+impl WsdlServiceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

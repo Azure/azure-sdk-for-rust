@@ -11,12 +11,22 @@ pub struct AccessPolicy {
     #[serde(rename = "Permission", default, skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 }
+impl AccessPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClearRange {
     #[serde(rename = "Start")]
     pub start: i64,
     #[serde(rename = "End")]
     pub end: i64,
+}
+impl ClearRange {
+    pub fn new(start: i64, end: i64) -> Self {
+        Self { start, end }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
@@ -31,6 +41,23 @@ pub struct CorsRule {
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
 }
+impl CorsRule {
+    pub fn new(
+        allowed_origins: String,
+        allowed_methods: String,
+        allowed_headers: String,
+        exposed_headers: String,
+        max_age_in_seconds: i64,
+    ) -> Self {
+        Self {
+            allowed_origins,
+            allowed_methods,
+            allowed_headers,
+            exposed_headers,
+            max_age_in_seconds,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectoryItem {
     #[serde(rename = "Name")]
@@ -43,6 +70,17 @@ pub struct DirectoryItem {
     pub attributes: Option<String>,
     #[serde(rename = "PermissionKey", default, skip_serializing_if = "Option::is_none")]
     pub permission_key: Option<String>,
+}
+impl DirectoryItem {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            file_id: None,
+            properties: None,
+            attributes: None,
+            permission_key: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorCode {
@@ -127,6 +165,17 @@ pub struct FileItem {
     #[serde(rename = "PermissionKey", default, skip_serializing_if = "Option::is_none")]
     pub permission_key: Option<String>,
 }
+impl FileItem {
+    pub fn new(name: String, properties: FileProperty) -> Self {
+        Self {
+            name,
+            file_id: None,
+            properties,
+            attributes: None,
+            permission_key: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileProperty {
     #[serde(rename = "Content-Length")]
@@ -144,6 +193,19 @@ pub struct FileProperty {
     #[serde(rename = "Etag", default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
+impl FileProperty {
+    pub fn new(content_length: i64) -> Self {
+        Self {
+            content_length,
+            creation_time: None,
+            last_access_time: None,
+            last_write_time: None,
+            change_time: None,
+            last_modified: None,
+            etag: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileRange {
     #[serde(rename = "Start")]
@@ -151,12 +213,25 @@ pub struct FileRange {
     #[serde(rename = "End")]
     pub end: i64,
 }
+impl FileRange {
+    pub fn new(start: i64, end: i64) -> Self {
+        Self { start, end }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilesAndDirectoriesListSegment {
     #[serde(rename = "DirectoryItems")]
     pub directory_items: Vec<DirectoryItem>,
     #[serde(rename = "FileItems")]
     pub file_items: Vec<FileItem>,
+}
+impl FilesAndDirectoriesListSegment {
+    pub fn new(directory_items: Vec<DirectoryItem>, file_items: Vec<FileItem>) -> Self {
+        Self {
+            directory_items,
+            file_items,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HandleItem {
@@ -176,6 +251,20 @@ pub struct HandleItem {
     pub open_time: String,
     #[serde(rename = "LastReconnectTime", default, skip_serializing_if = "Option::is_none")]
     pub last_reconnect_time: Option<String>,
+}
+impl HandleItem {
+    pub fn new(handle_id: String, path: String, file_id: String, session_id: String, client_ip: String, open_time: String) -> Self {
+        Self {
+            handle_id,
+            path,
+            file_id,
+            parent_id: None,
+            session_id,
+            client_ip,
+            open_time,
+            last_reconnect_time: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LeaseDuration {
@@ -227,12 +316,43 @@ pub struct ListFilesAndDirectoriesSegmentResponse {
     #[serde(rename = "DirectoryId", default, skip_serializing_if = "Option::is_none")]
     pub directory_id: Option<String>,
 }
+impl ListFilesAndDirectoriesSegmentResponse {
+    pub fn new(
+        service_endpoint: String,
+        share_name: String,
+        directory_path: String,
+        prefix: String,
+        segment: FilesAndDirectoriesListSegment,
+        next_marker: String,
+    ) -> Self {
+        Self {
+            service_endpoint,
+            share_name,
+            share_snapshot: None,
+            directory_path,
+            prefix,
+            marker: None,
+            max_results: None,
+            segment,
+            next_marker,
+            directory_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListHandlesResponse {
     #[serde(rename = "HandleList", default, skip_serializing_if = "Vec::is_empty")]
     pub handle_list: Vec<HandleItem>,
     #[serde(rename = "NextMarker")]
     pub next_marker: String,
+}
+impl ListHandlesResponse {
+    pub fn new(next_marker: String) -> Self {
+        Self {
+            handle_list: Vec::new(),
+            next_marker,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListSharesResponse {
@@ -249,8 +369,25 @@ pub struct ListSharesResponse {
     #[serde(rename = "NextMarker")]
     pub next_marker: String,
 }
+impl ListSharesResponse {
+    pub fn new(service_endpoint: String, next_marker: String) -> Self {
+        Self {
+            service_endpoint,
+            prefix: None,
+            marker: None,
+            max_results: None,
+            share_items: Vec::new(),
+            next_marker,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Metadata {}
+impl Metadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
     #[serde(rename = "Version")]
@@ -262,12 +399,27 @@ pub struct Metrics {
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
+impl Metrics {
+    pub fn new(version: String, enabled: bool) -> Self {
+        Self {
+            version,
+            enabled,
+            include_ap_is: None,
+            retention_policy: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
     #[serde(rename = "Enabled")]
     pub enabled: bool,
     #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i64>,
+}
+impl RetentionPolicy {
+    pub fn new(enabled: bool) -> Self {
+        Self { enabled, days: None }
+    }
 }
 pub type ShareEnabledProtocols = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -276,6 +428,11 @@ pub struct ShareFileRangeList {
     pub ranges: Vec<FileRange>,
     #[serde(rename = "ClearRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub clear_ranges: Vec<ClearRange>,
+}
+impl ShareFileRangeList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareItemInternal {
@@ -292,9 +449,26 @@ pub struct ShareItemInternal {
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<Metadata>,
 }
+impl ShareItemInternal {
+    pub fn new(name: String, properties: SharePropertiesInternal) -> Self {
+        Self {
+            name,
+            snapshot: None,
+            deleted: None,
+            version: None,
+            properties,
+            metadata: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharePermission {
     pub permission: String,
+}
+impl SharePermission {
+    pub fn new(permission: String) -> Self {
+        Self { permission }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharePropertiesInternal {
@@ -333,10 +507,38 @@ pub struct SharePropertiesInternal {
     #[serde(rename = "RootSquash", default, skip_serializing_if = "Option::is_none")]
     pub root_squash: Option<ShareRootSquash>,
 }
+impl SharePropertiesInternal {
+    pub fn new(last_modified: String, etag: String, quota: i64) -> Self {
+        Self {
+            last_modified,
+            etag,
+            quota,
+            provisioned_iops: None,
+            provisioned_ingress_m_bps: None,
+            provisioned_egress_m_bps: None,
+            next_allowed_quota_downgrade_time: None,
+            deleted_time: None,
+            remaining_retention_days: None,
+            access_tier: None,
+            access_tier_change_time: None,
+            access_tier_transition_state: None,
+            lease_status: None,
+            lease_state: None,
+            lease_duration: None,
+            enabled_protocols: None,
+            root_squash: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareProtocolSettings {
     #[serde(rename = "Smb", default, skip_serializing_if = "Option::is_none")]
     pub smb: Option<ShareSmbSettings>,
+}
+impl ShareProtocolSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ShareRootSquash {
@@ -349,10 +551,20 @@ pub struct ShareSmbSettings {
     #[serde(rename = "Multichannel", default, skip_serializing_if = "Option::is_none")]
     pub multichannel: Option<SmbMultichannel>,
 }
+impl ShareSmbSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareStats {
     #[serde(rename = "ShareUsageBytes")]
     pub share_usage_bytes: i64,
+}
+impl ShareStats {
+    pub fn new(share_usage_bytes: i64) -> Self {
+        Self { share_usage_bytes }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {
@@ -361,16 +573,31 @@ pub struct SignedIdentifier {
     #[serde(rename = "AccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub access_policy: Option<AccessPolicy>,
 }
+impl SignedIdentifier {
+    pub fn new(id: String) -> Self {
+        Self { id, access_policy: None }
+    }
+}
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmbMultichannel {
     #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
+impl SmbMultichannel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl StorageError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceProperties {
@@ -382,4 +609,9 @@ pub struct StorageServiceProperties {
     pub cors: Vec<CorsRule>,
     #[serde(rename = "Protocol", default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ShareProtocolSettings>,
+}
+impl StorageServiceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

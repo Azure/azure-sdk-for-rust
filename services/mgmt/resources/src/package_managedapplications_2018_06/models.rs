@@ -11,6 +11,16 @@ pub struct Application {
     pub plan: Option<Plan>,
     pub kind: String,
 }
+impl Application {
+    pub fn new(properties: ApplicationProperties, kind: String) -> Self {
+        Self {
+            generic_resource: GenericResource::default(),
+            properties,
+            plan: None,
+            kind,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationArtifact {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19,6 +29,11 @@ pub struct ApplicationArtifact {
     pub uri: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ApplicationArtifactType>,
+}
+impl ApplicationArtifact {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplicationArtifactType {
@@ -31,12 +46,25 @@ pub struct ApplicationDefinition {
     pub generic_resource: GenericResource,
     pub properties: ApplicationDefinitionProperties,
 }
+impl ApplicationDefinition {
+    pub fn new(properties: ApplicationDefinitionProperties) -> Self {
+        Self {
+            generic_resource: GenericResource::default(),
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationDefinitionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ApplicationDefinitionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationDefinitionProperties {
@@ -58,12 +86,32 @@ pub struct ApplicationDefinitionProperties {
     #[serde(rename = "createUiDefinition", default, skip_serializing_if = "Option::is_none")]
     pub create_ui_definition: Option<serde_json::Value>,
 }
+impl ApplicationDefinitionProperties {
+    pub fn new(lock_level: ApplicationLockLevel, authorizations: Vec<ApplicationProviderAuthorization>) -> Self {
+        Self {
+            lock_level,
+            display_name: None,
+            is_enabled: None,
+            authorizations,
+            artifacts: Vec::new(),
+            description: None,
+            package_file_uri: None,
+            main_template: None,
+            create_ui_definition: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Application>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ApplicationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplicationLockLevel {
@@ -82,6 +130,11 @@ pub struct ApplicationPatchable {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
+impl ApplicationPatchable {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationProperties {
     #[serde(rename = "managedResourceGroupId")]
@@ -94,6 +147,17 @@ pub struct ApplicationProperties {
     pub outputs: Option<serde_json::Value>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+}
+impl ApplicationProperties {
+    pub fn new(managed_resource_group_id: String) -> Self {
+        Self {
+            managed_resource_group_id,
+            application_definition_id: None,
+            parameters: None,
+            outputs: None,
+            provisioning_state: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationPropertiesPatchable {
@@ -108,12 +172,25 @@ pub struct ApplicationPropertiesPatchable {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
+impl ApplicationPropertiesPatchable {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationProviderAuthorization {
     #[serde(rename = "principalId")]
     pub principal_id: String,
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
+}
+impl ApplicationProviderAuthorization {
+    pub fn new(principal_id: String, role_definition_id: String) -> Self {
+        Self {
+            principal_id,
+            role_definition_id,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -123,6 +200,11 @@ pub struct ErrorResponse {
     pub error_code: Option<String>,
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenericResource {
@@ -135,6 +217,11 @@ pub struct GenericResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
 }
+impl GenericResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -143,6 +230,11 @@ pub struct Identity {
     pub tenant_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
+}
+impl Identity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod identity {
     use super::*;
@@ -158,6 +250,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -169,6 +266,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -176,6 +278,11 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
@@ -185,6 +292,17 @@ pub struct Plan {
     #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
     pub version: String,
+}
+impl Plan {
+    pub fn new(name: String, publisher: String, product: String, version: String) -> Self {
+        Self {
+            name,
+            publisher,
+            product,
+            promotion_code: None,
+            version,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlanPatchable {
@@ -198,6 +316,11 @@ pub struct PlanPatchable {
     pub promotion_code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl PlanPatchable {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
@@ -226,6 +349,11 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: String,
@@ -239,4 +367,16 @@ pub struct Sku {
     pub model: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
+}
+impl Sku {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            tier: None,
+            size: None,
+            family: None,
+            model: None,
+            capacity: None,
+        }
+    }
 }

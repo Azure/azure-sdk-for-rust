@@ -7,10 +7,20 @@ pub struct ARecord {
     #[serde(rename = "ipv4Address", default, skip_serializing_if = "Option::is_none")]
     pub ipv4_address: Option<String>,
 }
+impl ARecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AaaaRecord {
     #[serde(rename = "ipv6Address", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_address: Option<String>,
+}
+impl AaaaRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CaaRecord {
@@ -21,10 +31,20 @@ pub struct CaaRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl CaaRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
@@ -37,10 +57,20 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CnameRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
+}
+impl CnameRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsResourceReference {
@@ -49,25 +79,50 @@ pub struct DnsResourceReference {
     #[serde(rename = "targetResource", default, skip_serializing_if = "Option::is_none")]
     pub target_resource: Option<SubResource>,
 }
+impl DnsResourceReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsResourceReferenceRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DnsResourceReferenceRequestProperties>,
+}
+impl DnsResourceReferenceRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsResourceReferenceRequestProperties {
     #[serde(rename = "targetResources", default, skip_serializing_if = "Vec::is_empty")]
     pub target_resources: Vec<SubResource>,
 }
+impl DnsResourceReferenceRequestProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsResourceReferenceResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DnsResourceReferenceResultProperties>,
 }
+impl DnsResourceReferenceResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsResourceReferenceResultProperties {
     #[serde(rename = "dnsResourceReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub dns_resource_references: Vec<DnsResourceReference>,
+}
+impl DnsResourceReferenceResultProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MxRecord {
@@ -76,15 +131,30 @@ pub struct MxRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exchange: Option<String>,
 }
+impl MxRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NsRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nsdname: Option<String>,
 }
+impl NsRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PtrRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ptrdname: Option<String>,
+}
+impl PtrRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecordSet {
@@ -99,12 +169,22 @@ pub struct RecordSet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecordSetProperties>,
 }
+impl RecordSet {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecordSetListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RecordSet>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RecordSetListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecordSetProperties {
@@ -139,10 +219,20 @@ pub struct RecordSetProperties {
     #[serde(rename = "caaRecords", default, skip_serializing_if = "Vec::is_empty")]
     pub caa_records: Vec<CaaRecord>,
 }
+impl RecordSetProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecordSetUpdateParameters {
     #[serde(rename = "RecordSet", default, skip_serializing_if = "Option::is_none")]
     pub record_set: Option<RecordSet>,
+}
+impl RecordSetUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -155,6 +245,17 @@ pub struct Resource {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SoaRecord {
@@ -173,6 +274,11 @@ pub struct SoaRecord {
     #[serde(rename = "minimumTTL", default, skip_serializing_if = "Option::is_none")]
     pub minimum_ttl: Option<i64>,
 }
+impl SoaRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SrvRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -184,15 +290,30 @@ pub struct SrvRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
+impl SrvRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
+impl SubResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TxtRecord {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
+}
+impl TxtRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Zone {
@@ -203,12 +324,26 @@ pub struct Zone {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ZoneProperties>,
 }
+impl Zone {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            etag: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ZoneListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Zone>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ZoneListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ZoneProperties {
@@ -227,6 +362,11 @@ pub struct ZoneProperties {
     #[serde(rename = "resolutionVirtualNetworks", default, skip_serializing_if = "Vec::is_empty")]
     pub resolution_virtual_networks: Vec<SubResource>,
 }
+impl ZoneProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod zone_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -244,4 +384,9 @@ pub mod zone_properties {
 pub struct ZoneUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl ZoneUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

@@ -7,12 +7,22 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -27,6 +37,11 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkAssociation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -38,10 +53,20 @@ pub struct PrivateLinkAssociation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl PrivateLinkAssociation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkAssociationGetResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkAssociation>,
+}
+impl PrivateLinkAssociationGetResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkAssociationProperties {
@@ -49,6 +74,11 @@ pub struct PrivateLinkAssociationProperties {
     pub private_link: Option<String>,
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<private_link_association_properties::PublicNetworkAccess>,
+}
+impl PrivateLinkAssociationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod private_link_association_properties {
     use super::*;
@@ -68,6 +98,11 @@ pub struct PrivateLinkAssociationPropertiesExpanded {
     pub tenant_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+}
+impl PrivateLinkAssociationPropertiesExpanded {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod private_link_association_properties_expanded {
     use super::*;
@@ -90,18 +125,38 @@ pub struct ResourceManagementPrivateLink {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
+impl ResourceManagementPrivateLink {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceManagementPrivateLinkEndpointConnections {
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<String>,
+}
+impl ResourceManagementPrivateLinkEndpointConnections {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceManagementPrivateLinkListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceManagementPrivateLink>,
 }
+impl ResourceManagementPrivateLinkListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceManagementPrivateLinkLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+}
+impl ResourceManagementPrivateLinkLocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

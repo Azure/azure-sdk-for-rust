@@ -7,6 +7,11 @@ pub struct AccessUri {
     #[serde(rename = "accessSAS", default, skip_serializing_if = "Option::is_none")]
     pub access_sas: Option<String>,
 }
+impl AccessUri {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -20,6 +25,11 @@ pub struct ApiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ApiError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiErrorBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -29,10 +39,20 @@ pub struct ApiErrorBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ApiErrorBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreationData {
@@ -55,6 +75,21 @@ pub struct CreationData {
     #[serde(rename = "logicalSectorSize", default, skip_serializing_if = "Option::is_none")]
     pub logical_sector_size: Option<i32>,
 }
+impl CreationData {
+    pub fn new(create_option: creation_data::CreateOption) -> Self {
+        Self {
+            create_option,
+            storage_account_id: None,
+            image_reference: None,
+            gallery_image_reference: None,
+            source_uri: None,
+            source_resource_id: None,
+            source_unique_id: None,
+            upload_size_bytes: None,
+            logical_sector_size: None,
+        }
+    }
+}
 pub mod creation_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -74,10 +109,23 @@ pub struct DataDiskImageEncryption {
     pub disk_image_encryption: DiskImageEncryption,
     pub lun: i32,
 }
+impl DataDiskImageEncryption {
+    pub fn new(lun: i32) -> Self {
+        Self {
+            disk_image_encryption: DiskImageEncryption::default(),
+            lun,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Disallowed {
     #[serde(rename = "diskTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub disk_types: Vec<String>,
+}
+impl Disallowed {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Disk {
@@ -96,6 +144,19 @@ pub struct Disk {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskProperties>,
 }
+impl Disk {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            managed_by: None,
+            managed_by_extended: Vec::new(),
+            sku: None,
+            zones: Vec::new(),
+            extended_location: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskAccess {
     #[serde(flatten)]
@@ -103,11 +164,24 @@ pub struct DiskAccess {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskAccessProperties>,
 }
+impl DiskAccess {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskAccessList {
     pub value: Vec<DiskAccess>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DiskAccessList {
+    pub fn new(value: Vec<DiskAccess>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskAccessProperties {
@@ -118,10 +192,20 @@ pub struct DiskAccessProperties {
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
 }
+impl DiskAccessProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskAccessUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl DiskAccessUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskEncryptionSet {
@@ -132,11 +216,25 @@ pub struct DiskEncryptionSet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EncryptionSetProperties>,
 }
+impl DiskEncryptionSet {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            identity: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskEncryptionSetList {
     pub value: Vec<DiskEncryptionSet>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DiskEncryptionSetList {
+    pub fn new(value: Vec<DiskEncryptionSet>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskEncryptionSetType {
@@ -150,6 +248,11 @@ pub struct DiskEncryptionSetUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl DiskEncryptionSetUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskEncryptionSetUpdateProperties {
     #[serde(rename = "encryptionType", default, skip_serializing_if = "Option::is_none")]
@@ -157,16 +260,31 @@ pub struct DiskEncryptionSetUpdateProperties {
     #[serde(rename = "activeKey", default, skip_serializing_if = "Option::is_none")]
     pub active_key: Option<KeyForDiskEncryptionSet>,
 }
+impl DiskEncryptionSetUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskImageEncryption {
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_set_id: Option<String>,
+}
+impl DiskImageEncryption {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskList {
     pub value: Vec<Disk>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DiskList {
+    pub fn new(value: Vec<Disk>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskProperties {
@@ -215,6 +333,34 @@ pub struct DiskProperties {
     #[serde(rename = "burstingEnabled", default, skip_serializing_if = "Option::is_none")]
     pub bursting_enabled: Option<bool>,
 }
+impl DiskProperties {
+    pub fn new(creation_data: CreationData) -> Self {
+        Self {
+            time_created: None,
+            os_type: None,
+            hyper_v_generation: None,
+            purchase_plan: None,
+            creation_data,
+            disk_size_gb: None,
+            disk_size_bytes: None,
+            unique_id: None,
+            encryption_settings_collection: None,
+            provisioning_state: None,
+            disk_iops_read_write: None,
+            disk_m_bps_read_write: None,
+            disk_iops_read_only: None,
+            disk_m_bps_read_only: None,
+            disk_state: None,
+            encryption: None,
+            max_shares: None,
+            share_info: Vec::new(),
+            network_access_policy: None,
+            disk_access_id: None,
+            tier: None,
+            bursting_enabled: None,
+        }
+    }
+}
 pub mod disk_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -235,11 +381,21 @@ pub struct DiskRestorePoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskRestorePointProperties>,
 }
+impl DiskRestorePoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskRestorePointList {
     pub value: Vec<DiskRestorePoint>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DiskRestorePointList {
+    pub fn new(value: Vec<DiskRestorePoint>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskRestorePointProperties {
@@ -260,6 +416,11 @@ pub struct DiskRestorePointProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
 }
+impl DiskRestorePointProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod disk_restore_point_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -279,6 +440,11 @@ pub struct DiskSku {
     pub name: Option<disk_sku::Name>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+}
+impl DiskSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod disk_sku {
     use super::*;
@@ -313,6 +479,11 @@ pub struct DiskUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<DiskSku>,
 }
+impl DiskUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskUpdateProperties {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
@@ -344,6 +515,11 @@ pub struct DiskUpdateProperties {
     #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<PurchasePlan>,
 }
+impl DiskUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod disk_update_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -359,12 +535,22 @@ pub struct Encryption {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<EncryptionType>,
 }
+impl Encryption {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionImages {
     #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_image: Option<OsDiskImageEncryption>,
     #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disk_images: Vec<DataDiskImageEncryption>,
+}
+impl EncryptionImages {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSetIdentity {
@@ -374,6 +560,11 @@ pub struct EncryptionSetIdentity {
     pub principal_id: Option<String>,
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+impl EncryptionSetIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod encryption_set_identity {
     use super::*;
@@ -394,6 +585,11 @@ pub struct EncryptionSetProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
+impl EncryptionSetProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionSettingsCollection {
     pub enabled: bool,
@@ -402,12 +598,26 @@ pub struct EncryptionSettingsCollection {
     #[serde(rename = "encryptionSettingsVersion", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings_version: Option<String>,
 }
+impl EncryptionSettingsCollection {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            enabled,
+            encryption_settings: Vec::new(),
+            encryption_settings_version: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSettingsElement {
     #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_key: Option<KeyVaultAndSecretReference>,
     #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub key_encryption_key: Option<KeyVaultAndKeyReference>,
+}
+impl EncryptionSettingsElement {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EncryptionType {
@@ -422,6 +632,11 @@ pub struct ExtendedLocation {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ExtendedLocationType>,
 }
+impl ExtendedLocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ExtendedLocationType {
     EdgeZone,
@@ -433,6 +648,14 @@ pub struct Gallery {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryProperties>,
 }
+impl Gallery {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplication {
     #[serde(flatten)]
@@ -440,11 +663,24 @@ pub struct GalleryApplication {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryApplicationProperties>,
 }
+impl GalleryApplication {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationList {
     pub value: Vec<GalleryApplication>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl GalleryApplicationList {
+    pub fn new(value: Vec<GalleryApplication>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationProperties {
@@ -461,6 +697,18 @@ pub struct GalleryApplicationProperties {
     #[serde(rename = "supportedOSType")]
     pub supported_os_type: gallery_application_properties::SupportedOsType,
 }
+impl GalleryApplicationProperties {
+    pub fn new(supported_os_type: gallery_application_properties::SupportedOsType) -> Self {
+        Self {
+            description: None,
+            eula: None,
+            privacy_statement_uri: None,
+            release_note_uri: None,
+            end_of_life_date: None,
+            supported_os_type,
+        }
+    }
+}
 pub mod gallery_application_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -476,6 +724,11 @@ pub struct GalleryApplicationUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryApplicationProperties>,
 }
+impl GalleryApplicationUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationVersion {
     #[serde(flatten)]
@@ -483,11 +736,24 @@ pub struct GalleryApplicationVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryApplicationVersionProperties>,
 }
+impl GalleryApplicationVersion {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationVersionList {
     pub value: Vec<GalleryApplicationVersion>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl GalleryApplicationVersionList {
+    pub fn new(value: Vec<GalleryApplicationVersion>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryApplicationVersionProperties {
@@ -497,6 +763,15 @@ pub struct GalleryApplicationVersionProperties {
     pub provisioning_state: Option<gallery_application_version_properties::ProvisioningState>,
     #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
     pub replication_status: Option<ReplicationStatus>,
+}
+impl GalleryApplicationVersionProperties {
+    pub fn new(publishing_profile: GalleryApplicationVersionPublishingProfile) -> Self {
+        Self {
+            publishing_profile,
+            provisioning_state: None,
+            replication_status: None,
+        }
+    }
 }
 pub mod gallery_application_version_properties {
     use super::*;
@@ -520,12 +795,27 @@ pub struct GalleryApplicationVersionPublishingProfile {
     #[serde(rename = "enableHealthCheck", default, skip_serializing_if = "Option::is_none")]
     pub enable_health_check: Option<bool>,
 }
+impl GalleryApplicationVersionPublishingProfile {
+    pub fn new(source: UserArtifactSource) -> Self {
+        Self {
+            gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase::default(),
+            source,
+            manage_actions: None,
+            enable_health_check: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryApplicationVersionUpdate {
     #[serde(flatten)]
     pub update_resource_definition: UpdateResourceDefinition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryApplicationVersionProperties>,
+}
+impl GalleryApplicationVersionUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryArtifactPublishingProfileBase {
@@ -541,6 +831,11 @@ pub struct GalleryArtifactPublishingProfileBase {
     pub end_of_life_date: Option<String>,
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<gallery_artifact_publishing_profile_base::StorageAccountType>,
+}
+impl GalleryArtifactPublishingProfileBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod gallery_artifact_publishing_profile_base {
     use super::*;
@@ -559,6 +854,11 @@ pub struct GalleryArtifactSource {
     #[serde(rename = "managedImage")]
     pub managed_image: ManagedArtifact,
 }
+impl GalleryArtifactSource {
+    pub fn new(managed_image: ManagedArtifact) -> Self {
+        Self { managed_image }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryArtifactVersionSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -566,11 +866,24 @@ pub struct GalleryArtifactVersionSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
+impl GalleryArtifactVersionSource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryDataDiskImage {
     #[serde(flatten)]
     pub gallery_disk_image: GalleryDiskImage,
     pub lun: i32,
+}
+impl GalleryDataDiskImage {
+    pub fn new(lun: i32) -> Self {
+        Self {
+            gallery_disk_image: GalleryDiskImage::default(),
+            lun,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryDiskImage {
@@ -580,6 +893,11 @@ pub struct GalleryDiskImage {
     pub host_caching: Option<gallery_disk_image::HostCaching>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<GalleryArtifactVersionSource>,
+}
+impl GalleryDiskImage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod gallery_disk_image {
     use super::*;
@@ -595,12 +913,25 @@ pub struct GalleryIdentifier {
     #[serde(rename = "uniqueName", default, skip_serializing_if = "Option::is_none")]
     pub unique_name: Option<String>,
 }
+impl GalleryIdentifier {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImage {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryImageProperties>,
+}
+impl GalleryImage {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryImageFeature {
@@ -609,17 +940,32 @@ pub struct GalleryImageFeature {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl GalleryImageFeature {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageIdentifier {
     pub publisher: String,
     pub offer: String,
     pub sku: String,
 }
+impl GalleryImageIdentifier {
+    pub fn new(publisher: String, offer: String, sku: String) -> Self {
+        Self { publisher, offer, sku }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageList {
     pub value: Vec<GalleryImage>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl GalleryImageList {
+    pub fn new(value: Vec<GalleryImage>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageProperties {
@@ -650,6 +996,30 @@ pub struct GalleryImageProperties {
     pub purchase_plan: Option<ImagePurchasePlan>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<gallery_image_properties::ProvisioningState>,
+}
+impl GalleryImageProperties {
+    pub fn new(
+        os_type: gallery_image_properties::OsType,
+        os_state: gallery_image_properties::OsState,
+        identifier: GalleryImageIdentifier,
+    ) -> Self {
+        Self {
+            description: None,
+            eula: None,
+            privacy_statement_uri: None,
+            release_note_uri: None,
+            os_type,
+            os_state,
+            hyper_v_generation: None,
+            features: Vec::new(),
+            end_of_life_date: None,
+            identifier,
+            recommended: None,
+            disallowed: None,
+            purchase_plan: None,
+            provisioning_state: None,
+        }
+    }
 }
 pub mod gallery_image_properties {
     use super::*;
@@ -685,6 +1055,11 @@ pub struct GalleryImageUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryImageProperties>,
 }
+impl GalleryImageUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageVersion {
     #[serde(flatten)]
@@ -692,11 +1067,24 @@ pub struct GalleryImageVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryImageVersionProperties>,
 }
+impl GalleryImageVersion {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageVersionList {
     pub value: Vec<GalleryImageVersion>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl GalleryImageVersionList {
+    pub fn new(value: Vec<GalleryImageVersion>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryImageVersionProperties {
@@ -708,6 +1096,16 @@ pub struct GalleryImageVersionProperties {
     pub storage_profile: GalleryImageVersionStorageProfile,
     #[serde(rename = "replicationStatus", default, skip_serializing_if = "Option::is_none")]
     pub replication_status: Option<ReplicationStatus>,
+}
+impl GalleryImageVersionProperties {
+    pub fn new(storage_profile: GalleryImageVersionStorageProfile) -> Self {
+        Self {
+            publishing_profile: None,
+            provisioning_state: None,
+            storage_profile,
+            replication_status: None,
+        }
+    }
 }
 pub mod gallery_image_version_properties {
     use super::*;
@@ -726,6 +1124,11 @@ pub struct GalleryImageVersionPublishingProfile {
     #[serde(flatten)]
     pub gallery_artifact_publishing_profile_base: GalleryArtifactPublishingProfileBase,
 }
+impl GalleryImageVersionPublishingProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryImageVersionStorageProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -735,6 +1138,11 @@ pub struct GalleryImageVersionStorageProfile {
     #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disk_images: Vec<GalleryDataDiskImage>,
 }
+impl GalleryImageVersionStorageProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryImageVersionUpdate {
     #[serde(flatten)]
@@ -742,16 +1150,31 @@ pub struct GalleryImageVersionUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryImageVersionProperties>,
 }
+impl GalleryImageVersionUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GalleryList {
     pub value: Vec<Gallery>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl GalleryList {
+    pub fn new(value: Vec<Gallery>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryOsDiskImage {
     #[serde(flatten)]
     pub gallery_disk_image: GalleryDiskImage,
+}
+impl GalleryOsDiskImage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GalleryProperties {
@@ -763,6 +1186,11 @@ pub struct GalleryProperties {
     pub provisioning_state: Option<gallery_properties::ProvisioningState>,
     #[serde(rename = "sharingProfile", default, skip_serializing_if = "Option::is_none")]
     pub sharing_profile: Option<SharingProfile>,
+}
+impl GalleryProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod gallery_properties {
     use super::*;
@@ -783,11 +1211,24 @@ pub struct GalleryUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GalleryProperties>,
 }
+impl GalleryUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GrantAccessData {
     pub access: grant_access_data::Access,
     #[serde(rename = "durationInSeconds")]
     pub duration_in_seconds: i32,
+}
+impl GrantAccessData {
+    pub fn new(access: grant_access_data::Access, duration_in_seconds: i32) -> Self {
+        Self {
+            access,
+            duration_in_seconds,
+        }
+    }
 }
 pub mod grant_access_data {
     use super::*;
@@ -804,6 +1245,11 @@ pub struct ImageDiskReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
+impl ImageDiskReference {
+    pub fn new(id: String) -> Self {
+        Self { id, lun: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImagePurchasePlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -813,12 +1259,22 @@ pub struct ImagePurchasePlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
 }
+impl ImagePurchasePlan {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exceptiontype: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errordetail: Option<String>,
+}
+impl InnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyForDiskEncryptionSet {
@@ -827,12 +1283,25 @@ pub struct KeyForDiskEncryptionSet {
     #[serde(rename = "keyUrl")]
     pub key_url: String,
 }
+impl KeyForDiskEncryptionSet {
+    pub fn new(key_url: String) -> Self {
+        Self {
+            source_vault: None,
+            key_url,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultAndKeyReference {
     #[serde(rename = "sourceVault")]
     pub source_vault: SourceVault,
     #[serde(rename = "keyUrl")]
     pub key_url: String,
+}
+impl KeyVaultAndKeyReference {
+    pub fn new(source_vault: SourceVault, key_url: String) -> Self {
+        Self { source_vault, key_url }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultAndSecretReference {
@@ -841,9 +1310,19 @@ pub struct KeyVaultAndSecretReference {
     #[serde(rename = "secretUrl")]
     pub secret_url: String,
 }
+impl KeyVaultAndSecretReference {
+    pub fn new(source_vault: SourceVault, secret_url: String) -> Self {
+        Self { source_vault, secret_url }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedArtifact {
     pub id: String,
+}
+impl ManagedArtifact {
+    pub fn new(id: String) -> Self {
+        Self { id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NetworkAccessPolicy {
@@ -856,12 +1335,22 @@ pub struct OsDiskImageEncryption {
     #[serde(flatten)]
     pub disk_image_encryption: DiskImageEncryption,
 }
+impl OsDiskImageEncryption {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PirResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+}
+impl PirResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PirSharedGalleryResource {
@@ -870,10 +1359,20 @@ pub struct PirSharedGalleryResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<SharedGalleryIdentifier>,
 }
+impl PirSharedGalleryResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
@@ -886,12 +1385,22 @@ pub struct PrivateEndpointConnection {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl PrivateEndpointConnection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PrivateEndpointConnectionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
@@ -901,6 +1410,15 @@ pub struct PrivateEndpointConnectionProperties {
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
+}
+impl PrivateEndpointConnectionProperties {
+    pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
+        Self {
+            private_endpoint: None,
+            private_link_service_connection_state,
+            provisioning_state: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointConnectionProvisioningState {
@@ -926,10 +1444,20 @@ pub struct PrivateLinkResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl PrivateLinkResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+impl PrivateLinkResourceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
@@ -940,6 +1468,11 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
+impl PrivateLinkResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -948,6 +1481,11 @@ pub struct PrivateLinkServiceConnectionState {
     pub description: Option<String>,
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
+}
+impl PrivateLinkServiceConnectionState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyOnlyResource {
@@ -958,6 +1496,11 @@ pub struct ProxyOnlyResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl ProxyOnlyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PurchasePlan {
     pub name: String,
@@ -966,12 +1509,27 @@ pub struct PurchasePlan {
     #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
 }
+impl PurchasePlan {
+    pub fn new(name: String, publisher: String, product: String) -> Self {
+        Self {
+            name,
+            publisher,
+            product,
+            promotion_code: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedMachineConfiguration {
     #[serde(rename = "vCPUs", default, skip_serializing_if = "Option::is_none")]
     pub v_cp_us: Option<ResourceRange>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory: Option<ResourceRange>,
+}
+impl RecommendedMachineConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegionalReplicationStatus {
@@ -983,6 +1541,11 @@ pub struct RegionalReplicationStatus {
     pub details: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub progress: Option<i32>,
+}
+impl RegionalReplicationStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod regional_replication_status {
     use super::*;
@@ -1000,6 +1563,11 @@ pub struct ReplicationStatus {
     pub aggregated_state: Option<replication_status::AggregatedState>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub summary: Vec<RegionalReplicationStatus>,
+}
+impl ReplicationStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod replication_status {
     use super::*;
@@ -1023,6 +1591,17 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceRange {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1030,26 +1609,51 @@ pub struct ResourceRange {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max: Option<i32>,
 }
+impl ResourceRange {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceUriList {
     pub value: Vec<String>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ResourceUriList {
+    pub fn new(value: Vec<String>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareInfoElement {
     #[serde(rename = "vmUri", default, skip_serializing_if = "Option::is_none")]
     pub vm_uri: Option<String>,
+}
+impl ShareInfoElement {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGallery {
     #[serde(flatten)]
     pub pir_shared_gallery_resource: PirSharedGalleryResource,
 }
+impl SharedGallery {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGalleryIdentifier {
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
     pub unique_id: Option<String>,
+}
+impl SharedGalleryIdentifier {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGalleryImage {
@@ -1058,11 +1662,21 @@ pub struct SharedGalleryImage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedGalleryImageProperties>,
 }
+impl SharedGalleryImage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryImageList {
     pub value: Vec<SharedGalleryImage>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SharedGalleryImageList {
+    pub fn new(value: Vec<SharedGalleryImage>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryImageProperties {
@@ -1083,6 +1697,25 @@ pub struct SharedGalleryImageProperties {
     pub features: Vec<GalleryImageFeature>,
     #[serde(rename = "purchasePlan", default, skip_serializing_if = "Option::is_none")]
     pub purchase_plan: Option<ImagePurchasePlan>,
+}
+impl SharedGalleryImageProperties {
+    pub fn new(
+        os_type: shared_gallery_image_properties::OsType,
+        os_state: shared_gallery_image_properties::OsState,
+        identifier: GalleryImageIdentifier,
+    ) -> Self {
+        Self {
+            os_type,
+            os_state,
+            end_of_life_date: None,
+            identifier,
+            recommended: None,
+            disallowed: None,
+            hyper_v_generation: None,
+            features: Vec::new(),
+            purchase_plan: None,
+        }
+    }
 }
 pub mod shared_gallery_image_properties {
     use super::*;
@@ -1109,11 +1742,21 @@ pub struct SharedGalleryImageVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedGalleryImageVersionProperties>,
 }
+impl SharedGalleryImageVersion {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryImageVersionList {
     pub value: Vec<SharedGalleryImageVersion>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SharedGalleryImageVersionList {
+    pub fn new(value: Vec<SharedGalleryImageVersion>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedGalleryImageVersionProperties {
@@ -1122,11 +1765,21 @@ pub struct SharedGalleryImageVersionProperties {
     #[serde(rename = "endOfLifeDate", default, skip_serializing_if = "Option::is_none")]
     pub end_of_life_date: Option<String>,
 }
+impl SharedGalleryImageVersionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedGalleryList {
     pub value: Vec<SharedGallery>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SharedGalleryList {
+    pub fn new(value: Vec<SharedGallery>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharingProfile {
@@ -1134,6 +1787,11 @@ pub struct SharingProfile {
     pub permissions: Option<sharing_profile::Permissions>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<SharingProfileGroup>,
+}
+impl SharingProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod sharing_profile {
     use super::*;
@@ -1150,6 +1808,11 @@ pub struct SharingProfileGroup {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ids: Vec<String>,
 }
+impl SharingProfileGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod sharing_profile_group {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1165,6 +1828,14 @@ pub struct SharingUpdate {
     pub operation_type: sharing_update::OperationType,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<SharingProfileGroup>,
+}
+impl SharingUpdate {
+    pub fn new(operation_type: sharing_update::OperationType) -> Self {
+        Self {
+            operation_type,
+            groups: Vec::new(),
+        }
+    }
 }
 pub mod sharing_update {
     use super::*;
@@ -1188,11 +1859,27 @@ pub struct Snapshot {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SnapshotProperties>,
 }
+impl Snapshot {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            managed_by: None,
+            sku: None,
+            extended_location: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotList {
     pub value: Vec<Snapshot>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SnapshotList {
+    pub fn new(value: Vec<Snapshot>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
@@ -1227,6 +1914,27 @@ pub struct SnapshotProperties {
     #[serde(rename = "diskAccessId", default, skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
 }
+impl SnapshotProperties {
+    pub fn new(creation_data: CreationData) -> Self {
+        Self {
+            time_created: None,
+            os_type: None,
+            hyper_v_generation: None,
+            purchase_plan: None,
+            creation_data,
+            disk_size_gb: None,
+            disk_size_bytes: None,
+            disk_state: None,
+            unique_id: None,
+            encryption_settings_collection: None,
+            provisioning_state: None,
+            incremental: None,
+            encryption: None,
+            network_access_policy: None,
+            disk_access_id: None,
+        }
+    }
+}
 pub mod snapshot_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1246,6 +1954,11 @@ pub struct SnapshotSku {
     pub name: Option<snapshot_sku::Name>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+}
+impl SnapshotSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod snapshot_sku {
     use super::*;
@@ -1268,6 +1981,11 @@ pub struct SnapshotUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<SnapshotSku>,
 }
+impl SnapshotUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotUpdateProperties {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
@@ -1283,6 +2001,11 @@ pub struct SnapshotUpdateProperties {
     #[serde(rename = "diskAccessId", default, skip_serializing_if = "Option::is_none")]
     pub disk_access_id: Option<String>,
 }
+impl SnapshotUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod snapshot_update_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1296,6 +2019,11 @@ pub struct SourceVault {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
+impl SourceVault {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetRegion {
     pub name: String,
@@ -1305,6 +2033,16 @@ pub struct TargetRegion {
     pub storage_account_type: Option<target_region::StorageAccountType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<EncryptionImages>,
+}
+impl TargetRegion {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            regional_replica_count: None,
+            storage_account_type: None,
+            encryption: None,
+        }
+    }
 }
 pub mod target_region {
     use super::*;
@@ -1329,6 +2067,11 @@ pub struct UpdateResourceDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl UpdateResourceDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserArtifactManage {
     pub install: String,
@@ -1336,10 +2079,27 @@ pub struct UserArtifactManage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub update: Option<String>,
 }
+impl UserArtifactManage {
+    pub fn new(install: String, remove: String) -> Self {
+        Self {
+            install,
+            remove,
+            update: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserArtifactSource {
     #[serde(rename = "mediaLink")]
     pub media_link: String,
     #[serde(rename = "defaultConfigurationLink", default, skip_serializing_if = "Option::is_none")]
     pub default_configuration_link: Option<String>,
+}
+impl UserArtifactSource {
+    pub fn new(media_link: String) -> Self {
+        Self {
+            media_link,
+            default_configuration_link: None,
+        }
+    }
 }

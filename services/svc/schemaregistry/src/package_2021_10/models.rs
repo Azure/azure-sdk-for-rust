@@ -6,6 +6,11 @@ use serde::{Deserialize, Serialize};
 pub struct Error {
     pub error: ErrorDetail,
 }
+impl Error {
+    pub fn new(error: ErrorDetail) -> Self {
+        Self { error }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
     pub code: String,
@@ -13,20 +18,44 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
 }
+impl ErrorDetail {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+        }
+    }
+}
 pub type SchemaGroup = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaGroups {
     #[serde(rename = "schemaGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub schema_groups: Vec<SchemaGroup>,
 }
+impl SchemaGroups {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaId {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl SchemaId {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type SchemaVersion = i64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaVersions {
     #[serde(rename = "schemaVersions", default, skip_serializing_if = "Vec::is_empty")]
     pub schema_versions: Vec<SchemaVersion>,
+}
+impl SchemaVersions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

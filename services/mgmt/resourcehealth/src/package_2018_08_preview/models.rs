@@ -11,6 +11,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataEntity {
     #[serde(flatten)]
@@ -18,12 +23,22 @@ pub struct MetadataEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetadataEntityProperties>,
 }
+impl MetadataEntity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataEntityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MetadataEntity>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl MetadataEntityListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataEntityProperties {
@@ -36,12 +51,22 @@ pub struct MetadataEntityProperties {
     #[serde(rename = "supportedValues", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_values: Vec<MetadataSupportedValueDetail>,
 }
+impl MetadataEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataSupportedValueDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+}
+impl MetadataSupportedValueDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -51,6 +76,11 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilityStatus {
@@ -64,6 +94,11 @@ pub struct AvailabilityStatus {
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<availability_status::Properties>,
+}
+impl AvailabilityStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod availability_status {
     use super::*;
@@ -102,6 +137,11 @@ pub mod availability_status {
         #[serde(rename = "serviceImpactingEvents", default, skip_serializing_if = "Vec::is_empty")]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod properties {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -125,6 +165,11 @@ pub mod availability_status {
             #[serde(rename = "unavailabilitySummary", default, skip_serializing_if = "Option::is_none")]
             pub unavailability_summary: Option<String>,
         }
+        impl RecentlyResolved {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -132,6 +177,11 @@ pub struct AvailabilityStatusListResult {
     pub value: Vec<AvailabilityStatus>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl AvailabilityStatusListResult {
+    pub fn new(value: Vec<AvailabilityStatus>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmergingIssue {
@@ -142,6 +192,11 @@ pub struct EmergingIssue {
     #[serde(rename = "statusActiveEvents", default, skip_serializing_if = "Vec::is_empty")]
     pub status_active_events: Vec<StatusActiveEvent>,
 }
+impl EmergingIssue {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmergingIssueImpact {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -151,12 +206,22 @@ pub struct EmergingIssueImpact {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<ImpactedRegion>,
 }
+impl EmergingIssueImpact {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmergingIssueListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EmergingIssuesGetResult>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl EmergingIssueListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmergingIssuesGetResult {
@@ -165,12 +230,22 @@ pub struct EmergingIssuesGetResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EmergingIssue>,
 }
+impl EmergingIssuesGetResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Event {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<event::Properties>,
+}
+impl Event {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod event {
     use super::*;
@@ -223,6 +298,11 @@ pub mod event {
         #[serde(rename = "hirStage", default, skip_serializing_if = "Option::is_none")]
         pub hir_stage: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod properties {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -262,6 +342,11 @@ pub mod event {
             #[serde(rename = "articleContent", default, skip_serializing_if = "Option::is_none")]
             pub article_content: Option<String>,
         }
+        impl Article {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct RecommendedActions {
             #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -271,6 +356,11 @@ pub mod event {
             #[serde(rename = "localeCode", default, skip_serializing_if = "Option::is_none")]
             pub locale_code: Option<String>,
         }
+        impl RecommendedActions {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -278,6 +368,11 @@ pub struct Events {
     pub value: Vec<Event>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl Events {
+    pub fn new(value: Vec<Event>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Faq {
@@ -288,12 +383,22 @@ pub struct Faq {
     #[serde(rename = "localeCode", default, skip_serializing_if = "Option::is_none")]
     pub locale_code: Option<String>,
 }
+impl Faq {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Impact {
     #[serde(rename = "impactedService", default, skip_serializing_if = "Option::is_none")]
     pub impacted_service: Option<String>,
     #[serde(rename = "impactedRegions", default, skip_serializing_if = "Vec::is_empty")]
     pub impacted_regions: Vec<ImpactedServiceRegion>,
+}
+impl Impact {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImpactedRegion {
@@ -302,11 +407,21 @@ pub struct ImpactedRegion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl ImpactedRegion {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImpactedResourceListResult {
     pub value: Vec<ImpactedResourceStatus>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ImpactedResourceListResult {
+    pub fn new(value: Vec<ImpactedResourceStatus>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImpactedResourceStatus {
@@ -314,6 +429,11 @@ pub struct ImpactedResourceStatus {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<impacted_resource_status::Properties>,
+}
+impl ImpactedResourceStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod impacted_resource_status {
     use super::*;
@@ -329,6 +449,11 @@ pub mod impacted_resource_status {
         pub reason_type: Option<properties::ReasonType>,
         #[serde(rename = "occuredTime", default, skip_serializing_if = "Option::is_none")]
         pub occured_time: Option<String>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     pub mod properties {
         use super::*;
@@ -360,6 +485,11 @@ pub struct ImpactedServiceRegion {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub updates: Vec<Update>,
 }
+impl ImpactedServiceRegion {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod impacted_service_region {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -381,6 +511,11 @@ pub struct Link {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
+impl Link {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod link {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -395,6 +530,11 @@ pub mod link {
         #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
         pub localized_value: Option<String>,
     }
+    impl DisplayText {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -402,6 +542,11 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -416,10 +561,20 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
     pub value: Vec<Operation>,
+}
+impl OperationListResult {
+    pub fn new(value: Vec<Operation>) -> Self {
+        Self { value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedAction {
@@ -429,6 +584,11 @@ pub struct RecommendedAction {
     pub action_url: Option<String>,
     #[serde(rename = "actionUrlText", default, skip_serializing_if = "Option::is_none")]
     pub action_url_text: Option<String>,
+}
+impl RecommendedAction {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceImpactingEvent {
@@ -443,12 +603,22 @@ pub struct ServiceImpactingEvent {
     #[serde(rename = "incidentProperties", default, skip_serializing_if = "Option::is_none")]
     pub incident_properties: Option<service_impacting_event::IncidentProperties>,
 }
+impl ServiceImpactingEvent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod service_impacting_event {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Status {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
+    }
+    impl Status {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct IncidentProperties {
@@ -460,6 +630,11 @@ pub mod service_impacting_event {
         pub region: Option<String>,
         #[serde(rename = "incidentType", default, skip_serializing_if = "Option::is_none")]
         pub incident_type: Option<String>,
+    }
+    impl IncidentProperties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -484,6 +659,11 @@ pub struct StatusActiveEvent {
     pub last_modified_time: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub impacts: Vec<EmergingIssueImpact>,
+}
+impl StatusActiveEvent {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod status_active_event {
     use super::*;
@@ -511,10 +691,20 @@ pub struct StatusBanner {
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
 }
+impl StatusBanner {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Update {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
     #[serde(rename = "updateDateTime", default, skip_serializing_if = "Option::is_none")]
     pub update_date_time: Option<String>,
+}
+impl Update {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

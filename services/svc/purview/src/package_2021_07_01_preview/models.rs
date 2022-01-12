@@ -15,6 +15,11 @@ pub struct AttributeMatcher {
     #[serde(rename = "attributeValueExcludedIn", default, skip_serializing_if = "Vec::is_empty")]
     pub attribute_value_excluded_in: Vec<String>,
 }
+impl AttributeMatcher {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttributeRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -25,6 +30,11 @@ pub struct AttributeRule {
     pub name: Option<String>,
     #[serde(rename = "dnfCondition", default, skip_serializing_if = "Option::is_none")]
     pub dnf_condition: Option<DnfCondition>,
+}
+impl AttributeRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod attribute_rule {
     use super::*;
@@ -42,6 +52,11 @@ pub struct CollectionReference {
     #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
     pub reference_name: Option<String>,
 }
+impl CollectionReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DecisionRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -50,6 +65,11 @@ pub struct DecisionRule {
     pub effect: Option<decision_rule::Effect>,
     #[serde(rename = "dnfCondition", default, skip_serializing_if = "Option::is_none")]
     pub dnf_condition: Option<DnfCondition>,
+}
+impl DecisionRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod decision_rule {
     use super::*;
@@ -74,9 +94,24 @@ pub struct ErrorModel {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorModel>,
 }
+impl ErrorModel {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            target: None,
+            details: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponseModel {
     pub error: ErrorModel,
+}
+impl ErrorResponseModel {
+    pub fn new(error: ErrorModel) -> Self {
+        Self { error }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataPolicy {
@@ -89,11 +124,21 @@ pub struct MetadataPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetadataPolicyProperties>,
 }
+impl MetadataPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataPolicyList {
     pub values: Vec<MetadataPolicy>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl MetadataPolicyList {
+    pub fn new(values: Vec<MetadataPolicy>) -> Self {
+        Self { values, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataPolicyProperties {
@@ -108,6 +153,11 @@ pub struct MetadataPolicyProperties {
     #[serde(rename = "parentCollectionName", default, skip_serializing_if = "Option::is_none")]
     pub parent_collection_name: Option<String>,
 }
+impl MetadataPolicyProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataRole {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -119,11 +169,21 @@ pub struct MetadataRole {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetadataRoleProperties>,
 }
+impl MetadataRole {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataRoleList {
     pub values: Vec<MetadataRole>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl MetadataRoleList {
+    pub fn new(values: Vec<MetadataRole>) -> Self {
+        Self { values, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataRoleProperties {
@@ -141,4 +201,9 @@ pub struct MetadataRoleProperties {
     pub dnf_condition: Option<DnfCondition>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
+}
+impl MetadataRoleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

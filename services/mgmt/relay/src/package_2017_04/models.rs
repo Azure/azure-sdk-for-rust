@@ -15,17 +15,35 @@ pub struct AccessKeys {
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
 }
+impl AccessKeys {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthorizationRule {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: authorization_rule::Properties,
 }
+impl AuthorizationRule {
+    pub fn new(properties: authorization_rule::Properties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
+}
 pub mod authorization_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
         pub rights: Vec<String>,
+    }
+    impl Properties {
+        pub fn new(rights: Vec<String>) -> Self {
+            Self { rights }
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -35,9 +53,19 @@ pub struct AuthorizationRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl AuthorizationRuleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailability {
     pub name: String,
+}
+impl CheckNameAvailability {
+    pub fn new(name: String) -> Self {
+        Self { name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
@@ -48,6 +76,11 @@ pub struct CheckNameAvailabilityResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
 }
+impl CheckNameAvailabilityResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -55,12 +88,22 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridConnection {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hybrid_connection::Properties>,
+}
+impl HybridConnection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod hybrid_connection {
     use super::*;
@@ -77,6 +120,11 @@ pub mod hybrid_connection {
         #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
         pub user_metadata: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridConnectionListResult {
@@ -85,12 +133,22 @@ pub struct HybridConnectionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl HybridConnectionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -103,6 +161,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -111,12 +174,22 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateAccessKeyParameters {
     #[serde(rename = "keyType")]
     pub key_type: regenerate_access_key_parameters::KeyType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+}
+impl RegenerateAccessKeyParameters {
+    pub fn new(key_type: regenerate_access_key_parameters::KeyType) -> Self {
+        Self { key_type, key: None }
+    }
 }
 pub mod regenerate_access_key_parameters {
     use super::*;
@@ -135,12 +208,26 @@ pub struct RelayNamespace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RelayNamespaceProperties>,
 }
+impl RelayNamespace {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            sku: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelayNamespaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RelayNamespace>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RelayNamespaceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RelayNamespaceProperties {
@@ -154,6 +241,11 @@ pub struct RelayNamespaceProperties {
     pub service_bus_endpoint: Option<String>,
     #[serde(rename = "metricId", default, skip_serializing_if = "Option::is_none")]
     pub metric_id: Option<String>,
+}
+impl RelayNamespaceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod relay_namespace_properties {
     use super::*;
@@ -176,6 +268,11 @@ pub struct RelayUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RelayNamespaceProperties>,
 }
+impl RelayUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -185,6 +282,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceNamespacePatch {
     #[serde(flatten)]
@@ -192,11 +294,21 @@ pub struct ResourceNamespacePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl ResourceNamespacePatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: sku::Name,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
+}
+impl Sku {
+    pub fn new(name: sku::Name) -> Self {
+        Self { name, tier: None }
+    }
 }
 pub mod sku {
     use super::*;
@@ -217,6 +329,15 @@ pub struct TrackedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UnavailableReason {
     None,
@@ -232,6 +353,11 @@ pub struct WcfRelay {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<wcf_relay::Properties>,
+}
+impl WcfRelay {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod wcf_relay {
     use super::*;
@@ -254,6 +380,11 @@ pub mod wcf_relay {
         #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
         pub user_metadata: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod properties {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -269,4 +400,9 @@ pub struct WcfRelaysListResult {
     pub value: Vec<WcfRelay>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WcfRelaysListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

@@ -11,12 +11,25 @@ pub struct AclFailedEntry {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
+impl AclFailedEntry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobHierarchyListSegment {
     #[serde(rename = "BlobPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub blob_prefixes: Vec<BlobPrefix>,
     #[serde(rename = "BlobItems")]
     pub blob_items: Vec<BlobItemInternal>,
+}
+impl BlobHierarchyListSegment {
+    pub fn new(blob_items: Vec<BlobItemInternal>) -> Self {
+        Self {
+            blob_prefixes: Vec::new(),
+            blob_items,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobItemInternal {
@@ -35,10 +48,28 @@ pub struct BlobItemInternal {
     #[serde(rename = "DeletionId", default, skip_serializing_if = "Option::is_none")]
     pub deletion_id: Option<String>,
 }
+impl BlobItemInternal {
+    pub fn new(name: String, deleted: bool, snapshot: String, properties: BlobPropertiesInternal) -> Self {
+        Self {
+            name,
+            deleted,
+            snapshot,
+            version_id: None,
+            is_current_version: None,
+            properties,
+            deletion_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPrefix {
     #[serde(rename = "Name")]
     pub name: String,
+}
+impl BlobPrefix {
+    pub fn new(name: String) -> Self {
+        Self { name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
@@ -103,6 +134,42 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "DeleteTime", default, skip_serializing_if = "Option::is_none")]
     pub delete_time: Option<String>,
 }
+impl BlobPropertiesInternal {
+    pub fn new(last_modified: String, etag: String) -> Self {
+        Self {
+            creation_time: None,
+            last_modified,
+            etag,
+            content_length: None,
+            content_type: None,
+            content_encoding: None,
+            content_language: None,
+            content_md5: None,
+            content_disposition: None,
+            cache_control: None,
+            x_ms_blob_sequence_number: None,
+            copy_id: None,
+            copy_source: None,
+            copy_progress: None,
+            copy_completion_time: None,
+            copy_status_description: None,
+            server_encrypted: None,
+            incremental_copy: None,
+            destination_snapshot: None,
+            deleted_time: None,
+            remaining_retention_days: None,
+            access_tier_inferred: None,
+            customer_provided_key_sha256: None,
+            encryption_scope: None,
+            access_tier_change_time: None,
+            tag_count: None,
+            expiry_time: None,
+            sealed: None,
+            last_access_time: None,
+            delete_time: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileSystem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -112,10 +179,20 @@ pub struct FileSystem {
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
 }
+impl FileSystem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileSystemList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filesystems: Vec<FileSystem>,
+}
+impl FileSystemList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsHierarchySegmentResponse {
@@ -135,6 +212,20 @@ pub struct ListBlobsHierarchySegmentResponse {
     pub segment: BlobHierarchyListSegment,
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
+}
+impl ListBlobsHierarchySegmentResponse {
+    pub fn new(service_endpoint: String, container_name: String, segment: BlobHierarchyListSegment) -> Self {
+        Self {
+            service_endpoint,
+            container_name,
+            prefix: None,
+            marker: None,
+            max_results: None,
+            delimiter: None,
+            segment,
+            next_marker: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Path {
@@ -157,10 +248,20 @@ pub struct Path {
     #[serde(rename = "EncryptionScope", default, skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
 }
+impl Path {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PathList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<Path>,
+}
+impl PathList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SetAccessControlRecursiveResponse {
@@ -173,10 +274,20 @@ pub struct SetAccessControlRecursiveResponse {
     #[serde(rename = "failedEntries", default, skip_serializing_if = "Vec::is_empty")]
     pub failed_entries: Vec<AclFailedEntry>,
 }
+impl SetAccessControlRecursiveResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<storage_error::Error>,
+}
+impl StorageError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod storage_error {
     use super::*;
@@ -186,5 +297,10 @@ pub mod storage_error {
         pub code: Option<String>,
         #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
+    }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }

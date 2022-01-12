@@ -12,6 +12,11 @@ pub struct CanonicalSupportPlanInfoDefinition {
     #[serde(rename = "oneTimeCharge", default, skip_serializing_if = "Option::is_none")]
     pub one_time_charge: Option<canonical_support_plan_info_definition::OneTimeCharge>,
 }
+impl CanonicalSupportPlanInfoDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod canonical_support_plan_info_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -38,6 +43,11 @@ pub struct CanonicalSupportPlanProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
 }
+impl CanonicalSupportPlanProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod canonical_support_plan_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -61,10 +71,25 @@ pub struct CanonicalSupportPlanResponseEnvelope {
     pub type_: Option<String>,
     pub properties: CanonicalSupportPlanProperties,
 }
+impl CanonicalSupportPlanResponseEnvelope {
+    pub fn new(properties: CanonicalSupportPlanProperties) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
     pub message: String,
     pub code: String,
+}
+impl ErrorDefinition {
+    pub fn new(message: String, code: String) -> Self {
+        Self { message, code }
+    }
 }
 pub type OperationList = Vec<OperationsDefinition>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -72,12 +97,22 @@ pub struct OperationListValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<OperationList>,
 }
+impl OperationListValue {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationsDisplayDefinition>,
+}
+impl OperationsDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsDisplayDefinition {
@@ -89,4 +124,9 @@ pub struct OperationsDisplayDefinition {
     pub operation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl OperationsDisplayDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

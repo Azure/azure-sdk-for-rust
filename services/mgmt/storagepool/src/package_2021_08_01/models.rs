@@ -9,6 +9,14 @@ pub struct Acl {
     #[serde(rename = "mappedLuns")]
     pub mapped_luns: Vec<String>,
 }
+impl Acl {
+    pub fn new(initiator_iqn: String, mapped_luns: Vec<String>) -> Self {
+        Self {
+            initiator_iqn,
+            mapped_luns,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AclMode {
     Dynamic,
@@ -19,6 +27,11 @@ pub type AvailabilityZone = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Disk {
     pub id: String,
+}
+impl Disk {
+    pub fn new(id: String) -> Self {
+        Self { id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPool {
@@ -33,6 +46,18 @@ pub struct DiskPool {
     pub managed_by_extended: Option<ManagedByExtended>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemMetadata>,
+}
+impl DiskPool {
+    pub fn new(tracked_resource: TrackedResource, properties: DiskPoolProperties) -> Self {
+        Self {
+            tracked_resource,
+            sku: None,
+            properties,
+            managed_by: None,
+            managed_by_extended: None,
+            system_data: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolCreate {
@@ -52,6 +77,21 @@ pub struct DiskPoolCreate {
     #[serde(rename = "managedByExtended", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_extended: Option<ManagedByExtended>,
 }
+impl DiskPoolCreate {
+    pub fn new(sku: Sku, properties: DiskPoolCreateProperties, location: String) -> Self {
+        Self {
+            sku,
+            properties,
+            tags: None,
+            location,
+            id: None,
+            name: None,
+            type_: None,
+            managed_by: None,
+            managed_by_extended: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolCreateProperties {
     #[serde(rename = "availabilityZones", default, skip_serializing_if = "Vec::is_empty")]
@@ -63,11 +103,26 @@ pub struct DiskPoolCreateProperties {
     #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_capabilities: Vec<AdditionalCapability>,
 }
+impl DiskPoolCreateProperties {
+    pub fn new(subnet_id: String) -> Self {
+        Self {
+            availability_zones: Vec::new(),
+            disks: Vec::new(),
+            subnet_id,
+            additional_capabilities: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolListResult {
     pub value: Vec<DiskPool>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DiskPoolListResult {
+    pub fn new(value: Vec<DiskPool>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolProperties {
@@ -82,6 +137,23 @@ pub struct DiskPoolProperties {
     pub subnet_id: String,
     #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_capabilities: Vec<AdditionalCapability>,
+}
+impl DiskPoolProperties {
+    pub fn new(
+        provisioning_state: ProvisioningState,
+        availability_zones: Vec<AvailabilityZone>,
+        status: OperationalStatus,
+        subnet_id: String,
+    ) -> Self {
+        Self {
+            provisioning_state,
+            availability_zones,
+            status,
+            disks: Vec::new(),
+            subnet_id,
+            additional_capabilities: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskPoolTier {
@@ -101,10 +173,26 @@ pub struct DiskPoolUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl DiskPoolUpdate {
+    pub fn new(properties: DiskPoolUpdateProperties) -> Self {
+        Self {
+            managed_by: None,
+            managed_by_extended: None,
+            properties,
+            sku: None,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskPoolUpdateProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<Disk>,
+}
+impl DiskPoolUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskPoolZoneInfo {
@@ -115,6 +203,11 @@ pub struct DiskPoolZoneInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
+impl DiskPoolZoneInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskPoolZoneListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -122,12 +215,22 @@ pub struct DiskPoolZoneListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl DiskPoolZoneListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointDependency {
     #[serde(rename = "domainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
     #[serde(rename = "endpointDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub endpoint_details: Vec<EndpointDetail>,
+}
+impl EndpointDependency {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointDetail {
@@ -140,10 +243,20 @@ pub struct EndpointDetail {
     #[serde(rename = "isAccessible", default, skip_serializing_if = "Option::is_none")]
     pub is_accessible: Option<bool>,
 }
+impl EndpointDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl Error {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
@@ -151,6 +264,11 @@ pub struct ErrorAdditionalInfo {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -165,6 +283,11 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiLun {
     pub name: String,
@@ -172,6 +295,15 @@ pub struct IscsiLun {
     pub managed_disk_azure_resource_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
+}
+impl IscsiLun {
+    pub fn new(name: String, managed_disk_azure_resource_id: String) -> Self {
+        Self {
+            name,
+            managed_disk_azure_resource_id,
+            lun: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTarget {
@@ -185,6 +317,17 @@ pub struct IscsiTarget {
     #[serde(rename = "managedByExtended", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_extended: Option<ManagedByExtended>,
 }
+impl IscsiTarget {
+    pub fn new(properties: IscsiTargetProperties) -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+            system_data: None,
+            managed_by: None,
+            managed_by_extended: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetCreate {
     #[serde(flatten)]
@@ -194,6 +337,16 @@ pub struct IscsiTargetCreate {
     pub managed_by: Option<ManagedBy>,
     #[serde(rename = "managedByExtended", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_extended: Option<ManagedByExtended>,
+}
+impl IscsiTargetCreate {
+    pub fn new(properties: IscsiTargetCreateProperties) -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+            managed_by: None,
+            managed_by_extended: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetCreateProperties {
@@ -206,11 +359,26 @@ pub struct IscsiTargetCreateProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub luns: Vec<IscsiLun>,
 }
+impl IscsiTargetCreateProperties {
+    pub fn new(acl_mode: AclMode) -> Self {
+        Self {
+            acl_mode,
+            target_iqn: None,
+            static_acls: Vec::new(),
+            luns: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetList {
     pub value: Vec<IscsiTarget>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl IscsiTargetList {
+    pub fn new(value: Vec<IscsiTarget>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetProperties {
@@ -232,6 +400,21 @@ pub struct IscsiTargetProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sessions: Vec<String>,
 }
+impl IscsiTargetProperties {
+    pub fn new(acl_mode: AclMode, target_iqn: String, provisioning_state: ProvisioningState, status: OperationalStatus) -> Self {
+        Self {
+            acl_mode,
+            static_acls: Vec::new(),
+            luns: Vec::new(),
+            target_iqn,
+            provisioning_state,
+            status,
+            endpoints: Vec::new(),
+            port: None,
+            sessions: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetUpdate {
     #[serde(flatten)]
@@ -242,12 +425,27 @@ pub struct IscsiTargetUpdate {
     #[serde(rename = "managedByExtended", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_extended: Option<ManagedByExtended>,
 }
+impl IscsiTargetUpdate {
+    pub fn new(properties: IscsiTargetUpdateProperties) -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+            managed_by: None,
+            managed_by_extended: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IscsiTargetUpdateProperties {
     #[serde(rename = "staticAcls", default, skip_serializing_if = "Vec::is_empty")]
     pub static_acls: Vec<Acl>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub luns: Vec<IscsiLun>,
+}
+impl IscsiTargetUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ManagedBy = String;
 pub type ManagedByExtended = Vec<ManagedBy>;
@@ -270,11 +468,21 @@ pub struct OutboundEnvironmentEndpoint {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<EndpointDependency>,
 }
+impl OutboundEnvironmentEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutboundEnvironmentEndpointList {
     pub value: Vec<OutboundEnvironmentEndpoint>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OutboundEnvironmentEndpointList {
+    pub fn new(value: Vec<OutboundEnvironmentEndpoint>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
@@ -292,6 +500,11 @@ pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
 }
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -301,12 +514,22 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl ResourceSkuCapability {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuInfo {
@@ -325,12 +548,22 @@ pub struct ResourceSkuInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<ResourceSkuRestrictions>,
 }
+impl ResourceSkuInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceSkuInfo>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ResourceSkuListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuLocationInfo {
@@ -341,12 +574,22 @@ pub struct ResourceSkuLocationInfo {
     #[serde(rename = "zoneDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub zone_details: Vec<ResourceSkuZoneDetails>,
 }
+impl ResourceSkuLocationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuRestrictionInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
+}
+impl ResourceSkuRestrictionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuRestrictions {
@@ -358,6 +601,11 @@ pub struct ResourceSkuRestrictions {
     pub restriction_info: Option<ResourceSkuRestrictionInfo>,
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
+}
+impl ResourceSkuRestrictions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_sku_restrictions {
     use super::*;
@@ -379,11 +627,21 @@ pub struct ResourceSkuZoneDetails {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<ResourceSkuCapability>,
 }
+impl ResourceSkuZoneDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+}
+impl Sku {
+    pub fn new(name: String) -> Self {
+        Self { name, tier: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoragePoolOperationDisplay {
@@ -392,11 +650,26 @@ pub struct StoragePoolOperationDisplay {
     pub operation: String,
     pub description: String,
 }
+impl StoragePoolOperationDisplay {
+    pub fn new(provider: String, resource: String, operation: String, description: String) -> Self {
+        Self {
+            provider,
+            resource,
+            operation,
+            description,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoragePoolOperationListResult {
     pub value: Vec<StoragePoolRpOperation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl StoragePoolOperationListResult {
+    pub fn new(value: Vec<StoragePoolRpOperation>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoragePoolRpOperation {
@@ -408,6 +681,17 @@ pub struct StoragePoolRpOperation {
     pub display: StoragePoolOperationDisplay,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+}
+impl StoragePoolRpOperation {
+    pub fn new(name: String, is_data_action: bool, display: StoragePoolOperationDisplay) -> Self {
+        Self {
+            name,
+            is_data_action,
+            action_type: None,
+            display,
+            origin: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemMetadata {
@@ -423,6 +707,11 @@ pub struct SystemMetadata {
     pub last_modified_by_type: Option<system_metadata::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_metadata {
     use super::*;
@@ -448,4 +737,13 @@ pub struct TrackedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
+}
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
 }

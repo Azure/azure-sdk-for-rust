@@ -13,6 +13,11 @@ pub struct AzureResourceProperties {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl AzureResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
     pub code: String,
@@ -26,6 +31,18 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
+impl ErrorDetail {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            target: None,
+            value: None,
+            resources: Vec::new(),
+            additional_properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorInfo {
     pub code: String,
@@ -37,10 +54,26 @@ pub struct ErrorInfo {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
+impl ErrorInfo {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+            innererror: None,
+            additional_properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorInfo>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IdentityType {
@@ -59,11 +92,24 @@ pub struct LogAnalyticsQueryPack {
     pub query_packs_resource: QueryPacksResource,
     pub properties: LogAnalyticsQueryPackProperties,
 }
+impl LogAnalyticsQueryPack {
+    pub fn new(query_packs_resource: QueryPacksResource, properties: LogAnalyticsQueryPackProperties) -> Self {
+        Self {
+            query_packs_resource,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackListResult {
     pub value: Vec<LogAnalyticsQueryPack>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl LogAnalyticsQueryPackListResult {
+    pub fn new(value: Vec<LogAnalyticsQueryPack>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackProperties {
@@ -76,6 +122,11 @@ pub struct LogAnalyticsQueryPackProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
+impl LogAnalyticsQueryPackProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackQuery {
     #[serde(flatten)]
@@ -83,11 +134,21 @@ pub struct LogAnalyticsQueryPackQuery {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogAnalyticsQueryPackQueryProperties>,
 }
+impl LogAnalyticsQueryPackQuery {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackQueryListResult {
     pub value: Vec<LogAnalyticsQueryPackQuery>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl LogAnalyticsQueryPackQueryListResult {
+    pub fn new(value: Vec<LogAnalyticsQueryPackQuery>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackQueryProperties {
@@ -111,6 +172,22 @@ pub struct LogAnalyticsQueryPackQueryProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl LogAnalyticsQueryPackQueryProperties {
+    pub fn new(display_name: String, body: String) -> Self {
+        Self {
+            id: None,
+            display_name,
+            time_created: None,
+            time_modified: None,
+            author: None,
+            description: None,
+            body,
+            related: None,
+            tags: None,
+            properties: None,
+        }
+    }
+}
 pub mod log_analytics_query_pack_query_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -122,6 +199,11 @@ pub mod log_analytics_query_pack_query_properties {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub solutions: Vec<String>,
     }
+    impl Related {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackQuerySearchProperties {
@@ -129,6 +211,11 @@ pub struct LogAnalyticsQueryPackQuerySearchProperties {
     pub related: Option<log_analytics_query_pack_query_search_properties::Related>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl LogAnalyticsQueryPackQuerySearchProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod log_analytics_query_pack_query_search_properties {
     use super::*;
@@ -140,6 +227,11 @@ pub mod log_analytics_query_pack_query_search_properties {
         pub resource_types: Vec<String>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub solutions: Vec<String>,
+    }
+    impl Related {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -153,6 +245,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -164,12 +261,22 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryPacksResource {
@@ -182,6 +289,17 @@ pub struct QueryPacksResource {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl QueryPacksResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -198,8 +316,18 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl TagsResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

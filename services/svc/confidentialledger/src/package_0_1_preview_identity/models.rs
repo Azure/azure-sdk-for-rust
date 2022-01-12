@@ -7,6 +7,11 @@ pub struct ConfidentialLedgerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ConfidentialLedgerErrorBody>,
 }
+impl ConfidentialLedgerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfidentialLedgerErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16,10 +21,23 @@ pub struct ConfidentialLedgerErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<ConfidentialLedgerErrorBody>>,
 }
+impl ConfidentialLedgerErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LedgerIdentityInformation {
     #[serde(rename = "ledgerId", default, skip_serializing_if = "Option::is_none")]
     pub ledger_id: Option<String>,
     #[serde(rename = "ledgerTlsCertificate")]
     pub ledger_tls_certificate: String,
+}
+impl LedgerIdentityInformation {
+    pub fn new(ledger_tls_certificate: String) -> Self {
+        Self {
+            ledger_id: None,
+            ledger_tls_certificate,
+        }
+    }
 }

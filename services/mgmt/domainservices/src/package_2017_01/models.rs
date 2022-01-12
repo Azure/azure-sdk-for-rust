@@ -11,6 +11,11 @@ pub struct DomainSecuritySettings {
     #[serde(rename = "syncNtlmPasswords", default, skip_serializing_if = "Option::is_none")]
     pub sync_ntlm_passwords: Option<domain_security_settings::SyncNtlmPasswords>,
 }
+impl DomainSecuritySettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod domain_security_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -36,12 +41,22 @@ pub struct DomainService {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DomainServiceProperties>,
 }
+impl DomainService {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DomainService>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DomainServiceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainServiceProperties {
@@ -76,6 +91,11 @@ pub struct DomainServiceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
+impl DomainServiceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod domain_service_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -101,6 +121,11 @@ pub struct HealthAlert {
     #[serde(rename = "resolutionUri", default, skip_serializing_if = "Option::is_none")]
     pub resolution_uri: Option<String>,
 }
+impl HealthAlert {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitor {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -109,6 +134,11 @@ pub struct HealthMonitor {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
+}
+impl HealthMonitor {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LdapsSettings {
@@ -128,6 +158,11 @@ pub struct LdapsSettings {
     pub external_access: Option<ldaps_settings::ExternalAccess>,
     #[serde(rename = "externalAccessIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub external_access_ip_address: Option<String>,
+}
+impl LdapsSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod ldaps_settings {
     use super::*;
@@ -150,6 +185,11 @@ pub struct NotificationSettings {
     pub notify_dc_admins: Option<notification_settings::NotifyDcAdmins>,
     #[serde(rename = "additionalRecipients", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_recipients: Vec<String>,
+}
+impl NotificationSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod notification_settings {
     use super::*;
@@ -175,6 +215,11 @@ pub struct OperationDisplayInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
+impl OperationDisplayInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -184,12 +229,22 @@ pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
+impl OperationEntity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationEntityListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -205,4 +260,9 @@ pub struct Resource {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

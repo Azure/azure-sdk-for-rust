@@ -9,6 +9,11 @@ pub struct AutoscaleErrorResponse {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl AutoscaleErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod autoscale_error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -22,6 +27,11 @@ pub mod autoscale_error_response {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub details: Option<String>,
     }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoscaleNotification {
@@ -30,6 +40,15 @@ pub struct AutoscaleNotification {
     pub email: Option<EmailNotification>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub webhooks: Vec<WebhookNotification>,
+}
+impl AutoscaleNotification {
+    pub fn new(operation: autoscale_notification::Operation) -> Self {
+        Self {
+            operation,
+            email: None,
+            webhooks: Vec::new(),
+        }
+    }
 }
 pub mod autoscale_notification {
     use super::*;
@@ -48,6 +67,17 @@ pub struct AutoscaleProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recurrence: Option<Recurrence>,
 }
+impl AutoscaleProfile {
+    pub fn new(name: String, capacity: ScaleCapacity, rules: Vec<ScaleRule>) -> Self {
+        Self {
+            name,
+            capacity,
+            rules,
+            fixed_date: None,
+            recurrence: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoscaleSetting {
     pub profiles: Vec<AutoscaleProfile>,
@@ -64,6 +94,19 @@ pub struct AutoscaleSetting {
     #[serde(rename = "targetResourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_location: Option<String>,
 }
+impl AutoscaleSetting {
+    pub fn new(profiles: Vec<AutoscaleProfile>) -> Self {
+        Self {
+            profiles,
+            notifications: Vec::new(),
+            enabled: None,
+            predictive_autoscale_policy: None,
+            name: None,
+            target_resource_uri: None,
+            target_resource_location: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoscaleSettingResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -79,11 +122,29 @@ pub struct AutoscaleSettingResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl AutoscaleSettingResource {
+    pub fn new(location: String, properties: AutoscaleSetting) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+            properties,
+            system_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoscaleSettingResourceCollection {
     pub value: Vec<AutoscaleSettingResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl AutoscaleSettingResourceCollection {
+    pub fn new(value: Vec<AutoscaleSettingResource>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoscaleSettingResourcePatch {
@@ -91,6 +152,11 @@ pub struct AutoscaleSettingResourcePatch {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutoscaleSetting>,
+}
+impl AutoscaleSettingResourcePatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettings {
@@ -113,12 +179,22 @@ pub struct DiagnosticSettings {
     #[serde(rename = "logAnalyticsDestinationType", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_destination_type: Option<String>,
 }
+impl DiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategory {
     #[serde(rename = "categoryType", default, skip_serializing_if = "Option::is_none")]
     pub category_type: Option<diagnostic_settings_category::CategoryType>,
     #[serde(rename = "categoryGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub category_groups: Vec<String>,
+}
+impl DiagnosticSettingsCategory {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod diagnostic_settings_category {
     use super::*;
@@ -137,10 +213,20 @@ pub struct DiagnosticSettingsCategoryResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl DiagnosticSettingsCategoryResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategoryResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiagnosticSettingsCategoryResource>,
+}
+impl DiagnosticSettingsCategoryResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsResource {
@@ -151,10 +237,20 @@ pub struct DiagnosticSettingsResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl DiagnosticSettingsResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiagnosticSettingsResource>,
+}
+impl DiagnosticSettingsResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailNotification {
@@ -165,12 +261,22 @@ pub struct EmailNotification {
     #[serde(rename = "customEmails", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_emails: Vec<String>,
 }
+impl EmailNotification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSettings {
@@ -181,6 +287,16 @@ pub struct LogSettings {
     pub enabled: bool,
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+}
+impl LogSettings {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            category: None,
+            category_group: None,
+            enabled,
+            retention_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettings {
@@ -199,6 +315,11 @@ pub struct ManagementGroupDiagnosticSettings {
     #[serde(rename = "marketplacePartnerId", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_partner_id: Option<String>,
 }
+impl ManagementGroupDiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettingsResource {
     #[serde(flatten)]
@@ -208,10 +329,20 @@ pub struct ManagementGroupDiagnosticSettingsResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl ManagementGroupDiagnosticSettingsResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementGroupDiagnosticSettingsResource>,
+}
+impl ManagementGroupDiagnosticSettingsResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementGroupLogSettings {
@@ -220,6 +351,15 @@ pub struct ManagementGroupLogSettings {
     #[serde(rename = "categoryGroup", default, skip_serializing_if = "Option::is_none")]
     pub category_group: Option<String>,
     pub enabled: bool,
+}
+impl ManagementGroupLogSettings {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            category: None,
+            category_group: None,
+            enabled,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricSettings {
@@ -230,6 +370,16 @@ pub struct MetricSettings {
     pub enabled: bool,
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+}
+impl MetricSettings {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            time_grain: None,
+            category: None,
+            enabled,
+            retention_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricTrigger {
@@ -254,6 +404,33 @@ pub struct MetricTrigger {
     pub dimensions: Vec<ScaleRuleMetricDimension>,
     #[serde(rename = "dividePerInstance", default, skip_serializing_if = "Option::is_none")]
     pub divide_per_instance: Option<bool>,
+}
+impl MetricTrigger {
+    pub fn new(
+        metric_name: String,
+        metric_resource_uri: String,
+        time_grain: String,
+        statistic: metric_trigger::Statistic,
+        time_window: String,
+        time_aggregation: metric_trigger::TimeAggregation,
+        operator: metric_trigger::Operator,
+        threshold: f64,
+    ) -> Self {
+        Self {
+            metric_name,
+            metric_namespace: None,
+            metric_resource_uri,
+            metric_resource_location: None,
+            time_grain,
+            statistic,
+            time_window,
+            time_aggregation,
+            operator,
+            threshold,
+            dimensions: Vec::new(),
+            divide_per_instance: None,
+        }
+    }
 }
 pub mod metric_trigger {
     use super::*;
@@ -291,6 +468,14 @@ pub struct PredictiveAutoscalePolicy {
     #[serde(rename = "scaleLookAheadTime", default, skip_serializing_if = "Option::is_none")]
     pub scale_look_ahead_time: Option<String>,
 }
+impl PredictiveAutoscalePolicy {
+    pub fn new(scale_mode: predictive_autoscale_policy::ScaleMode) -> Self {
+        Self {
+            scale_mode,
+            scale_look_ahead_time: None,
+        }
+    }
+}
 pub mod predictive_autoscale_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -313,16 +498,31 @@ pub struct PredictiveResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data: Vec<PredictiveValue>,
 }
+impl PredictiveResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PredictiveValue {
     #[serde(rename = "timeStamp")]
     pub time_stamp: String,
     pub value: f64,
 }
+impl PredictiveValue {
+    pub fn new(time_stamp: String, value: f64) -> Self {
+        Self { time_stamp, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Recurrence {
     pub frequency: recurrence::Frequency,
     pub schedule: RecurrentSchedule,
+}
+impl Recurrence {
+    pub fn new(frequency: recurrence::Frequency, schedule: RecurrentSchedule) -> Self {
+        Self { frequency, schedule }
+    }
 }
 pub mod recurrence {
     use super::*;
@@ -346,6 +546,16 @@ pub struct RecurrentSchedule {
     pub hours: Vec<i32>,
     pub minutes: Vec<i32>,
 }
+impl RecurrentSchedule {
+    pub fn new(time_zone: String, days: Vec<String>, hours: Vec<i32>, minutes: Vec<i32>) -> Self {
+        Self {
+            time_zone,
+            days,
+            hours,
+            minutes,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -355,10 +565,20 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
     pub enabled: bool,
     pub days: i32,
+}
+impl RetentionPolicy {
+    pub fn new(enabled: bool, days: i32) -> Self {
+        Self { enabled, days }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScaleAction {
@@ -368,6 +588,16 @@ pub struct ScaleAction {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     pub cooldown: String,
+}
+impl ScaleAction {
+    pub fn new(direction: scale_action::Direction, type_: scale_action::Type, cooldown: String) -> Self {
+        Self {
+            direction,
+            type_,
+            value: None,
+            cooldown,
+        }
+    }
 }
 pub mod scale_action {
     use super::*;
@@ -391,12 +621,25 @@ pub struct ScaleCapacity {
     pub maximum: String,
     pub default: String,
 }
+impl ScaleCapacity {
+    pub fn new(minimum: String, maximum: String, default: String) -> Self {
+        Self { minimum, maximum, default }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScaleRule {
     #[serde(rename = "metricTrigger")]
     pub metric_trigger: MetricTrigger,
     #[serde(rename = "scaleAction")]
     pub scale_action: ScaleAction,
+}
+impl ScaleRule {
+    pub fn new(metric_trigger: MetricTrigger, scale_action: ScaleAction) -> Self {
+        Self {
+            metric_trigger,
+            scale_action,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScaleRuleMetricDimension {
@@ -406,6 +649,15 @@ pub struct ScaleRuleMetricDimension {
     pub operator: scale_rule_metric_dimension::Operator,
     #[serde(rename = "Values")]
     pub values: Vec<String>,
+}
+impl ScaleRuleMetricDimension {
+    pub fn new(dimension_name: String, operator: scale_rule_metric_dimension::Operator, values: Vec<String>) -> Self {
+        Self {
+            dimension_name,
+            operator,
+            values,
+        }
+    }
 }
 pub mod scale_rule_metric_dimension {
     use super::*;
@@ -432,6 +684,11 @@ pub struct SubscriptionDiagnosticSettings {
     #[serde(rename = "marketplacePartnerId", default, skip_serializing_if = "Option::is_none")]
     pub marketplace_partner_id: Option<String>,
 }
+impl SubscriptionDiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDiagnosticSettingsResource {
     #[serde(flatten)]
@@ -441,10 +698,20 @@ pub struct SubscriptionDiagnosticSettingsResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl SubscriptionDiagnosticSettingsResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubscriptionDiagnosticSettingsResource>,
+}
+impl SubscriptionDiagnosticSettingsResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionLogSettings {
@@ -454,6 +721,15 @@ pub struct SubscriptionLogSettings {
     pub category_group: Option<String>,
     pub enabled: bool,
 }
+impl SubscriptionLogSettings {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            category: None,
+            category_group: None,
+            enabled,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeWindow {
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
@@ -461,12 +737,26 @@ pub struct TimeWindow {
     pub start: String,
     pub end: String,
 }
+impl TimeWindow {
+    pub fn new(start: String, end: String) -> Self {
+        Self {
+            time_zone: None,
+            start,
+            end,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookNotification {
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+}
+impl WebhookNotification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -482,6 +772,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

@@ -9,11 +9,21 @@ pub struct RedisAccessKeys {
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
+impl RedisAccessKeys {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisCreateOrUpdateParameters {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: RedisProperties,
+}
+impl RedisCreateOrUpdateParameters {
+    pub fn new(resource: Resource, properties: RedisProperties) -> Self {
+        Self { resource, properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisListKeysResult {
@@ -22,12 +32,22 @@ pub struct RedisListKeysResult {
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
+impl RedisListKeysResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RedisResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RedisListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisProperties {
@@ -49,6 +69,21 @@ pub struct RedisProperties {
     #[serde(rename = "staticIP", default, skip_serializing_if = "Option::is_none")]
     pub static_ip: Option<String>,
 }
+impl RedisProperties {
+    pub fn new(sku: Sku) -> Self {
+        Self {
+            redis_version: None,
+            sku,
+            redis_configuration: None,
+            enable_non_ssl_port: None,
+            tenant_settings: None,
+            shard_count: None,
+            virtual_network: None,
+            subnet: None,
+            static_ip: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisReadableProperties {
     #[serde(flatten)]
@@ -62,6 +97,17 @@ pub struct RedisReadableProperties {
     #[serde(rename = "sslPort", default, skip_serializing_if = "Option::is_none")]
     pub ssl_port: Option<i32>,
 }
+impl RedisReadableProperties {
+    pub fn new(redis_properties: RedisProperties) -> Self {
+        Self {
+            redis_properties,
+            provisioning_state: None,
+            host_name: None,
+            port: None,
+            ssl_port: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisReadablePropertiesWithAccessKey {
     #[serde(flatten)]
@@ -69,12 +115,28 @@ pub struct RedisReadablePropertiesWithAccessKey {
     #[serde(rename = "accessKeys", default, skip_serializing_if = "Option::is_none")]
     pub access_keys: Option<RedisAccessKeys>,
 }
+impl RedisReadablePropertiesWithAccessKey {
+    pub fn new(redis_readable_properties: RedisReadableProperties) -> Self {
+        Self {
+            redis_readable_properties,
+            access_keys: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisRebootParameters {
     #[serde(rename = "rebootType")]
     pub reboot_type: redis_reboot_parameters::RebootType,
     #[serde(rename = "shardId", default, skip_serializing_if = "Option::is_none")]
     pub shard_id: Option<i32>,
+}
+impl RedisRebootParameters {
+    pub fn new(reboot_type: redis_reboot_parameters::RebootType) -> Self {
+        Self {
+            reboot_type,
+            shard_id: None,
+        }
+    }
 }
 pub mod redis_reboot_parameters {
     use super::*;
@@ -89,6 +151,11 @@ pub mod redis_reboot_parameters {
 pub struct RedisRegenerateKeyParameters {
     #[serde(rename = "keyType")]
     pub key_type: redis_regenerate_key_parameters::KeyType,
+}
+impl RedisRegenerateKeyParameters {
+    pub fn new(key_type: redis_regenerate_key_parameters::KeyType) -> Self {
+        Self { key_type }
+    }
 }
 pub mod redis_regenerate_key_parameters {
     use super::*;
@@ -105,12 +172,28 @@ pub struct RedisResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RedisReadableProperties>,
 }
+impl RedisResource {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisResourceWithAccessKey {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RedisReadablePropertiesWithAccessKey>,
+}
+impl RedisResourceWithAccessKey {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -124,11 +207,27 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: sku::Name,
     pub family: sku::Family,
     pub capacity: i32,
+}
+impl Sku {
+    pub fn new(name: sku::Name, family: sku::Family, capacity: i32) -> Self {
+        Self { name, family, capacity }
+    }
 }
 pub mod sku {
     use super::*;

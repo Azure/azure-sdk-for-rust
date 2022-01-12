@@ -9,6 +9,11 @@ pub struct AlexaChannel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlexaChannelProperties>,
 }
+impl AlexaChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlexaChannelProperties {
     #[serde(rename = "alexaSkillId")]
@@ -20,6 +25,16 @@ pub struct AlexaChannelProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
+impl AlexaChannelProperties {
+    pub fn new(alexa_skill_id: String, is_enabled: bool) -> Self {
+        Self {
+            alexa_skill_id,
+            url_fragment: None,
+            service_endpoint_uri: None,
+            is_enabled,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Bot {
     #[serde(flatten)]
@@ -27,12 +42,22 @@ pub struct Bot {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BotProperties>,
 }
+impl Bot {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BotChannel {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Channel>,
+}
+impl BotChannel {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BotProperties {
@@ -66,6 +91,27 @@ pub struct BotProperties {
     #[serde(rename = "cmekKeyVaultUrl", default, skip_serializing_if = "Option::is_none")]
     pub cmek_key_vault_url: Option<String>,
 }
+impl BotProperties {
+    pub fn new(display_name: String, endpoint: String, msa_app_id: String) -> Self {
+        Self {
+            display_name,
+            description: None,
+            icon_url: None,
+            endpoint,
+            endpoint_version: None,
+            msa_app_id,
+            configured_channels: Vec::new(),
+            enabled_channels: Vec::new(),
+            developer_app_insight_key: None,
+            developer_app_insights_api_key: None,
+            developer_app_insights_application_id: None,
+            luis_app_ids: Vec::new(),
+            luis_key: None,
+            is_cmek_enabled: None,
+            cmek_key_vault_url: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BotResponseList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -73,10 +119,20 @@ pub struct BotResponseList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Bot>,
 }
+impl BotResponseList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Channel {
     #[serde(rename = "channelName")]
     pub channel_name: String,
+}
+impl Channel {
+    pub fn new(channel_name: String) -> Self {
+        Self { channel_name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChannelResponseList {
@@ -85,12 +141,22 @@ pub struct ChannelResponseList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BotChannel>,
 }
+impl ChannelResponseList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityRequestBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl CheckNameAvailabilityRequestBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResponseBody {
@@ -99,10 +165,20 @@ pub struct CheckNameAvailabilityResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl CheckNameAvailabilityResponseBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionItemName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl ConnectionItemName {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSetting {
@@ -111,12 +187,22 @@ pub struct ConnectionSetting {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionSettingProperties>,
 }
+impl ConnectionSetting {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSettingParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl ConnectionSettingParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSettingProperties {
@@ -135,12 +221,22 @@ pub struct ConnectionSettingProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ConnectionSettingParameter>,
 }
+impl ConnectionSettingProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSettingResponseList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectionSetting>,
+}
+impl ConnectionSettingResponseList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineChannel {
@@ -149,10 +245,20 @@ pub struct DirectLineChannel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DirectLineChannelProperties>,
 }
+impl DirectLineChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DirectLineChannelProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sites: Vec<DirectLineSite>,
+}
+impl DirectLineChannelProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSite {
@@ -175,12 +281,32 @@ pub struct DirectLineSite {
     #[serde(rename = "trustedOrigins", default, skip_serializing_if = "Vec::is_empty")]
     pub trusted_origins: Vec<String>,
 }
+impl DirectLineSite {
+    pub fn new(site_name: String, is_enabled: bool, is_v1_enabled: bool, is_v3_enabled: bool) -> Self {
+        Self {
+            site_id: None,
+            site_name,
+            key: None,
+            key2: None,
+            is_enabled,
+            is_v1_enabled,
+            is_v3_enabled,
+            is_secure_site_enabled: None,
+            trusted_origins: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSpeechChannel {
     #[serde(flatten)]
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DirectLineSpeechChannelProperties>,
+}
+impl DirectLineSpeechChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSpeechChannelProperties {
@@ -195,12 +321,28 @@ pub struct DirectLineSpeechChannelProperties {
     #[serde(rename = "isDefaultBotForCogSvcAccount", default, skip_serializing_if = "Option::is_none")]
     pub is_default_bot_for_cog_svc_account: Option<bool>,
 }
+impl DirectLineSpeechChannelProperties {
+    pub fn new(cognitive_services_subscription_id: String) -> Self {
+        Self {
+            cognitive_services_subscription_id,
+            is_enabled: None,
+            custom_voice_deployment_id: None,
+            custom_speech_model_id: None,
+            is_default_bot_for_cog_svc_account: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailChannel {
     #[serde(flatten)]
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EmailChannelProperties>,
+}
+impl EmailChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailChannelProperties {
@@ -211,15 +353,34 @@ pub struct EmailChannelProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
+impl EmailChannelProperties {
+    pub fn new(email_address: String, is_enabled: bool) -> Self {
+        Self {
+            email_address,
+            password: None,
+            is_enabled,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorBody>,
 }
+impl Error {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorBody {
     pub code: String,
     pub message: String,
+}
+impl ErrorBody {
+    pub fn new(code: String, message: String) -> Self {
+        Self { code, message }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacebookChannel {
@@ -227,6 +388,11 @@ pub struct FacebookChannel {
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FacebookChannelProperties>,
+}
+impl FacebookChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacebookChannelProperties {
@@ -243,11 +409,28 @@ pub struct FacebookChannelProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
+impl FacebookChannelProperties {
+    pub fn new(app_id: String, is_enabled: bool) -> Self {
+        Self {
+            verify_token: None,
+            pages: Vec::new(),
+            app_id,
+            app_secret: None,
+            callback_url: None,
+            is_enabled,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacebookPage {
     pub id: String,
     #[serde(rename = "accessToken", default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
+}
+impl FacebookPage {
+    pub fn new(id: String) -> Self {
+        Self { id, access_token: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KikChannel {
@@ -255,6 +438,11 @@ pub struct KikChannel {
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<KikChannelProperties>,
+}
+impl KikChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KikChannelProperties {
@@ -266,6 +454,16 @@ pub struct KikChannelProperties {
     pub is_validated: Option<bool>,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
+}
+impl KikChannelProperties {
+    pub fn new(user_name: String, is_enabled: bool) -> Self {
+        Self {
+            user_name,
+            api_key: None,
+            is_validated: None,
+            is_enabled,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Kind {
@@ -285,6 +483,11 @@ pub struct LineChannel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LineChannelProperties>,
 }
+impl LineChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LineChannelProperties {
     #[serde(rename = "lineRegistrations")]
@@ -293,6 +496,15 @@ pub struct LineChannelProperties {
     pub callback_url: Option<String>,
     #[serde(rename = "isValidated", default, skip_serializing_if = "Option::is_none")]
     pub is_validated: Option<bool>,
+}
+impl LineChannelProperties {
+    pub fn new(line_registrations: Vec<LineRegistration>) -> Self {
+        Self {
+            line_registrations,
+            callback_url: None,
+            is_validated: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LineRegistration {
@@ -303,12 +515,22 @@ pub struct LineRegistration {
     #[serde(rename = "channelAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub channel_access_token: Option<String>,
 }
+impl LineRegistration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MsTeamsChannel {
     #[serde(flatten)]
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MsTeamsChannelProperties>,
+}
+impl MsTeamsChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MsTeamsChannelProperties {
@@ -318,6 +540,15 @@ pub struct MsTeamsChannelProperties {
     pub calling_web_hook: Option<String>,
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
+}
+impl MsTeamsChannelProperties {
+    pub fn new(is_enabled: bool) -> Self {
+        Self {
+            enable_calling: None,
+            calling_web_hook: None,
+            is_enabled,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayInfo {
@@ -330,6 +561,11 @@ pub struct OperationDisplayInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
+impl OperationDisplayInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -341,12 +577,22 @@ pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl OperationEntity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
+}
+impl OperationEntityListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -367,10 +613,20 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProvider {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceProviderProperties>,
+}
+impl ServiceProvider {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProviderParameter {
@@ -387,6 +643,11 @@ pub struct ServiceProviderParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<String>,
 }
+impl ServiceProviderParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProviderProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -402,6 +663,11 @@ pub struct ServiceProviderProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ServiceProviderParameter>,
 }
+impl ServiceProviderProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProviderResponseList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -409,11 +675,21 @@ pub struct ServiceProviderResponseList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceProvider>,
 }
+impl ServiceProviderResponseList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SiteInfo {
     #[serde(rename = "siteName")]
     pub site_name: String,
     pub key: site_info::Key,
+}
+impl SiteInfo {
+    pub fn new(site_name: String, key: site_info::Key) -> Self {
+        Self { site_name, key }
+    }
 }
 pub mod site_info {
     use super::*;
@@ -430,6 +706,11 @@ pub struct Sku {
     pub name: SkuName,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
+}
+impl Sku {
+    pub fn new(name: SkuName) -> Self {
+        Self { name, tier: None }
+    }
 }
 pub mod sku {
     use super::*;
@@ -450,6 +731,11 @@ pub struct SkypeChannel {
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SkypeChannelProperties>,
+}
+impl SkypeChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkypeChannelProperties {
@@ -472,12 +758,32 @@ pub struct SkypeChannelProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
+impl SkypeChannelProperties {
+    pub fn new(is_enabled: bool) -> Self {
+        Self {
+            enable_messaging: None,
+            enable_media_cards: None,
+            enable_video: None,
+            enable_calling: None,
+            enable_screen_sharing: None,
+            enable_groups: None,
+            groups_mode: None,
+            calling_web_hook: None,
+            is_enabled,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SlackChannel {
     #[serde(flatten)]
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SlackChannelProperties>,
+}
+impl SlackChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SlackChannelProperties {
@@ -502,12 +808,33 @@ pub struct SlackChannelProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
+impl SlackChannelProperties {
+    pub fn new(is_enabled: bool) -> Self {
+        Self {
+            client_id: None,
+            client_secret: None,
+            verification_token: None,
+            landing_page_url: None,
+            redirect_action: None,
+            last_submission_id: None,
+            register_before_o_auth_flow: None,
+            is_validated: None,
+            signing_secret: None,
+            is_enabled,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsChannel {
     #[serde(flatten)]
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SmsChannelProperties>,
+}
+impl SmsChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsChannelProperties {
@@ -521,12 +848,28 @@ pub struct SmsChannelProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
+impl SmsChannelProperties {
+    pub fn new(phone: String, account_sid: String, is_enabled: bool) -> Self {
+        Self {
+            phone,
+            account_sid,
+            auth_token: None,
+            is_validated: None,
+            is_enabled,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TelegramChannel {
     #[serde(flatten)]
     pub channel: Channel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TelegramChannelProperties>,
+}
+impl TelegramChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TelegramChannelProperties {
@@ -537,6 +880,15 @@ pub struct TelegramChannelProperties {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
 }
+impl TelegramChannelProperties {
+    pub fn new(is_enabled: bool) -> Self {
+        Self {
+            access_token: None,
+            is_validated: None,
+            is_enabled,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebChatChannel {
     #[serde(flatten)]
@@ -544,12 +896,22 @@ pub struct WebChatChannel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebChatChannelProperties>,
 }
+impl WebChatChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self { channel, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebChatChannelProperties {
     #[serde(rename = "webChatEmbedCode", default, skip_serializing_if = "Option::is_none")]
     pub web_chat_embed_code: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sites: Vec<WebChatSite>,
+}
+impl WebChatChannelProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebChatSite {
@@ -565,4 +927,16 @@ pub struct WebChatSite {
     pub is_enabled: bool,
     #[serde(rename = "enablePreview")]
     pub enable_preview: bool,
+}
+impl WebChatSite {
+    pub fn new(site_name: String, is_enabled: bool, enable_preview: bool) -> Self {
+        Self {
+            site_id: None,
+            site_name,
+            key: None,
+            key2: None,
+            is_enabled,
+            enable_preview,
+        }
+    }
 }

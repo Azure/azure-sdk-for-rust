@@ -40,6 +40,30 @@ pub struct SparkBatchJob {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub log: Vec<String>,
 }
+impl SparkBatchJob {
+    pub fn new(id: i32) -> Self {
+        Self {
+            livy_info: None,
+            name: None,
+            workspace_name: None,
+            spark_pool_name: None,
+            submitter_name: None,
+            submitter_id: None,
+            artifact_id: None,
+            job_type: None,
+            result: None,
+            scheduler_info: None,
+            plugin_info: None,
+            error_info: Vec::new(),
+            tags: None,
+            id,
+            app_id: None,
+            app_info: None,
+            state: None,
+            log: Vec::new(),
+        }
+    }
+}
 pub mod spark_batch_job {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -61,6 +85,15 @@ pub struct SparkBatchJobCollection {
     pub total: i32,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sessions: Vec<SparkBatchJob>,
+}
+impl SparkBatchJobCollection {
+    pub fn new(from: i32, total: i32) -> Self {
+        Self {
+            from,
+            total,
+            sessions: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkBatchJobOptions {
@@ -95,6 +128,28 @@ pub struct SparkBatchJobOptions {
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
     pub num_executors: Option<i32>,
 }
+impl SparkBatchJobOptions {
+    pub fn new(name: String, file: String) -> Self {
+        Self {
+            tags: None,
+            artifact_id: None,
+            name,
+            file,
+            class_name: None,
+            args: Vec::new(),
+            jars: Vec::new(),
+            py_files: Vec::new(),
+            files: Vec::new(),
+            archives: Vec::new(),
+            conf: None,
+            driver_memory: None,
+            driver_cores: None,
+            executor_memory: None,
+            executor_cores: None,
+            num_executors: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkBatchJobState {
     #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
@@ -115,6 +170,11 @@ pub struct SparkBatchJobState {
     pub current_state: Option<String>,
     #[serde(rename = "jobCreationRequest", default, skip_serializing_if = "Option::is_none")]
     pub job_creation_request: Option<SparkRequest>,
+}
+impl SparkBatchJobState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkRequest {
@@ -147,6 +207,11 @@ pub struct SparkRequest {
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
     pub num_executors: Option<i32>,
 }
+impl SparkRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkScheduler {
     #[serde(rename = "submittedAt", default, skip_serializing_if = "Option::is_none")]
@@ -159,6 +224,11 @@ pub struct SparkScheduler {
     pub cancellation_requested_at: Option<String>,
     #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
     pub current_state: Option<spark_scheduler::CurrentState>,
+}
+impl SparkScheduler {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod spark_scheduler {
     use super::*;
@@ -177,6 +247,11 @@ pub struct SparkServiceError {
     pub error_code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<spark_service_error::Source>,
+}
+impl SparkServiceError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod spark_service_error {
     use super::*;
@@ -202,6 +277,11 @@ pub struct SparkServicePlugin {
     pub cleanup_started_at: Option<String>,
     #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
     pub current_state: Option<spark_service_plugin::CurrentState>,
+}
+impl SparkServicePlugin {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod spark_service_plugin {
     use super::*;
@@ -254,6 +334,30 @@ pub struct SparkSession {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub log: Vec<String>,
 }
+impl SparkSession {
+    pub fn new(id: i32) -> Self {
+        Self {
+            livy_info: None,
+            name: None,
+            workspace_name: None,
+            spark_pool_name: None,
+            submitter_name: None,
+            submitter_id: None,
+            artifact_id: None,
+            job_type: None,
+            result: None,
+            scheduler_info: None,
+            plugin_info: None,
+            error_info: Vec::new(),
+            tags: None,
+            id,
+            app_id: None,
+            app_info: None,
+            state: None,
+            log: Vec::new(),
+        }
+    }
+}
 pub mod spark_session {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -275,6 +379,15 @@ pub struct SparkSessionCollection {
     pub total: i32,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sessions: Vec<SparkSession>,
+}
+impl SparkSessionCollection {
+    pub fn new(from: i32, total: i32) -> Self {
+        Self {
+            from,
+            total,
+            sessions: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkSessionOptions {
@@ -310,6 +423,28 @@ pub struct SparkSessionOptions {
     #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
     pub num_executors: Option<i32>,
 }
+impl SparkSessionOptions {
+    pub fn new(name: String) -> Self {
+        Self {
+            tags: None,
+            artifact_id: None,
+            name,
+            file: None,
+            class_name: None,
+            args: Vec::new(),
+            jars: Vec::new(),
+            py_files: Vec::new(),
+            files: Vec::new(),
+            archives: Vec::new(),
+            conf: None,
+            driver_memory: None,
+            driver_cores: None,
+            executor_memory: None,
+            executor_cores: None,
+            num_executors: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkSessionState {
     #[serde(rename = "notStartedAt", default, skip_serializing_if = "Option::is_none")]
@@ -335,6 +470,11 @@ pub struct SparkSessionState {
     #[serde(rename = "jobCreationRequest", default, skip_serializing_if = "Option::is_none")]
     pub job_creation_request: Option<SparkRequest>,
 }
+impl SparkSessionState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkStatement {
     pub id: i32,
@@ -345,10 +485,25 @@ pub struct SparkStatement {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<SparkStatementOutput>,
 }
+impl SparkStatement {
+    pub fn new(id: i32) -> Self {
+        Self {
+            id,
+            code: None,
+            state: None,
+            output: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkStatementCancellationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub msg: Option<String>,
+}
+impl SparkStatementCancellationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SparkStatementCollection {
@@ -356,12 +511,25 @@ pub struct SparkStatementCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statements: Vec<SparkStatement>,
 }
+impl SparkStatementCollection {
+    pub fn new(total_statements: i32) -> Self {
+        Self {
+            total_statements,
+            statements: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkStatementOptions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<spark_statement_options::Kind>,
+}
+impl SparkStatementOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod spark_statement_options {
     use super::*;
@@ -390,4 +558,16 @@ pub struct SparkStatementOutput {
     pub evalue: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub traceback: Vec<String>,
+}
+impl SparkStatementOutput {
+    pub fn new(execution_count: i32) -> Self {
+        Self {
+            status: None,
+            execution_count,
+            data: None,
+            ename: None,
+            evalue: None,
+            traceback: Vec::new(),
+        }
+    }
 }

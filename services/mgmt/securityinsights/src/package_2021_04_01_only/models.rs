@@ -9,6 +9,11 @@ pub struct AccountEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountEntityProperties>,
 }
+impl AccountEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountEntityProperties {
     #[serde(flatten)]
@@ -37,6 +42,11 @@ pub struct AccountEntityProperties {
     pub upn_suffix: Option<String>,
     #[serde(rename = "dnsDomain", default, skip_serializing_if = "Option::is_none")]
     pub dns_domain: Option<String>,
+}
+impl AccountEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AlertSeverity {
@@ -67,6 +77,11 @@ pub struct AzureResourceEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureResourceEntityProperties>,
 }
+impl AzureResourceEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceEntityProperties {
     #[serde(flatten)]
@@ -75,6 +90,11 @@ pub struct AzureResourceEntityProperties {
     pub resource_id: Option<String>,
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
+}
+impl AzureResourceEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientInfo {
@@ -87,12 +107,22 @@ pub struct ClientInfo {
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
 }
+impl ClientInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudApplicationEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudApplicationEntityProperties>,
+}
+impl CloudApplicationEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudApplicationEntityProperties {
@@ -105,10 +135,20 @@ pub struct CloudApplicationEntityProperties {
     #[serde(rename = "instanceName", default, skip_serializing_if = "Option::is_none")]
     pub instance_name: Option<String>,
 }
+impl CloudApplicationEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DnsEntity {
@@ -116,6 +156,11 @@ pub struct DnsEntity {
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DnsEntityProperties>,
+}
+impl DnsEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsEntityProperties {
@@ -130,12 +175,25 @@ pub struct DnsEntityProperties {
     #[serde(rename = "ipAddressEntityIds", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_address_entity_ids: Vec<String>,
 }
+impl DnsEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Entity {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(flatten)]
     pub entity_kind: EntityKind,
+}
+impl Entity {
+    pub fn new(entity_kind: EntityKind) -> Self {
+        Self {
+            resource: Resource::default(),
+            entity_kind,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityCommonProperties {
@@ -144,12 +202,22 @@ pub struct EntityCommonProperties {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
+impl EntityCommonProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityEdges {
     #[serde(rename = "targetEntityId", default, skip_serializing_if = "Option::is_none")]
     pub target_entity_id: Option<String>,
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<serde_json::Value>,
+}
+impl EntityEdges {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityInnerKind {
@@ -179,12 +247,22 @@ pub enum EntityInnerKind {
 pub struct EntityKind {
     pub kind: EntityInnerKind,
 }
+impl EntityKind {
+    pub fn new(kind: EntityInnerKind) -> Self {
+        Self { kind }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -199,12 +277,22 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileEntityProperties>,
+}
+impl FileEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileEntityProperties {
@@ -219,12 +307,22 @@ pub struct FileEntityProperties {
     #[serde(rename = "hostEntityId", default, skip_serializing_if = "Option::is_none")]
     pub host_entity_id: Option<String>,
 }
+impl FileEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileHashEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileHashEntityProperties>,
+}
+impl FileHashEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileHashEntityProperties {
@@ -234,6 +332,11 @@ pub struct FileHashEntityProperties {
     pub algorithm: Option<file_hash_entity_properties::Algorithm>,
     #[serde(rename = "hashValue", default, skip_serializing_if = "Option::is_none")]
     pub hash_value: Option<String>,
+}
+impl FileHashEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod file_hash_entity_properties {
     use super::*;
@@ -267,12 +370,22 @@ pub struct GeoLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
 }
+impl GeoLocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HostEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HostEntityProperties>,
+}
+impl HostEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HostEntityProperties {
@@ -297,6 +410,11 @@ pub struct HostEntityProperties {
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
 }
+impl HostEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod host_entity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -315,6 +433,11 @@ pub struct HuntingBookmark {
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HuntingBookmarkProperties>,
+}
+impl HuntingBookmark {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HuntingBookmarkProperties {
@@ -342,12 +465,35 @@ pub struct HuntingBookmarkProperties {
     #[serde(rename = "incidentInfo", default, skip_serializing_if = "Option::is_none")]
     pub incident_info: Option<IncidentInfo>,
 }
+impl HuntingBookmarkProperties {
+    pub fn new(display_name: String, query: String) -> Self {
+        Self {
+            entity_common_properties: EntityCommonProperties::default(),
+            created: None,
+            created_by: None,
+            display_name,
+            event_time: None,
+            labels: Vec::new(),
+            notes: None,
+            query,
+            query_result: None,
+            updated: None,
+            updated_by: None,
+            incident_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Incident {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IncidentProperties>,
+}
+impl Incident {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentAdditionalData {
@@ -362,13 +508,28 @@ pub struct IncidentAdditionalData {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tactics: Vec<AttackTactic>,
 }
+impl IncidentAdditionalData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentAlertList {
     pub value: Vec<SecurityAlert>,
 }
+impl IncidentAlertList {
+    pub fn new(value: Vec<SecurityAlert>) -> Self {
+        Self { value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentBookmarkList {
     pub value: Vec<HuntingBookmark>,
+}
+impl IncidentBookmarkList {
+    pub fn new(value: Vec<HuntingBookmark>) -> Self {
+        Self { value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentComment {
@@ -377,11 +538,21 @@ pub struct IncidentComment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IncidentCommentProperties>,
 }
+impl IncidentComment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentCommentList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<IncidentComment>,
+}
+impl IncidentCommentList {
+    pub fn new(value: Vec<IncidentComment>) -> Self {
+        Self { next_link: None, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentCommentProperties {
@@ -393,6 +564,16 @@ pub struct IncidentCommentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<ClientInfo>,
 }
+impl IncidentCommentProperties {
+    pub fn new(message: String) -> Self {
+        Self {
+            created_time_utc: None,
+            last_modified_time_utc: None,
+            message,
+            author: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentEntitiesResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -400,11 +581,21 @@ pub struct IncidentEntitiesResponse {
     #[serde(rename = "metaData", default, skip_serializing_if = "Vec::is_empty")]
     pub meta_data: Vec<IncidentEntitiesResultsMetadata>,
 }
+impl IncidentEntitiesResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentEntitiesResultsMetadata {
     pub count: i32,
     #[serde(rename = "entityKind")]
     pub entity_kind: EntityInnerKind,
+}
+impl IncidentEntitiesResultsMetadata {
+    pub fn new(count: i32, entity_kind: EntityInnerKind) -> Self {
+        Self { count, entity_kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentInfo {
@@ -416,6 +607,11 @@ pub struct IncidentInfo {
     pub title: Option<String>,
     #[serde(rename = "relationName", default, skip_serializing_if = "Option::is_none")]
     pub relation_name: Option<String>,
+}
+impl IncidentInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod incident_info {
     use super::*;
@@ -435,6 +631,14 @@ pub struct IncidentLabel {
     #[serde(rename = "labelType", default, skip_serializing_if = "Option::is_none")]
     pub label_type: Option<incident_label::LabelType>,
 }
+impl IncidentLabel {
+    pub fn new(label_name: String) -> Self {
+        Self {
+            label_name,
+            label_type: None,
+        }
+    }
+}
 pub mod incident_label {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -449,6 +653,11 @@ pub struct IncidentList {
     pub next_link: Option<String>,
     pub value: Vec<Incident>,
 }
+impl IncidentList {
+    pub fn new(value: Vec<Incident>) -> Self {
+        Self { next_link: None, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentOwnerInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -459,6 +668,11 @@ pub struct IncidentOwnerInfo {
     pub object_id: Option<String>,
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
+}
+impl IncidentOwnerInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentProperties {
@@ -493,6 +707,29 @@ pub struct IncidentProperties {
     pub severity: incident_properties::Severity,
     pub status: incident_properties::Status,
     pub title: String,
+}
+impl IncidentProperties {
+    pub fn new(severity: incident_properties::Severity, status: incident_properties::Status, title: String) -> Self {
+        Self {
+            additional_data: None,
+            classification: None,
+            classification_comment: None,
+            classification_reason: None,
+            created_time_utc: None,
+            description: None,
+            first_activity_time_utc: None,
+            incident_url: None,
+            incident_number: None,
+            labels: Vec::new(),
+            last_activity_time_utc: None,
+            last_modified_time_utc: None,
+            owner: None,
+            related_analytic_rule_ids: Vec::new(),
+            severity,
+            status,
+            title,
+        }
+    }
 }
 pub mod incident_properties {
     use super::*;
@@ -530,6 +767,11 @@ pub struct IoTDeviceEntity {
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTDeviceEntityProperties>,
+}
+impl IoTDeviceEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTDeviceEntityProperties {
@@ -570,12 +812,22 @@ pub struct IoTDeviceEntityProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub protocols: Vec<String>,
 }
+impl IoTDeviceEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IpEntityProperties>,
+}
+impl IpEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpEntityProperties {
@@ -588,6 +840,11 @@ pub struct IpEntityProperties {
     #[serde(rename = "threatIntelligence", default, skip_serializing_if = "Vec::is_empty")]
     pub threat_intelligence: Vec<ThreatIntelligence>,
 }
+impl IpEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type Label = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MailClusterEntity {
@@ -595,6 +852,11 @@ pub struct MailClusterEntity {
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MailClusterEntityProperties>,
+}
+impl MailClusterEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailClusterEntityProperties {
@@ -631,12 +893,22 @@ pub struct MailClusterEntityProperties {
     #[serde(rename = "clusterGroup", default, skip_serializing_if = "Option::is_none")]
     pub cluster_group: Option<String>,
 }
+impl MailClusterEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MailMessageEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MailMessageEntityProperties>,
+}
+impl MailMessageEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailMessageEntityProperties {
@@ -693,6 +965,11 @@ pub struct MailMessageEntityProperties {
     #[serde(rename = "deliveryLocation", default, skip_serializing_if = "Option::is_none")]
     pub delivery_location: Option<mail_message_entity_properties::DeliveryLocation>,
 }
+impl MailMessageEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod mail_message_entity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -730,6 +1007,11 @@ pub struct MailboxEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MailboxEntityProperties>,
 }
+impl MailboxEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MailboxEntityProperties {
     #[serde(flatten)]
@@ -743,12 +1025,22 @@ pub struct MailboxEntityProperties {
     #[serde(rename = "externalDirectoryObjectId", default, skip_serializing_if = "Option::is_none")]
     pub external_directory_object_id: Option<String>,
 }
+impl MailboxEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MalwareEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MalwareEntityProperties>,
+}
+impl MalwareEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MalwareEntityProperties {
@@ -763,6 +1055,11 @@ pub struct MalwareEntityProperties {
     #[serde(rename = "processEntityIds", default, skip_serializing_if = "Vec::is_empty")]
     pub process_entity_ids: Vec<String>,
 }
+impl MalwareEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -771,6 +1068,11 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -785,6 +1087,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
@@ -792,12 +1099,22 @@ pub struct OperationsList {
     pub next_link: Option<String>,
     pub value: Vec<Operation>,
 }
+impl OperationsList {
+    pub fn new(value: Vec<Operation>) -> Self {
+        Self { next_link: None, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProcessEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProcessEntityProperties>,
+}
+impl ProcessEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProcessEntityProperties {
@@ -822,6 +1139,11 @@ pub struct ProcessEntityProperties {
     #[serde(rename = "processId", default, skip_serializing_if = "Option::is_none")]
     pub process_id: Option<String>,
 }
+impl ProcessEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod process_entity_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -838,6 +1160,11 @@ pub struct RegistryKeyEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryKeyEntityProperties>,
 }
+impl RegistryKeyEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryKeyEntityProperties {
     #[serde(flatten)]
@@ -846,6 +1173,11 @@ pub struct RegistryKeyEntityProperties {
     pub hive: Option<registry_key_entity_properties::Hive>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+}
+impl RegistryKeyEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod registry_key_entity_properties {
     use super::*;
@@ -880,6 +1212,11 @@ pub struct RegistryValueEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryValueEntityProperties>,
 }
+impl RegistryValueEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryValueEntityProperties {
     #[serde(flatten)]
@@ -892,6 +1229,11 @@ pub struct RegistryValueEntityProperties {
     pub value_name: Option<String>,
     #[serde(rename = "valueType", default, skip_serializing_if = "Option::is_none")]
     pub value_type: Option<registry_value_entity_properties::ValueType>,
+}
+impl RegistryValueEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod registry_value_entity_properties {
     use super::*;
@@ -914,11 +1256,21 @@ pub struct Relation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RelationProperties>,
 }
+impl Relation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<Relation>,
+}
+impl RelationList {
+    pub fn new(value: Vec<Relation>) -> Self {
+        Self { next_link: None, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelationProperties {
@@ -931,6 +1283,16 @@ pub struct RelationProperties {
     #[serde(rename = "relatedResourceKind", default, skip_serializing_if = "Option::is_none")]
     pub related_resource_kind: Option<String>,
 }
+impl RelationProperties {
+    pub fn new(related_resource_id: String) -> Self {
+        Self {
+            related_resource_id,
+            related_resource_name: None,
+            related_resource_type: None,
+            related_resource_kind: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -942,6 +1304,11 @@ pub struct Resource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceWithEtag {
     #[serde(flatten)]
@@ -949,12 +1316,22 @@ pub struct ResourceWithEtag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
+impl ResourceWithEtag {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAlert {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAlertProperties>,
+}
+impl SecurityAlert {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAlertProperties {
@@ -1011,6 +1388,11 @@ pub struct SecurityAlertProperties {
     #[serde(rename = "resourceIdentifiers", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_identifiers: Vec<serde_json::Value>,
 }
+impl SecurityAlertProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod security_alert_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1059,6 +1441,11 @@ pub struct SecurityGroupEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityGroupEntityProperties>,
 }
+impl SecurityGroupEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityGroupEntityProperties {
     #[serde(flatten)]
@@ -1070,12 +1457,22 @@ pub struct SecurityGroupEntityProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
 }
+impl SecurityGroupEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubmissionMailEntity {
     #[serde(flatten)]
     pub entity: Entity,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubmissionMailEntityProperties>,
+}
+impl SubmissionMailEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubmissionMailEntityProperties {
@@ -1102,6 +1499,11 @@ pub struct SubmissionMailEntityProperties {
     #[serde(rename = "reportType", default, skip_serializing_if = "Option::is_none")]
     pub report_type: Option<String>,
 }
+impl SubmissionMailEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1117,10 +1519,20 @@ pub struct ThreatIntelligence {
     #[serde(rename = "threatType", default, skip_serializing_if = "Option::is_none")]
     pub threat_type: Option<String>,
 }
+impl ThreatIntelligence {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceAppendTags {
     #[serde(rename = "threatIntelligenceTags", default, skip_serializing_if = "Vec::is_empty")]
     pub threat_intelligence_tags: Vec<String>,
+}
+impl ThreatIntelligenceAppendTags {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceExternalReference {
@@ -1134,6 +1546,11 @@ pub struct ThreatIntelligenceExternalReference {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hashes: Option<serde_json::Value>,
+}
+impl ThreatIntelligenceExternalReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceFilteringCriteria {
@@ -1164,6 +1581,11 @@ pub struct ThreatIntelligenceFilteringCriteria {
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
+impl ThreatIntelligenceFilteringCriteria {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceGranularMarkingModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1173,12 +1595,25 @@ pub struct ThreatIntelligenceGranularMarkingModel {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub selectors: Vec<String>,
 }
+impl ThreatIntelligenceGranularMarkingModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceIndicatorModel {
     #[serde(flatten)]
     pub threat_intelligence_information: ThreatIntelligenceInformation,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceIndicatorProperties>,
+}
+impl ThreatIntelligenceIndicatorModel {
+    pub fn new(threat_intelligence_information: ThreatIntelligenceInformation) -> Self {
+        Self {
+            threat_intelligence_information,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceIndicatorModelForRequestBody {
@@ -1188,6 +1623,15 @@ pub struct ThreatIntelligenceIndicatorModelForRequestBody {
     pub etag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceIndicatorProperties>,
+}
+impl ThreatIntelligenceIndicatorModelForRequestBody {
+    pub fn new(threat_intelligence_resource_kind: ThreatIntelligenceResourceKind) -> Self {
+        Self {
+            threat_intelligence_resource_kind,
+            etag: None,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceIndicatorProperties {
@@ -1250,6 +1694,11 @@ pub struct ThreatIntelligenceIndicatorProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub extensions: Option<serde_json::Value>,
 }
+impl ThreatIntelligenceIndicatorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceInformation {
     #[serde(flatten)]
@@ -1257,11 +1706,24 @@ pub struct ThreatIntelligenceInformation {
     #[serde(flatten)]
     pub threat_intelligence_resource_kind: ThreatIntelligenceResourceKind,
 }
+impl ThreatIntelligenceInformation {
+    pub fn new(threat_intelligence_resource_kind: ThreatIntelligenceResourceKind) -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+            threat_intelligence_resource_kind,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceInformationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<ThreatIntelligenceInformation>,
+}
+impl ThreatIntelligenceInformationList {
+    pub fn new(value: Vec<ThreatIntelligenceInformation>) -> Self {
+        Self { next_link: None, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceKillChainPhase {
@@ -1269,6 +1731,11 @@ pub struct ThreatIntelligenceKillChainPhase {
     pub kill_chain_name: Option<String>,
     #[serde(rename = "phaseName", default, skip_serializing_if = "Option::is_none")]
     pub phase_name: Option<String>,
+}
+impl ThreatIntelligenceKillChainPhase {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceMetric {
@@ -1281,6 +1748,11 @@ pub struct ThreatIntelligenceMetric {
     #[serde(rename = "sourceMetrics", default, skip_serializing_if = "Vec::is_empty")]
     pub source_metrics: Vec<ThreatIntelligenceMetricEntity>,
 }
+impl ThreatIntelligenceMetric {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceMetricEntity {
     #[serde(rename = "metricName", default, skip_serializing_if = "Option::is_none")]
@@ -1288,14 +1760,29 @@ pub struct ThreatIntelligenceMetricEntity {
     #[serde(rename = "metricValue", default, skip_serializing_if = "Option::is_none")]
     pub metric_value: Option<i32>,
 }
+impl ThreatIntelligenceMetricEntity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceMetrics {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceMetric>,
 }
+impl ThreatIntelligenceMetrics {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceMetricsList {
     pub value: Vec<ThreatIntelligenceMetrics>,
+}
+impl ThreatIntelligenceMetricsList {
+    pub fn new(value: Vec<ThreatIntelligenceMetrics>) -> Self {
+        Self { value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceParsedPattern {
@@ -1304,12 +1791,22 @@ pub struct ThreatIntelligenceParsedPattern {
     #[serde(rename = "patternTypeValues", default, skip_serializing_if = "Vec::is_empty")]
     pub pattern_type_values: Vec<ThreatIntelligenceParsedPatternTypeValue>,
 }
+impl ThreatIntelligenceParsedPattern {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceParsedPatternTypeValue {
     #[serde(rename = "valueType", default, skip_serializing_if = "Option::is_none")]
     pub value_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl ThreatIntelligenceParsedPatternTypeValue {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ThreatIntelligenceResourceInnerKind {
@@ -1320,12 +1817,22 @@ pub enum ThreatIntelligenceResourceInnerKind {
 pub struct ThreatIntelligenceResourceKind {
     pub kind: ThreatIntelligenceResourceInnerKind,
 }
+impl ThreatIntelligenceResourceKind {
+    pub fn new(kind: ThreatIntelligenceResourceInnerKind) -> Self {
+        Self { kind }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ThreatIntelligenceSortingCriteria {
     #[serde(rename = "itemKey", default, skip_serializing_if = "Option::is_none")]
     pub item_key: Option<String>,
     #[serde(rename = "sortOrder", default, skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<ThreatIntelligenceSortingOrder>,
+}
+impl ThreatIntelligenceSortingCriteria {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ThreatIntelligenceSortingOrder {
@@ -1343,12 +1850,22 @@ pub struct UrlEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UrlEntityProperties>,
 }
+impl UrlEntity {
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UrlEntityProperties {
     #[serde(flatten)]
     pub entity_common_properties: EntityCommonProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+}
+impl UrlEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserInfo {
@@ -1359,12 +1876,22 @@ pub struct UserInfo {
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
 }
+impl UserInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Watchlist {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WatchlistProperties>,
+}
+impl Watchlist {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WatchlistItem {
@@ -1373,11 +1900,21 @@ pub struct WatchlistItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WatchlistItemProperties>,
 }
+impl WatchlistItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WatchlistItemList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<WatchlistItem>,
+}
+impl WatchlistItemList {
+    pub fn new(value: Vec<WatchlistItem>) -> Self {
+        Self { next_link: None, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WatchlistItemProperties {
@@ -1402,11 +1939,32 @@ pub struct WatchlistItemProperties {
     #[serde(rename = "entityMapping", default, skip_serializing_if = "Option::is_none")]
     pub entity_mapping: Option<serde_json::Value>,
 }
+impl WatchlistItemProperties {
+    pub fn new(items_key_value: serde_json::Value) -> Self {
+        Self {
+            watchlist_item_type: None,
+            watchlist_item_id: None,
+            tenant_id: None,
+            is_deleted: None,
+            created: None,
+            updated: None,
+            created_by: None,
+            updated_by: None,
+            items_key_value,
+            entity_mapping: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WatchlistList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<Watchlist>,
+}
+impl WatchlistList {
+    pub fn new(value: Vec<Watchlist>) -> Self {
+        Self { next_link: None, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WatchlistProperties {
@@ -1449,6 +2007,32 @@ pub struct WatchlistProperties {
     #[serde(rename = "uploadStatus", default, skip_serializing_if = "Option::is_none")]
     pub upload_status: Option<String>,
 }
+impl WatchlistProperties {
+    pub fn new(display_name: String, provider: String, source: watchlist_properties::Source, items_search_key: String) -> Self {
+        Self {
+            watchlist_id: None,
+            display_name,
+            provider,
+            source,
+            created: None,
+            updated: None,
+            created_by: None,
+            updated_by: None,
+            description: None,
+            watchlist_type: None,
+            watchlist_alias: None,
+            is_deleted: None,
+            labels: Vec::new(),
+            default_duration: None,
+            tenant_id: None,
+            number_of_lines_to_skip: None,
+            raw_content: None,
+            items_search_key,
+            content_type: None,
+            upload_status: None,
+        }
+    }
+}
 pub mod watchlist_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1473,6 +2057,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

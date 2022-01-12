@@ -11,6 +11,11 @@ pub struct AccessPolicy {
     #[serde(rename = "Permission")]
     pub permission: String,
 }
+impl AccessPolicy {
+    pub fn new(start: String, expiry: String, permission: String) -> Self {
+        Self { start, expiry, permission }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
     #[serde(rename = "AllowedOrigins")]
@@ -24,12 +29,34 @@ pub struct CorsRule {
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
 }
+impl CorsRule {
+    pub fn new(
+        allowed_origins: String,
+        allowed_methods: String,
+        allowed_headers: String,
+        exposed_headers: String,
+        max_age_in_seconds: i64,
+    ) -> Self {
+        Self {
+            allowed_origins,
+            allowed_methods,
+            allowed_headers,
+            exposed_headers,
+            max_age_in_seconds,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoReplication {
     #[serde(rename = "Status")]
     pub status: geo_replication::Status,
     #[serde(rename = "LastSyncTime")]
     pub last_sync_time: String,
+}
+impl GeoReplication {
+    pub fn new(status: geo_replication::Status, last_sync_time: String) -> Self {
+        Self { status, last_sync_time }
+    }
 }
 pub mod geo_replication {
     use super::*;
@@ -56,6 +83,17 @@ pub struct Logging {
     #[serde(rename = "RetentionPolicy")]
     pub retention_policy: RetentionPolicy,
 }
+impl Logging {
+    pub fn new(version: String, delete: bool, read: bool, write: bool, retention_policy: RetentionPolicy) -> Self {
+        Self {
+            version,
+            delete,
+            read,
+            write,
+            retention_policy,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
@@ -67,12 +105,27 @@ pub struct Metrics {
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
+impl Metrics {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            version: None,
+            enabled,
+            include_ap_is: None,
+            retention_policy: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
     #[serde(rename = "Enabled")]
     pub enabled: bool,
     #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i64>,
+}
+impl RetentionPolicy {
+    pub fn new(enabled: bool) -> Self {
+        Self { enabled, days: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {
@@ -81,9 +134,19 @@ pub struct SignedIdentifier {
     #[serde(rename = "AccessPolicy")]
     pub access_policy: AccessPolicy,
 }
+impl SignedIdentifier {
+    pub fn new(id: String, access_policy: AccessPolicy) -> Self {
+        Self { id, access_policy }
+    }
+}
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableEntityProperties {}
+impl TableEntityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableEntityQueryResponse {
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]
@@ -91,10 +154,20 @@ pub struct TableEntityQueryResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TableEntityProperties>,
 }
+impl TableEntityQueryResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableProperties {
     #[serde(rename = "TableName", default, skip_serializing_if = "Option::is_none")]
     pub table_name: Option<String>,
+}
+impl TableProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableQueryResponse {
@@ -103,12 +176,22 @@ pub struct TableQueryResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TableResponseProperties>,
 }
+impl TableQueryResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableResponse {
     #[serde(flatten)]
     pub table_response_properties: TableResponseProperties,
     #[serde(rename = "odata.metadata", default, skip_serializing_if = "Option::is_none")]
     pub odata_metadata: Option<String>,
+}
+impl TableResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableResponseProperties {
@@ -121,10 +204,20 @@ pub struct TableResponseProperties {
     #[serde(rename = "odata.editLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_edit_link: Option<String>,
 }
+impl TableResponseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableServiceError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl TableServiceError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableServiceProperties {
@@ -137,8 +230,18 @@ pub struct TableServiceProperties {
     #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
     pub cors: Vec<CorsRule>,
 }
+impl TableServiceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableServiceStats {
     #[serde(rename = "GeoReplication", default, skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,
+}
+impl TableServiceStats {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

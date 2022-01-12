@@ -15,6 +15,11 @@ pub struct ApprovalSettings {
     #[serde(rename = "approvalStages", default, skip_serializing_if = "Vec::is_empty")]
     pub approval_stages: Vec<ApprovalStage>,
 }
+impl ApprovalSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod approval_settings {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -40,10 +45,20 @@ pub struct ApprovalStage {
     #[serde(rename = "escalationApprovers", default, skip_serializing_if = "Vec::is_empty")]
     pub escalation_approvers: Vec<UserSet>,
 }
+impl ApprovalStage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
@@ -51,6 +66,11 @@ pub struct CloudErrorBody {
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EligibleChildResource {
@@ -61,6 +81,11 @@ pub struct EligibleChildResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl EligibleChildResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EligibleChildResourcesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -68,12 +93,22 @@ pub struct EligibleChildResourcesListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl EligibleChildResourcesListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
@@ -88,10 +123,20 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpandedProperties {
@@ -101,6 +146,11 @@ pub struct ExpandedProperties {
     pub role_definition: Option<expanded_properties::RoleDefinition>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub principal: Option<expanded_properties::Principal>,
+}
+impl ExpandedProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod expanded_properties {
     use super::*;
@@ -113,6 +163,11 @@ pub mod expanded_properties {
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
     }
+    impl Scope {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct RoleDefinition {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -121,6 +176,11 @@ pub mod expanded_properties {
         pub display_name: Option<String>,
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
+    }
+    impl RoleDefinition {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Principal {
@@ -132,6 +192,11 @@ pub mod expanded_properties {
         pub email: Option<String>,
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
+    }
+    impl Principal {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -145,6 +210,11 @@ pub struct Permission {
     #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_data_actions: Vec<String>,
 }
+impl Permission {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyAssignmentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -153,6 +223,11 @@ pub struct PolicyAssignmentProperties {
     pub role_definition: Option<policy_assignment_properties::RoleDefinition>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<policy_assignment_properties::Policy>,
+}
+impl PolicyAssignmentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod policy_assignment_properties {
     use super::*;
@@ -165,6 +240,11 @@ pub mod policy_assignment_properties {
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
     }
+    impl Scope {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct RoleDefinition {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -173,6 +253,11 @@ pub mod policy_assignment_properties {
         pub display_name: Option<String>,
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
+    }
+    impl RoleDefinition {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Policy {
@@ -183,11 +268,21 @@ pub mod policy_assignment_properties {
         #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
         pub last_modified_date_time: Option<String>,
     }
+    impl Policy {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<policy_properties::Scope>,
+}
+impl PolicyProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod policy_properties {
     use super::*;
@@ -199,6 +294,11 @@ pub mod policy_properties {
         pub display_name: Option<String>,
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
+    }
+    impl Scope {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -212,6 +312,11 @@ pub struct Principal {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
 }
+impl Principal {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -223,14 +328,29 @@ pub struct RoleAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentProperties>,
 }
+impl RoleAssignment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentCreateParameters {
     pub properties: RoleAssignmentProperties,
+}
+impl RoleAssignmentCreateParameters {
+    pub fn new(properties: RoleAssignmentProperties) -> Self {
+        Self { properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentFilter {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+}
+impl RoleAssignmentFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentListResult {
@@ -238,6 +358,11 @@ pub struct RoleAssignmentListResult {
     pub value: Vec<RoleAssignment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleAssignmentListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentProperties {
@@ -266,6 +391,24 @@ pub struct RoleAssignmentProperties {
     #[serde(rename = "delegatedManagedIdentityResourceId", default, skip_serializing_if = "Option::is_none")]
     pub delegated_managed_identity_resource_id: Option<String>,
 }
+impl RoleAssignmentProperties {
+    pub fn new(role_definition_id: String, principal_id: String) -> Self {
+        Self {
+            scope: None,
+            role_definition_id,
+            principal_id,
+            principal_type: None,
+            description: None,
+            condition: None,
+            condition_version: None,
+            created_on: None,
+            updated_on: None,
+            created_by: None,
+            updated_by: None,
+            delegated_managed_identity_resource_id: None,
+        }
+    }
+}
 pub mod role_assignment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -293,6 +436,11 @@ pub struct RoleAssignmentSchedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentScheduleProperties>,
 }
+impl RoleAssignmentSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleFilter {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -301,6 +449,11 @@ pub struct RoleAssignmentScheduleFilter {
     pub role_definition_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+}
+impl RoleAssignmentScheduleFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleInstance {
@@ -313,6 +466,11 @@ pub struct RoleAssignmentScheduleInstance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentScheduleInstanceProperties>,
 }
+impl RoleAssignmentScheduleInstance {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleInstanceFilter {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -324,12 +482,22 @@ pub struct RoleAssignmentScheduleInstanceFilter {
     #[serde(rename = "roleAssignmentScheduleId", default, skip_serializing_if = "Option::is_none")]
     pub role_assignment_schedule_id: Option<String>,
 }
+impl RoleAssignmentScheduleInstanceFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleInstanceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignmentScheduleInstance>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleAssignmentScheduleInstanceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleInstanceProperties {
@@ -371,6 +539,11 @@ pub struct RoleAssignmentScheduleInstanceProperties {
     pub created_on: Option<String>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
+}
+impl RoleAssignmentScheduleInstanceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod role_assignment_schedule_instance_properties {
     use super::*;
@@ -426,6 +599,11 @@ pub struct RoleAssignmentScheduleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl RoleAssignmentScheduleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -460,6 +638,11 @@ pub struct RoleAssignmentScheduleProperties {
     pub updated_on: Option<String>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
+}
+impl RoleAssignmentScheduleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod role_assignment_schedule_properties {
     use super::*;
@@ -519,6 +702,11 @@ pub struct RoleAssignmentScheduleRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentScheduleRequestProperties>,
 }
+impl RoleAssignmentScheduleRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleRequestFilter {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -530,12 +718,22 @@ pub struct RoleAssignmentScheduleRequestFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
+impl RoleAssignmentScheduleRequestFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentScheduleRequestListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignmentScheduleRequest>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleAssignmentScheduleRequestListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentScheduleRequestProperties {
@@ -579,6 +777,34 @@ pub struct RoleAssignmentScheduleRequestProperties {
     pub requestor_id: Option<String>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
+}
+impl RoleAssignmentScheduleRequestProperties {
+    pub fn new(
+        role_definition_id: String,
+        principal_id: String,
+        request_type: role_assignment_schedule_request_properties::RequestType,
+    ) -> Self {
+        Self {
+            scope: None,
+            role_definition_id,
+            principal_id,
+            principal_type: None,
+            request_type,
+            status: None,
+            approval_id: None,
+            target_role_assignment_schedule_id: None,
+            target_role_assignment_schedule_instance_id: None,
+            schedule_info: None,
+            linked_role_eligibility_schedule_id: None,
+            justification: None,
+            ticket_info: None,
+            condition: None,
+            condition_version: None,
+            created_on: None,
+            requestor_id: None,
+            expanded_properties: None,
+        }
+    }
 }
 pub mod role_assignment_schedule_request_properties {
     use super::*;
@@ -634,6 +860,11 @@ pub mod role_assignment_schedule_request_properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub expiration: Option<schedule_info::Expiration>,
     }
+    impl ScheduleInfo {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod schedule_info {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -644,6 +875,11 @@ pub mod role_assignment_schedule_request_properties {
             pub end_date_time: Option<String>,
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub duration: Option<String>,
+        }
+        impl Expiration {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
         pub mod expiration {
             use super::*;
@@ -662,6 +898,11 @@ pub mod role_assignment_schedule_request_properties {
         #[serde(rename = "ticketSystem", default, skip_serializing_if = "Option::is_none")]
         pub ticket_system: Option<String>,
     }
+    impl TicketInfo {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilitySchedule {
@@ -674,6 +915,11 @@ pub struct RoleEligibilitySchedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleEligibilityScheduleProperties>,
 }
+impl RoleEligibilitySchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleFilter {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -682,6 +928,11 @@ pub struct RoleEligibilityScheduleFilter {
     pub role_definition_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+}
+impl RoleEligibilityScheduleFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleInstance {
@@ -694,6 +945,11 @@ pub struct RoleEligibilityScheduleInstance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleEligibilityScheduleInstanceProperties>,
 }
+impl RoleEligibilityScheduleInstance {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleInstanceFilter {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -705,12 +961,22 @@ pub struct RoleEligibilityScheduleInstanceFilter {
     #[serde(rename = "roleEligibilityScheduleId", default, skip_serializing_if = "Option::is_none")]
     pub role_eligibility_schedule_id: Option<String>,
 }
+impl RoleEligibilityScheduleInstanceFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleInstanceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleEligibilityScheduleInstance>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleEligibilityScheduleInstanceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleInstanceProperties {
@@ -740,6 +1006,11 @@ pub struct RoleEligibilityScheduleInstanceProperties {
     pub created_on: Option<String>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
+}
+impl RoleEligibilityScheduleInstanceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod role_eligibility_schedule_instance_properties {
     use super::*;
@@ -790,6 +1061,11 @@ pub struct RoleEligibilityScheduleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl RoleEligibilityScheduleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -820,6 +1096,11 @@ pub struct RoleEligibilityScheduleProperties {
     pub updated_on: Option<String>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
+}
+impl RoleEligibilityScheduleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod role_eligibility_schedule_properties {
     use super::*;
@@ -874,6 +1155,11 @@ pub struct RoleEligibilityScheduleRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleEligibilityScheduleRequestProperties>,
 }
+impl RoleEligibilityScheduleRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleRequestFilter {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -885,12 +1171,22 @@ pub struct RoleEligibilityScheduleRequestFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
+impl RoleEligibilityScheduleRequestFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleEligibilityScheduleRequestListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleEligibilityScheduleRequest>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleEligibilityScheduleRequestListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleEligibilityScheduleRequestProperties {
@@ -932,6 +1228,33 @@ pub struct RoleEligibilityScheduleRequestProperties {
     pub requestor_id: Option<String>,
     #[serde(rename = "expandedProperties", default, skip_serializing_if = "Option::is_none")]
     pub expanded_properties: Option<ExpandedProperties>,
+}
+impl RoleEligibilityScheduleRequestProperties {
+    pub fn new(
+        role_definition_id: String,
+        principal_id: String,
+        request_type: role_eligibility_schedule_request_properties::RequestType,
+    ) -> Self {
+        Self {
+            scope: None,
+            role_definition_id,
+            principal_id,
+            principal_type: None,
+            request_type,
+            status: None,
+            approval_id: None,
+            schedule_info: None,
+            target_role_eligibility_schedule_id: None,
+            target_role_eligibility_schedule_instance_id: None,
+            justification: None,
+            ticket_info: None,
+            condition: None,
+            condition_version: None,
+            created_on: None,
+            requestor_id: None,
+            expanded_properties: None,
+        }
+    }
 }
 pub mod role_eligibility_schedule_request_properties {
     use super::*;
@@ -987,6 +1310,11 @@ pub mod role_eligibility_schedule_request_properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub expiration: Option<schedule_info::Expiration>,
     }
+    impl ScheduleInfo {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod schedule_info {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -997,6 +1325,11 @@ pub mod role_eligibility_schedule_request_properties {
             pub end_date_time: Option<String>,
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub duration: Option<String>,
+        }
+        impl Expiration {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
         pub mod expiration {
             use super::*;
@@ -1015,6 +1348,11 @@ pub mod role_eligibility_schedule_request_properties {
         #[serde(rename = "ticketSystem", default, skip_serializing_if = "Option::is_none")]
         pub ticket_system: Option<String>,
     }
+    impl TicketInfo {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicy {
@@ -1027,12 +1365,25 @@ pub struct RoleManagementPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleManagementPolicyProperties>,
 }
+impl RoleManagementPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyApprovalRule {
     #[serde(flatten)]
     pub role_management_policy_rule: RoleManagementPolicyRule,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub setting: Option<ApprovalSettings>,
+}
+impl RoleManagementPolicyApprovalRule {
+    pub fn new(role_management_policy_rule: RoleManagementPolicyRule) -> Self {
+        Self {
+            role_management_policy_rule,
+            setting: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyAssignment {
@@ -1045,12 +1396,22 @@ pub struct RoleManagementPolicyAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleManagementPolicyAssignmentProperties>,
 }
+impl RoleManagementPolicyAssignment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleManagementPolicyAssignment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleManagementPolicyAssignmentListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyAssignmentProperties {
@@ -1063,6 +1424,11 @@ pub struct RoleManagementPolicyAssignmentProperties {
     #[serde(rename = "policyAssignmentProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_properties: Option<PolicyAssignmentProperties>,
 }
+impl RoleManagementPolicyAssignmentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyAuthenticationContextRule {
     #[serde(flatten)]
@@ -1072,12 +1438,29 @@ pub struct RoleManagementPolicyAuthenticationContextRule {
     #[serde(rename = "claimValue", default, skip_serializing_if = "Option::is_none")]
     pub claim_value: Option<String>,
 }
+impl RoleManagementPolicyAuthenticationContextRule {
+    pub fn new(role_management_policy_rule: RoleManagementPolicyRule) -> Self {
+        Self {
+            role_management_policy_rule,
+            is_enabled: None,
+            claim_value: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyEnablementRule {
     #[serde(flatten)]
     pub role_management_policy_rule: RoleManagementPolicyRule,
     #[serde(rename = "enabledRules", default, skip_serializing_if = "Vec::is_empty")]
     pub enabled_rules: Vec<String>,
+}
+impl RoleManagementPolicyEnablementRule {
+    pub fn new(role_management_policy_rule: RoleManagementPolicyRule) -> Self {
+        Self {
+            role_management_policy_rule,
+            enabled_rules: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyExpirationRule {
@@ -1088,12 +1471,26 @@ pub struct RoleManagementPolicyExpirationRule {
     #[serde(rename = "maximumDuration", default, skip_serializing_if = "Option::is_none")]
     pub maximum_duration: Option<String>,
 }
+impl RoleManagementPolicyExpirationRule {
+    pub fn new(role_management_policy_rule: RoleManagementPolicyRule) -> Self {
+        Self {
+            role_management_policy_rule,
+            is_expiration_required: None,
+            maximum_duration: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleManagementPolicy>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleManagementPolicyListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyNotificationRule {
@@ -1109,6 +1506,18 @@ pub struct RoleManagementPolicyNotificationRule {
     pub notification_recipients: Vec<String>,
     #[serde(rename = "isDefaultRecipientsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_default_recipients_enabled: Option<bool>,
+}
+impl RoleManagementPolicyNotificationRule {
+    pub fn new(role_management_policy_rule: RoleManagementPolicyRule) -> Self {
+        Self {
+            role_management_policy_rule,
+            notification_type: None,
+            notification_level: None,
+            recipient_type: None,
+            notification_recipients: Vec::new(),
+            is_default_recipients_enabled: None,
+        }
+    }
 }
 pub mod role_management_policy_notification_rule {
     use super::*;
@@ -1150,6 +1559,11 @@ pub struct RoleManagementPolicyProperties {
     #[serde(rename = "policyProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_properties: Option<PolicyProperties>,
 }
+impl RoleManagementPolicyProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1158,6 +1572,15 @@ pub struct RoleManagementPolicyRule {
     pub rule_type: RoleManagementPolicyRuleType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<RoleManagementPolicyRuleTarget>,
+}
+impl RoleManagementPolicyRule {
+    pub fn new(rule_type: RoleManagementPolicyRuleType) -> Self {
+        Self {
+            id: None,
+            rule_type,
+            target: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyRuleTarget {
@@ -1173,6 +1596,11 @@ pub struct RoleManagementPolicyRuleTarget {
     pub inheritable_settings: Vec<String>,
     #[serde(rename = "enforcedSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub enforced_settings: Vec<String>,
+}
+impl RoleManagementPolicyRuleTarget {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RoleManagementPolicyRuleType {
@@ -1193,6 +1621,11 @@ pub struct UserSet {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl UserSet {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod user_set {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1208,10 +1641,20 @@ pub struct ValidationResponse {
     #[serde(rename = "errorInfo", default, skip_serializing_if = "Option::is_none")]
     pub error_info: Option<ValidationResponseErrorInfo>,
 }
+impl ValidationResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidationResponseErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ValidationResponseErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

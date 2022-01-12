@@ -13,12 +13,27 @@ pub struct DeliveryPackageInformation {
     #[serde(rename = "shipDate", default, skip_serializing_if = "Option::is_none")]
     pub ship_date: Option<String>,
 }
+impl DeliveryPackageInformation {
+    pub fn new(carrier_name: String, tracking_number: String) -> Self {
+        Self {
+            carrier_name,
+            tracking_number,
+            drive_count: None,
+            ship_date: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DriveBitLockerKey {
     #[serde(rename = "bitLockerKey", default, skip_serializing_if = "Option::is_none")]
     pub bit_locker_key: Option<String>,
     #[serde(rename = "driveId", default, skip_serializing_if = "Option::is_none")]
     pub drive_id: Option<String>,
+}
+impl DriveBitLockerKey {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DriveStatus {
@@ -47,6 +62,11 @@ pub struct DriveStatus {
     #[serde(rename = "bytesSucceeded", default, skip_serializing_if = "Option::is_none")]
     pub bytes_succeeded: Option<i64>,
 }
+impl DriveStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod drive_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -74,6 +94,11 @@ pub struct EncryptionKeyDetails {
     #[serde(rename = "kekVaultResourceID", default, skip_serializing_if = "Option::is_none")]
     pub kek_vault_resource_id: Option<String>,
 }
+impl EncryptionKeyDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod encryption_key_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -92,6 +117,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod error_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -107,6 +137,11 @@ pub mod error_response {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub innererror: Option<serde_json::Value>,
     }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Export {
@@ -114,6 +149,11 @@ pub struct Export {
     pub blob_list: Option<export::BlobList>,
     #[serde(rename = "blobListBlobPath", default, skip_serializing_if = "Option::is_none")]
     pub blob_list_blob_path: Option<String>,
+}
+impl Export {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod export {
     use super::*;
@@ -124,11 +164,21 @@ pub mod export {
         #[serde(rename = "blobPathPrefix", default, skip_serializing_if = "Vec::is_empty")]
         pub blob_path_prefix: Vec<String>,
     }
+    impl BlobList {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetBitLockerKeysResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DriveBitLockerKey>,
+}
+impl GetBitLockerKeysResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityDetails {
@@ -138,6 +188,11 @@ pub struct IdentityDetails {
     pub principal_id: Option<String>,
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+impl IdentityDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod identity_details {
     use super::*;
@@ -192,6 +247,11 @@ pub struct JobDetails {
     #[serde(rename = "encryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub encryption_key: Option<EncryptionKeyDetails>,
 }
+impl JobDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobResponse {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
@@ -211,6 +271,11 @@ pub struct JobResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityDetails>,
 }
+impl JobResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListJobsResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -218,10 +283,20 @@ pub struct ListJobsResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobResponse>,
 }
+impl ListJobsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListOperationsResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl ListOperationsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Location {
@@ -233,6 +308,11 @@ pub struct Location {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<location::Properties>,
+}
+impl Location {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod location {
     use super::*;
@@ -261,16 +341,31 @@ pub mod location {
         #[serde(rename = "alternateLocations", default, skip_serializing_if = "Vec::is_empty")]
         pub alternate_locations: Vec<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationsResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Location>,
 }
+impl LocationsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     pub name: String,
     pub display: operation::Display,
+}
+impl Operation {
+    pub fn new(name: String, display: operation::Display) -> Self {
+        Self { name, display }
+    }
 }
 pub mod operation {
     use super::*;
@@ -285,6 +380,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PackageInformation {
@@ -297,6 +397,16 @@ pub struct PackageInformation {
     #[serde(rename = "shipDate")]
     pub ship_date: String,
 }
+impl PackageInformation {
+    pub fn new(carrier_name: String, tracking_number: String, drive_count: i64, ship_date: String) -> Self {
+        Self {
+            carrier_name,
+            tracking_number,
+            drive_count,
+            ship_date,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PutJobParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -305,6 +415,11 @@ pub struct PutJobParameters {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobDetails>,
+}
+impl PutJobParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReturnAddress {
@@ -324,12 +439,43 @@ pub struct ReturnAddress {
     pub phone: String,
     pub email: String,
 }
+impl ReturnAddress {
+    pub fn new(
+        recipient_name: String,
+        street_address1: String,
+        city: String,
+        postal_code: String,
+        country_or_region: String,
+        phone: String,
+        email: String,
+    ) -> Self {
+        Self {
+            recipient_name,
+            street_address1,
+            street_address2: None,
+            city,
+            state_or_province: None,
+            postal_code,
+            country_or_region,
+            phone,
+            email,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReturnShipping {
     #[serde(rename = "carrierName")]
     pub carrier_name: String,
     #[serde(rename = "carrierAccountNumber")]
     pub carrier_account_number: String,
+}
+impl ReturnShipping {
+    pub fn new(carrier_name: String, carrier_account_number: String) -> Self {
+        Self {
+            carrier_name,
+            carrier_account_number,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShippingInformation {
@@ -352,12 +498,22 @@ pub struct ShippingInformation {
     #[serde(rename = "additionalInformation", default, skip_serializing_if = "Option::is_none")]
     pub additional_information: Option<String>,
 }
+impl ShippingInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateJobParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<update_job_parameters::Properties>,
+}
+impl UpdateJobParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod update_job_parameters {
     use super::*;
@@ -380,6 +536,11 @@ pub mod update_job_parameters {
         #[serde(rename = "driveList", default, skip_serializing_if = "Vec::is_empty")]
         pub drive_list: Vec<DriveStatus>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -395,6 +556,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

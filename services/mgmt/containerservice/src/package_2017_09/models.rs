@@ -7,12 +7,25 @@ pub struct AccessProfile {
     #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub kube_config: Option<String>,
 }
+impl AccessProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerService {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContainerServiceProperties>,
+}
+impl ContainerService {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceAgentPoolProfile {
@@ -36,14 +49,40 @@ pub struct ContainerServiceAgentPoolProfile {
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
+impl ContainerServiceAgentPoolProfile {
+    pub fn new(name: String, vm_size: ContainerServiceVmSize) -> Self {
+        Self {
+            name,
+            count: None,
+            vm_size,
+            os_disk_size_gb: None,
+            dns_prefix: None,
+            fqdn: None,
+            ports: Vec::new(),
+            storage_profile: None,
+            vnet_subnet_id: None,
+            os_type: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceCustomProfile {
     pub orchestrator: String,
+}
+impl ContainerServiceCustomProfile {
+    pub fn new(orchestrator: String) -> Self {
+        Self { orchestrator }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceDiagnosticsProfile {
     #[serde(rename = "vmDiagnostics")]
     pub vm_diagnostics: ContainerServiceVmDiagnostics,
+}
+impl ContainerServiceDiagnosticsProfile {
+    pub fn new(vm_diagnostics: ContainerServiceVmDiagnostics) -> Self {
+        Self { vm_diagnostics }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceLinuxProfile {
@@ -51,12 +90,22 @@ pub struct ContainerServiceLinuxProfile {
     pub admin_username: String,
     pub ssh: ContainerServiceSshConfiguration,
 }
+impl ContainerServiceLinuxProfile {
+    pub fn new(admin_username: String, ssh: ContainerServiceSshConfiguration) -> Self {
+        Self { admin_username, ssh }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ContainerServiceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceMasterProfile {
@@ -77,6 +126,20 @@ pub struct ContainerServiceMasterProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
+impl ContainerServiceMasterProfile {
+    pub fn new(dns_prefix: String, vm_size: ContainerServiceVmSize) -> Self {
+        Self {
+            count: None,
+            dns_prefix,
+            vm_size,
+            os_disk_size_gb: None,
+            vnet_subnet_id: None,
+            first_consecutive_static_ip: None,
+            storage_profile: None,
+            fqdn: None,
+        }
+    }
+}
 pub mod container_service_master_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -89,6 +152,14 @@ pub struct ContainerServiceOrchestratorProfile {
     pub orchestrator_type: container_service_orchestrator_profile::OrchestratorType,
     #[serde(rename = "orchestratorVersion", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_version: Option<String>,
+}
+impl ContainerServiceOrchestratorProfile {
+    pub fn new(orchestrator_type: container_service_orchestrator_profile::OrchestratorType) -> Self {
+        Self {
+            orchestrator_type,
+            orchestrator_version: None,
+        }
+    }
 }
 pub mod container_service_orchestrator_profile {
     use super::*;
@@ -124,6 +195,25 @@ pub struct ContainerServiceProperties {
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
 }
+impl ContainerServiceProperties {
+    pub fn new(
+        orchestrator_profile: ContainerServiceOrchestratorProfile,
+        master_profile: ContainerServiceMasterProfile,
+        linux_profile: ContainerServiceLinuxProfile,
+    ) -> Self {
+        Self {
+            provisioning_state: None,
+            orchestrator_profile,
+            custom_profile: None,
+            service_principal_profile: None,
+            master_profile,
+            agent_pool_profiles: Vec::new(),
+            windows_profile: None,
+            linux_profile,
+            diagnostics_profile: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceServicePrincipalProfile {
     #[serde(rename = "clientId")]
@@ -133,15 +223,34 @@ pub struct ContainerServiceServicePrincipalProfile {
     #[serde(rename = "keyVaultSecretRef", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_secret_ref: Option<KeyVaultSecretRef>,
 }
+impl ContainerServiceServicePrincipalProfile {
+    pub fn new(client_id: String) -> Self {
+        Self {
+            client_id,
+            secret: None,
+            key_vault_secret_ref: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshConfiguration {
     #[serde(rename = "publicKeys")]
     pub public_keys: Vec<ContainerServiceSshPublicKey>,
 }
+impl ContainerServiceSshConfiguration {
+    pub fn new(public_keys: Vec<ContainerServiceSshPublicKey>) -> Self {
+        Self { public_keys }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshPublicKey {
     #[serde(rename = "keyData")]
     pub key_data: String,
+}
+impl ContainerServiceSshPublicKey {
+    pub fn new(key_data: String) -> Self {
+        Self { key_data }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceStorageProfile {
@@ -153,6 +262,14 @@ pub struct ContainerServiceVmDiagnostics {
     pub enabled: bool,
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
+}
+impl ContainerServiceVmDiagnostics {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            enabled,
+            storage_uri: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceVmSize {
@@ -513,6 +630,14 @@ pub struct ContainerServiceWindowsProfile {
     #[serde(rename = "adminPassword")]
     pub admin_password: String,
 }
+impl ContainerServiceWindowsProfile {
+    pub fn new(admin_username: String, admin_password: String) -> Self {
+        Self {
+            admin_username,
+            admin_password,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSecretRef {
     #[serde(rename = "vaultID")]
@@ -522,12 +647,29 @@ pub struct KeyVaultSecretRef {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
+impl KeyVaultSecretRef {
+    pub fn new(vault_id: String, secret_name: String) -> Self {
+        Self {
+            vault_id,
+            secret_name,
+            version: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedCluster {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedClusterProperties>,
+}
+impl ManagedCluster {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAccessProfile {
@@ -536,12 +678,25 @@ pub struct ManagedClusterAccessProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessProfile>,
 }
+impl ManagedClusterAccessProfile {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedCluster>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ManagedClusterListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterPoolUpgradeProfile {
@@ -553,6 +708,16 @@ pub struct ManagedClusterPoolUpgradeProfile {
     pub os_type: OsType,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<String>,
+}
+impl ManagedClusterPoolUpgradeProfile {
+    pub fn new(kubernetes_version: String, os_type: OsType) -> Self {
+        Self {
+            kubernetes_version,
+            name: None,
+            os_type,
+            upgrades: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterProperties {
@@ -571,6 +736,11 @@ pub struct ManagedClusterProperties {
     #[serde(rename = "servicePrincipalProfile", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_profile: Option<ContainerServiceServicePrincipalProfile>,
 }
+impl ManagedClusterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterUpgradeProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -581,12 +751,33 @@ pub struct ManagedClusterUpgradeProfile {
     pub type_: Option<String>,
     pub properties: ManagedClusterUpgradeProfileProperties,
 }
+impl ManagedClusterUpgradeProfile {
+    pub fn new(properties: ManagedClusterUpgradeProfileProperties) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterUpgradeProfileProperties {
     #[serde(rename = "controlPlaneProfile")]
     pub control_plane_profile: ManagedClusterPoolUpgradeProfile,
     #[serde(rename = "agentPoolProfiles")]
     pub agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
+}
+impl ManagedClusterUpgradeProfileProperties {
+    pub fn new(
+        control_plane_profile: ManagedClusterPoolUpgradeProfile,
+        agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
+    ) -> Self {
+        Self {
+            control_plane_profile,
+            agent_pool_profiles,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OsType {
@@ -605,6 +796,14 @@ pub struct OrchestratorProfile {
     #[serde(rename = "orchestratorVersion")]
     pub orchestrator_version: String,
 }
+impl OrchestratorProfile {
+    pub fn new(orchestrator_type: String, orchestrator_version: String) -> Self {
+        Self {
+            orchestrator_type,
+            orchestrator_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfile {
     #[serde(rename = "orchestratorType")]
@@ -613,6 +812,16 @@ pub struct OrchestratorVersionProfile {
     pub orchestrator_version: String,
     pub default: bool,
     pub upgrades: Vec<OrchestratorProfile>,
+}
+impl OrchestratorVersionProfile {
+    pub fn new(orchestrator_type: String, orchestrator_version: String, default: bool, upgrades: Vec<OrchestratorProfile>) -> Self {
+        Self {
+            orchestrator_type,
+            orchestrator_version,
+            default,
+            upgrades,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileListResult {
@@ -624,9 +833,24 @@ pub struct OrchestratorVersionProfileListResult {
     pub type_: Option<String>,
     pub properties: OrchestratorVersionProfileProperties,
 }
+impl OrchestratorVersionProfileListResult {
+    pub fn new(properties: OrchestratorVersionProfileProperties) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileProperties {
     pub orchestrators: Vec<OrchestratorVersionProfile>,
+}
+impl OrchestratorVersionProfileProperties {
+    pub fn new(orchestrators: Vec<OrchestratorVersionProfile>) -> Self {
+        Self { orchestrators }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -639,4 +863,15 @@ pub struct Resource {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
 }

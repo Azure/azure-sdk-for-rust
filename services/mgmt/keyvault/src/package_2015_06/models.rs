@@ -12,6 +12,16 @@ pub struct AccessPolicyEntry {
     pub application_id: Option<String>,
     pub permissions: Permissions,
 }
+impl AccessPolicyEntry {
+    pub fn new(tenant_id: String, object_id: String, permissions: Permissions) -> Self {
+        Self {
+            tenant_id,
+            object_id,
+            application_id: None,
+            permissions,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Permissions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -20,6 +30,11 @@ pub struct Permissions {
     pub secrets: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub certificates: Vec<String>,
+}
+impl Permissions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -32,6 +47,17 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(name: String, location: String) -> Self {
+        Self {
+            id: None,
+            name,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -39,10 +65,20 @@ pub struct ResourceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ResourceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub family: sku::Family,
     pub name: sku::Name,
+}
+impl Sku {
+    pub fn new(family: sku::Family, name: sku::Name) -> Self {
+        Self { family, name }
+    }
 }
 pub mod sku {
     use super::*;
@@ -64,6 +100,11 @@ pub struct Vault {
     pub resource: Resource,
     pub properties: VaultProperties,
 }
+impl Vault {
+    pub fn new(resource: Resource, properties: VaultProperties) -> Self {
+        Self { resource, properties }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultCreateOrUpdateParameters {
     pub location: String,
@@ -71,12 +112,26 @@ pub struct VaultCreateOrUpdateParameters {
     pub tags: Option<serde_json::Value>,
     pub properties: VaultProperties,
 }
+impl VaultCreateOrUpdateParameters {
+    pub fn new(location: String, properties: VaultProperties) -> Self {
+        Self {
+            location,
+            tags: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaultListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Vault>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl VaultListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultProperties {
@@ -95,4 +150,18 @@ pub struct VaultProperties {
     pub enabled_for_template_deployment: Option<bool>,
     #[serde(rename = "enableSoftDelete", default, skip_serializing_if = "Option::is_none")]
     pub enable_soft_delete: Option<bool>,
+}
+impl VaultProperties {
+    pub fn new(tenant_id: String, sku: Sku, access_policies: Vec<AccessPolicyEntry>) -> Self {
+        Self {
+            vault_uri: None,
+            tenant_id,
+            sku,
+            access_policies,
+            enabled_for_deployment: None,
+            enabled_for_disk_encryption: None,
+            enabled_for_template_deployment: None,
+            enable_soft_delete: None,
+        }
+    }
 }

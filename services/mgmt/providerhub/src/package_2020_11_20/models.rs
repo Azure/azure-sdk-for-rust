@@ -9,6 +9,11 @@ pub struct AuthorizationActionMapping {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub desired: Option<String>,
 }
+impl AuthorizationActionMapping {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanaryTrafficRegionRolloutConfiguration {
     #[serde(rename = "skipRegions", default, skip_serializing_if = "Vec::is_empty")]
@@ -16,12 +21,22 @@ pub struct CanaryTrafficRegionRolloutConfiguration {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<String>,
 }
+impl CanaryTrafficRegionRolloutConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilitySpecifications {
     #[serde(rename = "enableDefaultValidation", default, skip_serializing_if = "Option::is_none")]
     pub enable_default_validation: Option<bool>,
     #[serde(rename = "resourceTypesWithCustomValidation", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_types_with_custom_validation: Vec<String>,
+}
+impl CheckNameAvailabilitySpecifications {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckinManifestInfo {
@@ -34,17 +49,43 @@ pub struct CheckinManifestInfo {
     #[serde(rename = "commitId", default, skip_serializing_if = "Option::is_none")]
     pub commit_id: Option<String>,
 }
+impl CheckinManifestInfo {
+    pub fn new(is_checked_in: bool, status_message: String) -> Self {
+        Self {
+            is_checked_in,
+            status_message,
+            pull_request: None,
+            commit_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckinManifestParams {
     pub environment: String,
     #[serde(rename = "baselineArmManifestLocation")]
     pub baseline_arm_manifest_location: String,
 }
+impl CheckinManifestParams {
+    pub fn new(environment: String, baseline_arm_manifest_location: String) -> Self {
+        Self {
+            environment,
+            baseline_arm_manifest_location,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRollout {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     pub properties: serde_json::Value,
+}
+impl CustomRollout {
+    pub fn new(properties: serde_json::Value) -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomRolloutArrayResponseWithContinuation {
@@ -53,6 +94,11 @@ pub struct CustomRolloutArrayResponseWithContinuation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl CustomRolloutArrayResponseWithContinuation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRolloutProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -60,6 +106,15 @@ pub struct CustomRolloutProperties {
     pub specification: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<serde_json::Value>,
+}
+impl CustomRolloutProperties {
+    pub fn new(specification: serde_json::Value) -> Self {
+        Self {
+            provisioning_state: None,
+            specification,
+            status: None,
+        }
+    }
 }
 pub mod custom_rollout_properties {
     use super::*;
@@ -88,12 +143,26 @@ pub struct CustomRolloutSpecification {
     #[serde(rename = "resourceTypeRegistrations", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_type_registrations: Vec<ResourceTypeRegistration>,
 }
+impl CustomRolloutSpecification {
+    pub fn new(canary: serde_json::Value) -> Self {
+        Self {
+            canary,
+            provider_registration: None,
+            resource_type_registrations: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomRolloutStatus {
     #[serde(rename = "completedRegions", default, skip_serializing_if = "Vec::is_empty")]
     pub completed_regions: Vec<String>,
     #[serde(rename = "failedOrSkippedRegions", default, skip_serializing_if = "Option::is_none")]
     pub failed_or_skipped_regions: Option<serde_json::Value>,
+}
+impl CustomRolloutStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRollout {
@@ -102,12 +171,22 @@ pub struct DefaultRollout {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl DefaultRollout {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRolloutArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DefaultRollout>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DefaultRolloutArrayResponseWithContinuation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRolloutProperties {
@@ -117,6 +196,11 @@ pub struct DefaultRolloutProperties {
     pub specification: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<serde_json::Value>,
+}
+impl DefaultRolloutProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod default_rollout_properties {
     use super::*;
@@ -156,6 +240,11 @@ pub struct DefaultRolloutSpecification {
     #[serde(rename = "resourceTypeRegistrations", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_type_registrations: Vec<ResourceTypeRegistration>,
 }
+impl DefaultRolloutSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRolloutStatus {
     #[serde(flatten)]
@@ -166,6 +255,11 @@ pub struct DefaultRolloutStatus {
     pub next_traffic_region_scheduled_time: Option<String>,
     #[serde(rename = "subscriptionReregistrationResult", default, skip_serializing_if = "Option::is_none")]
     pub subscription_reregistration_result: Option<default_rollout_status::SubscriptionReregistrationResult>,
+}
+impl DefaultRolloutStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod default_rollout_status {
     use super::*;
@@ -201,10 +295,20 @@ pub struct Error {
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<serde_json::Value>,
 }
+impl Error {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedErrorInfo {
@@ -219,12 +323,22 @@ pub struct ExtendedErrorInfo {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<TypedErrorInfo>,
 }
+impl ExtendedErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedLocationOptions {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(rename = "supportedPolicy", default, skip_serializing_if = "Option::is_none")]
     pub supported_policy: Option<String>,
+}
+impl ExtendedLocationOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionOptions {
@@ -233,10 +347,20 @@ pub struct ExtensionOptions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub response: Vec<String>,
 }
+impl ExtensionOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeaturesRule {
     #[serde(rename = "requiredFeaturesPolicy")]
     pub required_features_policy: features_rule::RequiredFeaturesPolicy,
+}
+impl FeaturesRule {
+    pub fn new(required_features_policy: features_rule::RequiredFeaturesPolicy) -> Self {
+        Self { required_features_policy }
+    }
 }
 pub mod features_rule {
     use super::*;
@@ -250,6 +374,11 @@ pub mod features_rule {
 pub struct IdentityManagement {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_management::Type>,
+}
+impl IdentityManagement {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod identity_management {
     use super::*;
@@ -269,6 +398,11 @@ pub struct IdentityManagementProperties {
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
 }
+impl IdentityManagementProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod identity_management_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -287,12 +421,25 @@ pub struct InnerError {
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<serde_json::Value>,
 }
+impl InnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LightHouseAuthorization {
     #[serde(rename = "principalId")]
     pub principal_id: String,
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
+}
+impl LightHouseAuthorization {
+    pub fn new(principal_id: String, role_definition_id: String) -> Self {
+        Self {
+            principal_id,
+            role_definition_id,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkedAccessCheck {
@@ -307,12 +454,25 @@ pub struct LinkedAccessCheck {
     #[serde(rename = "linkedType", default, skip_serializing_if = "Option::is_none")]
     pub linked_type: Option<String>,
 }
+impl LinkedAccessCheck {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedOperationRule {
     #[serde(rename = "linkedOperation")]
     pub linked_operation: linked_operation_rule::LinkedOperation,
     #[serde(rename = "linkedAction")]
     pub linked_action: linked_operation_rule::LinkedAction,
+}
+impl LinkedOperationRule {
+    pub fn new(linked_operation: linked_operation_rule::LinkedOperation, linked_action: linked_operation_rule::LinkedAction) -> Self {
+        Self {
+            linked_operation,
+            linked_action,
+        }
+    }
 }
 pub mod linked_operation_rule {
     use super::*;
@@ -337,6 +497,11 @@ pub struct LoggingHiddenPropertyPath {
     #[serde(rename = "hiddenPathsOnResponse", default, skip_serializing_if = "Vec::is_empty")]
     pub hidden_paths_on_response: Vec<String>,
 }
+impl LoggingHiddenPropertyPath {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoggingRule {
     pub action: String,
@@ -345,6 +510,16 @@ pub struct LoggingRule {
     pub detail_level: logging_rule::DetailLevel,
     #[serde(rename = "hiddenPropertyPaths", default, skip_serializing_if = "Option::is_none")]
     pub hidden_property_paths: Option<serde_json::Value>,
+}
+impl LoggingRule {
+    pub fn new(action: String, direction: logging_rule::Direction, detail_level: logging_rule::DetailLevel) -> Self {
+        Self {
+            action,
+            direction,
+            detail_level,
+            hidden_property_paths: None,
+        }
+    }
 }
 pub mod logging_rule {
     use super::*;
@@ -367,6 +542,11 @@ pub struct NotificationEndpoint {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
 }
+impl NotificationEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationRegistration {
     #[serde(flatten)]
@@ -374,12 +554,22 @@ pub struct NotificationRegistration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl NotificationRegistration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NotificationRegistration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl NotificationRegistrationArrayResponseWithContinuation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationRegistrationProperties {
@@ -393,6 +583,11 @@ pub struct NotificationRegistrationProperties {
     pub notification_endpoints: Vec<NotificationEndpoint>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<notification_registration_properties::ProvisioningState>,
+}
+impl NotificationRegistrationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod notification_registration_properties {
     use super::*;
@@ -431,6 +626,11 @@ pub struct OperationsContent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationsDefinition>,
 }
+impl OperationsContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDefinition {
     pub name: String,
@@ -443,6 +643,18 @@ pub struct OperationsDefinition {
     pub action_type: Option<operations_definition::ActionType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+}
+impl OperationsDefinition {
+    pub fn new(name: String, display: serde_json::Value) -> Self {
+        Self {
+            name,
+            is_data_action: None,
+            origin: None,
+            display,
+            action_type: None,
+            properties: None,
+        }
+    }
 }
 pub mod operations_definition {
     use super::*;
@@ -465,6 +677,11 @@ pub struct OperationsDefinitionArrayResponseWithContinuation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationsDefinitionArrayResponseWithContinuation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDisplayDefinition {
     pub provider: String,
@@ -472,9 +689,24 @@ pub struct OperationsDisplayDefinition {
     pub operation: String,
     pub description: String,
 }
+impl OperationsDisplayDefinition {
+    pub fn new(provider: String, resource: String, operation: String, description: String) -> Self {
+        Self {
+            provider,
+            resource,
+            operation,
+            description,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsPutContent {
     pub contents: Vec<OperationsDefinition>,
+}
+impl OperationsPutContent {
+    pub fn new(contents: Vec<OperationsDefinition>) -> Self {
+        Self { contents }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderHubMetadata {
@@ -485,6 +717,11 @@ pub struct ProviderHubMetadata {
     #[serde(rename = "thirdPartyProviderAuthorization", default, skip_serializing_if = "Option::is_none")]
     pub third_party_provider_authorization: Option<serde_json::Value>,
 }
+impl ProviderHubMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderRegistration {
     #[serde(flatten)]
@@ -492,12 +729,22 @@ pub struct ProviderRegistration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl ProviderRegistration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProviderRegistration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ProviderRegistrationArrayResponseWithContinuation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderRegistrationProperties {
@@ -513,6 +760,11 @@ pub struct ProviderRegistrationProperties {
         skip_serializing_if = "Option::is_none"
     )]
     pub subscription_lifecycle_notification_specifications: Option<serde_json::Value>,
+}
+impl ProviderRegistrationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod provider_registration_properties {
     use super::*;
@@ -538,16 +790,34 @@ pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
 }
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReRegisterSubscriptionMetadata {
     pub enabled: bool,
     #[serde(rename = "concurrencyLimit", default, skip_serializing_if = "Option::is_none")]
     pub concurrency_limit: Option<i32>,
 }
+impl ReRegisterSubscriptionMetadata {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            enabled,
+            concurrency_limit: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestHeaderOptions {
     #[serde(rename = "optInHeaders", default, skip_serializing_if = "Option::is_none")]
     pub opt_in_headers: Option<request_header_options::OptInHeaders>,
+}
+impl RequestHeaderOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod request_header_options {
     use super::*;
@@ -569,6 +839,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceMovePolicy {
     #[serde(rename = "validationRequired", default, skip_serializing_if = "Option::is_none")]
@@ -578,10 +853,20 @@ pub struct ResourceMovePolicy {
     #[serde(rename = "crossSubscriptionMoveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub cross_subscription_move_enabled: Option<bool>,
 }
+impl ResourceMovePolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProviderAuthentication {
     #[serde(rename = "allowedAudiences")]
     pub allowed_audiences: Vec<String>,
+}
+impl ResourceProviderAuthentication {
+    pub fn new(allowed_audiences: Vec<String>) -> Self {
+        Self { allowed_audiences }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderAuthorization {
@@ -592,6 +877,11 @@ pub struct ResourceProviderAuthorization {
     #[serde(rename = "managedByRoleDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_role_definition_id: Option<String>,
 }
+impl ResourceProviderAuthorization {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceProviderCapabilities {
     #[serde(rename = "quotaId")]
@@ -599,6 +889,15 @@ pub struct ResourceProviderCapabilities {
     pub effect: resource_provider_capabilities::Effect,
     #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
     pub required_features: Vec<String>,
+}
+impl ResourceProviderCapabilities {
+    pub fn new(quota_id: String, effect: resource_provider_capabilities::Effect) -> Self {
+        Self {
+            quota_id,
+            effect,
+            required_features: Vec::new(),
+        }
+    }
 }
 pub mod resource_provider_capabilities {
     use super::*;
@@ -626,6 +925,11 @@ pub struct ResourceProviderEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
+impl ResourceProviderEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderManagement {
     #[serde(rename = "schemaOwners", default, skip_serializing_if = "Vec::is_empty")]
@@ -644,6 +948,11 @@ pub struct ResourceProviderManagement {
     pub resource_access_policy: Option<resource_provider_management::ResourceAccessPolicy>,
     #[serde(rename = "resourceAccessRoles", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_access_roles: Vec<serde_json::Value>,
+}
+impl ResourceProviderManagement {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_provider_management {
     use super::*;
@@ -685,6 +994,11 @@ pub struct ResourceProviderManifest {
     #[serde(rename = "reRegisterSubscriptionMetadata", default, skip_serializing_if = "Option::is_none")]
     pub re_register_subscription_metadata: Option<serde_json::Value>,
 }
+impl ResourceProviderManifest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod resource_provider_manifest {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -725,6 +1039,11 @@ pub struct ResourceProviderManifestProperties {
     pub metadata: Option<serde_json::Value>,
     #[serde(rename = "templateDeploymentOptions", default, skip_serializing_if = "Option::is_none")]
     pub template_deployment_options: Option<serde_json::Value>,
+}
+impl ResourceProviderManifestProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_provider_manifest_properties {
     use super::*;
@@ -791,6 +1110,11 @@ pub struct ResourceType {
     #[serde(rename = "resourceDeletionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_deletion_policy: Option<resource_type::ResourceDeletionPolicy>,
 }
+impl ResourceType {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod resource_type {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -842,6 +1166,11 @@ pub struct ResourceTypeEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
+impl ResourceTypeEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeExtension {
     #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
@@ -851,10 +1180,20 @@ pub struct ResourceTypeExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
+impl ResourceTypeExtension {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeExtensionOptions {
     #[serde(rename = "resourceCreationBegin", default, skip_serializing_if = "Option::is_none")]
     pub resource_creation_begin: Option<serde_json::Value>,
+}
+impl ResourceTypeExtensionOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeRegistration {
@@ -863,12 +1202,22 @@ pub struct ResourceTypeRegistration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl ResourceTypeRegistration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceTypeRegistration>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ResourceTypeRegistrationArrayResponseWithContinuation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeRegistrationProperties {
@@ -935,6 +1284,11 @@ pub struct ResourceTypeRegistrationProperties {
     #[serde(rename = "resourceDeletionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub resource_deletion_policy: Option<resource_type_registration_properties::ResourceDeletionPolicy>,
 }
+impl ResourceTypeRegistrationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod resource_type_registration_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -992,6 +1346,14 @@ pub struct ResourceTypeSku {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<resource_type_sku::ProvisioningState>,
 }
+impl ResourceTypeSku {
+    pub fn new(sku_settings: Vec<SkuSetting>) -> Self {
+        Self {
+            sku_settings,
+            provisioning_state: None,
+        }
+    }
+}
 pub mod resource_type_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1018,6 +1380,11 @@ pub struct RolloutStatusBase {
     #[serde(rename = "failedOrSkippedRegions", default, skip_serializing_if = "Option::is_none")]
     pub failed_or_skipped_regions: Option<serde_json::Value>,
 }
+impl RolloutStatusBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTreeInfo {
     #[serde(rename = "serviceId", default, skip_serializing_if = "Option::is_none")]
@@ -1025,10 +1392,20 @@ pub struct ServiceTreeInfo {
     #[serde(rename = "componentId", default, skip_serializing_if = "Option::is_none")]
     pub component_id: Option<String>,
 }
+impl ServiceTreeInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuCapability {
     pub name: String,
     pub value: String,
+}
+impl SkuCapability {
+    pub fn new(name: String, value: String) -> Self {
+        Self { name, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuCapacity {
@@ -1039,6 +1416,16 @@ pub struct SkuCapacity {
     pub default: Option<i32>,
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<sku_capacity::ScaleType>,
+}
+impl SkuCapacity {
+    pub fn new(minimum: i32) -> Self {
+        Self {
+            minimum,
+            maximum: None,
+            default: None,
+            scale_type: None,
+        }
+    }
 }
 pub mod sku_capacity {
     use super::*;
@@ -1058,6 +1445,15 @@ pub struct SkuCost {
     #[serde(rename = "extendedUnit", default, skip_serializing_if = "Option::is_none")]
     pub extended_unit: Option<String>,
 }
+impl SkuCost {
+    pub fn new(meter_id: String) -> Self {
+        Self {
+            meter_id,
+            quantity: None,
+            extended_unit: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuLocationInfo {
     pub location: String,
@@ -1069,6 +1465,17 @@ pub struct SkuLocationInfo {
     pub extended_locations: Vec<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<sku_location_info::Type>,
+}
+impl SkuLocationInfo {
+    pub fn new(location: String) -> Self {
+        Self {
+            location,
+            zones: Vec::new(),
+            zone_details: Vec::new(),
+            extended_locations: Vec::new(),
+            type_: None,
+        }
+    }
 }
 pub mod sku_location_info {
     use super::*;
@@ -1086,12 +1493,22 @@ pub struct SkuResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl SkuResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuResourceArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SkuResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SkuResourceArrayResponseWithContinuation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuSetting {
@@ -1119,12 +1536,35 @@ pub struct SkuSetting {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<SkuCapability>,
 }
+impl SkuSetting {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            tier: None,
+            size: None,
+            family: None,
+            kind: None,
+            locations: Vec::new(),
+            location_info: Vec::new(),
+            required_quota_ids: Vec::new(),
+            required_features: Vec::new(),
+            capacity: None,
+            costs: Vec::new(),
+            capabilities: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuZoneDetail {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub name: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<SkuCapability>,
+}
+impl SkuZoneDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionLifecycleNotificationSpecifications {
@@ -1133,10 +1573,20 @@ pub struct SubscriptionLifecycleNotificationSpecifications {
     #[serde(rename = "softDeleteTTL", default, skip_serializing_if = "Option::is_none")]
     pub soft_delete_ttl: Option<String>,
 }
+impl SubscriptionLifecycleNotificationSpecifications {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionStateOverrideAction {
     pub state: subscription_state_override_action::State,
     pub action: subscription_state_override_action::Action,
+}
+impl SubscriptionStateOverrideAction {
+    pub fn new(state: subscription_state_override_action::State, action: subscription_state_override_action::Action) -> Self {
+        Self { state, action }
+    }
 }
 pub mod subscription_state_override_action {
     use super::*;
@@ -1173,6 +1623,11 @@ pub struct SubscriptionStateRule {
     #[serde(rename = "allowedActions", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_actions: Vec<String>,
 }
+impl SubscriptionStateRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod subscription_state_rule {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1192,6 +1647,11 @@ pub struct SwaggerSpecification {
     #[serde(rename = "swaggerSpecFolderUri", default, skip_serializing_if = "Option::is_none")]
     pub swagger_spec_folder_uri: Option<String>,
 }
+impl SwaggerSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateDeploymentOptions {
     #[serde(rename = "preflightSupported", default, skip_serializing_if = "Option::is_none")]
@@ -1199,11 +1659,27 @@ pub struct TemplateDeploymentOptions {
     #[serde(rename = "preflightOptions", default, skip_serializing_if = "Vec::is_empty")]
     pub preflight_options: Vec<String>,
 }
+impl TemplateDeploymentOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateDeploymentPolicy {
     pub capabilities: template_deployment_policy::Capabilities,
     #[serde(rename = "preflightOptions")]
     pub preflight_options: template_deployment_policy::PreflightOptions,
+}
+impl TemplateDeploymentPolicy {
+    pub fn new(
+        capabilities: template_deployment_policy::Capabilities,
+        preflight_options: template_deployment_policy::PreflightOptions,
+    ) -> Self {
+        Self {
+            capabilities,
+            preflight_options,
+        }
+    }
 }
 pub mod template_deployment_policy {
     use super::*;
@@ -1228,6 +1704,11 @@ pub struct ThirdPartyProviderAuthorization {
     #[serde(rename = "managedByTenantId", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_tenant_id: Option<String>,
 }
+impl ThirdPartyProviderAuthorization {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThrottlingMetric {
     #[serde(rename = "type")]
@@ -1235,6 +1716,15 @@ pub struct ThrottlingMetric {
     pub limit: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
+}
+impl ThrottlingMetric {
+    pub fn new(type_: throttling_metric::Type, limit: i64) -> Self {
+        Self {
+            type_,
+            limit,
+            interval: None,
+        }
+    }
 }
 pub mod throttling_metric {
     use super::*;
@@ -1252,6 +1742,15 @@ pub struct ThrottlingRule {
     #[serde(rename = "requiredFeatures", default, skip_serializing_if = "Vec::is_empty")]
     pub required_features: Vec<String>,
 }
+impl ThrottlingRule {
+    pub fn new(action: String, metrics: Vec<ThrottlingMetric>) -> Self {
+        Self {
+            action,
+            metrics,
+            required_features: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficRegionRolloutConfiguration {
     #[serde(flatten)]
@@ -1259,10 +1758,20 @@ pub struct TrafficRegionRolloutConfiguration {
     #[serde(rename = "waitDuration", default, skip_serializing_if = "Option::is_none")]
     pub wait_duration: Option<String>,
 }
+impl TrafficRegionRolloutConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficRegions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<String>,
+}
+impl TrafficRegions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TypedErrorInfo {
@@ -1270,4 +1779,9 @@ pub struct TypedErrorInfo {
     pub type_: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl TypedErrorInfo {
+    pub fn new(type_: String) -> Self {
+        Self { type_, info: None }
+    }
 }

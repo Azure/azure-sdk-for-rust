@@ -9,12 +9,25 @@ pub struct BlobDetails {
     #[serde(rename = "blobName", default, skip_serializing_if = "Option::is_none")]
     pub blob_name: Option<String>,
 }
+impl BlobDetails {
+    pub fn new(container_name: String) -> Self {
+        Self {
+            container_name,
+            blob_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ErrorData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDetails {
@@ -54,6 +67,30 @@ pub struct JobDetails {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
 }
+impl JobDetails {
+    pub fn new(container_uri: String, input_data_format: String, provider_id: String, target: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            container_uri,
+            input_data_uri: None,
+            input_data_format,
+            input_params: None,
+            provider_id,
+            target,
+            metadata: None,
+            output_data_uri: None,
+            output_data_format: None,
+            status: None,
+            creation_time: None,
+            begin_execution_time: None,
+            end_execution_time: None,
+            cancellation_time: None,
+            error_data: None,
+            tags: Vec::new(),
+        }
+    }
+}
 pub mod job_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -74,6 +111,11 @@ pub struct JobDetailsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl JobDetailsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonPatchDocument {
     pub op: json_patch_document::Op,
@@ -82,6 +124,16 @@ pub struct JsonPatchDocument {
     pub value: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub from: Option<String>,
+}
+impl JsonPatchDocument {
+    pub fn new(op: json_patch_document::Op, path: String) -> Self {
+        Self {
+            op,
+            path,
+            value: None,
+            from: None,
+        }
+    }
 }
 pub mod json_patch_document {
     use super::*;
@@ -111,6 +163,11 @@ pub struct ProviderStatus {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub targets: Vec<TargetStatus>,
 }
+impl ProviderStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod provider_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -126,6 +183,11 @@ pub struct ProviderStatusList {
     pub value: Vec<ProviderStatus>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ProviderStatusList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Quota {
@@ -143,6 +205,11 @@ pub struct Quota {
     pub limit: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub period: Option<quota::Period>,
+}
+impl Quota {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod quota {
     use super::*;
@@ -164,15 +231,30 @@ pub struct QuotaList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl QuotaList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorData>,
 }
+impl RestError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SasUriResponse {
     #[serde(rename = "sasUri", default, skip_serializing_if = "Option::is_none")]
     pub sas_uri: Option<String>,
+}
+impl SasUriResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetStatus {
@@ -184,6 +266,11 @@ pub struct TargetStatus {
     pub average_queue_time: Option<i64>,
     #[serde(rename = "statusPage", default, skip_serializing_if = "Option::is_none")]
     pub status_page: Option<String>,
+}
+impl TargetStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod target_status {
     use super::*;

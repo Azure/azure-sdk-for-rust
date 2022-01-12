@@ -7,6 +7,11 @@ pub struct ActivationKeyResult {
     #[serde(rename = "activationKey", default, skip_serializing_if = "Option::is_none")]
     pub activation_key: Option<String>,
 }
+impl ActivationKeyResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudManifestFileDeploymentData {
     #[serde(rename = "externalDsmsCertificates", default, skip_serializing_if = "Option::is_none")]
@@ -16,12 +21,22 @@ pub struct CloudManifestFileDeploymentData {
     #[serde(rename = "customEnvironmentEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub custom_environment_endpoints: Option<CloudManifestFileEnvironmentEndpoints>,
 }
+impl CloudManifestFileDeploymentData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudManifestFileEnvironmentEndpoints {
     #[serde(rename = "customCloudArmEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub custom_cloud_arm_endpoint: Option<String>,
     #[serde(rename = "externalDsmsEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub external_dsms_endpoint: Option<String>,
+}
+impl CloudManifestFileEnvironmentEndpoints {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudManifestFileProperties {
@@ -30,12 +45,22 @@ pub struct CloudManifestFileProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
 }
+impl CloudManifestFileProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudManifestFileResponse {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudManifestFileProperties>,
+}
+impl CloudManifestFileResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Compatibility {
@@ -47,6 +72,11 @@ pub struct Compatibility {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub issues: Vec<CompatibilityIssue>,
+}
+impl Compatibility {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CompatibilityIssue {
@@ -78,6 +108,11 @@ pub struct CustomerSubscription {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl CustomerSubscription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomerSubscriptionList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -85,10 +120,20 @@ pub struct CustomerSubscriptionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomerSubscription>,
 }
+impl CustomerSubscriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomerSubscriptionProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+impl CustomerSubscriptionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataDiskImage {
@@ -97,12 +142,22 @@ pub struct DataDiskImage {
     #[serde(rename = "sourceBlobSasUri", default, skip_serializing_if = "Option::is_none")]
     pub source_blob_sas_uri: Option<String>,
 }
+impl DataDiskImage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceConfiguration {
     #[serde(rename = "deviceVersion", default, skip_serializing_if = "Option::is_none")]
     pub device_version: Option<String>,
     #[serde(rename = "identitySystem", default, skip_serializing_if = "Option::is_none")]
     pub identity_system: Option<device_configuration::IdentitySystem>,
+}
+impl DeviceConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod device_configuration {
     use super::*;
@@ -125,6 +180,11 @@ pub struct Display {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl Display {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -134,10 +194,20 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
+impl ErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedProduct {
@@ -148,12 +218,22 @@ pub struct ExtendedProduct {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExtendedProductProperties>,
 }
+impl ExtendedProduct {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedProductProperties {
     #[serde(flatten)]
     pub virtual_machine_extension_product_properties: VirtualMachineExtensionProductProperties,
     #[serde(flatten)]
     pub virtual_machine_product_properties: VirtualMachineProductProperties,
+}
+impl ExtendedProductProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IconUris {
@@ -168,6 +248,11 @@ pub struct IconUris {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hero: Option<String>,
 }
+impl IconUris {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedSubscription {
     #[serde(flatten)]
@@ -175,10 +260,23 @@ pub struct LinkedSubscription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LinkedSubscriptionProperties>,
 }
+impl LinkedSubscription {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedSubscriptionParameter {
     pub properties: LinkedSubscriptionParameterProperties,
     pub location: linked_subscription_parameter::Location,
+}
+impl LinkedSubscriptionParameter {
+    pub fn new(properties: LinkedSubscriptionParameterProperties, location: linked_subscription_parameter::Location) -> Self {
+        Self { properties, location }
+    }
 }
 pub mod linked_subscription_parameter {
     use super::*;
@@ -194,6 +292,14 @@ pub struct LinkedSubscriptionParameterProperties {
     pub linked_subscription_id: String,
     #[serde(rename = "registrationResourceId")]
     pub registration_resource_id: String,
+}
+impl LinkedSubscriptionParameterProperties {
+    pub fn new(linked_subscription_id: String, registration_resource_id: String) -> Self {
+        Self {
+            linked_subscription_id,
+            registration_resource_id,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkedSubscriptionProperties {
@@ -212,12 +318,22 @@ pub struct LinkedSubscriptionProperties {
     #[serde(rename = "deviceConnectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub device_connection_status: Option<String>,
 }
+impl LinkedSubscriptionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkedSubscriptionsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LinkedSubscription>,
+}
+impl LinkedSubscriptionsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketplaceProductLogUpdate {
@@ -229,6 +345,11 @@ pub struct MarketplaceProductLogUpdate {
     pub error: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
+}
+impl MarketplaceProductLogUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperatingSystem {
@@ -245,6 +366,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -252,12 +378,22 @@ pub struct OperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsDiskImage {
     #[serde(rename = "operatingSystem", default, skip_serializing_if = "Option::is_none")]
     pub operating_system: Option<OperatingSystem>,
     #[serde(rename = "sourceBlobSasUri", default, skip_serializing_if = "Option::is_none")]
     pub source_blob_sas_uri: Option<String>,
+}
+impl OsDiskImage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Product {
@@ -268,6 +404,11 @@ pub struct Product {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl Product {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductLink {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -275,12 +416,22 @@ pub struct ProductLink {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
+impl ProductLink {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Product>,
+}
+impl ProductList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductLog {
@@ -306,6 +457,11 @@ pub struct ProductLog {
     pub error: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
+}
+impl ProductLog {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductNestedProperties {
@@ -346,10 +502,20 @@ pub struct ProductNestedProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compatibility: Option<Compatibility>,
 }
+impl ProductNestedProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl ProductProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
@@ -365,6 +531,14 @@ pub struct Registration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistrationProperties>,
 }
+impl Registration {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -372,10 +546,20 @@ pub struct RegistrationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Registration>,
 }
+impl RegistrationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationParameter {
     pub properties: RegistrationParameterProperties,
     pub location: registration_parameter::Location,
+}
+impl RegistrationParameter {
+    pub fn new(properties: RegistrationParameterProperties, location: registration_parameter::Location) -> Self {
+        Self { properties, location }
+    }
 }
 pub mod registration_parameter {
     use super::*;
@@ -390,6 +574,11 @@ pub struct RegistrationParameterProperties {
     #[serde(rename = "registrationToken")]
     pub registration_token: String,
 }
+impl RegistrationParameterProperties {
+    pub fn new(registration_token: String) -> Self {
+        Self { registration_token }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationProperties {
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
@@ -398,6 +587,11 @@ pub struct RegistrationProperties {
     pub cloud_id: Option<String>,
     #[serde(rename = "billingModel", default, skip_serializing_if = "Option::is_none")]
     pub billing_model: Option<String>,
+}
+impl RegistrationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -409,6 +603,11 @@ pub struct Resource {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
@@ -428,6 +627,20 @@ pub struct TrackedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
+impl TrackedResource {
+    pub fn new(location: tracked_resource::Location) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            kind: None,
+            system_data: None,
+            location,
+            tags: None,
+            etag: None,
+        }
+    }
+}
 pub mod tracked_resource {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -440,6 +653,11 @@ pub mod tracked_resource {
 pub struct Uri {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+}
+impl Uri {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineExtensionProductProperties {
@@ -458,6 +676,11 @@ pub struct VirtualMachineExtensionProductProperties {
     #[serde(rename = "vmScaleSetEnabled", default, skip_serializing_if = "Option::is_none")]
     pub vm_scale_set_enabled: Option<bool>,
 }
+impl VirtualMachineExtensionProductProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineProductProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -466,6 +689,11 @@ pub struct VirtualMachineProductProperties {
     pub os_disk_image: Option<OsDiskImage>,
     #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disk_images: Vec<DataDiskImage>,
+}
+impl VirtualMachineProductProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -481,6 +709,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

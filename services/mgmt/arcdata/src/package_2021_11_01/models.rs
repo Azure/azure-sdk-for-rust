@@ -9,6 +9,11 @@ pub struct BasicLoginInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
+impl BasicLoginInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataControllerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -37,6 +42,11 @@ pub struct DataControllerProperties {
     pub cluster_id: Option<String>,
     #[serde(rename = "extensionId", default, skip_serializing_if = "Option::is_none")]
     pub extension_id: Option<String>,
+}
+impl DataControllerProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod data_controller_properties {
     use super::*;
@@ -69,15 +79,34 @@ pub struct DataControllerResource {
     pub extended_location: Option<ExtendedLocation>,
     pub properties: DataControllerProperties,
 }
+impl DataControllerResource {
+    pub fn new(tracked_resource: TrackedResource, properties: DataControllerProperties) -> Self {
+        Self {
+            tracked_resource,
+            extended_location: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataControllerUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl DataControllerUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseBody {
@@ -90,12 +119,22 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseBody>,
 }
+impl ErrorResponseBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ExtendedLocationType>,
+}
+impl ExtendedLocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ExtendedLocationType {
@@ -108,15 +147,30 @@ pub struct K8sResourceRequirements {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limits: Option<serde_json::Value>,
 }
+impl K8sResourceRequirements {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct K8sScheduling {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<K8sSchedulingOptions>,
 }
+impl K8sScheduling {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct K8sSchedulingOptions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resources: Option<K8sResourceRequirements>,
+}
+impl K8sSchedulingOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsWorkspaceConfig {
@@ -125,6 +179,11 @@ pub struct LogAnalyticsWorkspaceConfig {
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
 }
+impl LogAnalyticsWorkspaceConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OnPremiseProperty {
     pub id: String,
@@ -132,6 +191,15 @@ pub struct OnPremiseProperty {
     pub public_signing_key: String,
     #[serde(rename = "signingCertificateThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub signing_certificate_thumbprint: Option<String>,
+}
+impl OnPremiseProperty {
+    pub fn new(id: String, public_signing_key: String) -> Self {
+        Self {
+            id,
+            public_signing_key,
+            signing_certificate_thumbprint: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -143,6 +211,17 @@ pub struct Operation {
     pub is_data_action: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+}
+impl Operation {
+    pub fn new(name: String, display: OperationDisplay, is_data_action: bool) -> Self {
+        Self {
+            name,
+            display,
+            origin: None,
+            is_data_action,
+            properties: None,
+        }
+    }
 }
 pub mod operation {
     use super::*;
@@ -161,6 +240,16 @@ pub struct OperationDisplay {
     pub operation: String,
     pub description: String,
 }
+impl OperationDisplay {
+    pub fn new(provider: String, resource: String, operation: String, description: String) -> Self {
+        Self {
+            provider,
+            resource,
+            operation,
+            description,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -168,12 +257,22 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageOfDataControllerResource {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DataControllerResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PageOfDataControllerResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -186,6 +285,11 @@ pub struct Resource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlManagedInstance {
     #[serde(flatten)]
@@ -196,10 +300,25 @@ pub struct SqlManagedInstance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<SqlManagedInstanceSku>,
 }
+impl SqlManagedInstance {
+    pub fn new(tracked_resource: TrackedResource, properties: SqlManagedInstanceProperties) -> Self {
+        Self {
+            tracked_resource,
+            properties,
+            extended_location: None,
+            sku: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlManagedInstanceK8sRaw {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub spec: Option<SqlManagedInstanceK8sSpec>,
+}
+impl SqlManagedInstanceK8sRaw {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlManagedInstanceK8sSpec {
@@ -208,12 +327,22 @@ pub struct SqlManagedInstanceK8sSpec {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replicas: Option<i32>,
 }
+impl SqlManagedInstanceK8sSpec {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlManagedInstanceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SqlManagedInstance>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SqlManagedInstanceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlManagedInstanceProperties {
@@ -239,6 +368,11 @@ pub struct SqlManagedInstanceProperties {
     pub cluster_id: Option<String>,
     #[serde(rename = "extensionId", default, skip_serializing_if = "Option::is_none")]
     pub extension_id: Option<String>,
+}
+impl SqlManagedInstanceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod sql_managed_instance_properties {
     use super::*;
@@ -268,6 +402,18 @@ pub struct SqlManagedInstanceSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
+impl SqlManagedInstanceSku {
+    pub fn new(name: sql_managed_instance_sku::Name) -> Self {
+        Self {
+            name,
+            tier: None,
+            dev: None,
+            size: None,
+            family: None,
+            capacity: None,
+        }
+    }
+}
 pub mod sql_managed_instance_sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -291,6 +437,11 @@ pub struct SqlManagedInstanceUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl SqlManagedInstanceUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlServerInstance {
     #[serde(flatten)]
@@ -298,12 +449,25 @@ pub struct SqlServerInstance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SqlServerInstanceProperties>,
 }
+impl SqlServerInstance {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlServerInstanceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SqlServerInstance>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SqlServerInstanceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlServerInstanceProperties {
@@ -340,6 +504,29 @@ pub struct SqlServerInstanceProperties {
     pub azure_defender_status: Option<sql_server_instance_properties::AzureDefenderStatus>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+}
+impl SqlServerInstanceProperties {
+    pub fn new(container_resource_id: String, status: sql_server_instance_properties::Status) -> Self {
+        Self {
+            version: None,
+            edition: None,
+            container_resource_id,
+            create_time: None,
+            v_core: None,
+            status,
+            patch_level: None,
+            collation: None,
+            current_version: None,
+            instance_name: None,
+            tcp_dynamic_ports: None,
+            tcp_static_ports: None,
+            product_id: None,
+            license_type: None,
+            azure_defender_status_last_updated: None,
+            azure_defender_status: None,
+            provisioning_state: None,
+        }
+    }
 }
 pub mod sql_server_instance_properties {
     use super::*;
@@ -387,6 +574,11 @@ pub struct SqlServerInstanceUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl SqlServerInstanceUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
@@ -394,6 +586,15 @@ pub struct TrackedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
+}
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadServicePrincipal {
@@ -406,6 +607,11 @@ pub struct UploadServicePrincipal {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
 }
+impl UploadServicePrincipal {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadWatermark {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -414,6 +620,11 @@ pub struct UploadWatermark {
     pub logs: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub usages: Option<String>,
+}
+impl UploadWatermark {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -429,6 +640,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

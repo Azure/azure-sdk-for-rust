@@ -7,6 +7,11 @@ pub struct AccessToken {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
 }
+impl AccessToken {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16,10 +21,20 @@ pub struct AcrErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<serde_json::Value>,
 }
+impl AcrErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrErrors {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<AcrErrorInfo>,
+}
+impl AcrErrors {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrManifestAttributes {
@@ -29,6 +44,11 @@ pub struct AcrManifestAttributes {
     pub image_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub manifest: Option<AcrManifestAttributesBase>,
+}
+impl AcrManifestAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrManifestAttributesBase {
@@ -53,6 +73,11 @@ pub struct AcrManifestAttributesBase {
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
+impl AcrManifestAttributesBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrManifests {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -61,6 +86,11 @@ pub struct AcrManifests {
     pub image_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub manifests: Vec<AcrManifestAttributesBase>,
+}
+impl AcrManifests {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrRepositoryTags {
@@ -71,6 +101,11 @@ pub struct AcrRepositoryTags {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<AcrTagAttributesBase>,
 }
+impl AcrRepositoryTags {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrTagAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -79,6 +114,11 @@ pub struct AcrTagAttributes {
     pub image_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<AcrTagAttributesBase>,
+}
+impl AcrTagAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcrTagAttributesBase {
@@ -95,6 +135,11 @@ pub struct AcrTagAttributesBase {
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
+impl AcrTagAttributesBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChangeableAttributes {
     #[serde(rename = "deleteEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -106,6 +151,11 @@ pub struct ChangeableAttributes {
     #[serde(rename = "readEnabled", default, skip_serializing_if = "Option::is_none")]
     pub read_enabled: Option<bool>,
 }
+impl ChangeableAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedRepository {
     #[serde(rename = "manifestsDeleted", default, skip_serializing_if = "Vec::is_empty")]
@@ -113,15 +163,30 @@ pub struct DeletedRepository {
     #[serde(rename = "tagsDeleted", default, skip_serializing_if = "Vec::is_empty")]
     pub tags_deleted: Vec<String>,
 }
+impl DeletedRepository {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FsLayer {
     #[serde(rename = "blobSum", default, skip_serializing_if = "Option::is_none")]
     pub blob_sum: Option<String>,
 }
+impl FsLayer {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct History {
     #[serde(rename = "v1Compatibility", default, skip_serializing_if = "Option::is_none")]
     pub v1_compatibility: Option<String>,
+}
+impl History {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageSignature {
@@ -132,12 +197,22 @@ pub struct ImageSignature {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protected: Option<String>,
 }
+impl ImageSignature {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Jwk {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub jwk: Option<JwkHeader>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alg: Option<String>,
+}
+impl Jwk {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JwkHeader {
@@ -151,6 +226,11 @@ pub struct JwkHeader {
     pub x: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub y: Option<String>,
+}
+impl JwkHeader {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Manifest {
@@ -175,12 +255,22 @@ pub struct Manifest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub signatures: Vec<ImageSignature>,
 }
+impl Manifest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManifestAttributesManifest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub references: Vec<ManifestAttributesManifestReferences>,
     #[serde(rename = "quarantineTag", default, skip_serializing_if = "Option::is_none")]
     pub quarantine_tag: Option<String>,
+}
+impl ManifestAttributesManifest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManifestAttributesManifestReferences {
@@ -190,6 +280,11 @@ pub struct ManifestAttributesManifestReferences {
     pub architecture: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub os: Option<String>,
+}
+impl ManifestAttributesManifestReferences {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManifestChangeableAttributes {
@@ -206,15 +301,30 @@ pub struct ManifestChangeableAttributes {
     #[serde(rename = "quarantineDetails", default, skip_serializing_if = "Option::is_none")]
     pub quarantine_details: Option<String>,
 }
+impl ManifestChangeableAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RefreshToken {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<String>,
 }
+impl RefreshToken {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Repositories {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub repositories: Vec<String>,
+}
+impl Repositories {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RepositoryAttributes {
@@ -233,12 +343,22 @@ pub struct RepositoryAttributes {
     #[serde(rename = "changeableAttributes", default, skip_serializing_if = "Option::is_none")]
     pub changeable_attributes: Option<ChangeableAttributes>,
 }
+impl RepositoryAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RepositoryTags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+}
+impl RepositoryTags {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagAttributes {
@@ -249,10 +369,20 @@ pub struct TagAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<TagAttributesTag>,
 }
+impl TagAttributes {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagAttributesTag {
     #[serde(rename = "signatureRecord", default, skip_serializing_if = "Option::is_none")]
     pub signature_record: Option<String>,
+}
+impl TagAttributesTag {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct V2Descriptor {
@@ -262,4 +392,9 @@ pub struct V2Descriptor {
     pub size: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
+}
+impl V2Descriptor {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

@@ -17,6 +17,11 @@ pub struct ActionDetail {
     #[serde(rename = "Detail", default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
 }
+impl ActionDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroup {
     #[serde(rename = "groupShortName")]
@@ -45,6 +50,25 @@ pub struct ActionGroup {
     #[serde(rename = "eventHubReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub event_hub_receivers: Vec<EventHubReceiver>,
 }
+impl ActionGroup {
+    pub fn new(group_short_name: String, enabled: bool) -> Self {
+        Self {
+            group_short_name,
+            enabled,
+            email_receivers: Vec::new(),
+            sms_receivers: Vec::new(),
+            webhook_receivers: Vec::new(),
+            itsm_receivers: Vec::new(),
+            azure_app_push_receivers: Vec::new(),
+            automation_runbook_receivers: Vec::new(),
+            voice_receivers: Vec::new(),
+            logic_app_receivers: Vec::new(),
+            azure_function_receivers: Vec::new(),
+            arm_role_receivers: Vec::new(),
+            event_hub_receivers: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -52,10 +76,20 @@ pub struct ActionGroupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ActionGroupList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl ActionGroupPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatchBody {
@@ -64,12 +98,25 @@ pub struct ActionGroupPatchBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroupPatch>,
 }
+impl ActionGroupPatchBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
     pub azure_resource: AzureResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroup>,
+}
+impl ActionGroupResource {
+    pub fn new(azure_resource: AzureResource) -> Self {
+        Self {
+            azure_resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArmRoleReceiver {
@@ -78,6 +125,15 @@ pub struct ArmRoleReceiver {
     pub role_id: String,
     #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
     pub use_common_alert_schema: Option<bool>,
+}
+impl ArmRoleReceiver {
+    pub fn new(name: String, role_id: String) -> Self {
+        Self {
+            name,
+            role_id,
+            use_common_alert_schema: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRunbookReceiver {
@@ -96,11 +152,29 @@ pub struct AutomationRunbookReceiver {
     #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
     pub use_common_alert_schema: Option<bool>,
 }
+impl AutomationRunbookReceiver {
+    pub fn new(automation_account_id: String, runbook_name: String, webhook_resource_id: String, is_global_runbook: bool) -> Self {
+        Self {
+            automation_account_id,
+            runbook_name,
+            webhook_resource_id,
+            is_global_runbook,
+            name: None,
+            service_uri: None,
+            use_common_alert_schema: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureAppPushReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
     pub email_address: String,
+}
+impl AzureAppPushReceiver {
+    pub fn new(name: String, email_address: String) -> Self {
+        Self { name, email_address }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
@@ -113,6 +187,17 @@ pub struct AzureFunctionReceiver {
     pub http_trigger_url: String,
     #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
     pub use_common_alert_schema: Option<bool>,
+}
+impl AzureFunctionReceiver {
+    pub fn new(name: String, function_app_resource_id: String, function_name: String, http_trigger_url: String) -> Self {
+        Self {
+            name,
+            function_app_resource_id,
+            function_name,
+            http_trigger_url,
+            use_common_alert_schema: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResource {
@@ -130,12 +215,30 @@ pub struct AzureResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl AzureResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            kind: None,
+            identity: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Context {
     #[serde(rename = "NotificationSource", default, skip_serializing_if = "Option::is_none")]
     pub notification_source: Option<String>,
     #[serde(rename = "ContextType", default, skip_serializing_if = "Option::is_none")]
     pub context_type: Option<String>,
+}
+impl Context {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailReceiver {
@@ -147,10 +250,25 @@ pub struct EmailReceiver {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
+impl EmailReceiver {
+    pub fn new(name: String, email_address: String) -> Self {
+        Self {
+            name,
+            email_address,
+            use_common_alert_schema: None,
+            status: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {
     #[serde(rename = "receiverName")]
     pub receiver_name: String,
+}
+impl EnableRequest {
+    pub fn new(receiver_name: String) -> Self {
+        Self { receiver_name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -158,6 +276,11 @@ pub struct ErrorResponse {
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubReceiver {
@@ -173,6 +296,18 @@ pub struct EventHubReceiver {
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
+impl EventHubReceiver {
+    pub fn new(name: String, event_hub_name_space: String, event_hub_name: String, subscription_id: String) -> Self {
+        Self {
+            name,
+            event_hub_name_space,
+            event_hub_name,
+            use_common_alert_schema: None,
+            tenant_id: None,
+            subscription_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItsmReceiver {
     pub name: String,
@@ -184,6 +319,17 @@ pub struct ItsmReceiver {
     pub ticket_configuration: String,
     pub region: String,
 }
+impl ItsmReceiver {
+    pub fn new(name: String, workspace_id: String, connection_id: String, ticket_configuration: String, region: String) -> Self {
+        Self {
+            name,
+            workspace_id,
+            connection_id,
+            ticket_configuration,
+            region,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogicAppReceiver {
     pub name: String,
@@ -193,6 +339,16 @@ pub struct LogicAppReceiver {
     pub callback_url: String,
     #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
     pub use_common_alert_schema: Option<bool>,
+}
+impl LogicAppReceiver {
+    pub fn new(name: String, resource_id: String, callback_url: String) -> Self {
+        Self {
+            name,
+            resource_id,
+            callback_url,
+            use_common_alert_schema: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotificationRequestBody {
@@ -221,6 +377,24 @@ pub struct NotificationRequestBody {
     #[serde(rename = "eventHubReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub event_hub_receivers: Vec<EventHubReceiver>,
 }
+impl NotificationRequestBody {
+    pub fn new(alert_type: String) -> Self {
+        Self {
+            alert_type,
+            email_receivers: Vec::new(),
+            sms_receivers: Vec::new(),
+            webhook_receivers: Vec::new(),
+            itsm_receivers: Vec::new(),
+            azure_app_push_receivers: Vec::new(),
+            automation_runbook_receivers: Vec::new(),
+            voice_receivers: Vec::new(),
+            logic_app_receivers: Vec::new(),
+            azure_function_receivers: Vec::new(),
+            arm_role_receivers: Vec::new(),
+            event_hub_receivers: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReceiverStatus {
     NotSpecified,
@@ -237,6 +411,16 @@ pub struct SmsReceiver {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
+impl SmsReceiver {
+    pub fn new(name: String, country_code: String, phone_number: String) -> Self {
+        Self {
+            name,
+            country_code,
+            phone_number,
+            status: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TestNotificationDetailsResponse {
     #[serde(rename = "Context", default, skip_serializing_if = "Option::is_none")]
@@ -250,6 +434,17 @@ pub struct TestNotificationDetailsResponse {
     #[serde(rename = "ActionDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub action_details: Vec<ActionDetail>,
 }
+impl TestNotificationDetailsResponse {
+    pub fn new(state: String) -> Self {
+        Self {
+            context: None,
+            state,
+            completed_time: None,
+            created_time: None,
+            action_details: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TestNotificationResponse {
     #[serde(rename = "notificationId")]
@@ -259,6 +454,15 @@ pub struct TestNotificationResponse {
     #[serde(rename = "createdTime")]
     pub created_time: String,
 }
+impl TestNotificationResponse {
+    pub fn new(notification_id: String, correlation_id: String, created_time: String) -> Self {
+        Self {
+            notification_id,
+            correlation_id,
+            created_time,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VoiceReceiver {
     pub name: String,
@@ -266,6 +470,15 @@ pub struct VoiceReceiver {
     pub country_code: String,
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
+}
+impl VoiceReceiver {
+    pub fn new(name: String, country_code: String, phone_number: String) -> Self {
+        Self {
+            name,
+            country_code,
+            phone_number,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookReceiver {
@@ -282,4 +495,17 @@ pub struct WebhookReceiver {
     pub identifier_uri: Option<String>,
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+impl WebhookReceiver {
+    pub fn new(name: String, service_uri: String) -> Self {
+        Self {
+            name,
+            service_uri,
+            use_common_alert_schema: None,
+            use_aad_auth: None,
+            object_id: None,
+            identifier_uri: None,
+            tenant_id: None,
+        }
+    }
 }

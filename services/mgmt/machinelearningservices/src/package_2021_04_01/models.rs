@@ -29,6 +29,24 @@ pub struct AciServiceCreateRequest {
     #[serde(rename = "encryptionProperties", default, skip_serializing_if = "Option::is_none")]
     pub encryption_properties: Option<serde_json::Value>,
 }
+impl AciServiceCreateRequest {
+    pub fn new(create_service_request: CreateServiceRequest) -> Self {
+        Self {
+            create_service_request,
+            container_resource_requirements: None,
+            auth_enabled: None,
+            ssl_enabled: None,
+            app_insights_enabled: None,
+            data_collection: None,
+            ssl_certificate: None,
+            ssl_key: None,
+            cname: None,
+            dns_name_label: None,
+            vnet_configuration: None,
+            encryption_properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AciServiceResponse {
     #[serde(flatten)]
@@ -70,12 +88,42 @@ pub struct AciServiceResponse {
     #[serde(rename = "encryptionProperties", default, skip_serializing_if = "Option::is_none")]
     pub encryption_properties: Option<serde_json::Value>,
 }
+impl AciServiceResponse {
+    pub fn new(service_response_base: ServiceResponseBase) -> Self {
+        Self {
+            service_response_base,
+            container_resource_requirements: None,
+            scoring_uri: None,
+            location: None,
+            auth_enabled: None,
+            ssl_enabled: None,
+            app_insights_enabled: None,
+            data_collection: None,
+            ssl_certificate: None,
+            ssl_key: None,
+            cname: None,
+            public_ip: None,
+            public_fqdn: None,
+            swagger_uri: None,
+            model_config_map: None,
+            models: Vec::new(),
+            environment_image_request: None,
+            vnet_configuration: None,
+            encryption_properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Aks {
     #[serde(flatten)]
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<aks::Properties>,
+}
+impl Aks {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod aks {
     use super::*;
@@ -99,6 +147,11 @@ pub mod aks {
         pub load_balancer_type: Option<properties::LoadBalancerType>,
         #[serde(rename = "loadBalancerSubnet", default, skip_serializing_if = "Option::is_none")]
         pub load_balancer_subnet: Option<String>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     pub mod properties {
         use super::*;
@@ -136,6 +189,11 @@ pub struct AksReplicaStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
 }
+impl AksReplicaStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksServiceCreateRequest {
     #[serde(flatten)]
@@ -166,6 +224,26 @@ pub struct AksServiceCreateRequest {
     pub liveness_probe_requirements: Option<serde_json::Value>,
     #[serde(rename = "aadAuthEnabled", default, skip_serializing_if = "Option::is_none")]
     pub aad_auth_enabled: Option<bool>,
+}
+impl AksServiceCreateRequest {
+    pub fn new(create_endpoint_variant_request: CreateEndpointVariantRequest) -> Self {
+        Self {
+            create_endpoint_variant_request,
+            num_replicas: None,
+            data_collection: None,
+            compute_name: None,
+            app_insights_enabled: None,
+            auto_scaler: None,
+            container_resource_requirements: None,
+            max_concurrent_requests_per_container: None,
+            max_queue_wait_ms: None,
+            namespace: None,
+            scoring_timeout_ms: None,
+            auth_enabled: None,
+            liveness_probe_requirements: None,
+            aad_auth_enabled: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksServiceResponse {
@@ -210,6 +288,32 @@ pub struct AksServiceResponse {
     #[serde(rename = "environmentImageRequest", default, skip_serializing_if = "Option::is_none")]
     pub environment_image_request: Option<serde_json::Value>,
 }
+impl AksServiceResponse {
+    pub fn new(aks_variant_response: AksVariantResponse) -> Self {
+        Self {
+            aks_variant_response,
+            models: Vec::new(),
+            container_resource_requirements: None,
+            max_concurrent_requests_per_container: None,
+            max_queue_wait_ms: None,
+            compute_name: None,
+            namespace: None,
+            num_replicas: None,
+            data_collection: None,
+            app_insights_enabled: None,
+            auto_scaler: None,
+            scoring_uri: None,
+            deployment_status: None,
+            scoring_timeout_ms: None,
+            liveness_probe_requirements: None,
+            auth_enabled: None,
+            aad_auth_enabled: None,
+            swagger_uri: None,
+            model_config_map: None,
+            environment_image_request: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksVariantResponse {
     #[serde(flatten)]
@@ -220,6 +324,16 @@ pub struct AksVariantResponse {
     pub traffic_percentile: Option<f32>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<aks_variant_response::Type>,
+}
+impl AksVariantResponse {
+    pub fn new(service_response_base: ServiceResponseBase) -> Self {
+        Self {
+            service_response_base,
+            is_default: None,
+            traffic_percentile: None,
+            type_: None,
+        }
+    }
 }
 pub mod aks_variant_response {
     use super::*;
@@ -240,6 +354,16 @@ pub struct AksComputeSecrets {
     #[serde(rename = "imagePullSecretName", default, skip_serializing_if = "Option::is_none")]
     pub image_pull_secret_name: Option<String>,
 }
+impl AksComputeSecrets {
+    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+        Self {
+            compute_secrets,
+            user_kube_config: None,
+            admin_kube_config: None,
+            image_pull_secret_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AksNetworkingConfiguration {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
@@ -251,12 +375,22 @@ pub struct AksNetworkingConfiguration {
     #[serde(rename = "dockerBridgeCidr", default, skip_serializing_if = "Option::is_none")]
     pub docker_bridge_cidr: Option<String>,
 }
+impl AksNetworkingConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AmlCompute {
     #[serde(flatten)]
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<aml_compute::Properties>,
+}
+impl AmlCompute {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod aml_compute {
     use super::*;
@@ -294,6 +428,11 @@ pub mod aml_compute {
         pub node_state_counts: Option<NodeStateCounts>,
         #[serde(rename = "enableNodePublicIp", default, skip_serializing_if = "Option::is_none")]
         pub enable_node_public_ip: Option<bool>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     pub mod properties {
         use super::*;
@@ -345,6 +484,11 @@ pub struct AmlComputeNodeInformation {
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
 }
+impl AmlComputeNodeInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod aml_compute_node_information {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -372,6 +516,15 @@ pub struct AmlComputeNodesInformation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl AmlComputeNodesInformation {
+    pub fn new(compute_nodes_information: ComputeNodesInformation) -> Self {
+        Self {
+            compute_nodes_information,
+            nodes: Vec::new(),
+            next_link: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AmlUserFeature {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -381,12 +534,22 @@ pub struct AmlUserFeature {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl AmlUserFeature {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssignedUser {
     #[serde(rename = "objectId")]
     pub object_id: String,
     #[serde(rename = "tenantId")]
     pub tenant_id: String,
+}
+impl AssignedUser {
+    pub fn new(object_id: String, tenant_id: String) -> Self {
+        Self { object_id, tenant_id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthKeys {
@@ -395,12 +558,22 @@ pub struct AuthKeys {
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
+impl AuthKeys {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoPauseProperties {
     #[serde(rename = "delayInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub delay_in_minutes: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl AutoPauseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaleProperties {
@@ -410,6 +583,11 @@ pub struct AutoScaleProperties {
     pub enabled: Option<bool>,
     #[serde(rename = "maxNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub max_node_count: Option<i32>,
+}
+impl AutoScaleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaler {
@@ -424,15 +602,30 @@ pub struct AutoScaler {
     #[serde(rename = "refreshPeriodInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub refresh_period_in_seconds: Option<i32>,
 }
+impl AutoScaler {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterUpdateProperties>,
 }
+impl ClusterUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpdateProperties {
     #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
     pub scale_settings: Option<ScaleSettings>,
+}
+impl ClusterUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compute {
@@ -457,6 +650,22 @@ pub struct Compute {
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
 }
+impl Compute {
+    pub fn new(compute_type: ComputeType) -> Self {
+        Self {
+            compute_type,
+            compute_location: None,
+            provisioning_state: None,
+            description: None,
+            created_on: None,
+            modified_on: None,
+            resource_id: None,
+            provisioning_errors: Vec::new(),
+            is_attached_compute: None,
+            disable_local_auth: None,
+        }
+    }
+}
 pub mod compute {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -476,6 +685,11 @@ pub struct ComputeInstance {
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<compute_instance::Properties>,
+}
+impl ComputeInstance {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod compute_instance {
     use super::*;
@@ -508,6 +722,11 @@ pub mod compute_instance {
         #[serde(rename = "lastOperation", default, skip_serializing_if = "Option::is_none")]
         pub last_operation: Option<ComputeInstanceLastOperation>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod properties {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -539,12 +758,22 @@ pub struct ComputeInstanceApplication {
     #[serde(rename = "endpointUri", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_uri: Option<String>,
 }
+impl ComputeInstanceApplication {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeInstanceConnectivityEndpoints {
     #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<String>,
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
+}
+impl ComputeInstanceConnectivityEndpoints {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeInstanceCreatedBy {
@@ -555,6 +784,11 @@ pub struct ComputeInstanceCreatedBy {
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 }
+impl ComputeInstanceCreatedBy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeInstanceLastOperation {
     #[serde(rename = "operationName", default, skip_serializing_if = "Option::is_none")]
@@ -563,6 +797,11 @@ pub struct ComputeInstanceLastOperation {
     pub operation_time: Option<String>,
     #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
     pub operation_status: Option<compute_instance_last_operation::OperationStatus>,
+}
+impl ComputeInstanceLastOperation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod compute_instance_last_operation {
     use super::*;
@@ -597,6 +836,11 @@ pub struct ComputeInstanceSshSettings {
     pub ssh_port: Option<i32>,
     #[serde(rename = "adminPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub admin_public_key: Option<String>,
+}
+impl ComputeInstanceSshSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod compute_instance_ssh_settings {
     use super::*;
@@ -636,6 +880,14 @@ pub struct ComputeNodesInformation {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ComputeNodesInformation {
+    pub fn new(compute_type: ComputeType) -> Self {
+        Self {
+            compute_type,
+            next_link: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeResource {
     #[serde(flatten)]
@@ -643,10 +895,20 @@ pub struct ComputeResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Compute>,
 }
+impl ComputeResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeSecrets {
     #[serde(rename = "computeType")]
     pub compute_type: ComputeType,
+}
+impl ComputeSecrets {
+    pub fn new(compute_type: ComputeType) -> Self {
+        Self { compute_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComputeType {
@@ -671,10 +933,20 @@ pub struct ContainerRegistry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
+impl ContainerRegistry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
+}
+impl ContainerRegistryResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerResourceRequirements {
@@ -691,10 +963,20 @@ pub struct ContainerResourceRequirements {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fpga: Option<i32>,
 }
+impl ContainerResourceRequirements {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CosmosDbSettings {
     #[serde(rename = "collectionsThroughput", default, skip_serializing_if = "Option::is_none")]
     pub collections_throughput: Option<i32>,
+}
+impl CosmosDbSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateEndpointVariantRequest {
@@ -706,6 +988,16 @@ pub struct CreateEndpointVariantRequest {
     pub traffic_percentile: Option<f32>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<create_endpoint_variant_request::Type>,
+}
+impl CreateEndpointVariantRequest {
+    pub fn new(create_service_request: CreateServiceRequest) -> Self {
+        Self {
+            create_service_request,
+            is_default: None,
+            traffic_percentile: None,
+            type_: None,
+        }
+    }
 }
 pub mod create_endpoint_variant_request {
     use super::*;
@@ -732,6 +1024,19 @@ pub struct CreateServiceRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
+impl CreateServiceRequest {
+    pub fn new(compute_type: create_service_request::ComputeType) -> Self {
+        Self {
+            description: None,
+            kv_tags: None,
+            properties: None,
+            keys: None,
+            compute_type,
+            environment_image_request: None,
+            location: None,
+        }
+    }
+}
 pub mod create_service_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -747,12 +1052,22 @@ pub struct DataFactory {
     #[serde(flatten)]
     pub compute: Compute,
 }
+impl DataFactory {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataLakeAnalytics {
     #[serde(flatten)]
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<data_lake_analytics::Properties>,
+}
+impl DataLakeAnalytics {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod data_lake_analytics {
     use super::*;
@@ -761,6 +1076,11 @@ pub mod data_lake_analytics {
         #[serde(rename = "dataLakeStoreAccountName", default, skip_serializing_if = "Option::is_none")]
         pub data_lake_store_account_name: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Databricks {
@@ -768,6 +1088,11 @@ pub struct Databricks {
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<databricks::Properties>,
+}
+impl Databricks {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod databricks {
     use super::*;
@@ -778,6 +1103,11 @@ pub mod databricks {
         #[serde(rename = "workspaceUrl", default, skip_serializing_if = "Option::is_none")]
         pub workspace_url: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabricksComputeSecrets {
@@ -786,12 +1116,25 @@ pub struct DatabricksComputeSecrets {
     #[serde(rename = "databricksAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub databricks_access_token: Option<String>,
 }
+impl DatabricksComputeSecrets {
+    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+        Self {
+            compute_secrets,
+            databricks_access_token: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatasetReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl DatasetReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionProperties {
@@ -802,6 +1145,15 @@ pub struct EncryptionProperties {
     #[serde(rename = "keyVersion")]
     pub key_version: String,
 }
+impl EncryptionProperties {
+    pub fn new(vault_base_url: String, key_name: String, key_version: String) -> Self {
+        Self {
+            vault_base_url,
+            key_name,
+            key_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionProperty {
     pub status: encryption_property::Status,
@@ -809,6 +1161,15 @@ pub struct EncryptionProperty {
     pub identity: Option<IdentityForCmk>,
     #[serde(rename = "keyVaultProperties")]
     pub key_vault_properties: KeyVaultProperties,
+}
+impl EncryptionProperty {
+    pub fn new(status: encryption_property::Status, key_vault_properties: KeyVaultProperties) -> Self {
+        Self {
+            status,
+            identity: None,
+            key_vault_properties,
+        }
+    }
 }
 pub mod encryption_property {
     use super::*;
@@ -833,6 +1194,11 @@ pub struct EnvironmentImageRequest {
     #[serde(rename = "environmentReference", default, skip_serializing_if = "Option::is_none")]
     pub environment_reference: Option<serde_json::Value>,
 }
+impl EnvironmentImageRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentImageResponse {
     #[serde(rename = "driverProgram", default, skip_serializing_if = "Option::is_none")]
@@ -848,6 +1214,11 @@ pub struct EnvironmentImageResponse {
     #[serde(rename = "environmentReference", default, skip_serializing_if = "Option::is_none")]
     pub environment_reference: Option<serde_json::Value>,
 }
+impl EnvironmentImageResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -855,10 +1226,20 @@ pub struct EnvironmentReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
+impl EnvironmentReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
     pub code: String,
     pub message: String,
+}
+impl ErrorDetail {
+    pub fn new(code: String, message: String) -> Self {
+        Self { code, message }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -871,6 +1252,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EstimatedVmPrice {
     #[serde(rename = "retailPrice")]
@@ -879,6 +1265,15 @@ pub struct EstimatedVmPrice {
     pub os_type: estimated_vm_price::OsType,
     #[serde(rename = "vmTier")]
     pub vm_tier: estimated_vm_price::VmTier,
+}
+impl EstimatedVmPrice {
+    pub fn new(retail_price: f64, os_type: estimated_vm_price::OsType, vm_tier: estimated_vm_price::VmTier) -> Self {
+        Self {
+            retail_price,
+            os_type,
+            vm_tier,
+        }
+    }
 }
 pub mod estimated_vm_price {
     use super::*;
@@ -902,6 +1297,19 @@ pub struct EstimatedVmPrices {
     pub unit_of_measure: estimated_vm_prices::UnitOfMeasure,
     pub values: Vec<EstimatedVmPrice>,
 }
+impl EstimatedVmPrices {
+    pub fn new(
+        billing_currency: estimated_vm_prices::BillingCurrency,
+        unit_of_measure: estimated_vm_prices::UnitOfMeasure,
+        values: Vec<EstimatedVmPrice>,
+    ) -> Self {
+        Self {
+            billing_currency,
+            unit_of_measure,
+            values,
+        }
+    }
+}
 pub mod estimated_vm_prices {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -921,6 +1329,11 @@ pub struct HdInsight {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hd_insight::Properties>,
 }
+impl HdInsight {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
+}
 pub mod hd_insight {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -931,6 +1344,11 @@ pub mod hd_insight {
         pub address: Option<String>,
         #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
         pub administrator_account: Option<VirtualMachineSshCredentials>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -943,6 +1361,11 @@ pub struct Identity {
     pub type_: Option<identity::Type>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedIdentities>,
+}
+impl Identity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod identity {
     use super::*;
@@ -959,6 +1382,11 @@ pub mod identity {
 pub struct IdentityForCmk {
     #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identity: Option<String>,
+}
+impl IdentityForCmk {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IdentityType {
@@ -978,6 +1406,11 @@ pub struct ImageAsset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unpack: Option<bool>,
 }
+impl ImageAsset {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultProperties {
     #[serde(rename = "keyVaultArmId")]
@@ -987,12 +1420,26 @@ pub struct KeyVaultProperties {
     #[serde(rename = "identityClientId", default, skip_serializing_if = "Option::is_none")]
     pub identity_client_id: Option<String>,
 }
+impl KeyVaultProperties {
+    pub fn new(key_vault_arm_id: String, key_identifier: String) -> Self {
+        Self {
+            key_vault_arm_id,
+            key_identifier,
+            identity_client_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListAmlUserFeatureResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AmlUserFeature>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ListAmlUserFeatureResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListNotebookKeysResult {
@@ -1001,10 +1448,20 @@ pub struct ListNotebookKeysResult {
     #[serde(rename = "secondaryAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_access_key: Option<String>,
 }
+impl ListNotebookKeysResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListStorageAccountKeysResult {
     #[serde(rename = "userStorageKey", default, skip_serializing_if = "Option::is_none")]
     pub user_storage_key: Option<String>,
+}
+impl ListStorageAccountKeysResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListUsagesResult {
@@ -1012,6 +1469,11 @@ pub struct ListUsagesResult {
     pub value: Vec<Usage>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ListUsagesResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListWorkspaceKeysResult {
@@ -1026,12 +1488,22 @@ pub struct ListWorkspaceKeysResult {
     #[serde(rename = "notebookAccessKeys", default, skip_serializing_if = "Option::is_none")]
     pub notebook_access_keys: Option<ListNotebookKeysResult>,
 }
+impl ListWorkspaceKeysResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListWorkspaceQuotas {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceQuota>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ListWorkspaceQuotas {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LivenessProbeRequirements {
@@ -1046,10 +1518,20 @@ pub struct LivenessProbeRequirements {
     #[serde(rename = "initialDelaySeconds", default, skip_serializing_if = "Option::is_none")]
     pub initial_delay_seconds: Option<i32>,
 }
+impl LivenessProbeRequirements {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineLearningServiceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl MachineLearningServiceError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Model {
@@ -1094,12 +1576,44 @@ pub struct Model {
     #[serde(rename = "resourceRequirements", default, skip_serializing_if = "Option::is_none")]
     pub resource_requirements: Option<ContainerResourceRequirements>,
 }
+impl Model {
+    pub fn new(name: String, url: String, mime_type: String) -> Self {
+        Self {
+            id: None,
+            name,
+            framework: None,
+            framework_version: None,
+            version: None,
+            datasets: Vec::new(),
+            url,
+            mime_type,
+            description: None,
+            created_time: None,
+            modified_time: None,
+            unpack: None,
+            parent_model_id: None,
+            run_id: None,
+            experiment_name: None,
+            kv_tags: None,
+            properties: None,
+            derived_model_ids: Vec::new(),
+            sample_input_data: None,
+            sample_output_data: None,
+            resource_requirements: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelDataCollection {
     #[serde(rename = "eventHubEnabled", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_enabled: Option<bool>,
     #[serde(rename = "storageEnabled", default, skip_serializing_if = "Option::is_none")]
     pub storage_enabled: Option<bool>,
+}
+impl ModelDataCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelDockerSection {
@@ -1110,6 +1624,11 @@ pub struct ModelDockerSection {
     #[serde(rename = "baseImageRegistry", default, skip_serializing_if = "Option::is_none")]
     pub base_image_registry: Option<serde_json::Value>,
 }
+impl ModelDockerSection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelDockerSectionResponse {
     #[serde(rename = "baseImage", default, skip_serializing_if = "Option::is_none")]
@@ -1118,6 +1637,11 @@ pub struct ModelDockerSectionResponse {
     pub base_dockerfile: Option<String>,
     #[serde(rename = "baseImageRegistry", default, skip_serializing_if = "Option::is_none")]
     pub base_image_registry: Option<serde_json::Value>,
+}
+impl ModelDockerSectionResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelEnvironmentDefinition {
@@ -1138,6 +1662,11 @@ pub struct ModelEnvironmentDefinition {
     #[serde(rename = "inferencingStackVersion", default, skip_serializing_if = "Option::is_none")]
     pub inferencing_stack_version: Option<String>,
 }
+impl ModelEnvironmentDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelEnvironmentDefinitionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1157,6 +1686,11 @@ pub struct ModelEnvironmentDefinitionResponse {
     #[serde(rename = "inferencingStackVersion", default, skip_serializing_if = "Option::is_none")]
     pub inferencing_stack_version: Option<String>,
 }
+impl ModelEnvironmentDefinitionResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelPythonSection {
     #[serde(rename = "interpreterPath", default, skip_serializing_if = "Option::is_none")]
@@ -1168,6 +1702,11 @@ pub struct ModelPythonSection {
     #[serde(rename = "baseCondaEnvironment", default, skip_serializing_if = "Option::is_none")]
     pub base_conda_environment: Option<String>,
 }
+impl ModelPythonSection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModelSparkSection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1176,6 +1715,11 @@ pub struct ModelSparkSection {
     pub packages: Vec<SparkMavenPackage>,
     #[serde(rename = "precachePackages", default, skip_serializing_if = "Option::is_none")]
     pub precache_packages: Option<bool>,
+}
+impl ModelSparkSection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeStateCounts {
@@ -1191,6 +1735,11 @@ pub struct NodeStateCounts {
     pub leaving_node_count: Option<i32>,
     #[serde(rename = "preemptedNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub preempted_node_count: Option<i32>,
+}
+impl NodeStateCounts {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotebookAccessTokenResult {
@@ -1211,12 +1760,22 @@ pub struct NotebookAccessTokenResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
 }
+impl NotebookAccessTokenResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotebookPreparationError {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
     #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<i32>,
+}
+impl NotebookPreparationError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotebookResourceInfo {
@@ -1227,12 +1786,22 @@ pub struct NotebookResourceInfo {
     #[serde(rename = "notebookPreparationError", default, skip_serializing_if = "Option::is_none")]
     pub notebook_preparation_error: Option<NotebookPreparationError>,
 }
+impl NotebookResourceInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -1247,11 +1816,21 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedComputeResourcesList {
@@ -1260,12 +1839,22 @@ pub struct PaginatedComputeResourcesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PaginatedComputeResourcesList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedServiceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ServiceResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PaginatedServiceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedWorkspaceConnectionsList {
@@ -1274,6 +1863,11 @@ pub struct PaginatedWorkspaceConnectionsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PaginatedWorkspaceConnectionsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Password {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1281,10 +1875,20 @@ pub struct Password {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl Password {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PersonalComputeInstanceSettings {
     #[serde(rename = "assignedUser", default, skip_serializing_if = "Option::is_none")]
     pub assigned_user: Option<AssignedUser>,
+}
+impl PersonalComputeInstanceSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
@@ -1293,12 +1897,22 @@ pub struct PrivateEndpoint {
     #[serde(rename = "subnetArmId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_arm_id: Option<String>,
 }
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
+}
+impl PrivateEndpointConnection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
@@ -1308,6 +1922,15 @@ pub struct PrivateEndpointConnectionProperties {
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
+}
+impl PrivateEndpointConnectionProperties {
+    pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
+        Self {
+            private_endpoint: None,
+            private_link_service_connection_state,
+            provisioning_state: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointConnectionProvisioningState {
@@ -1331,10 +1954,20 @@ pub struct PrivateLinkResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
+impl PrivateLinkResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+impl PrivateLinkResourceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
@@ -1345,6 +1978,11 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
+impl PrivateLinkResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1353,6 +1991,11 @@ pub struct PrivateLinkServiceConnectionState {
     pub description: Option<String>,
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
+}
+impl PrivateLinkServiceConnectionState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaBaseProperties {
@@ -1364,6 +2007,11 @@ pub struct QuotaBaseProperties {
     pub limit: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<quota_base_properties::Unit>,
+}
+impl QuotaBaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod quota_base_properties {
     use super::*;
@@ -1379,12 +2027,22 @@ pub struct QuotaUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
+impl QuotaUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RCranPackage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<String>,
+}
+impl RCranPackage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RGitHubPackage {
@@ -1393,10 +2051,20 @@ pub struct RGitHubPackage {
     #[serde(rename = "authToken", default, skip_serializing_if = "Option::is_none")]
     pub auth_token: Option<String>,
 }
+impl RGitHubPackage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RGitHubPackageResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<String>,
+}
+impl RGitHubPackageResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RSection {
@@ -1417,6 +2085,11 @@ pub struct RSection {
     #[serde(rename = "bioConductorPackages", default, skip_serializing_if = "Vec::is_empty")]
     pub bio_conductor_packages: Vec<String>,
 }
+impl RSection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RSectionResponse {
     #[serde(rename = "rVersion", default, skip_serializing_if = "Option::is_none")]
@@ -1436,6 +2109,11 @@ pub struct RSectionResponse {
     #[serde(rename = "bioConductorPackages", default, skip_serializing_if = "Vec::is_empty")]
     pub bio_conductor_packages: Vec<String>,
 }
+impl RSectionResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListCredentialsResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1444,6 +2122,11 @@ pub struct RegistryListCredentialsResult {
     pub username: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub passwords: Vec<Password>,
+}
+impl RegistryListCredentialsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -1464,9 +2147,19 @@ pub struct Resource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceId {
     pub id: String,
+}
+impl ResourceId {
+    pub fn new(id: String) -> Self {
+        Self { id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceName {
@@ -1474,6 +2167,11 @@ pub struct ResourceName {
     pub value: Option<String>,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
+}
+impl ResourceName {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceQuota {
@@ -1489,6 +2187,11 @@ pub struct ResourceQuota {
     pub limit: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<resource_quota::Unit>,
+}
+impl ResourceQuota {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_quota {
     use super::*;
@@ -1506,12 +2209,22 @@ pub struct ResourceSkuLocationInfo {
     #[serde(rename = "zoneDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub zone_details: Vec<ResourceSkuZoneDetails>,
 }
+impl ResourceSkuLocationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuZoneDetails {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub name: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<SkuCapability>,
+}
+impl ResourceSkuZoneDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Restriction {
@@ -1521,6 +2234,11 @@ pub struct Restriction {
     pub values: Vec<String>,
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
+}
+impl Restriction {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod restriction {
     use super::*;
@@ -1538,6 +2256,11 @@ pub struct SkuCapability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl SkuCapability {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScaleSettings {
     #[serde(rename = "maxNodeCount")]
@@ -1546,6 +2269,15 @@ pub struct ScaleSettings {
     pub min_node_count: Option<i32>,
     #[serde(rename = "nodeIdleTimeBeforeScaleDown", default, skip_serializing_if = "Option::is_none")]
     pub node_idle_time_before_scale_down: Option<String>,
+}
+impl ScaleSettings {
+    pub fn new(max_node_count: i32) -> Self {
+        Self {
+            max_node_count,
+            min_node_count: None,
+            node_idle_time_before_scale_down: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptReference {
@@ -1558,6 +2290,11 @@ pub struct ScriptReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
+impl ScriptReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptsToExecute {
     #[serde(rename = "startupScript", default, skip_serializing_if = "Option::is_none")]
@@ -1565,10 +2302,20 @@ pub struct ScriptsToExecute {
     #[serde(rename = "creationScript", default, skip_serializing_if = "Option::is_none")]
     pub creation_script: Option<ScriptReference>,
 }
+impl ScriptsToExecute {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceManagedResourcesSettings {
     #[serde(rename = "cosmosDb", default, skip_serializing_if = "Option::is_none")]
     pub cosmos_db: Option<CosmosDbSettings>,
+}
+impl ServiceManagedResourcesSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalCredentials {
@@ -1577,12 +2324,22 @@ pub struct ServicePrincipalCredentials {
     #[serde(rename = "clientSecret")]
     pub client_secret: String,
 }
+impl ServicePrincipalCredentials {
+    pub fn new(client_id: String, client_secret: String) -> Self {
+        Self { client_id, client_secret }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceResponseBase>,
+}
+impl ServiceResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceResponseBase {
@@ -1600,6 +2357,19 @@ pub struct ServiceResponseBase {
     pub compute_type: service_response_base::ComputeType,
     #[serde(rename = "deploymentType", default, skip_serializing_if = "Option::is_none")]
     pub deployment_type: Option<service_response_base::DeploymentType>,
+}
+impl ServiceResponseBase {
+    pub fn new(compute_type: service_response_base::ComputeType) -> Self {
+        Self {
+            description: None,
+            kv_tags: None,
+            properties: None,
+            state: None,
+            error: None,
+            compute_type,
+            deployment_type: None,
+        }
+    }
 }
 pub mod service_response_base {
     use super::*;
@@ -1631,12 +2401,22 @@ pub struct SetupScripts {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scripts: Option<ScriptsToExecute>,
 }
+impl SetupScripts {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedPrivateLinkResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedPrivateLinkResourceProperty>,
+}
+impl SharedPrivateLinkResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedPrivateLinkResourceProperty {
@@ -1649,6 +2429,11 @@ pub struct SharedPrivateLinkResourceProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
 }
+impl SharedPrivateLinkResourceProperty {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1656,12 +2441,22 @@ pub struct Sku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }
+impl Sku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkspaceSku>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SkuListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkMavenPackage {
@@ -1671,6 +2466,11 @@ pub struct SparkMavenPackage {
     pub artifact: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl SparkMavenPackage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SslConfiguration {
@@ -1686,6 +2486,11 @@ pub struct SslConfiguration {
     pub leaf_domain_label: Option<String>,
     #[serde(rename = "overwriteExistingDomain", default, skip_serializing_if = "Option::is_none")]
     pub overwrite_existing_domain: Option<bool>,
+}
+impl SslConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod ssl_configuration {
     use super::*;
@@ -1703,10 +2508,23 @@ pub struct SynapseSpark {
     #[serde(flatten)]
     pub synapse_spark_pool_properties: SynapseSparkPoolProperties,
 }
+impl SynapseSpark {
+    pub fn new(compute: Compute) -> Self {
+        Self {
+            compute,
+            synapse_spark_pool_properties: SynapseSparkPoolProperties::default(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SynapseSparkPoolProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<synapse_spark_pool_properties::Properties>,
+}
+impl SynapseSparkPoolProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod synapse_spark_pool_properties {
     use super::*;
@@ -1733,6 +2551,11 @@ pub mod synapse_spark_pool_properties {
         #[serde(rename = "poolName", default, skip_serializing_if = "Option::is_none")]
         pub pool_name: Option<String>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -1749,6 +2572,11 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemService {
     #[serde(rename = "systemServiceType", default, skip_serializing_if = "Option::is_none")]
@@ -1757,6 +2585,11 @@ pub struct SystemService {
     pub public_ip_address: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl SystemService {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateWorkspaceQuotas {
@@ -1770,6 +2603,11 @@ pub struct UpdateWorkspaceQuotas {
     pub unit: Option<update_workspace_quotas::Unit>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<update_workspace_quotas::Status>,
+}
+impl UpdateWorkspaceQuotas {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod update_workspace_quotas {
     use super::*;
@@ -1797,6 +2635,11 @@ pub struct UpdateWorkspaceQuotasResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl UpdateWorkspaceQuotasResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1814,6 +2657,11 @@ pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
+impl Usage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1828,6 +2676,11 @@ pub struct UsageName {
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
+impl UsageName {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAccountCredentials {
     #[serde(rename = "adminUserName")]
@@ -1837,8 +2690,22 @@ pub struct UserAccountCredentials {
     #[serde(rename = "adminUserPassword", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_password: Option<String>,
 }
+impl UserAccountCredentials {
+    pub fn new(admin_user_name: String) -> Self {
+        Self {
+            admin_user_name,
+            admin_user_ssh_public_key: None,
+            admin_user_password: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentities {}
+impl UserAssignedIdentities {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -1848,12 +2715,22 @@ pub struct UserAssignedIdentity {
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
+impl UserAssignedIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachine {
     #[serde(flatten)]
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<virtual_machine::Properties>,
+}
+impl VirtualMachine {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod virtual_machine {
     use super::*;
@@ -1870,10 +2747,20 @@ pub mod virtual_machine {
         #[serde(rename = "isNotebookInstanceCompute", default, skip_serializing_if = "Option::is_none")]
         pub is_notebook_instance_compute: Option<bool>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineImage {
     pub id: String,
+}
+impl VirtualMachineImage {
+    pub fn new(id: String) -> Self {
+        Self { id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
@@ -1881,6 +2768,14 @@ pub struct VirtualMachineSecrets {
     pub compute_secrets: ComputeSecrets,
     #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
     pub administrator_account: Option<VirtualMachineSshCredentials>,
+}
+impl VirtualMachineSecrets {
+    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+        Self {
+            compute_secrets,
+            administrator_account: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSize {
@@ -1907,10 +2802,20 @@ pub struct VirtualMachineSize {
     #[serde(rename = "supportedComputeTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_compute_types: Vec<String>,
 }
+impl VirtualMachineSize {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSizeListResult {
     #[serde(rename = "amlCompute", default, skip_serializing_if = "Vec::is_empty")]
     pub aml_compute: Vec<VirtualMachineSize>,
+}
+impl VirtualMachineSizeListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSshCredentials {
@@ -1923,6 +2828,11 @@ pub struct VirtualMachineSshCredentials {
     #[serde(rename = "privateKeyData", default, skip_serializing_if = "Option::is_none")]
     pub private_key_data: Option<String>,
 }
+impl VirtualMachineSshCredentials {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VnetConfiguration {
     #[serde(rename = "vnetName", default, skip_serializing_if = "Option::is_none")]
@@ -1930,12 +2840,22 @@ pub struct VnetConfiguration {
     #[serde(rename = "subnetName", default, skip_serializing_if = "Option::is_none")]
     pub subnet_name: Option<String>,
 }
+impl VnetConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workspace {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
+}
+impl Workspace {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceConnection {
@@ -1948,12 +2868,22 @@ pub struct WorkspaceConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceConnectionProps>,
 }
+impl WorkspaceConnection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceConnectionDto {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceConnectionProps>,
+}
+impl WorkspaceConnectionDto {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceConnectionProps {
@@ -1967,6 +2897,11 @@ pub struct WorkspaceConnectionProps {
     pub value: Option<String>,
     #[serde(rename = "valueFormat", default, skip_serializing_if = "Option::is_none")]
     pub value_format: Option<workspace_connection_props::ValueFormat>,
+}
+impl WorkspaceConnectionProps {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod workspace_connection_props {
     use super::*;
@@ -1982,6 +2917,11 @@ pub struct WorkspaceListResult {
     pub value: Vec<Workspace>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WorkspaceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceProperties {
@@ -2028,6 +2968,11 @@ pub struct WorkspaceProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
+impl WorkspaceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2054,6 +2999,11 @@ pub struct WorkspacePropertiesUpdateParameters {
     #[serde(rename = "primaryUserAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub primary_user_assigned_identity: Option<String>,
 }
+impl WorkspacePropertiesUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceSku {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2071,6 +3021,11 @@ pub struct WorkspaceSku {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<Restriction>,
 }
+impl WorkspaceSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2081,4 +3036,9 @@ pub struct WorkspaceUpdateParameters {
     pub identity: Option<Identity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspacePropertiesUpdateParameters>,
+}
+impl WorkspaceUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

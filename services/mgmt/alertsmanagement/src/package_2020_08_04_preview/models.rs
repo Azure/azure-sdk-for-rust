@@ -9,14 +9,29 @@ pub struct HealthAlertAction {
     #[serde(rename = "webHookProperties", default, skip_serializing_if = "Option::is_none")]
     pub web_hook_properties: Option<serde_json::Value>,
 }
+impl HealthAlertAction {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertCriteria {
     #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
     pub all_of: Vec<HealthAlertCriterion>,
 }
+impl HealthAlertCriteria {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthAlertCriterion {
     pub namespace: health_alert_criterion::Namespace,
+}
+impl HealthAlertCriterion {
+    pub fn new(namespace: health_alert_criterion::Namespace) -> Self {
+        Self { namespace }
+    }
 }
 pub mod health_alert_criterion {
     use super::*;
@@ -37,16 +52,38 @@ pub struct HealthAlertProperties {
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
 }
+impl HealthAlertProperties {
+    pub fn new(description: String, enabled: bool, criteria: HealthAlertCriteria) -> Self {
+        Self {
+            description,
+            enabled,
+            scopes: Vec::new(),
+            criteria,
+            actions: Vec::new(),
+            last_updated_time: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthAlertResource {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: HealthAlertProperties,
 }
+impl HealthAlertResource {
+    pub fn new(resource: Resource, properties: HealthAlertProperties) -> Self {
+        Self { resource, properties }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HealthAlertResource>,
+}
+impl HealthAlertResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertResourcePatch {
@@ -55,10 +92,20 @@ pub struct HealthAlertResourcePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HealthAlertProperties>,
 }
+impl HealthAlertResourcePatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertsErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<HealthAlertsErrorResponseBody>,
+}
+impl HealthAlertsErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertsErrorResponseBody {
@@ -67,11 +114,24 @@ pub struct HealthAlertsErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl HealthAlertsErrorResponseBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthState {
     #[serde(rename = "healthStateName")]
     pub health_state_name: health_state::HealthStateName,
     pub severity: i64,
+}
+impl HealthState {
+    pub fn new(health_state_name: health_state::HealthStateName, severity: i64) -> Self {
+        Self {
+            health_state_name,
+            severity,
+        }
+    }
 }
 pub mod health_state {
     use super::*;
@@ -93,6 +153,17 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmGuestHealthAlertCriterion {
     #[serde(flatten)]
@@ -104,12 +175,27 @@ pub struct VmGuestHealthAlertCriterion {
     #[serde(rename = "healthStates")]
     pub health_states: Vec<HealthState>,
 }
+impl VmGuestHealthAlertCriterion {
+    pub fn new(health_alert_criterion: HealthAlertCriterion, health_states: Vec<HealthState>) -> Self {
+        Self {
+            health_alert_criterion,
+            monitor_names: Vec::new(),
+            monitor_types: Vec::new(),
+            health_states,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -124,10 +210,20 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<Operation>,
+}
+impl OperationsList {
+    pub fn new(value: Vec<Operation>) -> Self {
+        Self { next_link: None, value }
+    }
 }

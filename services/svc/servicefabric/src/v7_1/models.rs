@@ -17,12 +17,22 @@ pub struct AadMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant: Option<String>,
 }
+impl AadMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadMetadataObject {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<AadMetadata>,
+}
+impl AadMetadataObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddRemoveIncrementalNamedPartitionScalingMechanism {
@@ -35,6 +45,21 @@ pub struct AddRemoveIncrementalNamedPartitionScalingMechanism {
     #[serde(rename = "ScaleIncrement")]
     pub scale_increment: i64,
 }
+impl AddRemoveIncrementalNamedPartitionScalingMechanism {
+    pub fn new(
+        scaling_mechanism_description: ScalingMechanismDescription,
+        min_partition_count: i64,
+        max_partition_count: i64,
+        scale_increment: i64,
+    ) -> Self {
+        Self {
+            scaling_mechanism_description,
+            min_partition_count,
+            max_partition_count,
+            scale_increment,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddRemoveReplicaScalingMechanism {
     #[serde(flatten)]
@@ -46,12 +71,27 @@ pub struct AddRemoveReplicaScalingMechanism {
     #[serde(rename = "scaleIncrement")]
     pub scale_increment: i64,
 }
+impl AddRemoveReplicaScalingMechanism {
+    pub fn new(auto_scaling_mechanism: AutoScalingMechanism, min_count: i64, max_count: i64, scale_increment: i64) -> Self {
+        Self {
+            auto_scaling_mechanism,
+            min_count,
+            max_count,
+            scale_increment,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AnalysisEventMetadata {
     #[serde(rename = "Delay", default, skip_serializing_if = "Option::is_none")]
     pub delay: Option<String>,
     #[serde(rename = "Duration", default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
+}
+impl AnalysisEventMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationBackupConfigurationInfo {
@@ -60,12 +100,28 @@ pub struct ApplicationBackupConfigurationInfo {
     #[serde(rename = "ApplicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<ApplicationName>,
 }
+impl ApplicationBackupConfigurationInfo {
+    pub fn new(backup_configuration_info: BackupConfigurationInfo) -> Self {
+        Self {
+            backup_configuration_info,
+            application_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationBackupEntity {
     #[serde(flatten)]
     pub backup_entity: BackupEntity,
     #[serde(rename = "ApplicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<ApplicationName>,
+}
+impl ApplicationBackupEntity {
+    pub fn new(backup_entity: BackupEntity) -> Self {
+        Self {
+            backup_entity,
+            application_name: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationCapacityDescription {
@@ -75,6 +131,11 @@ pub struct ApplicationCapacityDescription {
     pub maximum_nodes: Option<i64>,
     #[serde(rename = "ApplicationMetrics", default, skip_serializing_if = "Option::is_none")]
     pub application_metrics: Option<ApplicationMetricDescriptionList>,
+}
+impl ApplicationCapacityDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationContainerInstanceExitedEvent {
@@ -105,6 +166,39 @@ pub struct ApplicationContainerInstanceExitedEvent {
     #[serde(rename = "StartTime")]
     pub start_time: String,
 }
+impl ApplicationContainerInstanceExitedEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        service_name: String,
+        service_package_name: String,
+        service_package_activation_id: String,
+        is_exclusive: bool,
+        code_package_name: String,
+        entry_point_type: String,
+        image_name: String,
+        container_name: String,
+        host_id: String,
+        exit_code: i64,
+        unexpected_termination: bool,
+        start_time: String,
+    ) -> Self {
+        Self {
+            application_event,
+            service_name,
+            service_package_name,
+            service_package_activation_id,
+            is_exclusive,
+            code_package_name,
+            entry_point_type,
+            image_name,
+            container_name,
+            host_id,
+            exit_code,
+            unexpected_termination,
+            start_time,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationCreatedEvent {
     #[serde(flatten)]
@@ -115,6 +209,21 @@ pub struct ApplicationCreatedEvent {
     pub application_type_version: String,
     #[serde(rename = "ApplicationDefinitionKind")]
     pub application_definition_kind: String,
+}
+impl ApplicationCreatedEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_type_name: String,
+        application_type_version: String,
+        application_definition_kind: String,
+    ) -> Self {
+        Self {
+            application_event,
+            application_type_name,
+            application_type_version,
+            application_definition_kind,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplicationDefinitionKind {
@@ -131,6 +240,15 @@ pub struct ApplicationDeletedEvent {
     #[serde(rename = "ApplicationTypeVersion")]
     pub application_type_version: String,
 }
+impl ApplicationDeletedEvent {
+    pub fn new(application_event: ApplicationEvent, application_type_name: String, application_type_version: String) -> Self {
+        Self {
+            application_event,
+            application_type_name,
+            application_type_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationDescription {
     #[serde(rename = "Name")]
@@ -146,12 +264,32 @@ pub struct ApplicationDescription {
     #[serde(rename = "ManagedApplicationIdentity", default, skip_serializing_if = "Option::is_none")]
     pub managed_application_identity: Option<ManagedApplicationIdentityDescription>,
 }
+impl ApplicationDescription {
+    pub fn new(name: ApplicationName, type_name: ApplicationTypeName, type_version: ApplicationTypeVersion) -> Self {
+        Self {
+            name,
+            type_name,
+            type_version,
+            parameter_list: None,
+            application_capacity: None,
+            managed_application_identity: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationEvent {
     #[serde(flatten)]
     pub fabric_event: FabricEvent,
     #[serde(rename = "ApplicationId")]
     pub application_id: ApplicationId,
+}
+impl ApplicationEvent {
+    pub fn new(fabric_event: FabricEvent, application_id: ApplicationId) -> Self {
+        Self {
+            fabric_event,
+            application_id,
+        }
+    }
 }
 pub type ApplicationEventList = Vec<ApplicationEvent>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -165,6 +303,11 @@ pub struct ApplicationHealth {
     #[serde(rename = "DeployedApplicationHealthStates", default, skip_serializing_if = "Vec::is_empty")]
     pub deployed_application_health_states: Vec<DeployedApplicationHealthState>,
 }
+impl ApplicationHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationHealthEvaluation {
     #[serde(flatten)]
@@ -174,10 +317,24 @@ pub struct ApplicationHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl ApplicationHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            application_name: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationHealthPolicies {
     #[serde(rename = "ApplicationHealthPolicyMap", default, skip_serializing_if = "Option::is_none")]
     pub application_health_policy_map: Option<ApplicationHealthPolicyMap>,
+}
+impl ApplicationHealthPolicies {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationHealthPolicy {
@@ -194,6 +351,11 @@ pub struct ApplicationHealthPolicy {
     #[serde(rename = "ServiceTypeHealthPolicyMap", default, skip_serializing_if = "Option::is_none")]
     pub service_type_health_policy_map: Option<ServiceTypeHealthPolicyMap>,
 }
+impl ApplicationHealthPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type ApplicationHealthPolicyMap = Vec<ApplicationHealthPolicyMapItem>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationHealthPolicyMapItem {
@@ -201,6 +363,11 @@ pub struct ApplicationHealthPolicyMapItem {
     pub key: ApplicationName,
     #[serde(rename = "Value")]
     pub value: ApplicationHealthPolicy,
+}
+impl ApplicationHealthPolicyMapItem {
+    pub fn new(key: ApplicationName, value: ApplicationHealthPolicy) -> Self {
+        Self { key, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationHealthReportExpiredEvent {
@@ -225,12 +392,44 @@ pub struct ApplicationHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl ApplicationHealthReportExpiredEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_instance_id: i64,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            application_event,
+            application_instance_id,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationHealthState {
     #[serde(flatten)]
     pub entity_health_state: EntityHealthState,
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ApplicationName>,
+}
+impl ApplicationHealthState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationHealthStateChunk {
@@ -245,12 +444,22 @@ pub struct ApplicationHealthStateChunk {
     #[serde(rename = "DeployedApplicationHealthStateChunks", default, skip_serializing_if = "Option::is_none")]
     pub deployed_application_health_state_chunks: Option<DeployedApplicationHealthStateChunkList>,
 }
+impl ApplicationHealthStateChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationHealthStateChunkList {
     #[serde(flatten)]
     pub entity_health_state_chunk_list: EntityHealthStateChunkList,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ApplicationHealthStateChunk>,
+}
+impl ApplicationHealthStateChunkList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationHealthStateFilter {
@@ -264,6 +473,11 @@ pub struct ApplicationHealthStateFilter {
     pub service_filters: Vec<ServiceHealthStateFilter>,
     #[serde(rename = "DeployedApplicationFilters", default, skip_serializing_if = "Vec::is_empty")]
     pub deployed_application_filters: Vec<DeployedApplicationHealthStateFilter>,
+}
+impl ApplicationHealthStateFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ApplicationId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -285,6 +499,11 @@ pub struct ApplicationInfo {
     #[serde(rename = "ApplicationDefinitionKind", default, skip_serializing_if = "Option::is_none")]
     pub application_definition_kind: Option<ApplicationDefinitionKind>,
 }
+impl ApplicationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationLoadInfo {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
@@ -298,6 +517,11 @@ pub struct ApplicationLoadInfo {
     #[serde(rename = "ApplicationLoadMetricInformation", default, skip_serializing_if = "Option::is_none")]
     pub application_load_metric_information: Option<ApplicationLoadMetricInformationList>,
 }
+impl ApplicationLoadInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationLoadMetricInformation {
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
@@ -308,6 +532,11 @@ pub struct ApplicationLoadMetricInformation {
     pub application_capacity: Option<i64>,
     #[serde(rename = "ApplicationLoad", default, skip_serializing_if = "Option::is_none")]
     pub application_load: Option<i64>,
+}
+impl ApplicationLoadMetricInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ApplicationLoadMetricInformationList = Vec<ApplicationLoadMetricInformation>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -321,6 +550,11 @@ pub struct ApplicationMetricDescription {
     #[serde(rename = "TotalApplicationCapacity", default, skip_serializing_if = "Option::is_none")]
     pub total_application_capacity: Option<i64>,
 }
+impl ApplicationMetricDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type ApplicationMetricDescriptionList = Vec<ApplicationMetricDescription>;
 pub type ApplicationName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -329,6 +563,11 @@ pub struct ApplicationNameInfo {
     pub id: Option<ApplicationId>,
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ApplicationName>,
+}
+impl ApplicationNameInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationNewHealthReportEvent {
@@ -353,6 +592,33 @@ pub struct ApplicationNewHealthReportEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl ApplicationNewHealthReportEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_instance_id: i64,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            application_event,
+            application_instance_id,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplicationPackageCleanupPolicy {
     Invalid,
@@ -366,6 +632,11 @@ pub struct ApplicationParameter {
     pub key: String,
     #[serde(rename = "Value")]
     pub value: String,
+}
+impl ApplicationParameter {
+    pub fn new(key: String, value: String) -> Self {
+        Self { key, value }
+    }
 }
 pub type ApplicationParameterList = Vec<ApplicationParameter>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -397,6 +668,39 @@ pub struct ApplicationProcessExitedEvent {
     #[serde(rename = "StartTime")]
     pub start_time: String,
 }
+impl ApplicationProcessExitedEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        service_name: String,
+        service_package_name: String,
+        service_package_activation_id: String,
+        is_exclusive: bool,
+        code_package_name: String,
+        entry_point_type: String,
+        exe_name: String,
+        process_id: i64,
+        host_id: String,
+        exit_code: i64,
+        unexpected_termination: bool,
+        start_time: String,
+    ) -> Self {
+        Self {
+            application_event,
+            service_name,
+            service_package_name,
+            service_package_activation_id,
+            is_exclusive,
+            code_package_name,
+            entry_point_type,
+            exe_name,
+            process_id,
+            host_id,
+            exit_code,
+            unexpected_termination,
+            start_time,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -418,12 +722,26 @@ pub struct ApplicationProperties {
     #[serde(rename = "unhealthyEvaluation", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluation: Option<String>,
 }
+impl ApplicationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationResourceDescription {
     pub name: ApplicationResourceName,
     pub properties: ApplicationProperties,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityDescription>,
+}
+impl ApplicationResourceDescription {
+    pub fn new(name: ApplicationResourceName, properties: ApplicationProperties) -> Self {
+        Self {
+            name,
+            properties,
+            identity: None,
+        }
+    }
 }
 pub type ApplicationResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -455,6 +773,11 @@ pub struct ApplicationResourceUpgradeProgressInfo {
     #[serde(rename = "FailureTimestampUtc", default, skip_serializing_if = "Option::is_none")]
     pub failure_timestamp_utc: Option<String>,
 }
+impl ApplicationResourceUpgradeProgressInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplicationResourceUpgradeState {
     Invalid,
@@ -474,11 +797,24 @@ pub struct ApplicationScopedVolume {
     #[serde(rename = "creationParameters")]
     pub creation_parameters: ApplicationScopedVolumeCreationParameters,
 }
+impl ApplicationScopedVolume {
+    pub fn new(volume_reference: VolumeReference, creation_parameters: ApplicationScopedVolumeCreationParameters) -> Self {
+        Self {
+            volume_reference,
+            creation_parameters,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationScopedVolumeCreationParameters {
     pub kind: ApplicationScopedVolumeKind,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl ApplicationScopedVolumeCreationParameters {
+    pub fn new(kind: ApplicationScopedVolumeKind) -> Self {
+        Self { kind, description: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
@@ -486,6 +822,17 @@ pub struct ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
     pub application_scoped_volume_creation_parameters: ApplicationScopedVolumeCreationParameters,
     #[serde(rename = "sizeDisk")]
     pub size_disk: application_scoped_volume_creation_parameters_service_fabric_volume_disk::SizeDisk,
+}
+impl ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk {
+    pub fn new(
+        application_scoped_volume_creation_parameters: ApplicationScopedVolumeCreationParameters,
+        size_disk: application_scoped_volume_creation_parameters_service_fabric_volume_disk::SizeDisk,
+    ) -> Self {
+        Self {
+            application_scoped_volume_creation_parameters,
+            size_disk,
+        }
+    }
 }
 pub mod application_scoped_volume_creation_parameters_service_fabric_volume_disk {
     use super::*;
@@ -522,6 +869,17 @@ pub struct ApplicationTypeApplicationsHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl ApplicationTypeApplicationsHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            application_type_name: None,
+            max_percent_unhealthy_applications: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApplicationTypeDefinitionKind {
     Invalid,
@@ -536,10 +894,22 @@ pub struct ApplicationTypeHealthPolicyMapItem {
     #[serde(rename = "Value")]
     pub value: i64,
 }
+impl ApplicationTypeHealthPolicyMapItem {
+    pub fn new(key: String, value: i64) -> Self {
+        Self { key, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationTypeImageStorePath {
     #[serde(rename = "ApplicationTypeBuildPath")]
     pub application_type_build_path: String,
+}
+impl ApplicationTypeImageStorePath {
+    pub fn new(application_type_build_path: String) -> Self {
+        Self {
+            application_type_build_path,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationTypeInfo {
@@ -556,10 +926,20 @@ pub struct ApplicationTypeInfo {
     #[serde(rename = "ApplicationTypeDefinitionKind", default, skip_serializing_if = "Option::is_none")]
     pub application_type_definition_kind: Option<ApplicationTypeDefinitionKind>,
 }
+impl ApplicationTypeInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationTypeManifest {
     #[serde(rename = "Manifest", default, skip_serializing_if = "Option::is_none")]
     pub manifest: Option<String>,
+}
+impl ApplicationTypeManifest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ApplicationTypeName = String;
 pub type ApplicationTypeParameterList = Vec<ApplicationParameter>;
@@ -583,6 +963,21 @@ pub struct ApplicationUpgradeCompletedEvent {
     pub application_type_version: String,
     #[serde(rename = "OverallUpgradeElapsedTimeInMs")]
     pub overall_upgrade_elapsed_time_in_ms: f64,
+}
+impl ApplicationUpgradeCompletedEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_type_name: String,
+        application_type_version: String,
+        overall_upgrade_elapsed_time_in_ms: f64,
+    ) -> Self {
+        Self {
+            application_event,
+            application_type_name,
+            application_type_version,
+            overall_upgrade_elapsed_time_in_ms,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationUpgradeDescription {
@@ -613,6 +1008,27 @@ pub struct ApplicationUpgradeDescription {
     #[serde(rename = "InstanceCloseDelayDurationInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub instance_close_delay_duration_in_seconds: Option<InstanceCloseDelayDurationInSeconds>,
 }
+impl ApplicationUpgradeDescription {
+    pub fn new(
+        name: TargetApplicationName,
+        target_application_type_version: TargetApplicationTypeVersion,
+        upgrade_kind: UpgradeKind,
+    ) -> Self {
+        Self {
+            name,
+            target_application_type_version,
+            parameters: None,
+            upgrade_kind,
+            rolling_upgrade_mode: None,
+            upgrade_replica_set_check_timeout_in_seconds: None,
+            force_restart: None,
+            sort_order: None,
+            monitoring_policy: None,
+            application_health_policy: None,
+            instance_close_delay_duration_in_seconds: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationUpgradeDomainCompletedEvent {
     #[serde(flatten)]
@@ -629,6 +1045,27 @@ pub struct ApplicationUpgradeDomainCompletedEvent {
     pub upgrade_domains: String,
     #[serde(rename = "UpgradeDomainElapsedTimeInMs")]
     pub upgrade_domain_elapsed_time_in_ms: f64,
+}
+impl ApplicationUpgradeDomainCompletedEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_type_name: String,
+        current_application_type_version: String,
+        application_type_version: String,
+        upgrade_state: String,
+        upgrade_domains: String,
+        upgrade_domain_elapsed_time_in_ms: f64,
+    ) -> Self {
+        Self {
+            application_event,
+            application_type_name,
+            current_application_type_version,
+            application_type_version,
+            upgrade_state,
+            upgrade_domains,
+            upgrade_domain_elapsed_time_in_ms,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationUpgradeProgressInfo {
@@ -667,6 +1104,11 @@ pub struct ApplicationUpgradeProgressInfo {
     #[serde(rename = "UpgradeStatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_status_details: Option<String>,
 }
+impl ApplicationUpgradeProgressInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationUpgradeRollbackCompletedEvent {
     #[serde(flatten)]
@@ -679,6 +1121,23 @@ pub struct ApplicationUpgradeRollbackCompletedEvent {
     pub failure_reason: String,
     #[serde(rename = "OverallUpgradeElapsedTimeInMs")]
     pub overall_upgrade_elapsed_time_in_ms: f64,
+}
+impl ApplicationUpgradeRollbackCompletedEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_type_name: String,
+        application_type_version: String,
+        failure_reason: String,
+        overall_upgrade_elapsed_time_in_ms: f64,
+    ) -> Self {
+        Self {
+            application_event,
+            application_type_name,
+            application_type_version,
+            failure_reason,
+            overall_upgrade_elapsed_time_in_ms,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationUpgradeRollbackStartedEvent {
@@ -694,6 +1153,25 @@ pub struct ApplicationUpgradeRollbackStartedEvent {
     pub failure_reason: String,
     #[serde(rename = "OverallUpgradeElapsedTimeInMs")]
     pub overall_upgrade_elapsed_time_in_ms: f64,
+}
+impl ApplicationUpgradeRollbackStartedEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_type_name: String,
+        current_application_type_version: String,
+        application_type_version: String,
+        failure_reason: String,
+        overall_upgrade_elapsed_time_in_ms: f64,
+    ) -> Self {
+        Self {
+            application_event,
+            application_type_name,
+            current_application_type_version,
+            application_type_version,
+            failure_reason,
+            overall_upgrade_elapsed_time_in_ms,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationUpgradeStartedEvent {
@@ -712,6 +1190,27 @@ pub struct ApplicationUpgradeStartedEvent {
     #[serde(rename = "FailureAction")]
     pub failure_action: String,
 }
+impl ApplicationUpgradeStartedEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_type_name: String,
+        current_application_type_version: String,
+        application_type_version: String,
+        upgrade_type: String,
+        rolling_upgrade_mode: String,
+        failure_action: String,
+    ) -> Self {
+        Self {
+            application_event,
+            application_type_name,
+            current_application_type_version,
+            application_type_version,
+            upgrade_type,
+            rolling_upgrade_mode,
+            failure_action,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationUpgradeUpdateDescription {
     #[serde(rename = "Name")]
@@ -722,6 +1221,16 @@ pub struct ApplicationUpgradeUpdateDescription {
     pub application_health_policy: Option<ApplicationHealthPolicy>,
     #[serde(rename = "UpdateDescription", default, skip_serializing_if = "Option::is_none")]
     pub update_description: Option<RollingUpgradeUpdateDescription>,
+}
+impl ApplicationUpgradeUpdateDescription {
+    pub fn new(name: ApplicationName, upgrade_kind: UpgradeKind) -> Self {
+        Self {
+            name,
+            upgrade_kind,
+            application_health_policy: None,
+            update_description: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationsHealthEvaluation {
@@ -734,9 +1243,24 @@ pub struct ApplicationsHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl ApplicationsHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            max_percent_unhealthy_applications: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingMechanism {
     pub kind: AutoScalingMechanismKind,
+}
+impl AutoScalingMechanism {
+    pub fn new(kind: AutoScalingMechanismKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AutoScalingMechanismKind {
@@ -745,6 +1269,11 @@ pub enum AutoScalingMechanismKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingMetric {
     pub kind: AutoScalingMetricKind,
+}
+impl AutoScalingMetric {
+    pub fn new(kind: AutoScalingMetricKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AutoScalingMetricKind {
@@ -756,11 +1285,21 @@ pub struct AutoScalingPolicy {
     pub trigger: AutoScalingTrigger,
     pub mechanism: AutoScalingMechanism,
 }
+impl AutoScalingPolicy {
+    pub fn new(name: String, trigger: AutoScalingTrigger, mechanism: AutoScalingMechanism) -> Self {
+        Self { name, trigger, mechanism }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingResourceMetric {
     #[serde(flatten)]
     pub auto_scaling_metric: AutoScalingMetric,
     pub name: AutoScalingResourceMetricName,
+}
+impl AutoScalingResourceMetric {
+    pub fn new(auto_scaling_metric: AutoScalingMetric, name: AutoScalingResourceMetricName) -> Self {
+        Self { auto_scaling_metric, name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AutoScalingResourceMetricName {
@@ -772,6 +1311,11 @@ pub enum AutoScalingResourceMetricName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingTrigger {
     pub kind: AutoScalingTriggerKind,
+}
+impl AutoScalingTrigger {
+    pub fn new(kind: AutoScalingTriggerKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AutoScalingTriggerKind {
@@ -789,6 +1333,23 @@ pub struct AverageLoadScalingTrigger {
     #[serde(rename = "scaleIntervalInSeconds")]
     pub scale_interval_in_seconds: i64,
 }
+impl AverageLoadScalingTrigger {
+    pub fn new(
+        auto_scaling_trigger: AutoScalingTrigger,
+        metric: AutoScalingMetric,
+        lower_load_threshold: f64,
+        upper_load_threshold: f64,
+        scale_interval_in_seconds: i64,
+    ) -> Self {
+        Self {
+            auto_scaling_trigger,
+            metric,
+            lower_load_threshold,
+            upper_load_threshold,
+            scale_interval_in_seconds,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AveragePartitionLoadScalingTrigger {
     #[serde(flatten)]
@@ -801,6 +1362,23 @@ pub struct AveragePartitionLoadScalingTrigger {
     pub upper_load_threshold: String,
     #[serde(rename = "ScaleIntervalInSeconds")]
     pub scale_interval_in_seconds: i64,
+}
+impl AveragePartitionLoadScalingTrigger {
+    pub fn new(
+        scaling_trigger_description: ScalingTriggerDescription,
+        metric_name: String,
+        lower_load_threshold: String,
+        upper_load_threshold: String,
+        scale_interval_in_seconds: i64,
+    ) -> Self {
+        Self {
+            scaling_trigger_description,
+            metric_name,
+            lower_load_threshold,
+            upper_load_threshold,
+            scale_interval_in_seconds,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AverageServiceLoadScalingTrigger {
@@ -815,6 +1393,23 @@ pub struct AverageServiceLoadScalingTrigger {
     #[serde(rename = "ScaleIntervalInSeconds")]
     pub scale_interval_in_seconds: i64,
 }
+impl AverageServiceLoadScalingTrigger {
+    pub fn new(
+        scaling_trigger_description: ScalingTriggerDescription,
+        metric_name: String,
+        lower_load_threshold: String,
+        upper_load_threshold: String,
+        scale_interval_in_seconds: i64,
+    ) -> Self {
+        Self {
+            scaling_trigger_description,
+            metric_name,
+            lower_load_threshold,
+            upper_load_threshold,
+            scale_interval_in_seconds,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBlobBackupStorageDescription {
     #[serde(flatten)]
@@ -823,6 +1418,15 @@ pub struct AzureBlobBackupStorageDescription {
     pub connection_string: String,
     #[serde(rename = "ContainerName")]
     pub container_name: String,
+}
+impl AzureBlobBackupStorageDescription {
+    pub fn new(backup_storage_description: BackupStorageDescription, connection_string: String, container_name: String) -> Self {
+        Self {
+            backup_storage_description,
+            connection_string,
+            container_name,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureInternalMonitoringPipelineSinkDescription {
@@ -839,6 +1443,18 @@ pub struct AzureInternalMonitoringPipelineSinkDescription {
     #[serde(rename = "autoKeyConfigUrl", default, skip_serializing_if = "Option::is_none")]
     pub auto_key_config_url: Option<String>,
 }
+impl AzureInternalMonitoringPipelineSinkDescription {
+    pub fn new(diagnostics_sink_properties: DiagnosticsSinkProperties) -> Self {
+        Self {
+            diagnostics_sink_properties,
+            account_name: None,
+            namespace: None,
+            ma_config_url: None,
+            fluentd_config_url: None,
+            auto_key_config_url: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupConfigurationInfo {
     #[serde(rename = "Kind")]
@@ -850,10 +1466,25 @@ pub struct BackupConfigurationInfo {
     #[serde(rename = "SuspensionInfo", default, skip_serializing_if = "Option::is_none")]
     pub suspension_info: Option<BackupSuspensionInfo>,
 }
+impl BackupConfigurationInfo {
+    pub fn new(kind: BackupEntityKind) -> Self {
+        Self {
+            kind,
+            policy_name: None,
+            policy_inherited_from: None,
+            suspension_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupEntity {
     #[serde(rename = "EntityKind")]
     pub entity_kind: BackupEntityKind,
+}
+impl BackupEntity {
+    pub fn new(entity_kind: BackupEntityKind) -> Self {
+        Self { entity_kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BackupEntityKind {
@@ -889,10 +1520,20 @@ pub struct BackupInfo {
     #[serde(rename = "FailureError", default, skip_serializing_if = "Option::is_none")]
     pub failure_error: Option<FabricErrorError>,
 }
+impl BackupInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupPartitionDescription {
     #[serde(rename = "BackupStorage", default, skip_serializing_if = "Option::is_none")]
     pub backup_storage: Option<BackupStorageDescription>,
+}
+impl BackupPartitionDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicyDescription {
@@ -908,6 +1549,24 @@ pub struct BackupPolicyDescription {
     pub storage: BackupStorageDescription,
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicyDescription>,
+}
+impl BackupPolicyDescription {
+    pub fn new(
+        name: String,
+        auto_restore_on_data_loss: bool,
+        max_incremental_backups: i64,
+        schedule: BackupScheduleDescription,
+        storage: BackupStorageDescription,
+    ) -> Self {
+        Self {
+            name,
+            auto_restore_on_data_loss,
+            max_incremental_backups,
+            schedule,
+            storage,
+            retention_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BackupPolicyScope {
@@ -933,10 +1592,20 @@ pub struct BackupProgressInfo {
     #[serde(rename = "FailureError", default, skip_serializing_if = "Option::is_none")]
     pub failure_error: Option<FabricErrorError>,
 }
+impl BackupProgressInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupScheduleDescription {
     #[serde(rename = "ScheduleKind")]
     pub schedule_kind: BackupScheduleKind,
+}
+impl BackupScheduleDescription {
+    pub fn new(schedule_kind: BackupScheduleKind) -> Self {
+        Self { schedule_kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BackupScheduleFrequencyType {
@@ -966,6 +1635,14 @@ pub struct BackupStorageDescription {
     #[serde(rename = "FriendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
+impl BackupStorageDescription {
+    pub fn new(storage_kind: BackupStorageKind) -> Self {
+        Self {
+            storage_kind,
+            friendly_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BackupStorageKind {
     Invalid,
@@ -978,6 +1655,11 @@ pub struct BackupSuspensionInfo {
     pub is_suspended: Option<bool>,
     #[serde(rename = "SuspensionInheritedFrom", default, skip_serializing_if = "Option::is_none")]
     pub suspension_inherited_from: Option<BackupSuspensionScope>,
+}
+impl BackupSuspensionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BackupSuspensionScope {
@@ -1001,12 +1683,26 @@ pub struct BasicRetentionPolicyDescription {
     #[serde(rename = "MinimumNumberOfBackups", default, skip_serializing_if = "Option::is_none")]
     pub minimum_number_of_backups: Option<i64>,
 }
+impl BasicRetentionPolicyDescription {
+    pub fn new(retention_policy_description: RetentionPolicyDescription, retention_duration: String) -> Self {
+        Self {
+            retention_policy_description,
+            retention_duration,
+            minimum_number_of_backups: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BinaryPropertyValue {
     #[serde(flatten)]
     pub property_value: PropertyValue,
     #[serde(rename = "Data")]
     pub data: ByteArray,
+}
+impl BinaryPropertyValue {
+    pub fn new(property_value: PropertyValue, data: ByteArray) -> Self {
+        Self { property_value, data }
+    }
 }
 pub type ByteArray = Vec<i64>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1017,6 +1713,11 @@ pub struct Chaos {
     pub status: Option<ChaosStatus>,
     #[serde(rename = "ScheduleStatus", default, skip_serializing_if = "Option::is_none")]
     pub schedule_status: Option<ChaosScheduleStatus>,
+}
+impl Chaos {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosCodePackageRestartScheduledEvent {
@@ -1035,19 +1736,55 @@ pub struct ChaosCodePackageRestartScheduledEvent {
     #[serde(rename = "ServicePackageActivationId")]
     pub service_package_activation_id: String,
 }
+impl ChaosCodePackageRestartScheduledEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        fault_group_id: String,
+        fault_id: String,
+        node_name: NodeName,
+        service_manifest_name: String,
+        code_package_name: String,
+        service_package_activation_id: String,
+    ) -> Self {
+        Self {
+            application_event,
+            fault_group_id,
+            fault_id,
+            node_name,
+            service_manifest_name,
+            code_package_name,
+            service_package_activation_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosContext {
     #[serde(rename = "Map", default, skip_serializing_if = "Option::is_none")]
     pub map: Option<ChaosContextMap>,
 }
+impl ChaosContext {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosContextMap {}
+impl ChaosContextMap {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosEvent {
     #[serde(rename = "Kind")]
     pub kind: ChaosEventKind,
     #[serde(rename = "TimeStampUtc")]
     pub time_stamp_utc: String,
+}
+impl ChaosEvent {
+    pub fn new(kind: ChaosEventKind, time_stamp_utc: String) -> Self {
+        Self { kind, time_stamp_utc }
+    }
 }
 pub type ChaosEventHistory = Vec<ChaosEventWrapper>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1065,12 +1802,22 @@ pub struct ChaosEventWrapper {
     #[serde(rename = "ChaosEvent", default, skip_serializing_if = "Option::is_none")]
     pub chaos_event: Option<ChaosEvent>,
 }
+impl ChaosEventWrapper {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosEventsSegment {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "History", default, skip_serializing_if = "Option::is_none")]
     pub history: Option<ChaosEventHistory>,
+}
+impl ChaosEventsSegment {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosNodeRestartScheduledEvent {
@@ -1082,6 +1829,16 @@ pub struct ChaosNodeRestartScheduledEvent {
     pub fault_group_id: String,
     #[serde(rename = "FaultId")]
     pub fault_id: String,
+}
+impl ChaosNodeRestartScheduledEvent {
+    pub fn new(node_event: NodeEvent, node_instance_id: i64, fault_group_id: String, fault_id: String) -> Self {
+        Self {
+            node_event,
+            node_instance_id,
+            fault_group_id,
+            fault_id,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosParameters {
@@ -1108,12 +1865,22 @@ pub struct ChaosParameters {
     #[serde(rename = "ChaosTargetFilter", default, skip_serializing_if = "Option::is_none")]
     pub chaos_target_filter: Option<ChaosTargetFilter>,
 }
+impl ChaosParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosParametersDictionaryItem {
     #[serde(rename = "Key")]
     pub key: String,
     #[serde(rename = "Value")]
     pub value: ChaosParameters,
+}
+impl ChaosParametersDictionaryItem {
+    pub fn new(key: String, value: ChaosParameters) -> Self {
+        Self { key, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosPartitionPrimaryMoveScheduledEvent {
@@ -1129,6 +1896,25 @@ pub struct ChaosPartitionPrimaryMoveScheduledEvent {
     pub node_to: NodeName,
     #[serde(rename = "ForcedMove")]
     pub forced_move: bool,
+}
+impl ChaosPartitionPrimaryMoveScheduledEvent {
+    pub fn new(
+        partition_event: PartitionEvent,
+        fault_group_id: String,
+        fault_id: String,
+        service_name: String,
+        node_to: NodeName,
+        forced_move: bool,
+    ) -> Self {
+        Self {
+            partition_event,
+            fault_group_id,
+            fault_id,
+            service_name,
+            node_to,
+            forced_move,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosPartitionSecondaryMoveScheduledEvent {
@@ -1147,6 +1933,27 @@ pub struct ChaosPartitionSecondaryMoveScheduledEvent {
     #[serde(rename = "ForcedMove")]
     pub forced_move: bool,
 }
+impl ChaosPartitionSecondaryMoveScheduledEvent {
+    pub fn new(
+        partition_event: PartitionEvent,
+        fault_group_id: String,
+        fault_id: String,
+        service_name: String,
+        source_node: NodeName,
+        destination_node: NodeName,
+        forced_move: bool,
+    ) -> Self {
+        Self {
+            partition_event,
+            fault_group_id,
+            fault_id,
+            service_name,
+            source_node,
+            destination_node,
+            forced_move,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosReplicaRemovalScheduledEvent {
     #[serde(flatten)]
@@ -1157,6 +1964,16 @@ pub struct ChaosReplicaRemovalScheduledEvent {
     pub fault_id: String,
     #[serde(rename = "ServiceUri")]
     pub service_uri: String,
+}
+impl ChaosReplicaRemovalScheduledEvent {
+    pub fn new(replica_event: ReplicaEvent, fault_group_id: String, fault_id: String, service_uri: String) -> Self {
+        Self {
+            replica_event,
+            fault_group_id,
+            fault_id,
+            service_uri,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosReplicaRestartScheduledEvent {
@@ -1169,6 +1986,16 @@ pub struct ChaosReplicaRestartScheduledEvent {
     #[serde(rename = "ServiceUri")]
     pub service_uri: String,
 }
+impl ChaosReplicaRestartScheduledEvent {
+    pub fn new(replica_event: ReplicaEvent, fault_group_id: String, fault_id: String, service_uri: String) -> Self {
+        Self {
+            replica_event,
+            fault_group_id,
+            fault_id,
+            service_uri,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosSchedule {
     #[serde(rename = "StartDate", default, skip_serializing_if = "Option::is_none")]
@@ -1180,12 +2007,22 @@ pub struct ChaosSchedule {
     #[serde(rename = "Jobs", default, skip_serializing_if = "Vec::is_empty")]
     pub jobs: Vec<ChaosScheduleJob>,
 }
+impl ChaosSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosScheduleDescription {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
     #[serde(rename = "Schedule", default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<ChaosSchedule>,
+}
+impl ChaosScheduleDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosScheduleJob {
@@ -1195,6 +2032,11 @@ pub struct ChaosScheduleJob {
     pub days: Option<ChaosScheduleJobActiveDaysOfWeek>,
     #[serde(rename = "Times", default, skip_serializing_if = "Vec::is_empty")]
     pub times: Vec<TimeRange>,
+}
+impl ChaosScheduleJob {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosScheduleJobActiveDaysOfWeek {
@@ -1212,6 +2054,11 @@ pub struct ChaosScheduleJobActiveDaysOfWeek {
     pub friday: Option<bool>,
     #[serde(rename = "Saturday", default, skip_serializing_if = "Option::is_none")]
     pub saturday: Option<bool>,
+}
+impl ChaosScheduleJobActiveDaysOfWeek {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ChaosScheduleStatus {
@@ -1246,6 +2093,35 @@ pub struct ChaosStartedEvent {
     #[serde(rename = "ChaosContext")]
     pub chaos_context: String,
 }
+impl ChaosStartedEvent {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        max_concurrent_faults: i64,
+        time_to_run_in_seconds: f64,
+        max_cluster_stabilization_timeout_in_seconds: f64,
+        wait_time_between_iterations_in_seconds: f64,
+        wait_time_between_faults_in_seconds: f64,
+        move_replica_fault_enabled: bool,
+        included_node_type_list: String,
+        included_application_list: String,
+        cluster_health_policy: String,
+        chaos_context: String,
+    ) -> Self {
+        Self {
+            cluster_event,
+            max_concurrent_faults,
+            time_to_run_in_seconds,
+            max_cluster_stabilization_timeout_in_seconds,
+            wait_time_between_iterations_in_seconds,
+            wait_time_between_faults_in_seconds,
+            move_replica_fault_enabled,
+            included_node_type_list,
+            included_application_list,
+            cluster_health_policy,
+            chaos_context,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ChaosStatus {
     Invalid,
@@ -1259,12 +2135,22 @@ pub struct ChaosStoppedEvent {
     #[serde(rename = "Reason")]
     pub reason: String,
 }
+impl ChaosStoppedEvent {
+    pub fn new(cluster_event: ClusterEvent, reason: String) -> Self {
+        Self { cluster_event, reason }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChaosTargetFilter {
     #[serde(rename = "NodeTypeInclusionList", default, skip_serializing_if = "Vec::is_empty")]
     pub node_type_inclusion_list: Vec<NodeType>,
     #[serde(rename = "ApplicationInclusionList", default, skip_serializing_if = "Vec::is_empty")]
     pub application_inclusion_list: Vec<ApplicationName>,
+}
+impl ChaosTargetFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckExistsPropertyBatchOperation {
@@ -1273,12 +2159,28 @@ pub struct CheckExistsPropertyBatchOperation {
     #[serde(rename = "Exists")]
     pub exists: bool,
 }
+impl CheckExistsPropertyBatchOperation {
+    pub fn new(property_batch_operation: PropertyBatchOperation, exists: bool) -> Self {
+        Self {
+            property_batch_operation,
+            exists,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckSequencePropertyBatchOperation {
     #[serde(flatten)]
     pub property_batch_operation: PropertyBatchOperation,
     #[serde(rename = "SequenceNumber")]
     pub sequence_number: String,
+}
+impl CheckSequencePropertyBatchOperation {
+    pub fn new(property_batch_operation: PropertyBatchOperation, sequence_number: String) -> Self {
+        Self {
+            property_batch_operation,
+            sequence_number,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckValuePropertyBatchOperation {
@@ -1287,10 +2189,23 @@ pub struct CheckValuePropertyBatchOperation {
     #[serde(rename = "Value")]
     pub value: PropertyValue,
 }
+impl CheckValuePropertyBatchOperation {
+    pub fn new(property_batch_operation: PropertyBatchOperation, value: PropertyValue) -> Self {
+        Self {
+            property_batch_operation,
+            value,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterConfiguration {
     #[serde(rename = "ClusterConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub cluster_configuration: Option<String>,
+}
+impl ClusterConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterConfigurationUpgradeDescription {
@@ -1321,6 +2236,23 @@ pub struct ClusterConfigurationUpgradeDescription {
     #[serde(rename = "ApplicationHealthPolicies", default, skip_serializing_if = "Option::is_none")]
     pub application_health_policies: Option<ApplicationHealthPolicies>,
 }
+impl ClusterConfigurationUpgradeDescription {
+    pub fn new(cluster_config: String) -> Self {
+        Self {
+            cluster_config,
+            health_check_retry_timeout: None,
+            health_check_wait_duration_in_seconds: None,
+            health_check_stable_duration_in_seconds: None,
+            upgrade_domain_timeout_in_seconds: None,
+            upgrade_timeout_in_seconds: None,
+            max_percent_unhealthy_applications: None,
+            max_percent_unhealthy_nodes: None,
+            max_percent_delta_unhealthy_nodes: None,
+            max_percent_upgrade_domain_delta_unhealthy_nodes: None,
+            application_health_policies: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterConfigurationUpgradeStatusInfo {
     #[serde(rename = "UpgradeState", default, skip_serializing_if = "Option::is_none")]
@@ -1332,10 +2264,20 @@ pub struct ClusterConfigurationUpgradeStatusInfo {
     #[serde(rename = "Details", default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
+impl ClusterConfigurationUpgradeStatusInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterEvent {
     #[serde(flatten)]
     pub fabric_event: FabricEvent,
+}
+impl ClusterEvent {
+    pub fn new(fabric_event: FabricEvent) -> Self {
+        Self { fabric_event }
+    }
 }
 pub type ClusterEventList = Vec<ClusterEvent>;
 pub type ClusterFabricCodeVersionString = String;
@@ -1349,6 +2291,11 @@ pub struct ClusterHealth {
     #[serde(rename = "ApplicationHealthStates", default, skip_serializing_if = "Vec::is_empty")]
     pub application_health_states: Vec<ApplicationHealthState>,
 }
+impl ClusterHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterHealthChunk {
     #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
@@ -1357,6 +2304,11 @@ pub struct ClusterHealthChunk {
     pub node_health_state_chunks: Option<NodeHealthStateChunkList>,
     #[serde(rename = "ApplicationHealthStateChunks", default, skip_serializing_if = "Option::is_none")]
     pub application_health_state_chunks: Option<ApplicationHealthStateChunkList>,
+}
+impl ClusterHealthChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterHealthChunkQueryDescription {
@@ -1369,12 +2321,22 @@ pub struct ClusterHealthChunkQueryDescription {
     #[serde(rename = "ApplicationHealthPolicies", default, skip_serializing_if = "Option::is_none")]
     pub application_health_policies: Option<ApplicationHealthPolicies>,
 }
+impl ClusterHealthChunkQueryDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterHealthPolicies {
     #[serde(rename = "ApplicationHealthPolicyMap", default, skip_serializing_if = "Option::is_none")]
     pub application_health_policy_map: Option<ApplicationHealthPolicyMap>,
     #[serde(rename = "ClusterHealthPolicy", default, skip_serializing_if = "Option::is_none")]
     pub cluster_health_policy: Option<ClusterHealthPolicy>,
+}
+impl ClusterHealthPolicies {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterHealthPolicy {
@@ -1386,6 +2348,11 @@ pub struct ClusterHealthPolicy {
     pub max_percent_unhealthy_applications: Option<i64>,
     #[serde(rename = "ApplicationTypeHealthPolicyMap", default, skip_serializing_if = "Option::is_none")]
     pub application_type_health_policy_map: Option<ApplicationTypeHealthPolicyMap>,
+}
+impl ClusterHealthPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterHealthReportExpiredEvent {
@@ -1408,6 +2375,31 @@ pub struct ClusterHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl ClusterHealthReportExpiredEvent {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            cluster_event,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterLoadInfo {
     #[serde(rename = "LastBalancingStartTimeUtc", default, skip_serializing_if = "Option::is_none")]
@@ -1417,10 +2409,20 @@ pub struct ClusterLoadInfo {
     #[serde(rename = "LoadMetricInformation", default, skip_serializing_if = "Vec::is_empty")]
     pub load_metric_information: Vec<LoadMetricInformation>,
 }
+impl ClusterLoadInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterManifest {
     #[serde(rename = "Manifest", default, skip_serializing_if = "Option::is_none")]
     pub manifest: Option<String>,
+}
+impl ClusterManifest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterNewHealthReportEvent {
@@ -1443,6 +2445,31 @@ pub struct ClusterNewHealthReportEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl ClusterNewHealthReportEvent {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            cluster_event,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeCompletedEvent {
     #[serde(flatten)]
@@ -1451,6 +2478,15 @@ pub struct ClusterUpgradeCompletedEvent {
     pub target_cluster_version: String,
     #[serde(rename = "OverallUpgradeElapsedTimeInMs")]
     pub overall_upgrade_elapsed_time_in_ms: f64,
+}
+impl ClusterUpgradeCompletedEvent {
+    pub fn new(cluster_event: ClusterEvent, target_cluster_version: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
+        Self {
+            cluster_event,
+            target_cluster_version,
+            overall_upgrade_elapsed_time_in_ms,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpgradeDescriptionObject {
@@ -1483,6 +2519,11 @@ pub struct ClusterUpgradeDescriptionObject {
     #[serde(rename = "ApplicationHealthPolicyMap", default, skip_serializing_if = "Option::is_none")]
     pub application_health_policy_map: Option<ApplicationHealthPolicyMap>,
 }
+impl ClusterUpgradeDescriptionObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeDomainCompletedEvent {
     #[serde(flatten)]
@@ -1496,6 +2537,23 @@ pub struct ClusterUpgradeDomainCompletedEvent {
     #[serde(rename = "UpgradeDomainElapsedTimeInMs")]
     pub upgrade_domain_elapsed_time_in_ms: f64,
 }
+impl ClusterUpgradeDomainCompletedEvent {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        target_cluster_version: String,
+        upgrade_state: String,
+        upgrade_domains: String,
+        upgrade_domain_elapsed_time_in_ms: f64,
+    ) -> Self {
+        Self {
+            cluster_event,
+            target_cluster_version,
+            upgrade_state,
+            upgrade_domains,
+            upgrade_domain_elapsed_time_in_ms,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpgradeHealthPolicyObject {
     #[serde(rename = "MaxPercentDeltaUnhealthyNodes", default, skip_serializing_if = "Option::is_none")]
@@ -1506,6 +2564,11 @@ pub struct ClusterUpgradeHealthPolicyObject {
         skip_serializing_if = "Option::is_none"
     )]
     pub max_percent_upgrade_domain_delta_unhealthy_nodes: Option<i64>,
+}
+impl ClusterUpgradeHealthPolicyObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterUpgradeProgressObject {
@@ -1540,6 +2603,11 @@ pub struct ClusterUpgradeProgressObject {
     #[serde(rename = "UpgradeDomainProgressAtFailure", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_domain_progress_at_failure: Option<FailedUpgradeDomainProgressObject>,
 }
+impl ClusterUpgradeProgressObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeRollbackCompletedEvent {
     #[serde(flatten)]
@@ -1551,6 +2619,21 @@ pub struct ClusterUpgradeRollbackCompletedEvent {
     #[serde(rename = "OverallUpgradeElapsedTimeInMs")]
     pub overall_upgrade_elapsed_time_in_ms: f64,
 }
+impl ClusterUpgradeRollbackCompletedEvent {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        target_cluster_version: String,
+        failure_reason: String,
+        overall_upgrade_elapsed_time_in_ms: f64,
+    ) -> Self {
+        Self {
+            cluster_event,
+            target_cluster_version,
+            failure_reason,
+            overall_upgrade_elapsed_time_in_ms,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeRollbackStartedEvent {
     #[serde(flatten)]
@@ -1561,6 +2644,21 @@ pub struct ClusterUpgradeRollbackStartedEvent {
     pub failure_reason: String,
     #[serde(rename = "OverallUpgradeElapsedTimeInMs")]
     pub overall_upgrade_elapsed_time_in_ms: f64,
+}
+impl ClusterUpgradeRollbackStartedEvent {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        target_cluster_version: String,
+        failure_reason: String,
+        overall_upgrade_elapsed_time_in_ms: f64,
+    ) -> Self {
+        Self {
+            cluster_event,
+            target_cluster_version,
+            failure_reason,
+            overall_upgrade_elapsed_time_in_ms,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeStartedEvent {
@@ -1577,10 +2675,34 @@ pub struct ClusterUpgradeStartedEvent {
     #[serde(rename = "FailureAction")]
     pub failure_action: String,
 }
+impl ClusterUpgradeStartedEvent {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        current_cluster_version: String,
+        target_cluster_version: String,
+        upgrade_type: String,
+        rolling_upgrade_mode: String,
+        failure_action: String,
+    ) -> Self {
+        Self {
+            cluster_event,
+            current_cluster_version,
+            target_cluster_version,
+            upgrade_type,
+            rolling_upgrade_mode,
+            failure_action,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterVersion {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl ClusterVersion {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CodePackageEntryPoint {
@@ -1598,6 +2720,11 @@ pub struct CodePackageEntryPoint {
     pub next_activation_time: Option<String>,
     #[serde(rename = "InstanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<CodePackageInstanceId>,
+}
+impl CodePackageEntryPoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CodePackageEntryPointStatistics {
@@ -1624,6 +2751,11 @@ pub struct CodePackageEntryPointStatistics {
     #[serde(rename = "ContinuousExitFailureCount", default, skip_serializing_if = "Option::is_none")]
     pub continuous_exit_failure_count: Option<String>,
 }
+impl CodePackageEntryPointStatistics {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type CodePackageInstanceId = String;
 pub type CodePackageName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1647,6 +2779,11 @@ pub struct ComposeDeploymentStatusInfo {
     pub status: Option<ComposeDeploymentStatus>,
     #[serde(rename = "StatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
+}
+impl ComposeDeploymentStatusInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComposeDeploymentUpgradeDescription {
@@ -1672,6 +2809,21 @@ pub struct ComposeDeploymentUpgradeDescription {
     pub monitoring_policy: Option<MonitoringPolicyDescription>,
     #[serde(rename = "ApplicationHealthPolicy", default, skip_serializing_if = "Option::is_none")]
     pub application_health_policy: Option<ApplicationHealthPolicy>,
+}
+impl ComposeDeploymentUpgradeDescription {
+    pub fn new(deployment_name: DeploymentName, compose_file_content: String, upgrade_kind: UpgradeKind) -> Self {
+        Self {
+            deployment_name,
+            compose_file_content,
+            registry_credential: None,
+            upgrade_kind,
+            rolling_upgrade_mode: None,
+            upgrade_replica_set_check_timeout_in_seconds: None,
+            force_restart: None,
+            monitoring_policy: None,
+            application_health_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComposeDeploymentUpgradeProgressInfo {
@@ -1720,6 +2872,11 @@ pub struct ComposeDeploymentUpgradeProgressInfo {
     #[serde(rename = "ApplicationUpgradeStatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub application_upgrade_status_details: Option<String>,
 }
+impl ComposeDeploymentUpgradeProgressInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComposeDeploymentUpgradeState {
     Invalid,
@@ -1746,6 +2903,17 @@ pub struct ConfigParameterOverride {
     #[serde(rename = "PersistAcrossUpgrade", default, skip_serializing_if = "Option::is_none")]
     pub persist_across_upgrade: Option<bool>,
 }
+impl ConfigParameterOverride {
+    pub fn new(section_name: String, parameter_name: String, parameter_value: String) -> Self {
+        Self {
+            section_name,
+            parameter_name,
+            parameter_value,
+            timeout: None,
+            persist_across_upgrade: None,
+        }
+    }
+}
 pub type ConfigParameterOverrideList = Vec<ConfigParameterOverride>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerApiRequestBody {
@@ -1758,10 +2926,25 @@ pub struct ContainerApiRequestBody {
     #[serde(rename = "Body", default, skip_serializing_if = "Option::is_none")]
     pub body: Option<String>,
 }
+impl ContainerApiRequestBody {
+    pub fn new(uri_path: String) -> Self {
+        Self {
+            http_verb: None,
+            uri_path,
+            content_type: None,
+            body: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerApiResponse {
     #[serde(rename = "ContainerApiResult")]
     pub container_api_result: ContainerApiResult,
+}
+impl ContainerApiResponse {
+    pub fn new(container_api_result: ContainerApiResult) -> Self {
+        Self { container_api_result }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerApiResult {
@@ -1773,6 +2956,16 @@ pub struct ContainerApiResult {
     pub content_encoding: Option<String>,
     #[serde(rename = "Body", default, skip_serializing_if = "Option::is_none")]
     pub body: Option<String>,
+}
+impl ContainerApiResult {
+    pub fn new(status: i64) -> Self {
+        Self {
+            status,
+            content_type: None,
+            content_encoding: None,
+            body: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerCodePackageProperties {
@@ -1808,6 +3001,29 @@ pub struct ContainerCodePackageProperties {
     #[serde(rename = "readinessProbe", default, skip_serializing_if = "Vec::is_empty")]
     pub readiness_probe: Vec<Probe>,
 }
+impl ContainerCodePackageProperties {
+    pub fn new(name: String, image: String, resources: ResourceRequirements) -> Self {
+        Self {
+            name,
+            image,
+            image_registry_credential: None,
+            entry_point: None,
+            commands: Vec::new(),
+            environment_variables: Vec::new(),
+            settings: Vec::new(),
+            labels: Vec::new(),
+            endpoints: Vec::new(),
+            resources,
+            volume_refs: Vec::new(),
+            volumes: Vec::new(),
+            diagnostics: None,
+            reliable_collections_refs: Vec::new(),
+            instance_view: None,
+            liveness_probe: Vec::new(),
+            readiness_probe: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1823,10 +3039,20 @@ pub struct ContainerEvent {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl ContainerEvent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerInstanceEvent {
     #[serde(flatten)]
     pub fabric_event: FabricEvent,
+}
+impl ContainerInstanceEvent {
+    pub fn new(fabric_event: FabricEvent) -> Self {
+        Self { fabric_event }
+    }
 }
 pub type ContainerInstanceEventList = Vec<ContainerInstanceEvent>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1840,15 +3066,30 @@ pub struct ContainerInstanceView {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub events: Vec<ContainerEvent>,
 }
+impl ContainerInstanceView {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerLabel {
     pub name: String,
     pub value: String,
 }
+impl ContainerLabel {
+    pub fn new(name: String, value: String) -> Self {
+        Self { name, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerLogs {
     #[serde(rename = "Content", default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
+}
+impl ContainerLogs {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerState {
@@ -1863,6 +3104,11 @@ pub struct ContainerState {
     #[serde(rename = "detailStatus", default, skip_serializing_if = "Option::is_none")]
     pub detail_status: Option<String>,
 }
+impl ContainerState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type ContinuationToken = String;
 pub type CorrelationSchemeList = Vec<ServiceCorrelationDescription>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1874,6 +3120,15 @@ pub struct CreateComposeDeploymentDescription {
     #[serde(rename = "RegistryCredential", default, skip_serializing_if = "Option::is_none")]
     pub registry_credential: Option<RegistryCredential>,
 }
+impl CreateComposeDeploymentDescription {
+    pub fn new(deployment_name: DeploymentName, compose_file_content: String) -> Self {
+        Self {
+            deployment_name,
+            compose_file_content,
+            registry_credential: None,
+        }
+    }
+}
 pub type CurrentUpgradeDomainDuration = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CurrentUpgradeDomainProgressInfo {
@@ -1881,6 +3136,11 @@ pub struct CurrentUpgradeDomainProgressInfo {
     pub domain_name: Option<UpgradeDomainName>,
     #[serde(rename = "NodeUpgradeProgressList", default, skip_serializing_if = "Option::is_none")]
     pub node_upgrade_progress_list: Option<NodeUpgradeProgressInfoList>,
+}
+impl CurrentUpgradeDomainProgressInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DayOfWeek {
@@ -1898,6 +3158,11 @@ pub struct DeactivationIntentDescription {
     #[serde(rename = "DeactivationIntent", default, skip_serializing_if = "Option::is_none")]
     pub deactivation_intent: Option<deactivation_intent_description::DeactivationIntent>,
 }
+impl DeactivationIntentDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod deactivation_intent_description {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1912,10 +3177,20 @@ pub struct DefaultExecutionPolicy {
     #[serde(flatten)]
     pub execution_policy: ExecutionPolicy,
 }
+impl DefaultExecutionPolicy {
+    pub fn new(execution_policy: ExecutionPolicy) -> Self {
+        Self { execution_policy }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeletePropertyBatchOperation {
     #[serde(flatten)]
     pub property_batch_operation: PropertyBatchOperation,
+}
+impl DeletePropertyBatchOperation {
+    pub fn new(property_batch_operation: PropertyBatchOperation) -> Self {
+        Self { property_batch_operation }
+    }
 }
 pub type DeltaHealthEvaluationBool = bool;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1933,6 +3208,18 @@ pub struct DeltaNodesCheckHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl DeltaNodesCheckHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            baseline_error_count: None,
+            baseline_total_count: None,
+            max_percent_delta_unhealthy_nodes: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployServicePackageToNodeDescription {
     #[serde(rename = "ServiceManifestName")]
@@ -1946,6 +3233,22 @@ pub struct DeployServicePackageToNodeDescription {
     #[serde(rename = "PackageSharingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub package_sharing_policy: Option<PackageSharingPolicyInfoList>,
 }
+impl DeployServicePackageToNodeDescription {
+    pub fn new(
+        service_manifest_name: ServiceManifestName,
+        application_type_name: ApplicationTypeName,
+        application_type_version: ApplicationTypeVersion,
+        node_name: NodeName,
+    ) -> Self {
+        Self {
+            service_manifest_name,
+            application_type_name,
+            application_type_version,
+            node_name,
+            package_sharing_policy: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedApplicationHealth {
     #[serde(flatten)]
@@ -1957,6 +3260,11 @@ pub struct DeployedApplicationHealth {
     #[serde(rename = "DeployedServicePackageHealthStates", default, skip_serializing_if = "Option::is_none")]
     pub deployed_service_package_health_states: Option<DeployedServicePackageHealthStateList>,
 }
+impl DeployedApplicationHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedApplicationHealthEvaluation {
     #[serde(flatten)]
@@ -1967,6 +3275,16 @@ pub struct DeployedApplicationHealthEvaluation {
     pub application_name: Option<ApplicationName>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl DeployedApplicationHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            node_name: None,
+            application_name: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedApplicationHealthReportExpiredEvent {
@@ -1993,6 +3311,35 @@ pub struct DeployedApplicationHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl DeployedApplicationHealthReportExpiredEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_instance_id: i64,
+        node_name: NodeName,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            application_event,
+            application_instance_id,
+            node_name,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedApplicationHealthState {
     #[serde(flatten)]
@@ -2001,6 +3348,11 @@ pub struct DeployedApplicationHealthState {
     pub node_name: Option<NodeName>,
     #[serde(rename = "ApplicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<ApplicationName>,
+}
+impl DeployedApplicationHealthState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedApplicationHealthStateChunk {
@@ -2015,10 +3367,20 @@ pub struct DeployedApplicationHealthStateChunk {
     )]
     pub deployed_service_package_health_state_chunks: Option<DeployedServicePackageHealthStateChunkList>,
 }
+impl DeployedApplicationHealthStateChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedApplicationHealthStateChunkList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<DeployedApplicationHealthStateChunk>,
+}
+impl DeployedApplicationHealthStateChunkList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedApplicationHealthStateFilter {
@@ -2028,6 +3390,11 @@ pub struct DeployedApplicationHealthStateFilter {
     pub health_state_filter: Option<i64>,
     #[serde(rename = "DeployedServicePackageFilters", default, skip_serializing_if = "Vec::is_empty")]
     pub deployed_service_package_filters: Vec<DeployedServicePackageHealthStateFilter>,
+}
+impl DeployedApplicationHealthStateFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedApplicationInfo {
@@ -2047,6 +3414,11 @@ pub struct DeployedApplicationInfo {
     pub temp_directory: Option<String>,
     #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
+}
+impl DeployedApplicationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type DeployedApplicationInfoList = Vec<DeployedApplicationInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2074,6 +3446,35 @@ pub struct DeployedApplicationNewHealthReportEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl DeployedApplicationNewHealthReportEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        application_instance_id: i64,
+        node_name: NodeName,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            application_event,
+            application_instance_id,
+            node_name,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeployedApplicationStatus {
     Invalid,
@@ -2098,6 +3499,16 @@ pub struct DeployedApplicationsHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl DeployedApplicationsHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            max_percent_unhealthy_deployed_applications: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedCodePackageInfo {
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
@@ -2121,6 +3532,11 @@ pub struct DeployedCodePackageInfo {
     #[serde(rename = "MainEntryPoint", default, skip_serializing_if = "Option::is_none")]
     pub main_entry_point: Option<CodePackageEntryPoint>,
 }
+impl DeployedCodePackageInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type DeployedCodePackageInfoList = Vec<DeployedCodePackageInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedServicePackageHealth {
@@ -2132,6 +3548,11 @@ pub struct DeployedServicePackageHealth {
     pub service_manifest_name: Option<ServiceManifestName>,
     #[serde(rename = "NodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<NodeName>,
+}
+impl DeployedServicePackageHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedServicePackageHealthEvaluation {
@@ -2145,6 +3566,17 @@ pub struct DeployedServicePackageHealthEvaluation {
     pub service_manifest_name: Option<ServiceManifestName>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl DeployedServicePackageHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            node_name: None,
+            application_name: None,
+            service_manifest_name: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedServicePackageHealthReportExpiredEvent {
@@ -2175,6 +3607,39 @@ pub struct DeployedServicePackageHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl DeployedServicePackageHealthReportExpiredEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        service_manifest: String,
+        service_package_instance_id: i64,
+        service_package_activation_id: String,
+        node_name: NodeName,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            application_event,
+            service_manifest,
+            service_package_instance_id,
+            service_package_activation_id,
+            node_name,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedServicePackageHealthState {
     #[serde(flatten)]
@@ -2188,6 +3653,11 @@ pub struct DeployedServicePackageHealthState {
     #[serde(rename = "ServicePackageActivationId", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_id: Option<ServicePackageActivationId>,
 }
+impl DeployedServicePackageHealthState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedServicePackageHealthStateChunk {
     #[serde(flatten)]
@@ -2197,10 +3667,20 @@ pub struct DeployedServicePackageHealthStateChunk {
     #[serde(rename = "ServicePackageActivationId", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_id: Option<ServicePackageActivationId>,
 }
+impl DeployedServicePackageHealthStateChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedServicePackageHealthStateChunkList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<DeployedServicePackageHealthStateChunk>,
+}
+impl DeployedServicePackageHealthStateChunkList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedServicePackageHealthStateFilter {
@@ -2210,6 +3690,11 @@ pub struct DeployedServicePackageHealthStateFilter {
     pub service_package_activation_id_filter: Option<String>,
     #[serde(rename = "HealthStateFilter", default, skip_serializing_if = "Option::is_none")]
     pub health_state_filter: Option<i64>,
+}
+impl DeployedServicePackageHealthStateFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type DeployedServicePackageHealthStateList = Vec<DeployedServicePackageHealthState>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2222,6 +3707,11 @@ pub struct DeployedServicePackageInfo {
     pub status: Option<DeploymentStatus>,
     #[serde(rename = "ServicePackageActivationId", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_id: Option<ServicePackageActivationId>,
+}
+impl DeployedServicePackageInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type DeployedServicePackageInfoList = Vec<DeployedServicePackageInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2253,6 +3743,39 @@ pub struct DeployedServicePackageNewHealthReportEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl DeployedServicePackageNewHealthReportEvent {
+    pub fn new(
+        application_event: ApplicationEvent,
+        service_manifest_name: String,
+        service_package_instance_id: i64,
+        service_package_activation_id: String,
+        node_name: NodeName,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            application_event,
+            service_manifest_name,
+            service_package_instance_id,
+            service_package_activation_id,
+            node_name,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedServicePackagesHealthEvaluation {
     #[serde(flatten)]
@@ -2261,6 +3784,15 @@ pub struct DeployedServicePackagesHealthEvaluation {
     pub total_count: Option<i64>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl DeployedServicePackagesHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedServiceReplicaDetailInfo {
@@ -2276,6 +3808,18 @@ pub struct DeployedServiceReplicaDetailInfo {
     pub current_service_operation_start_time_utc: Option<String>,
     #[serde(rename = "ReportedLoad", default, skip_serializing_if = "Option::is_none")]
     pub reported_load: Option<LoadMetricReportInfoList>,
+}
+impl DeployedServiceReplicaDetailInfo {
+    pub fn new(service_kind: ServiceKind) -> Self {
+        Self {
+            service_kind,
+            service_name: None,
+            partition_id: None,
+            current_service_operation: None,
+            current_service_operation_start_time_utc: None,
+            reported_load: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedServiceReplicaInfo {
@@ -2300,6 +3844,22 @@ pub struct DeployedServiceReplicaInfo {
     #[serde(rename = "HostProcessId", default, skip_serializing_if = "Option::is_none")]
     pub host_process_id: Option<String>,
 }
+impl DeployedServiceReplicaInfo {
+    pub fn new(service_kind: ServiceKind) -> Self {
+        Self {
+            service_kind,
+            service_name: None,
+            service_type_name: None,
+            service_manifest_name: None,
+            code_package_name: None,
+            partition_id: None,
+            replica_status: None,
+            address: None,
+            service_package_activation_id: None,
+            host_process_id: None,
+        }
+    }
+}
 pub type DeployedServiceReplicaInfoList = Vec<DeployedServiceReplicaInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedServiceTypeInfo {
@@ -2313,6 +3873,11 @@ pub struct DeployedServiceTypeInfo {
     pub status: Option<ServiceTypeRegistrationStatus>,
     #[serde(rename = "ServicePackageActivationId", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_id: Option<ServicePackageActivationId>,
+}
+impl DeployedServiceTypeInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type DeployedServiceTypeInfoList = Vec<DeployedServiceTypeInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2334,6 +3899,20 @@ pub struct DeployedStatefulServiceReplicaDetailInfo {
     #[serde(rename = "DeployedServiceReplicaQueryResult", default, skip_serializing_if = "Option::is_none")]
     pub deployed_service_replica_query_result: Option<DeployedStatefulServiceReplicaInfo>,
 }
+impl DeployedStatefulServiceReplicaDetailInfo {
+    pub fn new(deployed_service_replica_detail_info: DeployedServiceReplicaDetailInfo) -> Self {
+        Self {
+            deployed_service_replica_detail_info,
+            replica_id: None,
+            current_replicator_operation: None,
+            read_status: None,
+            write_status: None,
+            replicator_status: None,
+            replica_status: None,
+            deployed_service_replica_query_result: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedStatefulServiceReplicaInfo {
     #[serde(flatten)]
@@ -2345,6 +3924,16 @@ pub struct DeployedStatefulServiceReplicaInfo {
     #[serde(rename = "ReconfigurationInformation", default, skip_serializing_if = "Option::is_none")]
     pub reconfiguration_information: Option<ReconfigurationInformation>,
 }
+impl DeployedStatefulServiceReplicaInfo {
+    pub fn new(deployed_service_replica_info: DeployedServiceReplicaInfo) -> Self {
+        Self {
+            deployed_service_replica_info,
+            replica_id: None,
+            replica_role: None,
+            reconfiguration_information: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedStatelessServiceInstanceDetailInfo {
     #[serde(flatten)]
@@ -2354,12 +3943,29 @@ pub struct DeployedStatelessServiceInstanceDetailInfo {
     #[serde(rename = "DeployedServiceReplicaQueryResult", default, skip_serializing_if = "Option::is_none")]
     pub deployed_service_replica_query_result: Option<DeployedStatelessServiceInstanceInfo>,
 }
+impl DeployedStatelessServiceInstanceDetailInfo {
+    pub fn new(deployed_service_replica_detail_info: DeployedServiceReplicaDetailInfo) -> Self {
+        Self {
+            deployed_service_replica_detail_info,
+            instance_id: None,
+            deployed_service_replica_query_result: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedStatelessServiceInstanceInfo {
     #[serde(flatten)]
     pub deployed_service_replica_info: DeployedServiceReplicaInfo,
     #[serde(rename = "InstanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<InstanceId>,
+}
+impl DeployedStatelessServiceInstanceInfo {
+    pub fn new(deployed_service_replica_info: DeployedServiceReplicaInfo) -> Self {
+        Self {
+            deployed_service_replica_info,
+            instance_id: None,
+        }
+    }
 }
 pub type DeploymentName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2382,12 +3988,22 @@ pub struct DiagnosticsDescription {
     #[serde(rename = "defaultSinkRefs", default, skip_serializing_if = "Vec::is_empty")]
     pub default_sink_refs: Vec<String>,
 }
+impl DiagnosticsDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticsRef {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     #[serde(rename = "sinkRefs", default, skip_serializing_if = "Vec::is_empty")]
     pub sink_refs: Vec<String>,
+}
+impl DiagnosticsRef {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiagnosticsSinkKind {
@@ -2402,10 +4018,24 @@ pub struct DiagnosticsSinkProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl DiagnosticsSinkProperties {
+    pub fn new(kind: DiagnosticsSinkKind) -> Self {
+        Self {
+            kind,
+            name: None,
+            description: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DisableBackupDescription {
     #[serde(rename = "CleanBackup")]
     pub clean_backup: bool,
+}
+impl DisableBackupDescription {
+    pub fn new(clean_backup: bool) -> Self {
+        Self { clean_backup }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskInfo {
@@ -2414,6 +4044,11 @@ pub struct DiskInfo {
     #[serde(rename = "AvailableSpace", default, skip_serializing_if = "Option::is_none")]
     pub available_space: Option<String>,
 }
+impl DiskInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DoublePropertyValue {
     #[serde(flatten)]
@@ -2421,10 +4056,20 @@ pub struct DoublePropertyValue {
     #[serde(rename = "Data")]
     pub data: f64,
 }
+impl DoublePropertyValue {
+    pub fn new(property_value: PropertyValue, data: f64) -> Self {
+        Self { property_value, data }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableBackupDescription {
     #[serde(rename = "BackupPolicyName")]
     pub backup_policy_name: String,
+}
+impl EnableBackupDescription {
+    pub fn new(backup_policy_name: String) -> Self {
+        Self { backup_policy_name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointProperties {
@@ -2432,20 +4077,40 @@ pub struct EndpointProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i64>,
 }
+impl EndpointProperties {
+    pub fn new(name: String) -> Self {
+        Self { name, port: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointRef {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl EndpointRef {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnsureAvailabilitySafetyCheck {
     #[serde(flatten)]
     pub partition_safety_check: PartitionSafetyCheck,
 }
+impl EnsureAvailabilitySafetyCheck {
+    pub fn new(partition_safety_check: PartitionSafetyCheck) -> Self {
+        Self { partition_safety_check }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnsurePartitionQuorumSafetyCheck {
     #[serde(flatten)]
     pub partition_safety_check: PartitionSafetyCheck,
+}
+impl EnsurePartitionQuorumSafetyCheck {
+    pub fn new(partition_safety_check: PartitionSafetyCheck) -> Self {
+        Self { partition_safety_check }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHealth {
@@ -2458,20 +4123,40 @@ pub struct EntityHealth {
     #[serde(rename = "HealthStatistics", default, skip_serializing_if = "Option::is_none")]
     pub health_statistics: Option<HealthStatistics>,
 }
+impl EntityHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHealthState {
     #[serde(rename = "AggregatedHealthState", default, skip_serializing_if = "Option::is_none")]
     pub aggregated_health_state: Option<HealthState>,
+}
+impl EntityHealthState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHealthStateChunk {
     #[serde(rename = "HealthState", default, skip_serializing_if = "Option::is_none")]
     pub health_state: Option<HealthState>,
 }
+impl EntityHealthStateChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHealthStateChunkList {
     #[serde(rename = "TotalCount", default, skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
+}
+impl EntityHealthStateChunkList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityKind {
@@ -2492,6 +4177,11 @@ pub struct EntityKindHealthStateCount {
     #[serde(rename = "HealthStateCount", default, skip_serializing_if = "Option::is_none")]
     pub health_state_count: Option<HealthStateCount>,
 }
+impl EntityKindHealthStateCount {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntryPointStatus {
     Invalid,
@@ -2509,6 +4199,11 @@ pub struct EnvironmentVariable {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl EnvironmentVariable {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EnvironmentVariableType {
@@ -2528,6 +4223,11 @@ pub struct Epoch {
     #[serde(rename = "DataLossVersion", default, skip_serializing_if = "Option::is_none")]
     pub data_loss_version: Option<String>,
 }
+impl Epoch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHealthEvaluation {
     #[serde(flatten)]
@@ -2537,6 +4237,15 @@ pub struct EventHealthEvaluation {
     #[serde(rename = "UnhealthyEvent", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_event: Option<HealthEvent>,
 }
+impl EventHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            consider_warning_as_error: None,
+            unhealthy_event: None,
+        }
+    }
+}
 pub type EventList = Vec<FabricEvent>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExecutingFaultsChaosEvent {
@@ -2545,10 +4254,23 @@ pub struct ExecutingFaultsChaosEvent {
     #[serde(rename = "Faults", default, skip_serializing_if = "Vec::is_empty")]
     pub faults: Vec<String>,
 }
+impl ExecutingFaultsChaosEvent {
+    pub fn new(chaos_event: ChaosEvent) -> Self {
+        Self {
+            chaos_event,
+            faults: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExecutionPolicy {
     #[serde(rename = "type")]
     pub type_: ExecutionPolicyType,
+}
+impl ExecutionPolicy {
+    pub fn new(type_: ExecutionPolicyType) -> Self {
+        Self { type_ }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ExecutionPolicyType {
@@ -2566,10 +4288,30 @@ pub struct ExternalStoreProvisionApplicationTypeDescription {
     #[serde(rename = "ApplicationTypeVersion")]
     pub application_type_version: String,
 }
+impl ExternalStoreProvisionApplicationTypeDescription {
+    pub fn new(
+        provision_application_type_description_base: ProvisionApplicationTypeDescriptionBase,
+        application_package_download_uri: String,
+        application_type_name: String,
+        application_type_version: String,
+    ) -> Self {
+        Self {
+            provision_application_type_description_base,
+            application_package_download_uri,
+            application_type_name,
+            application_type_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FabricCodeVersionInfo {
     #[serde(rename = "CodeVersion", default, skip_serializing_if = "Option::is_none")]
     pub code_version: Option<String>,
+}
+impl FabricCodeVersionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type FabricCodeVersionInfoList = Vec<FabricCodeVersionInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2577,11 +4319,21 @@ pub struct FabricConfigVersionInfo {
     #[serde(rename = "ConfigVersion", default, skip_serializing_if = "Option::is_none")]
     pub config_version: Option<String>,
 }
+impl FabricConfigVersionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type FabricConfigVersionInfoList = Vec<FabricConfigVersionInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FabricError {
     #[serde(rename = "Error")]
     pub error: FabricErrorError,
+}
+impl FabricError {
+    pub fn new(error: FabricErrorError) -> Self {
+        Self { error }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum FabricErrorCodes {
@@ -2760,6 +4512,11 @@ pub struct FabricErrorError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl FabricErrorError {
+    pub fn new(code: FabricErrorCodes) -> Self {
+        Self { code, message: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FabricEvent {
     #[serde(rename = "Kind")]
@@ -2772,6 +4529,17 @@ pub struct FabricEvent {
     pub time_stamp: String,
     #[serde(rename = "HasCorrelatedEvents", default, skip_serializing_if = "Option::is_none")]
     pub has_correlated_events: Option<bool>,
+}
+impl FabricEvent {
+    pub fn new(kind: FabricEventKind, event_instance_id: String, time_stamp: String) -> Self {
+        Self {
+            kind,
+            event_instance_id,
+            category: None,
+            time_stamp,
+            has_correlated_events: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum FabricEventKind {
@@ -2854,12 +4622,26 @@ pub struct FailedPropertyBatchInfo {
     #[serde(rename = "OperationIndex", default, skip_serializing_if = "Option::is_none")]
     pub operation_index: Option<i64>,
 }
+impl FailedPropertyBatchInfo {
+    pub fn new(property_batch_info: PropertyBatchInfo) -> Self {
+        Self {
+            property_batch_info,
+            error_message: None,
+            operation_index: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailedUpgradeDomainProgressObject {
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<UpgradeDomainName>,
     #[serde(rename = "NodeUpgradeProgressList", default, skip_serializing_if = "Option::is_none")]
     pub node_upgrade_progress_list: Option<NodeUpgradeProgressInfoList>,
+}
+impl FailedUpgradeDomainProgressObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum FailureAction {
@@ -2882,6 +4664,11 @@ pub struct FailureUpgradeDomainProgressInfo {
     #[serde(rename = "NodeUpgradeProgressList", default, skip_serializing_if = "Option::is_none")]
     pub node_upgrade_progress_list: Option<NodeUpgradeProgressInfoList>,
 }
+impl FailureUpgradeDomainProgressInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileInfo {
     #[serde(rename = "FileSize", default, skip_serializing_if = "Option::is_none")]
@@ -2892,6 +4679,11 @@ pub struct FileInfo {
     pub modified_date: Option<String>,
     #[serde(rename = "StoreRelativePath", default, skip_serializing_if = "Option::is_none")]
     pub store_relative_path: Option<String>,
+}
+impl FileInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileShareBackupStorageDescription {
@@ -2908,6 +4700,18 @@ pub struct FileShareBackupStorageDescription {
     #[serde(rename = "SecondaryPassword", default, skip_serializing_if = "Option::is_none")]
     pub secondary_password: Option<String>,
 }
+impl FileShareBackupStorageDescription {
+    pub fn new(backup_storage_description: BackupStorageDescription, path: String) -> Self {
+        Self {
+            backup_storage_description,
+            path,
+            primary_user_name: None,
+            primary_password: None,
+            secondary_user_name: None,
+            secondary_password: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileVersion {
     #[serde(rename = "VersionNumber", default, skip_serializing_if = "Option::is_none")]
@@ -2917,6 +4721,11 @@ pub struct FileVersion {
     #[serde(rename = "EpochConfigurationNumber", default, skip_serializing_if = "Option::is_none")]
     pub epoch_configuration_number: Option<String>,
 }
+impl FileVersion {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FolderInfo {
     #[serde(rename = "StoreRelativePath", default, skip_serializing_if = "Option::is_none")]
@@ -2924,12 +4733,22 @@ pub struct FolderInfo {
     #[serde(rename = "FileCount", default, skip_serializing_if = "Option::is_none")]
     pub file_count: Option<String>,
 }
+impl FolderInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FolderSizeInfo {
     #[serde(rename = "StoreRelativePath", default, skip_serializing_if = "Option::is_none")]
     pub store_relative_path: Option<ImageStoreRelativePath>,
     #[serde(rename = "FolderSize", default, skip_serializing_if = "Option::is_none")]
     pub folder_size: Option<String>,
+}
+impl FolderSizeInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ForceRestart = bool;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2939,6 +4758,14 @@ pub struct FrequencyBasedBackupScheduleDescription {
     #[serde(rename = "Interval")]
     pub interval: String,
 }
+impl FrequencyBasedBackupScheduleDescription {
+    pub fn new(backup_schedule_description: BackupScheduleDescription, interval: String) -> Self {
+        Self {
+            backup_schedule_description,
+            interval,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewayDestination {
     #[serde(rename = "applicationName")]
@@ -2947,6 +4774,15 @@ pub struct GatewayDestination {
     pub service_name: String,
     #[serde(rename = "endpointName")]
     pub endpoint_name: String,
+}
+impl GatewayDestination {
+    pub fn new(application_name: String, service_name: String, endpoint_name: String) -> Self {
+        Self {
+            application_name,
+            service_name,
+            endpoint_name,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewayProperties {
@@ -2967,10 +4803,29 @@ pub struct GatewayProperties {
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
 }
+impl GatewayProperties {
+    pub fn new(source_network: NetworkRef, destination_network: NetworkRef) -> Self {
+        Self {
+            description: None,
+            source_network,
+            destination_network,
+            tcp: Vec::new(),
+            http: Vec::new(),
+            status: None,
+            status_details: None,
+            ip_address: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewayResourceDescription {
     pub name: GatewayResourceName,
     pub properties: GatewayProperties,
+}
+impl GatewayResourceDescription {
+    pub fn new(name: GatewayResourceName, properties: GatewayProperties) -> Self {
+        Self { name, properties }
+    }
 }
 pub type GatewayResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2986,6 +4841,17 @@ pub struct GetBackupByStorageQueryDescription {
     #[serde(rename = "BackupEntity")]
     pub backup_entity: BackupEntity,
 }
+impl GetBackupByStorageQueryDescription {
+    pub fn new(storage: BackupStorageDescription, backup_entity: BackupEntity) -> Self {
+        Self {
+            start_date_time_filter: None,
+            end_date_time_filter: None,
+            latest: None,
+            storage,
+            backup_entity,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetPropertyBatchOperation {
     #[serde(flatten)]
@@ -2993,12 +4859,25 @@ pub struct GetPropertyBatchOperation {
     #[serde(rename = "IncludeValue", default, skip_serializing_if = "Option::is_none")]
     pub include_value: Option<bool>,
 }
+impl GetPropertyBatchOperation {
+    pub fn new(property_batch_operation: PropertyBatchOperation) -> Self {
+        Self {
+            property_batch_operation,
+            include_value: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuidPropertyValue {
     #[serde(flatten)]
     pub property_value: PropertyValue,
     #[serde(rename = "Data")]
     pub data: String,
+}
+impl GuidPropertyValue {
+    pub fn new(property_value: PropertyValue, data: String) -> Self {
+        Self { property_value, data }
+    }
 }
 pub type HealthCheckRetryTimeout = String;
 pub type HealthCheckStableDuration = String;
@@ -3011,6 +4890,15 @@ pub struct HealthEvaluation {
     pub aggregated_health_state: Option<HealthState>,
     #[serde(rename = "Description", default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl HealthEvaluation {
+    pub fn new(kind: HealthEvaluationKind) -> Self {
+        Self {
+            kind,
+            aggregated_health_state: None,
+            description: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum HealthEvaluationKind {
@@ -3042,6 +4930,11 @@ pub struct HealthEvaluationWrapper {
     #[serde(rename = "HealthEvaluation", default, skip_serializing_if = "Option::is_none")]
     pub health_evaluation: Option<HealthEvaluation>,
 }
+impl HealthEvaluationWrapper {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthEvent {
     #[serde(flatten)]
@@ -3058,6 +4951,19 @@ pub struct HealthEvent {
     pub last_warning_transition_at: Option<String>,
     #[serde(rename = "LastErrorTransitionAt", default, skip_serializing_if = "Option::is_none")]
     pub last_error_transition_at: Option<String>,
+}
+impl HealthEvent {
+    pub fn new(health_information: HealthInformation) -> Self {
+        Self {
+            health_information,
+            is_expired: None,
+            source_utc_timestamp: None,
+            last_modified_utc_timestamp: None,
+            last_ok_transition_at: None,
+            last_warning_transition_at: None,
+            last_error_transition_at: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthInformation {
@@ -3078,6 +4984,20 @@ pub struct HealthInformation {
     #[serde(rename = "HealthReportId", default, skip_serializing_if = "Option::is_none")]
     pub health_report_id: Option<String>,
 }
+impl HealthInformation {
+    pub fn new(source_id: String, property: String, health_state: HealthState) -> Self {
+        Self {
+            source_id,
+            property,
+            health_state,
+            time_to_live_in_milli_seconds: None,
+            description: None,
+            sequence_number: None,
+            remove_when_expired: None,
+            health_report_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum HealthState {
     Invalid,
@@ -3095,10 +5015,20 @@ pub struct HealthStateCount {
     #[serde(rename = "ErrorCount", default, skip_serializing_if = "Option::is_none")]
     pub error_count: Option<i64>,
 }
+impl HealthStateCount {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthStatistics {
     #[serde(rename = "HealthStateCountList", default, skip_serializing_if = "Vec::is_empty")]
     pub health_state_count_list: Vec<EntityKindHealthStateCount>,
+}
+impl HealthStatistics {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum HostIsolationMode {
@@ -3118,10 +5048,20 @@ pub struct HttpConfig {
     pub port: i64,
     pub hosts: Vec<HttpHostConfig>,
 }
+impl HttpConfig {
+    pub fn new(name: String, port: i64, hosts: Vec<HttpHostConfig>) -> Self {
+        Self { name, port, hosts }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpHostConfig {
     pub name: String,
     pub routes: Vec<HttpRouteConfig>,
+}
+impl HttpHostConfig {
+    pub fn new(name: String, routes: Vec<HttpRouteConfig>) -> Self {
+        Self { name, routes }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpRouteConfig {
@@ -3130,6 +5070,11 @@ pub struct HttpRouteConfig {
     pub match_: HttpRouteMatchRule,
     pub destination: GatewayDestination,
 }
+impl HttpRouteConfig {
+    pub fn new(name: String, match_: HttpRouteMatchRule, destination: GatewayDestination) -> Self {
+        Self { name, match_, destination }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpRouteMatchHeader {
     pub name: String,
@@ -3137,6 +5082,15 @@ pub struct HttpRouteMatchHeader {
     pub value: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<http_route_match_header::Type>,
+}
+impl HttpRouteMatchHeader {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            value: None,
+            type_: None,
+        }
+    }
 }
 pub mod http_route_match_header {
     use super::*;
@@ -3154,6 +5108,15 @@ pub struct HttpRouteMatchPath {
     #[serde(rename = "type")]
     pub type_: http_route_match_path::Type,
 }
+impl HttpRouteMatchPath {
+    pub fn new(value: String, type_: http_route_match_path::Type) -> Self {
+        Self {
+            value,
+            rewrite: None,
+            type_,
+        }
+    }
+}
 pub mod http_route_match_path {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3168,6 +5131,11 @@ pub struct HttpRouteMatchRule {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub headers: Vec<HttpRouteMatchHeader>,
 }
+impl HttpRouteMatchRule {
+    pub fn new(path: HttpRouteMatchPath) -> Self {
+        Self { path, headers: Vec::new() }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityDescription {
     #[serde(rename = "tokenServiceEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -3181,12 +5149,28 @@ pub struct IdentityDescription {
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedIdentityMap>,
 }
+impl IdentityDescription {
+    pub fn new(type_: String) -> Self {
+        Self {
+            token_service_endpoint: None,
+            type_,
+            tenant_id: None,
+            principal_id: None,
+            user_assigned_identities: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityItemDescription {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+}
+impl IdentityItemDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageRegistryCredential {
@@ -3196,6 +5180,16 @@ pub struct ImageRegistryCredential {
     pub password_type: Option<ImageRegistryPasswordType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+}
+impl ImageRegistryCredential {
+    pub fn new(server: String, username: String) -> Self {
+        Self {
+            server,
+            username,
+            password_type: None,
+            password: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ImageRegistryPasswordType {
@@ -3215,6 +5209,11 @@ pub struct ImageStoreContent {
     #[serde(rename = "StoreFolders", default, skip_serializing_if = "Vec::is_empty")]
     pub store_folders: Vec<FolderInfo>,
 }
+impl ImageStoreContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageStoreCopyDescription {
     #[serde(rename = "RemoteSource")]
@@ -3225,6 +5224,16 @@ pub struct ImageStoreCopyDescription {
     pub skip_files: Vec<String>,
     #[serde(rename = "CheckMarkFile", default, skip_serializing_if = "Option::is_none")]
     pub check_mark_file: Option<bool>,
+}
+impl ImageStoreCopyDescription {
+    pub fn new(remote_source: String, remote_destination: String) -> Self {
+        Self {
+            remote_source,
+            remote_destination,
+            skip_files: Vec::new(),
+            check_mark_file: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageStoreInfo {
@@ -3239,12 +5248,24 @@ pub struct ImageStoreInfo {
     #[serde(rename = "UsedByRegister", default, skip_serializing_if = "Option::is_none")]
     pub used_by_register: Option<UsageInfo>,
 }
+impl ImageStoreInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type ImageStoreRelativePath = String;
 pub type InfrastructureServiceResponse = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InlinedValueSecretResourceProperties {
     #[serde(flatten)]
     pub secret_resource_properties: SecretResourceProperties,
+}
+impl InlinedValueSecretResourceProperties {
+    pub fn new(secret_resource_properties: SecretResourceProperties) -> Self {
+        Self {
+            secret_resource_properties,
+        }
+    }
 }
 pub type InstanceCloseDelayDurationInSeconds = i64;
 pub type InstanceId = String;
@@ -3255,6 +5276,11 @@ pub struct Int64PropertyValue {
     #[serde(rename = "Data")]
     pub data: String,
 }
+impl Int64PropertyValue {
+    pub fn new(property_value: PropertyValue, data: String) -> Self {
+        Self { property_value, data }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Int64RangePartitionInformation {
     #[serde(flatten)]
@@ -3264,6 +5290,15 @@ pub struct Int64RangePartitionInformation {
     #[serde(rename = "HighKey", default, skip_serializing_if = "Option::is_none")]
     pub high_key: Option<String>,
 }
+impl Int64RangePartitionInformation {
+    pub fn new(partition_information: PartitionInformation) -> Self {
+        Self {
+            partition_information,
+            low_key: None,
+            high_key: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InvokeDataLossResult {
     #[serde(rename = "ErrorCode", default, skip_serializing_if = "Option::is_none")]
@@ -3271,12 +5306,22 @@ pub struct InvokeDataLossResult {
     #[serde(rename = "SelectedPartition", default, skip_serializing_if = "Option::is_none")]
     pub selected_partition: Option<SelectedPartition>,
 }
+impl InvokeDataLossResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InvokeQuorumLossResult {
     #[serde(rename = "ErrorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
     #[serde(rename = "SelectedPartition", default, skip_serializing_if = "Option::is_none")]
     pub selected_partition: Option<SelectedPartition>,
+}
+impl InvokeQuorumLossResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyValueStoreReplicaStatus {
@@ -3292,6 +5337,18 @@ pub struct KeyValueStoreReplicaStatus {
     pub copy_notification_current_progress: Option<String>,
     #[serde(rename = "StatusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
+}
+impl KeyValueStoreReplicaStatus {
+    pub fn new(replica_status_base: ReplicaStatusBase) -> Self {
+        Self {
+            replica_status_base,
+            database_row_count_estimate: None,
+            database_logical_size_estimate: None,
+            copy_notification_current_key_filter: None,
+            copy_notification_current_progress: None,
+            status_details: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadMetricInformation {
@@ -3346,6 +5403,11 @@ pub struct LoadMetricInformation {
     #[serde(rename = "PlannedLoadRemoval", default, skip_serializing_if = "Option::is_none")]
     pub planned_load_removal: Option<String>,
 }
+impl LoadMetricInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadMetricReport {
     #[serde(rename = "LastReportedUtc", default, skip_serializing_if = "Option::is_none")]
@@ -3356,6 +5418,11 @@ pub struct LoadMetricReport {
     pub value: Option<String>,
     #[serde(rename = "CurrentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<String>,
+}
+impl LoadMetricReport {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadMetricReportInfo {
@@ -3368,6 +5435,11 @@ pub struct LoadMetricReportInfo {
     #[serde(rename = "LastReportedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_reported_utc: Option<String>,
 }
+impl LoadMetricReportInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type LoadMetricReportInfoList = Vec<LoadMetricReportInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalNetworkResourceProperties {
@@ -3376,6 +5448,14 @@ pub struct LocalNetworkResourceProperties {
     #[serde(rename = "networkAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub network_address_prefix: Option<NetworkAddressPrefix>,
 }
+impl LocalNetworkResourceProperties {
+    pub fn new(network_resource_properties: NetworkResourceProperties) -> Self {
+        Self {
+            network_resource_properties,
+            network_address_prefix: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedApplicationIdentity {
     #[serde(rename = "Name")]
@@ -3383,12 +5463,22 @@ pub struct ManagedApplicationIdentity {
     #[serde(rename = "PrincipalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
 }
+impl ManagedApplicationIdentity {
+    pub fn new(name: String) -> Self {
+        Self { name, principal_id: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedApplicationIdentityDescription {
     #[serde(rename = "TokenServiceEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub token_service_endpoint: Option<String>,
     #[serde(rename = "ManagedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub managed_identities: Option<ManagedApplicationIdentityList>,
+}
+impl ManagedApplicationIdentityDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ManagedApplicationIdentityList = Vec<ManagedApplicationIdentity>;
 pub type MinInstanceCount = i64;
@@ -3412,6 +5502,11 @@ pub struct MonitoringPolicyDescription {
     #[serde(rename = "UpgradeDomainTimeoutInMilliseconds", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_domain_timeout_in_milliseconds: Option<UpgradeDomainTimeout>,
 }
+impl MonitoringPolicyDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MoveCost {
     Zero,
@@ -3425,12 +5520,25 @@ pub struct NameDescription {
     #[serde(rename = "Name")]
     pub name: FabricName,
 }
+impl NameDescription {
+    pub fn new(name: FabricName) -> Self {
+        Self { name }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedPartitionInformation {
     #[serde(flatten)]
     pub partition_information: PartitionInformation,
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl NamedPartitionInformation {
+    pub fn new(partition_information: PartitionInformation) -> Self {
+        Self {
+            partition_information,
+            name: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedPartitionSchemeDescription {
@@ -3440,6 +5548,15 @@ pub struct NamedPartitionSchemeDescription {
     pub count: i64,
     #[serde(rename = "Names")]
     pub names: Vec<String>,
+}
+impl NamedPartitionSchemeDescription {
+    pub fn new(partition_scheme_description: PartitionSchemeDescription, count: i64, names: Vec<String>) -> Self {
+        Self {
+            partition_scheme_description,
+            count,
+            names,
+        }
+    }
 }
 pub type NetworkAddressPrefix = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3453,10 +5570,20 @@ pub struct NetworkRef {
     #[serde(rename = "endpointRefs", default, skip_serializing_if = "Vec::is_empty")]
     pub endpoint_refs: Vec<EndpointRef>,
 }
+impl NetworkRef {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkResourceDescription {
     pub name: NetworkResourceName,
     pub properties: NetworkResourceProperties,
+}
+impl NetworkResourceDescription {
+    pub fn new(name: NetworkResourceName, properties: NetworkResourceProperties) -> Self {
+        Self { name, properties }
+    }
 }
 pub type NetworkResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3470,9 +5597,24 @@ pub struct NetworkResourceProperties {
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
 }
+impl NetworkResourceProperties {
+    pub fn new(network_resource_properties_base: NetworkResourcePropertiesBase) -> Self {
+        Self {
+            network_resource_properties_base,
+            description: None,
+            status: None,
+            status_details: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkResourcePropertiesBase {
     pub kind: NetworkKind,
+}
+impl NetworkResourcePropertiesBase {
+    pub fn new(kind: NetworkKind) -> Self {
+        Self { kind }
+    }
 }
 pub type NextUpgradeDomain = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3496,6 +5638,31 @@ pub struct NodeAbortedEvent {
     #[serde(rename = "NodeVersion")]
     pub node_version: String,
 }
+impl NodeAbortedEvent {
+    pub fn new(
+        node_event: NodeEvent,
+        node_instance: i64,
+        node_id: String,
+        upgrade_domain: String,
+        fault_domain: String,
+        ip_address_or_fqdn: String,
+        hostname: String,
+        is_seed_node: bool,
+        node_version: String,
+    ) -> Self {
+        Self {
+            node_event,
+            node_instance,
+            node_id,
+            upgrade_domain,
+            fault_domain,
+            ip_address_or_fqdn,
+            hostname,
+            is_seed_node,
+            node_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeAddedToClusterEvent {
     #[serde(flatten)]
@@ -3513,6 +5680,27 @@ pub struct NodeAddedToClusterEvent {
     #[serde(rename = "NodeCapacities")]
     pub node_capacities: String,
 }
+impl NodeAddedToClusterEvent {
+    pub fn new(
+        node_event: NodeEvent,
+        node_id: String,
+        node_instance: i64,
+        node_type: String,
+        fabric_version: String,
+        ip_address_or_fqdn: String,
+        node_capacities: String,
+    ) -> Self {
+        Self {
+            node_event,
+            node_id,
+            node_instance,
+            node_type,
+            fabric_version,
+            ip_address_or_fqdn,
+            node_capacities,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeClosedEvent {
     #[serde(flatten)]
@@ -3523,6 +5711,16 @@ pub struct NodeClosedEvent {
     pub node_instance: i64,
     #[serde(rename = "Error")]
     pub error: String,
+}
+impl NodeClosedEvent {
+    pub fn new(node_event: NodeEvent, node_id: String, node_instance: i64, error: String) -> Self {
+        Self {
+            node_event,
+            node_id,
+            node_instance,
+            error,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeDeactivateCompletedEvent {
@@ -3537,6 +5735,23 @@ pub struct NodeDeactivateCompletedEvent {
     #[serde(rename = "StartTime")]
     pub start_time: String,
 }
+impl NodeDeactivateCompletedEvent {
+    pub fn new(
+        node_event: NodeEvent,
+        node_instance: i64,
+        effective_deactivate_intent: String,
+        batch_ids_with_deactivate_intent: String,
+        start_time: String,
+    ) -> Self {
+        Self {
+            node_event,
+            node_instance,
+            effective_deactivate_intent,
+            batch_ids_with_deactivate_intent,
+            start_time,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeDeactivateStartedEvent {
     #[serde(flatten)]
@@ -3548,6 +5763,16 @@ pub struct NodeDeactivateStartedEvent {
     #[serde(rename = "DeactivateIntent")]
     pub deactivate_intent: String,
 }
+impl NodeDeactivateStartedEvent {
+    pub fn new(node_event: NodeEvent, node_instance: i64, batch_id: String, deactivate_intent: String) -> Self {
+        Self {
+            node_event,
+            node_instance,
+            batch_id,
+            deactivate_intent,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeDeactivationInfo {
     #[serde(rename = "NodeDeactivationIntent", default, skip_serializing_if = "Option::is_none")]
@@ -3558,6 +5783,11 @@ pub struct NodeDeactivationInfo {
     pub node_deactivation_task: Option<NodeDeactivationTaskList>,
     #[serde(rename = "PendingSafetyChecks", default, skip_serializing_if = "Option::is_none")]
     pub pending_safety_checks: Option<SafetyCheckInfoList>,
+}
+impl NodeDeactivationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NodeDeactivationIntent {
@@ -3581,12 +5811,22 @@ pub struct NodeDeactivationTask {
     #[serde(rename = "NodeDeactivationIntent", default, skip_serializing_if = "Option::is_none")]
     pub node_deactivation_intent: Option<NodeDeactivationIntent>,
 }
+impl NodeDeactivationTask {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeDeactivationTaskId {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "NodeDeactivationTaskType", default, skip_serializing_if = "Option::is_none")]
     pub node_deactivation_task_type: Option<NodeDeactivationTaskType>,
+}
+impl NodeDeactivationTaskId {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type NodeDeactivationTaskList = Vec<NodeDeactivationTask>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3605,12 +5845,26 @@ pub struct NodeDownEvent {
     #[serde(rename = "LastNodeUpAt")]
     pub last_node_up_at: String,
 }
+impl NodeDownEvent {
+    pub fn new(node_event: NodeEvent, node_instance: i64, last_node_up_at: String) -> Self {
+        Self {
+            node_event,
+            node_instance,
+            last_node_up_at,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeEvent {
     #[serde(flatten)]
     pub fabric_event: FabricEvent,
     #[serde(rename = "NodeName")]
     pub node_name: NodeName,
+}
+impl NodeEvent {
+    pub fn new(fabric_event: FabricEvent, node_name: NodeName) -> Self {
+        Self { fabric_event, node_name }
+    }
 }
 pub type NodeEventList = Vec<NodeEvent>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3620,6 +5874,11 @@ pub struct NodeHealth {
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<NodeName>,
 }
+impl NodeHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeHealthEvaluation {
     #[serde(flatten)]
@@ -3628,6 +5887,15 @@ pub struct NodeHealthEvaluation {
     pub node_name: Option<NodeName>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl NodeHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            node_name: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeHealthReportExpiredEvent {
@@ -3652,6 +5920,33 @@ pub struct NodeHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl NodeHealthReportExpiredEvent {
+    pub fn new(
+        node_event: NodeEvent,
+        node_instance_id: i64,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            node_event,
+            node_instance_id,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeHealthState {
     #[serde(flatten)]
@@ -3661,12 +5956,22 @@ pub struct NodeHealthState {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<NodeId>,
 }
+impl NodeHealthState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeHealthStateChunk {
     #[serde(flatten)]
     pub entity_health_state_chunk: EntityHealthStateChunk,
     #[serde(rename = "NodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<NodeName>,
+}
+impl NodeHealthStateChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeHealthStateChunkList {
@@ -3675,6 +5980,11 @@ pub struct NodeHealthStateChunkList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<NodeHealthStateChunk>,
 }
+impl NodeHealthStateChunkList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeHealthStateFilter {
     #[serde(rename = "NodeNameFilter", default, skip_serializing_if = "Option::is_none")]
@@ -3682,10 +5992,20 @@ pub struct NodeHealthStateFilter {
     #[serde(rename = "HealthStateFilter", default, skip_serializing_if = "Option::is_none")]
     pub health_state_filter: Option<i64>,
 }
+impl NodeHealthStateFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeId {
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl NodeId {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type NodeIdList = Vec<NodeId>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3694,6 +6014,14 @@ pub struct NodeImpact {
     pub node_name: String,
     #[serde(rename = "ImpactLevel", default, skip_serializing_if = "Option::is_none")]
     pub impact_level: Option<node_impact::ImpactLevel>,
+}
+impl NodeImpact {
+    pub fn new(node_name: String) -> Self {
+        Self {
+            node_name,
+            impact_level: None,
+        }
+    }
 }
 pub mod node_impact {
     use super::*;
@@ -3745,12 +6073,22 @@ pub struct NodeInfo {
     #[serde(rename = "NodeDownAt", default, skip_serializing_if = "Option::is_none")]
     pub node_down_at: Option<String>,
 }
+impl NodeInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeLoadInfo {
     #[serde(rename = "NodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<NodeName>,
     #[serde(rename = "NodeLoadMetricInformation", default, skip_serializing_if = "Vec::is_empty")]
     pub node_load_metric_information: Vec<NodeLoadMetricInformation>,
+}
+impl NodeLoadInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeLoadMetricInformation {
@@ -3777,6 +6115,11 @@ pub struct NodeLoadMetricInformation {
     #[serde(rename = "PlannedNodeLoadRemoval", default, skip_serializing_if = "Option::is_none")]
     pub planned_node_load_removal: Option<String>,
 }
+impl NodeLoadMetricInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type NodeName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeNewHealthReportEvent {
@@ -3801,6 +6144,33 @@ pub struct NodeNewHealthReportEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl NodeNewHealthReportEvent {
+    pub fn new(
+        node_event: NodeEvent,
+        node_instance_id: i64,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            node_event,
+            node_instance_id,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeOpenFailedEvent {
     #[serde(flatten)]
@@ -3824,6 +6194,33 @@ pub struct NodeOpenFailedEvent {
     #[serde(rename = "Error")]
     pub error: String,
 }
+impl NodeOpenFailedEvent {
+    pub fn new(
+        node_event: NodeEvent,
+        node_instance: i64,
+        node_id: String,
+        upgrade_domain: String,
+        fault_domain: String,
+        ip_address_or_fqdn: String,
+        hostname: String,
+        is_seed_node: bool,
+        node_version: String,
+        error: String,
+    ) -> Self {
+        Self {
+            node_event,
+            node_instance,
+            node_id,
+            upgrade_domain,
+            fault_domain,
+            ip_address_or_fqdn,
+            hostname,
+            is_seed_node,
+            node_version,
+            error,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeOpenSucceededEvent {
     #[serde(flatten)]
@@ -3845,6 +6242,31 @@ pub struct NodeOpenSucceededEvent {
     #[serde(rename = "NodeVersion")]
     pub node_version: String,
 }
+impl NodeOpenSucceededEvent {
+    pub fn new(
+        node_event: NodeEvent,
+        node_instance: i64,
+        node_id: String,
+        upgrade_domain: String,
+        fault_domain: String,
+        ip_address_or_fqdn: String,
+        hostname: String,
+        is_seed_node: bool,
+        node_version: String,
+    ) -> Self {
+        Self {
+            node_event,
+            node_instance,
+            node_id,
+            upgrade_domain,
+            fault_domain,
+            ip_address_or_fqdn,
+            hostname,
+            is_seed_node,
+            node_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeRemovedFromClusterEvent {
     #[serde(flatten)]
@@ -3862,12 +6284,41 @@ pub struct NodeRemovedFromClusterEvent {
     #[serde(rename = "NodeCapacities")]
     pub node_capacities: String,
 }
+impl NodeRemovedFromClusterEvent {
+    pub fn new(
+        node_event: NodeEvent,
+        node_id: String,
+        node_instance: i64,
+        node_type: String,
+        fabric_version: String,
+        ip_address_or_fqdn: String,
+        node_capacities: String,
+    ) -> Self {
+        Self {
+            node_event,
+            node_id,
+            node_instance,
+            node_type,
+            fabric_version,
+            ip_address_or_fqdn,
+            node_capacities,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeRepairImpactDescription {
     #[serde(flatten)]
     pub repair_impact_description_base: RepairImpactDescriptionBase,
     #[serde(rename = "NodeImpactList", default, skip_serializing_if = "Vec::is_empty")]
     pub node_impact_list: Vec<NodeImpact>,
+}
+impl NodeRepairImpactDescription {
+    pub fn new(repair_impact_description_base: RepairImpactDescriptionBase) -> Self {
+        Self {
+            repair_impact_description_base,
+            node_impact_list: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeRepairTargetDescription {
@@ -3876,12 +6327,25 @@ pub struct NodeRepairTargetDescription {
     #[serde(rename = "NodeNames", default, skip_serializing_if = "Vec::is_empty")]
     pub node_names: Vec<String>,
 }
+impl NodeRepairTargetDescription {
+    pub fn new(repair_target_description_base: RepairTargetDescriptionBase) -> Self {
+        Self {
+            repair_target_description_base,
+            node_names: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeResult {
     #[serde(rename = "NodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<NodeName>,
     #[serde(rename = "NodeInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub node_instance_id: Option<String>,
+}
+impl NodeResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NodeStatus {
@@ -3901,12 +6365,22 @@ pub struct NodeTransitionProgress {
     #[serde(rename = "NodeTransitionResult", default, skip_serializing_if = "Option::is_none")]
     pub node_transition_result: Option<NodeTransitionResult>,
 }
+impl NodeTransitionProgress {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeTransitionResult {
     #[serde(rename = "ErrorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
     #[serde(rename = "NodeResult", default, skip_serializing_if = "Option::is_none")]
     pub node_result: Option<NodeResult>,
+}
+impl NodeTransitionResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type NodeType = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3917,6 +6391,15 @@ pub struct NodeUpEvent {
     pub node_instance: i64,
     #[serde(rename = "LastNodeDownAt")]
     pub last_node_down_at: String,
+}
+impl NodeUpEvent {
+    pub fn new(node_event: NodeEvent, node_instance: i64, last_node_down_at: String) -> Self {
+        Self {
+            node_event,
+            node_instance,
+            last_node_down_at,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NodeUpgradePhase {
@@ -3934,6 +6417,11 @@ pub struct NodeUpgradeProgressInfo {
     #[serde(rename = "PendingSafetyChecks", default, skip_serializing_if = "Option::is_none")]
     pub pending_safety_checks: Option<SafetyCheckInfoList>,
 }
+impl NodeUpgradeProgressInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type NodeUpgradeProgressInfoList = Vec<NodeUpgradeProgressInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodesHealthEvaluation {
@@ -3945,6 +6433,16 @@ pub struct NodesHealthEvaluation {
     pub total_count: Option<i64>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl NodesHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            max_percent_unhealthy_nodes: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperatingSystemType {
@@ -3971,6 +6469,11 @@ pub struct OperationStatus {
     #[serde(rename = "Type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<OperationType>,
 }
+impl OperationStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type OperationStatusList = Vec<OperationStatus>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperationType {
@@ -3986,6 +6489,11 @@ pub struct PackageSharingPolicyInfo {
     pub shared_package_name: Option<String>,
     #[serde(rename = "PackageSharingScope", default, skip_serializing_if = "Option::is_none")]
     pub package_sharing_scope: Option<PackageSharingPolicyScope>,
+}
+impl PackageSharingPolicyInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type PackageSharingPolicyInfoList = Vec<PackageSharingPolicyInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4003,12 +6511,22 @@ pub struct PagedApplicationInfoList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ApplicationInfo>,
 }
+impl PagedApplicationInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedApplicationResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ApplicationResourceDescription>,
+}
+impl PagedApplicationResourceDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedApplicationTypeInfoList {
@@ -4017,12 +6535,22 @@ pub struct PagedApplicationTypeInfoList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ApplicationTypeInfo>,
 }
+impl PagedApplicationTypeInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedBackupConfigurationInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<BackupConfigurationInfo>,
+}
+impl PagedBackupConfigurationInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedBackupEntityList {
@@ -4031,12 +6559,22 @@ pub struct PagedBackupEntityList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<BackupEntity>,
 }
+impl PagedBackupEntityList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedBackupInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<BackupInfo>,
+}
+impl PagedBackupInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedBackupPolicyDescriptionList {
@@ -4045,12 +6583,22 @@ pub struct PagedBackupPolicyDescriptionList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<BackupPolicyDescription>,
 }
+impl PagedBackupPolicyDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedComposeDeploymentStatusInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ComposeDeploymentStatusInfo>,
+}
+impl PagedComposeDeploymentStatusInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedDeployedApplicationInfoList {
@@ -4059,12 +6607,22 @@ pub struct PagedDeployedApplicationInfoList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<DeployedApplicationInfo>,
 }
+impl PagedDeployedApplicationInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedGatewayResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<GatewayResourceDescription>,
+}
+impl PagedGatewayResourceDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedNetworkResourceDescriptionList {
@@ -4073,12 +6631,22 @@ pub struct PagedNetworkResourceDescriptionList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<NetworkResourceDescription>,
 }
+impl PagedNetworkResourceDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedNodeInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<NodeInfo>,
+}
+impl PagedNodeInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedPropertyInfoList {
@@ -4089,12 +6657,22 @@ pub struct PagedPropertyInfoList {
     #[serde(rename = "Properties", default, skip_serializing_if = "Vec::is_empty")]
     pub properties: Vec<PropertyInfo>,
 }
+impl PagedPropertyInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedReplicaInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ReplicaInfo>,
+}
+impl PagedReplicaInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedSecretResourceDescriptionList {
@@ -4103,12 +6681,22 @@ pub struct PagedSecretResourceDescriptionList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<SecretResourceDescription>,
 }
+impl PagedSecretResourceDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedSecretValueResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<SecretValueResourceDescription>,
+}
+impl PagedSecretValueResourceDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedServiceInfoList {
@@ -4117,12 +6705,22 @@ pub struct PagedServiceInfoList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ServiceInfo>,
 }
+impl PagedServiceInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedServicePartitionInfoList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ServicePartitionInfo>,
+}
+impl PagedServicePartitionInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedServiceReplicaDescriptionList {
@@ -4131,12 +6729,22 @@ pub struct PagedServiceReplicaDescriptionList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ServiceReplicaDescription>,
 }
+impl PagedServiceReplicaDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedServiceResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ServiceResourceDescription>,
+}
+impl PagedServiceResourceDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedSubNameInfoList {
@@ -4147,12 +6755,22 @@ pub struct PagedSubNameInfoList {
     #[serde(rename = "SubNames", default, skip_serializing_if = "Vec::is_empty")]
     pub sub_names: Vec<FabricName>,
 }
+impl PagedSubNameInfoList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PagedVolumeResourceDescriptionList {
     #[serde(rename = "ContinuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<ContinuationToken>,
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<VolumeResourceDescription>,
+}
+impl PagedVolumeResourceDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PartitionAccessStatus {
@@ -4169,6 +6787,11 @@ pub struct PartitionAnalysisEvent {
     #[serde(rename = "Metadata")]
     pub metadata: AnalysisEventMetadata,
 }
+impl PartitionAnalysisEvent {
+    pub fn new(partition_event: PartitionEvent, metadata: AnalysisEventMetadata) -> Self {
+        Self { partition_event, metadata }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionBackupConfigurationInfo {
     #[serde(flatten)]
@@ -4177,6 +6800,15 @@ pub struct PartitionBackupConfigurationInfo {
     pub service_name: Option<ServiceName>,
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
+}
+impl PartitionBackupConfigurationInfo {
+    pub fn new(backup_configuration_info: BackupConfigurationInfo) -> Self {
+        Self {
+            backup_configuration_info,
+            service_name: None,
+            partition_id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionBackupEntity {
@@ -4187,6 +6819,15 @@ pub struct PartitionBackupEntity {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
 }
+impl PartitionBackupEntity {
+    pub fn new(backup_entity: BackupEntity) -> Self {
+        Self {
+            backup_entity,
+            service_name: None,
+            partition_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionDataLossProgress {
     #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
@@ -4194,12 +6835,25 @@ pub struct PartitionDataLossProgress {
     #[serde(rename = "InvokeDataLossResult", default, skip_serializing_if = "Option::is_none")]
     pub invoke_data_loss_result: Option<InvokeDataLossResult>,
 }
+impl PartitionDataLossProgress {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionEvent {
     #[serde(flatten)]
     pub fabric_event: FabricEvent,
     #[serde(rename = "PartitionId")]
     pub partition_id: PartitionId,
+}
+impl PartitionEvent {
+    pub fn new(fabric_event: FabricEvent, partition_id: PartitionId) -> Self {
+        Self {
+            fabric_event,
+            partition_id,
+        }
+    }
 }
 pub type PartitionEventList = Vec<PartitionEvent>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4211,6 +6865,11 @@ pub struct PartitionHealth {
     #[serde(rename = "ReplicaHealthStates", default, skip_serializing_if = "Vec::is_empty")]
     pub replica_health_states: Vec<ReplicaHealthState>,
 }
+impl PartitionHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionHealthEvaluation {
     #[serde(flatten)]
@@ -4219,6 +6878,15 @@ pub struct PartitionHealthEvaluation {
     pub partition_id: Option<PartitionId>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl PartitionHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            partition_id: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionHealthReportExpiredEvent {
@@ -4241,12 +6909,42 @@ pub struct PartitionHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl PartitionHealthReportExpiredEvent {
+    pub fn new(
+        partition_event: PartitionEvent,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            partition_event,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionHealthState {
     #[serde(flatten)]
     pub entity_health_state: EntityHealthState,
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
+}
+impl PartitionHealthState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionHealthStateChunk {
@@ -4257,10 +6955,20 @@ pub struct PartitionHealthStateChunk {
     #[serde(rename = "ReplicaHealthStateChunks", default, skip_serializing_if = "Option::is_none")]
     pub replica_health_state_chunks: Option<ReplicaHealthStateChunkList>,
 }
+impl PartitionHealthStateChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionHealthStateChunkList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<PartitionHealthStateChunk>,
+}
+impl PartitionHealthStateChunkList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionHealthStateFilter {
@@ -4271,6 +6979,11 @@ pub struct PartitionHealthStateFilter {
     #[serde(rename = "ReplicaFilters", default, skip_serializing_if = "Vec::is_empty")]
     pub replica_filters: Vec<ReplicaHealthStateFilter>,
 }
+impl PartitionHealthStateFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type PartitionId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionInformation {
@@ -4278,6 +6991,14 @@ pub struct PartitionInformation {
     pub service_partition_kind: ServicePartitionKind,
     #[serde(rename = "Id", default, skip_serializing_if = "Option::is_none")]
     pub id: Option<PartitionId>,
+}
+impl PartitionInformation {
+    pub fn new(service_partition_kind: ServicePartitionKind) -> Self {
+        Self {
+            service_partition_kind,
+            id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionInstanceCountScaleMechanism {
@@ -4290,6 +7011,21 @@ pub struct PartitionInstanceCountScaleMechanism {
     #[serde(rename = "ScaleIncrement")]
     pub scale_increment: i64,
 }
+impl PartitionInstanceCountScaleMechanism {
+    pub fn new(
+        scaling_mechanism_description: ScalingMechanismDescription,
+        min_instance_count: i64,
+        max_instance_count: i64,
+        scale_increment: i64,
+    ) -> Self {
+        Self {
+            scaling_mechanism_description,
+            min_instance_count,
+            max_instance_count,
+            scale_increment,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionLoadInformation {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
@@ -4298,6 +7034,11 @@ pub struct PartitionLoadInformation {
     pub primary_load_metric_reports: Vec<LoadMetricReport>,
     #[serde(rename = "SecondaryLoadMetricReports", default, skip_serializing_if = "Vec::is_empty")]
     pub secondary_load_metric_reports: Vec<LoadMetricReport>,
+}
+impl PartitionLoadInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionNewHealthReportEvent {
@@ -4320,6 +7061,31 @@ pub struct PartitionNewHealthReportEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl PartitionNewHealthReportEvent {
+    pub fn new(
+        partition_event: PartitionEvent,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            partition_event,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionPrimaryMoveAnalysisEvent {
     #[serde(flatten)]
@@ -4335,12 +7101,36 @@ pub struct PartitionPrimaryMoveAnalysisEvent {
     #[serde(rename = "RelevantTraces")]
     pub relevant_traces: String,
 }
+impl PartitionPrimaryMoveAnalysisEvent {
+    pub fn new(
+        partition_analysis_event: PartitionAnalysisEvent,
+        when_move_completed: String,
+        previous_node: NodeName,
+        current_node: NodeName,
+        move_reason: String,
+        relevant_traces: String,
+    ) -> Self {
+        Self {
+            partition_analysis_event,
+            when_move_completed,
+            previous_node,
+            current_node,
+            move_reason,
+            relevant_traces,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionQuorumLossProgress {
     #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
     pub state: Option<OperationState>,
     #[serde(rename = "InvokeQuorumLossResult", default, skip_serializing_if = "Option::is_none")]
     pub invoke_quorum_loss_result: Option<InvokeQuorumLossResult>,
+}
+impl PartitionQuorumLossProgress {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionReconfiguredEvent {
@@ -4373,6 +7163,41 @@ pub struct PartitionReconfiguredEvent {
     #[serde(rename = "TotalDurationMs")]
     pub total_duration_ms: f64,
 }
+impl PartitionReconfiguredEvent {
+    pub fn new(
+        partition_event: PartitionEvent,
+        node_name: NodeName,
+        node_instance_id: String,
+        service_type: String,
+        cc_epoch_data_loss_version: i64,
+        cc_epoch_config_version: i64,
+        reconfig_type: String,
+        result: String,
+        phase0_duration_ms: f64,
+        phase1_duration_ms: f64,
+        phase2_duration_ms: f64,
+        phase3_duration_ms: f64,
+        phase4_duration_ms: f64,
+        total_duration_ms: f64,
+    ) -> Self {
+        Self {
+            partition_event,
+            node_name,
+            node_instance_id,
+            service_type,
+            cc_epoch_data_loss_version,
+            cc_epoch_config_version,
+            reconfig_type,
+            result,
+            phase0_duration_ms,
+            phase1_duration_ms,
+            phase2_duration_ms,
+            phase3_duration_ms,
+            phase4_duration_ms,
+            total_duration_ms,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartitionRestartProgress {
     #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
@@ -4380,12 +7205,25 @@ pub struct PartitionRestartProgress {
     #[serde(rename = "RestartPartitionResult", default, skip_serializing_if = "Option::is_none")]
     pub restart_partition_result: Option<RestartPartitionResult>,
 }
+impl PartitionRestartProgress {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionSafetyCheck {
     #[serde(flatten)]
     pub safety_check: SafetyCheck,
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
+}
+impl PartitionSafetyCheck {
+    pub fn new(safety_check: SafetyCheck) -> Self {
+        Self {
+            safety_check,
+            partition_id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PartitionScheme {
@@ -4398,6 +7236,11 @@ pub enum PartitionScheme {
 pub struct PartitionSchemeDescription {
     #[serde(rename = "PartitionScheme")]
     pub partition_scheme: PartitionScheme,
+}
+impl PartitionSchemeDescription {
+    pub fn new(partition_scheme: PartitionScheme) -> Self {
+        Self { partition_scheme }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionsHealthEvaluation {
@@ -4414,6 +7257,16 @@ pub struct PartitionsHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl PartitionsHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            max_percent_unhealthy_partitions_per_service: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrimaryReplicatorStatus {
     #[serde(flatten)]
@@ -4422,6 +7275,15 @@ pub struct PrimaryReplicatorStatus {
     pub replication_queue_status: Option<ReplicatorQueueStatus>,
     #[serde(rename = "RemoteReplicators", default, skip_serializing_if = "Option::is_none")]
     pub remote_replicators: Option<RemoteReplicatorStatusList>,
+}
+impl PrimaryReplicatorStatus {
+    pub fn new(replicator_status: ReplicatorStatus) -> Self {
+        Self {
+            replicator_status,
+            replication_queue_status: None,
+            remote_replicators: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Probe {
@@ -4442,9 +7304,19 @@ pub struct Probe {
     #[serde(rename = "tcpSocket", default, skip_serializing_if = "Option::is_none")]
     pub tcp_socket: Option<ProbeTcpSocket>,
 }
+impl Probe {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProbeExec {
     pub command: String,
+}
+impl ProbeExec {
+    pub fn new(command: String) -> Self {
+        Self { command }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProbeHttpGet {
@@ -4457,6 +7329,17 @@ pub struct ProbeHttpGet {
     pub http_headers: Vec<ProbeHttpGetHeaders>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scheme: Option<probe_http_get::Scheme>,
+}
+impl ProbeHttpGet {
+    pub fn new(port: i64) -> Self {
+        Self {
+            port,
+            path: None,
+            host: None,
+            http_headers: Vec::new(),
+            scheme: None,
+        }
+    }
 }
 pub mod probe_http_get {
     use super::*;
@@ -4473,19 +7356,39 @@ pub struct ProbeHttpGetHeaders {
     pub name: String,
     pub value: String,
 }
+impl ProbeHttpGetHeaders {
+    pub fn new(name: String, value: String) -> Self {
+        Self { name, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProbeTcpSocket {
     pub port: i64,
+}
+impl ProbeTcpSocket {
+    pub fn new(port: i64) -> Self {
+        Self { port }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PropertyBatchDescriptionList {
     #[serde(rename = "Operations", default, skip_serializing_if = "Vec::is_empty")]
     pub operations: Vec<PropertyBatchOperation>,
 }
+impl PropertyBatchDescriptionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyBatchInfo {
     #[serde(rename = "Kind")]
     pub kind: PropertyBatchInfoKind,
+}
+impl PropertyBatchInfo {
+    pub fn new(kind: PropertyBatchInfoKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PropertyBatchInfoKind {
@@ -4499,6 +7402,11 @@ pub struct PropertyBatchOperation {
     pub kind: PropertyBatchOperationKind,
     #[serde(rename = "PropertyName")]
     pub property_name: PropertyName,
+}
+impl PropertyBatchOperation {
+    pub fn new(kind: PropertyBatchOperationKind, property_name: PropertyName) -> Self {
+        Self { kind, property_name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PropertyBatchOperationKind {
@@ -4520,6 +7428,15 @@ pub struct PropertyDescription {
     #[serde(rename = "Value")]
     pub value: PropertyValue,
 }
+impl PropertyDescription {
+    pub fn new(property_name: PropertyName, value: PropertyValue) -> Self {
+        Self {
+            property_name,
+            custom_type_id: None,
+            value,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyInfo {
     #[serde(rename = "Name")]
@@ -4528,6 +7445,15 @@ pub struct PropertyInfo {
     pub value: Option<PropertyValue>,
     #[serde(rename = "Metadata")]
     pub metadata: PropertyMetadata,
+}
+impl PropertyInfo {
+    pub fn new(name: PropertyName, metadata: PropertyMetadata) -> Self {
+        Self {
+            name,
+            value: None,
+            metadata,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PropertyMetadata {
@@ -4544,11 +7470,21 @@ pub struct PropertyMetadata {
     #[serde(rename = "SequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub sequence_number: Option<String>,
 }
+impl PropertyMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type PropertyName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyValue {
     #[serde(rename = "Kind")]
     pub kind: PropertyValueKind,
+}
+impl PropertyValue {
+    pub fn new(kind: PropertyValueKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PropertyValueKind {
@@ -4568,12 +7504,29 @@ pub struct ProvisionApplicationTypeDescription {
     #[serde(rename = "ApplicationPackageCleanupPolicy", default, skip_serializing_if = "Option::is_none")]
     pub application_package_cleanup_policy: Option<ApplicationPackageCleanupPolicy>,
 }
+impl ProvisionApplicationTypeDescription {
+    pub fn new(
+        provision_application_type_description_base: ProvisionApplicationTypeDescriptionBase,
+        application_type_build_path: String,
+    ) -> Self {
+        Self {
+            provision_application_type_description_base,
+            application_type_build_path,
+            application_package_cleanup_policy: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProvisionApplicationTypeDescriptionBase {
     #[serde(rename = "Kind")]
     pub kind: ProvisionApplicationTypeKind,
     #[serde(rename = "Async")]
     pub async_: bool,
+}
+impl ProvisionApplicationTypeDescriptionBase {
+    pub fn new(kind: ProvisionApplicationTypeKind, async_: bool) -> Self {
+        Self { kind, async_ }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisionApplicationTypeKind {
@@ -4588,6 +7541,11 @@ pub struct ProvisionFabricDescription {
     #[serde(rename = "ClusterManifestFilePath", default, skip_serializing_if = "Option::is_none")]
     pub cluster_manifest_file_path: Option<String>,
 }
+impl ProvisionFabricDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PutPropertyBatchOperation {
     #[serde(flatten)]
@@ -4596,6 +7554,15 @@ pub struct PutPropertyBatchOperation {
     pub value: PropertyValue,
     #[serde(rename = "CustomTypeId", default, skip_serializing_if = "Option::is_none")]
     pub custom_type_id: Option<PropertyCustomTypeId>,
+}
+impl PutPropertyBatchOperation {
+    pub fn new(property_batch_operation: PropertyBatchOperation, value: PropertyValue) -> Self {
+        Self {
+            property_batch_operation,
+            value,
+            custom_type_id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReconfigurationInformation {
@@ -4607,6 +7574,11 @@ pub struct ReconfigurationInformation {
     pub reconfiguration_type: Option<ReconfigurationType>,
     #[serde(rename = "ReconfigurationStartTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub reconfiguration_start_time_utc: Option<String>,
+}
+impl ReconfigurationInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReconfigurationPhase {
@@ -4635,11 +7607,24 @@ pub struct RegistryCredential {
     #[serde(rename = "PasswordEncrypted", default, skip_serializing_if = "Option::is_none")]
     pub password_encrypted: Option<bool>,
 }
+impl RegistryCredential {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReliableCollectionsRef {
     pub name: String,
     #[serde(rename = "doNotPersistState", default, skip_serializing_if = "Option::is_none")]
     pub do_not_persist_state: Option<bool>,
+}
+impl ReliableCollectionsRef {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            do_not_persist_state: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemoteReplicatorAcknowledgementDetail {
@@ -4652,6 +7637,11 @@ pub struct RemoteReplicatorAcknowledgementDetail {
     #[serde(rename = "ReceivedAndNotAppliedCount", default, skip_serializing_if = "Option::is_none")]
     pub received_and_not_applied_count: Option<String>,
 }
+impl RemoteReplicatorAcknowledgementDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemoteReplicatorAcknowledgementStatus {
     #[serde(
@@ -4662,6 +7652,11 @@ pub struct RemoteReplicatorAcknowledgementStatus {
     pub replication_stream_acknowledgement_detail: Option<RemoteReplicatorAcknowledgementDetail>,
     #[serde(rename = "CopyStreamAcknowledgementDetail", default, skip_serializing_if = "Option::is_none")]
     pub copy_stream_acknowledgement_detail: Option<RemoteReplicatorAcknowledgementDetail>,
+}
+impl RemoteReplicatorAcknowledgementStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemoteReplicatorStatus {
@@ -4682,11 +7677,21 @@ pub struct RemoteReplicatorStatus {
     #[serde(rename = "RemoteReplicatorAcknowledgementStatus", default, skip_serializing_if = "Option::is_none")]
     pub remote_replicator_acknowledgement_status: Option<RemoteReplicatorAcknowledgementStatus>,
 }
+impl RemoteReplicatorStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type RemoteReplicatorStatusList = Vec<RemoteReplicatorStatus>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepairImpactDescriptionBase {
     #[serde(rename = "Kind")]
     pub kind: RepairImpactKind,
+}
+impl RepairImpactDescriptionBase {
+    pub fn new(kind: RepairImpactKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RepairImpactKind {
@@ -4697,6 +7702,11 @@ pub enum RepairImpactKind {
 pub struct RepairTargetDescriptionBase {
     #[serde(rename = "Kind")]
     pub kind: RepairTargetKind,
+}
+impl RepairTargetDescriptionBase {
+    pub fn new(kind: RepairTargetKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RepairTargetKind {
@@ -4742,6 +7752,30 @@ pub struct RepairTask {
     #[serde(rename = "PerformRestoringHealthCheck", default, skip_serializing_if = "Option::is_none")]
     pub perform_restoring_health_check: Option<bool>,
 }
+impl RepairTask {
+    pub fn new(task_id: String, state: repair_task::State, action: String) -> Self {
+        Self {
+            task_id,
+            version: None,
+            description: None,
+            state,
+            flags: None,
+            action,
+            target: None,
+            executor: None,
+            executor_data: None,
+            impact: None,
+            result_status: None,
+            result_code: None,
+            result_details: None,
+            history: None,
+            preparing_health_check_state: None,
+            restoring_health_check_state: None,
+            perform_preparing_health_check: None,
+            perform_restoring_health_check: None,
+        }
+    }
+}
 pub mod repair_task {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4772,6 +7806,11 @@ pub struct RepairTaskApproveDescription {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
+impl RepairTaskApproveDescription {
+    pub fn new(task_id: String) -> Self {
+        Self { task_id, version: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepairTaskCancelDescription {
     #[serde(rename = "TaskId")]
@@ -4781,12 +7820,26 @@ pub struct RepairTaskCancelDescription {
     #[serde(rename = "RequestAbort", default, skip_serializing_if = "Option::is_none")]
     pub request_abort: Option<bool>,
 }
+impl RepairTaskCancelDescription {
+    pub fn new(task_id: String) -> Self {
+        Self {
+            task_id,
+            version: None,
+            request_abort: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepairTaskDeleteDescription {
     #[serde(rename = "TaskId")]
     pub task_id: String,
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl RepairTaskDeleteDescription {
+    pub fn new(task_id: String) -> Self {
+        Self { task_id, version: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RepairTaskHealthCheckState {
@@ -4821,6 +7874,11 @@ pub struct RepairTaskHistory {
     #[serde(rename = "RestoringHealthCheckEndUtcTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub restoring_health_check_end_utc_timestamp: Option<String>,
 }
+impl RepairTaskHistory {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type RepairTaskList = Vec<RepairTask>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepairTaskUpdateHealthPolicyDescription {
@@ -4833,10 +7891,25 @@ pub struct RepairTaskUpdateHealthPolicyDescription {
     #[serde(rename = "PerformRestoringHealthCheck", default, skip_serializing_if = "Option::is_none")]
     pub perform_restoring_health_check: Option<bool>,
 }
+impl RepairTaskUpdateHealthPolicyDescription {
+    pub fn new(task_id: String) -> Self {
+        Self {
+            task_id,
+            version: None,
+            perform_preparing_health_check: None,
+            perform_restoring_health_check: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepairTaskUpdateInfo {
     #[serde(rename = "Version")]
     pub version: String,
+}
+impl RepairTaskUpdateInfo {
+    pub fn new(version: String) -> Self {
+        Self { version }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicaEvent {
@@ -4847,6 +7920,15 @@ pub struct ReplicaEvent {
     #[serde(rename = "ReplicaId")]
     pub replica_id: ReplicaIdInteger,
 }
+impl ReplicaEvent {
+    pub fn new(fabric_event: FabricEvent, partition_id: PartitionId, replica_id: ReplicaIdInteger) -> Self {
+        Self {
+            fabric_event,
+            partition_id,
+            replica_id,
+        }
+    }
+}
 pub type ReplicaEventList = Vec<ReplicaEvent>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicaHealth {
@@ -4856,6 +7938,15 @@ pub struct ReplicaHealth {
     pub service_kind: ServiceKind,
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
+}
+impl ReplicaHealth {
+    pub fn new(service_kind: ServiceKind) -> Self {
+        Self {
+            entity_health: EntityHealth::default(),
+            service_kind,
+            partition_id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicaHealthEvaluation {
@@ -4868,6 +7959,16 @@ pub struct ReplicaHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl ReplicaHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            partition_id: None,
+            replica_or_instance_id: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicaHealthState {
     #[serde(flatten)]
@@ -4877,6 +7978,15 @@ pub struct ReplicaHealthState {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
 }
+impl ReplicaHealthState {
+    pub fn new(service_kind: ServiceKind) -> Self {
+        Self {
+            entity_health_state: EntityHealthState::default(),
+            service_kind,
+            partition_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicaHealthStateChunk {
     #[serde(flatten)]
@@ -4884,10 +7994,20 @@ pub struct ReplicaHealthStateChunk {
     #[serde(rename = "ReplicaOrInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub replica_or_instance_id: Option<ReplicaOrInstanceId>,
 }
+impl ReplicaHealthStateChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicaHealthStateChunkList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ReplicaHealthStateChunk>,
+}
+impl ReplicaHealthStateChunkList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicaHealthStateFilter {
@@ -4895,6 +8015,11 @@ pub struct ReplicaHealthStateFilter {
     pub replica_or_instance_id_filter: Option<String>,
     #[serde(rename = "HealthStateFilter", default, skip_serializing_if = "Option::is_none")]
     pub health_state_filter: Option<i64>,
+}
+impl ReplicaHealthStateFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ReplicaId = String;
 pub type ReplicaIdInteger = i64;
@@ -4912,6 +8037,18 @@ pub struct ReplicaInfo {
     pub address: Option<String>,
     #[serde(rename = "LastInBuildDurationInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub last_in_build_duration_in_seconds: Option<String>,
+}
+impl ReplicaInfo {
+    pub fn new(service_kind: ServiceKind) -> Self {
+        Self {
+            service_kind,
+            replica_status: None,
+            health_state: None,
+            node_name: None,
+            address: None,
+            last_in_build_duration_in_seconds: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReplicaKind {
@@ -4941,6 +8078,11 @@ pub struct ReplicaStatusBase {
     #[serde(rename = "Kind")]
     pub kind: ReplicaKind,
 }
+impl ReplicaStatusBase {
+    pub fn new(kind: ReplicaKind) -> Self {
+        Self { kind }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicasHealthEvaluation {
     #[serde(flatten)]
@@ -4955,6 +8097,16 @@ pub struct ReplicasHealthEvaluation {
     pub total_count: Option<i64>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl ReplicasHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            max_percent_unhealthy_replicas_per_partition: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReplicatorOperationName {
@@ -4984,10 +8136,20 @@ pub struct ReplicatorQueueStatus {
     #[serde(rename = "LastSequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub last_sequence_number: Option<String>,
 }
+impl ReplicatorQueueStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicatorStatus {
     #[serde(rename = "Kind")]
     pub kind: ReplicaRole,
+}
+impl ReplicatorStatus {
+    pub fn new(kind: ReplicaRole) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResolvedServiceEndpoint {
@@ -4995,6 +8157,11 @@ pub struct ResolvedServiceEndpoint {
     pub kind: Option<ServiceEndpointRole>,
     #[serde(rename = "Address", default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
+}
+impl ResolvedServiceEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ResolvedServiceEndpointList = Vec<ResolvedServiceEndpoint>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5008,6 +8175,21 @@ pub struct ResolvedServicePartition {
     #[serde(rename = "Version")]
     pub version: String,
 }
+impl ResolvedServicePartition {
+    pub fn new(
+        name: ServiceName,
+        partition_information: PartitionInformation,
+        endpoints: ResolvedServiceEndpointList,
+        version: String,
+    ) -> Self {
+        Self {
+            name,
+            partition_information,
+            endpoints,
+            version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceLimits {
     #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
@@ -5015,17 +8197,32 @@ pub struct ResourceLimits {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cpu: Option<f64>,
 }
+impl ResourceLimits {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRequests {
     #[serde(rename = "memoryInGB")]
     pub memory_in_gb: f64,
     pub cpu: f64,
 }
+impl ResourceRequests {
+    pub fn new(memory_in_gb: f64, cpu: f64) -> Self {
+        Self { memory_in_gb, cpu }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRequirements {
     pub requests: ResourceRequests,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limits: Option<ResourceLimits>,
+}
+impl ResourceRequirements {
+    pub fn new(requests: ResourceRequests) -> Self {
+        Self { requests, limits: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceStatus {
@@ -5047,12 +8244,34 @@ pub struct RestartDeployedCodePackageDescription {
     #[serde(rename = "CodePackageInstanceId")]
     pub code_package_instance_id: CodePackageInstanceId,
 }
+impl RestartDeployedCodePackageDescription {
+    pub fn new(
+        service_manifest_name: ServiceManifestName,
+        code_package_name: CodePackageName,
+        code_package_instance_id: CodePackageInstanceId,
+    ) -> Self {
+        Self {
+            service_manifest_name,
+            service_package_activation_id: None,
+            code_package_name,
+            code_package_instance_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestartNodeDescription {
     #[serde(rename = "NodeInstanceId")]
     pub node_instance_id: String,
     #[serde(rename = "CreateFabricDump", default, skip_serializing_if = "Option::is_none")]
     pub create_fabric_dump: Option<restart_node_description::CreateFabricDump>,
+}
+impl RestartNodeDescription {
+    pub fn new(node_instance_id: String) -> Self {
+        Self {
+            node_instance_id,
+            create_fabric_dump: None,
+        }
+    }
 }
 pub mod restart_node_description {
     use super::*;
@@ -5074,6 +8293,11 @@ pub struct RestartPartitionResult {
     #[serde(rename = "SelectedPartition", default, skip_serializing_if = "Option::is_none")]
     pub selected_partition: Option<SelectedPartition>,
 }
+impl RestartPartitionResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RestartPolicy {
     OnFailure,
@@ -5088,6 +8312,15 @@ pub struct RestorePartitionDescription {
     #[serde(rename = "BackupStorage", default, skip_serializing_if = "Option::is_none")]
     pub backup_storage: Option<BackupStorageDescription>,
 }
+impl RestorePartitionDescription {
+    pub fn new(backup_id: String, backup_location: String) -> Self {
+        Self {
+            backup_id,
+            backup_location,
+            backup_storage: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoreProgressInfo {
     #[serde(rename = "RestoreState", default, skip_serializing_if = "Option::is_none")]
@@ -5100,6 +8333,11 @@ pub struct RestoreProgressInfo {
     pub restored_lsn: Option<String>,
     #[serde(rename = "FailureError", default, skip_serializing_if = "Option::is_none")]
     pub failure_error: Option<FabricErrorError>,
+}
+impl RestoreProgressInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RestoreState {
@@ -5115,15 +8353,30 @@ pub struct ResumeApplicationUpgradeDescription {
     #[serde(rename = "UpgradeDomainName")]
     pub upgrade_domain_name: String,
 }
+impl ResumeApplicationUpgradeDescription {
+    pub fn new(upgrade_domain_name: String) -> Self {
+        Self { upgrade_domain_name }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResumeClusterUpgradeDescription {
     #[serde(rename = "UpgradeDomain")]
     pub upgrade_domain: String,
 }
+impl ResumeClusterUpgradeDescription {
+    pub fn new(upgrade_domain: String) -> Self {
+        Self { upgrade_domain }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicyDescription {
     #[serde(rename = "RetentionPolicyType")]
     pub retention_policy_type: RetentionPolicyType,
+}
+impl RetentionPolicyDescription {
+    pub fn new(retention_policy_type: RetentionPolicyType) -> Self {
+        Self { retention_policy_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RetentionPolicyType {
@@ -5169,16 +8422,42 @@ pub struct RollingUpgradeUpdateDescription {
     #[serde(rename = "InstanceCloseDelayDurationInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub instance_close_delay_duration_in_seconds: Option<InstanceCloseDelayDurationInSeconds>,
 }
+impl RollingUpgradeUpdateDescription {
+    pub fn new(rolling_upgrade_mode: UpgradeMode) -> Self {
+        Self {
+            rolling_upgrade_mode,
+            force_restart: None,
+            replica_set_check_timeout_in_milliseconds: None,
+            failure_action: None,
+            health_check_wait_duration_in_milliseconds: None,
+            health_check_stable_duration_in_milliseconds: None,
+            health_check_retry_timeout_in_milliseconds: None,
+            upgrade_timeout_in_milliseconds: None,
+            upgrade_domain_timeout_in_milliseconds: None,
+            instance_close_delay_duration_in_seconds: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunToCompletionExecutionPolicy {
     #[serde(flatten)]
     pub execution_policy: ExecutionPolicy,
     pub restart: RestartPolicy,
 }
+impl RunToCompletionExecutionPolicy {
+    pub fn new(execution_policy: ExecutionPolicy, restart: RestartPolicy) -> Self {
+        Self { execution_policy, restart }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SafetyCheck {
     #[serde(rename = "Kind")]
     pub kind: SafetyCheckKind,
+}
+impl SafetyCheck {
+    pub fn new(kind: SafetyCheckKind) -> Self {
+        Self { kind }
+    }
 }
 pub type SafetyCheckInfoList = Vec<SafetyCheckWrapper>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5197,10 +8476,20 @@ pub struct SafetyCheckWrapper {
     #[serde(rename = "SafetyCheck", default, skip_serializing_if = "Option::is_none")]
     pub safety_check: Option<SafetyCheck>,
 }
+impl SafetyCheckWrapper {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingMechanismDescription {
     #[serde(rename = "Kind")]
     pub kind: ScalingMechanismKind,
+}
+impl ScalingMechanismDescription {
+    pub fn new(kind: ScalingMechanismKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScalingMechanismKind {
@@ -5215,11 +8504,24 @@ pub struct ScalingPolicyDescription {
     #[serde(rename = "ScalingMechanism")]
     pub scaling_mechanism: ScalingMechanismDescription,
 }
+impl ScalingPolicyDescription {
+    pub fn new(scaling_trigger: ScalingTriggerDescription, scaling_mechanism: ScalingMechanismDescription) -> Self {
+        Self {
+            scaling_trigger,
+            scaling_mechanism,
+        }
+    }
+}
 pub type ScalingPolicyDescriptionList = Vec<ScalingPolicyDescription>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingTriggerDescription {
     #[serde(rename = "Kind")]
     pub kind: ScalingTriggerKind,
+}
+impl ScalingTriggerDescription {
+    pub fn new(kind: ScalingTriggerKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScalingTriggerKind {
@@ -5232,10 +8534,24 @@ pub struct SecondaryActiveReplicatorStatus {
     #[serde(flatten)]
     pub secondary_replicator_status: SecondaryReplicatorStatus,
 }
+impl SecondaryActiveReplicatorStatus {
+    pub fn new(secondary_replicator_status: SecondaryReplicatorStatus) -> Self {
+        Self {
+            secondary_replicator_status,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecondaryIdleReplicatorStatus {
     #[serde(flatten)]
     pub secondary_replicator_status: SecondaryReplicatorStatus,
+}
+impl SecondaryIdleReplicatorStatus {
+    pub fn new(secondary_replicator_status: SecondaryReplicatorStatus) -> Self {
+        Self {
+            secondary_replicator_status,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecondaryReplicatorStatus {
@@ -5258,6 +8574,19 @@ pub struct SecondaryReplicatorStatus {
     #[serde(rename = "LastAcknowledgementSentTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_acknowledgement_sent_time_utc: Option<String>,
 }
+impl SecondaryReplicatorStatus {
+    pub fn new(replicator_status: ReplicatorStatus) -> Self {
+        Self {
+            replicator_status,
+            replication_queue_status: None,
+            last_replication_operation_received_time_utc: None,
+            is_in_build: None,
+            copy_queue_status: None,
+            last_copy_operation_received_time_utc: None,
+            last_acknowledgement_sent_time_utc: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SecretKind {
     #[serde(rename = "inlinedValue")]
@@ -5269,6 +8598,11 @@ pub enum SecretKind {
 pub struct SecretResourceDescription {
     pub properties: SecretResourceProperties,
     pub name: SecretResourceName,
+}
+impl SecretResourceDescription {
+    pub fn new(properties: SecretResourceProperties, name: SecretResourceName) -> Self {
+        Self { properties, name }
+    }
 }
 pub type SecretResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5284,34 +8618,75 @@ pub struct SecretResourceProperties {
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
 }
+impl SecretResourceProperties {
+    pub fn new(secret_resource_properties_base: SecretResourcePropertiesBase) -> Self {
+        Self {
+            secret_resource_properties_base,
+            description: None,
+            status: None,
+            status_details: None,
+            content_type: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretResourcePropertiesBase {
     pub kind: SecretKind,
+}
+impl SecretResourcePropertiesBase {
+    pub fn new(kind: SecretKind) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl SecretValue {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretValueProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl SecretValueProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretValueResourceDescription {
     pub name: String,
     pub properties: SecretValueResourceProperties,
 }
+impl SecretValueResourceDescription {
+    pub fn new(name: String, properties: SecretValueResourceProperties) -> Self {
+        Self { name, properties }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretValueResourceProperties {
     #[serde(flatten)]
     pub secret_value_properties: SecretValueProperties,
 }
+impl SecretValueResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SeedNodeSafetyCheck {
     #[serde(flatten)]
     pub safety_check: SafetyCheck,
+}
+impl SeedNodeSafetyCheck {
+    pub fn new(safety_check: SafetyCheck) -> Self {
+        Self { safety_check }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SelectedPartition {
@@ -5320,12 +8695,25 @@ pub struct SelectedPartition {
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
 }
+impl SelectedPartition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBackupConfigurationInfo {
     #[serde(flatten)]
     pub backup_configuration_info: BackupConfigurationInfo,
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<ServiceName>,
+}
+impl ServiceBackupConfigurationInfo {
+    pub fn new(backup_configuration_info: BackupConfigurationInfo) -> Self {
+        Self {
+            backup_configuration_info,
+            service_name: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBackupEntity {
@@ -5334,12 +8722,25 @@ pub struct ServiceBackupEntity {
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<ServiceName>,
 }
+impl ServiceBackupEntity {
+    pub fn new(backup_entity: BackupEntity) -> Self {
+        Self {
+            backup_entity,
+            service_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceCorrelationDescription {
     #[serde(rename = "Scheme")]
     pub scheme: ServiceCorrelationScheme,
     #[serde(rename = "ServiceName")]
     pub service_name: ServiceName,
+}
+impl ServiceCorrelationDescription {
+    pub fn new(scheme: ServiceCorrelationScheme, service_name: ServiceName) -> Self {
+        Self { scheme, service_name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServiceCorrelationScheme {
@@ -5373,6 +8774,35 @@ pub struct ServiceCreatedEvent {
     #[serde(rename = "PartitionId")]
     pub partition_id: PartitionId,
 }
+impl ServiceCreatedEvent {
+    pub fn new(
+        service_event: ServiceEvent,
+        service_type_name: String,
+        application_name: String,
+        application_type_name: String,
+        service_instance: i64,
+        is_stateful: bool,
+        partition_count: i32,
+        target_replica_set_size: i32,
+        min_replica_set_size: i32,
+        service_package_version: String,
+        partition_id: PartitionId,
+    ) -> Self {
+        Self {
+            service_event,
+            service_type_name,
+            application_name,
+            application_type_name,
+            service_instance,
+            is_stateful,
+            partition_count,
+            target_replica_set_size,
+            min_replica_set_size,
+            service_package_version,
+            partition_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceDeletedEvent {
     #[serde(flatten)]
@@ -5395,6 +8825,33 @@ pub struct ServiceDeletedEvent {
     pub min_replica_set_size: i32,
     #[serde(rename = "ServicePackageVersion")]
     pub service_package_version: String,
+}
+impl ServiceDeletedEvent {
+    pub fn new(
+        service_event: ServiceEvent,
+        service_type_name: String,
+        application_name: String,
+        application_type_name: String,
+        service_instance: i64,
+        is_stateful: bool,
+        partition_count: i32,
+        target_replica_set_size: i32,
+        min_replica_set_size: i32,
+        service_package_version: String,
+    ) -> Self {
+        Self {
+            service_event,
+            service_type_name,
+            application_name,
+            application_type_name,
+            service_instance,
+            is_stateful,
+            partition_count,
+            target_replica_set_size,
+            min_replica_set_size,
+            service_package_version,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceDescription {
@@ -5429,6 +8886,32 @@ pub struct ServiceDescription {
     #[serde(rename = "ScalingPolicies", default, skip_serializing_if = "Option::is_none")]
     pub scaling_policies: Option<ScalingPolicyDescriptionList>,
 }
+impl ServiceDescription {
+    pub fn new(
+        service_kind: ServiceKind,
+        service_name: ServiceName,
+        service_type_name: ServiceTypeName,
+        partition_description: PartitionSchemeDescription,
+    ) -> Self {
+        Self {
+            service_kind,
+            application_name: None,
+            service_name,
+            service_type_name,
+            initialization_data: None,
+            partition_description,
+            placement_constraints: None,
+            correlation_scheme: None,
+            service_load_metrics: None,
+            service_placement_policies: None,
+            default_move_cost: None,
+            is_default_move_cost_specified: None,
+            service_package_activation_mode: None,
+            service_dns_name: None,
+            scaling_policies: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServiceEndpointRole {
     Invalid,
@@ -5442,6 +8925,11 @@ pub struct ServiceEvent {
     pub fabric_event: FabricEvent,
     #[serde(rename = "ServiceId")]
     pub service_id: ServiceId,
+}
+impl ServiceEvent {
+    pub fn new(fabric_event: FabricEvent, service_id: ServiceId) -> Self {
+        Self { fabric_event, service_id }
+    }
 }
 pub type ServiceEventList = Vec<ServiceEvent>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5459,6 +8947,18 @@ pub struct ServiceFromTemplateDescription {
     #[serde(rename = "ServiceDnsName", default, skip_serializing_if = "Option::is_none")]
     pub service_dns_name: Option<String>,
 }
+impl ServiceFromTemplateDescription {
+    pub fn new(application_name: ApplicationName, service_name: ServiceName, service_type_name: ServiceTypeName) -> Self {
+        Self {
+            application_name,
+            service_name,
+            service_type_name,
+            initialization_data: None,
+            service_package_activation_mode: None,
+            service_dns_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceHealth {
     #[serde(flatten)]
@@ -5468,6 +8968,11 @@ pub struct ServiceHealth {
     #[serde(rename = "PartitionHealthStates", default, skip_serializing_if = "Vec::is_empty")]
     pub partition_health_states: Vec<PartitionHealthState>,
 }
+impl ServiceHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceHealthEvaluation {
     #[serde(flatten)]
@@ -5476,6 +8981,15 @@ pub struct ServiceHealthEvaluation {
     pub service_name: Option<ServiceName>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl ServiceHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            service_name: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceHealthReportExpiredEvent {
@@ -5500,12 +9014,44 @@ pub struct ServiceHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl ServiceHealthReportExpiredEvent {
+    pub fn new(
+        service_event: ServiceEvent,
+        instance_id: i64,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            service_event,
+            instance_id,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceHealthState {
     #[serde(flatten)]
     pub entity_health_state: EntityHealthState,
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<ServiceName>,
+}
+impl ServiceHealthState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceHealthStateChunk {
@@ -5516,10 +9062,20 @@ pub struct ServiceHealthStateChunk {
     #[serde(rename = "PartitionHealthStateChunks", default, skip_serializing_if = "Option::is_none")]
     pub partition_health_state_chunks: Option<PartitionHealthStateChunkList>,
 }
+impl ServiceHealthStateChunk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceHealthStateChunkList {
     #[serde(rename = "Items", default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<ServiceHealthStateChunk>,
+}
+impl ServiceHealthStateChunkList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceHealthStateFilter {
@@ -5530,6 +9086,11 @@ pub struct ServiceHealthStateFilter {
     #[serde(rename = "PartitionFilters", default, skip_serializing_if = "Vec::is_empty")]
     pub partition_filters: Vec<PartitionHealthStateFilter>,
 }
+impl ServiceHealthStateFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type ServiceId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceIdentity {
@@ -5537,6 +9098,11 @@ pub struct ServiceIdentity {
     pub name: Option<String>,
     #[serde(rename = "identityRef", default, skip_serializing_if = "Option::is_none")]
     pub identity_ref: Option<String>,
+}
+impl ServiceIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceInfo {
@@ -5557,6 +9123,20 @@ pub struct ServiceInfo {
     #[serde(rename = "IsServiceGroup", default, skip_serializing_if = "Option::is_none")]
     pub is_service_group: Option<bool>,
 }
+impl ServiceInfo {
+    pub fn new(service_kind: ServiceKind) -> Self {
+        Self {
+            id: None,
+            service_kind,
+            name: None,
+            type_name: None,
+            manifest_version: None,
+            health_state: None,
+            service_status: None,
+            is_service_group: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServiceKind {
     Invalid,
@@ -5576,6 +9156,17 @@ pub struct ServiceLoadMetricDescription {
     #[serde(rename = "DefaultLoad", default, skip_serializing_if = "Option::is_none")]
     pub default_load: Option<i64>,
 }
+impl ServiceLoadMetricDescription {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            weight: None,
+            primary_default_load: None,
+            secondary_default_load: None,
+            default_load: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServiceLoadMetricWeight {
     Zero,
@@ -5592,6 +9183,11 @@ pub struct ServiceNameInfo {
     pub id: Option<ServiceId>,
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ServiceName>,
+}
+impl ServiceNameInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceNewHealthReportEvent {
@@ -5615,6 +9211,33 @@ pub struct ServiceNewHealthReportEvent {
     pub remove_when_expired: bool,
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
+}
+impl ServiceNewHealthReportEvent {
+    pub fn new(
+        service_event: ServiceEvent,
+        instance_id: i64,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            service_event,
+            instance_id,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServiceOperationName {
@@ -5642,6 +9265,16 @@ pub struct ServicePartitionInfo {
     #[serde(rename = "PartitionInformation", default, skip_serializing_if = "Option::is_none")]
     pub partition_information: Option<PartitionInformation>,
 }
+impl ServicePartitionInfo {
+    pub fn new(service_kind: ServiceKind) -> Self {
+        Self {
+            service_kind,
+            health_state: None,
+            partition_status: None,
+            partition_information: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServicePartitionKind {
     Invalid,
@@ -5665,16 +9298,36 @@ pub struct ServicePlacementInvalidDomainPolicyDescription {
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
 }
+impl ServicePlacementInvalidDomainPolicyDescription {
+    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
+        Self {
+            service_placement_policy_description,
+            domain_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementNonPartiallyPlaceServicePolicyDescription {
     #[serde(flatten)]
     pub service_placement_policy_description: ServicePlacementPolicyDescription,
+}
+impl ServicePlacementNonPartiallyPlaceServicePolicyDescription {
+    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
+        Self {
+            service_placement_policy_description,
+        }
+    }
 }
 pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicyDescription>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementPolicyDescription {
     #[serde(rename = "Type")]
     pub type_: ServicePlacementPolicyType,
+}
+impl ServicePlacementPolicyDescription {
+    pub fn new(type_: ServicePlacementPolicyType) -> Self {
+        Self { type_ }
+    }
 }
 pub type ServicePlacementPolicyDescriptionList = Vec<ServicePlacementPolicyDescription>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5693,6 +9346,14 @@ pub struct ServicePlacementPreferPrimaryDomainPolicyDescription {
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
 }
+impl ServicePlacementPreferPrimaryDomainPolicyDescription {
+    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
+        Self {
+            service_placement_policy_description,
+            domain_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementRequireDomainDistributionPolicyDescription {
     #[serde(flatten)]
@@ -5700,12 +9361,28 @@ pub struct ServicePlacementRequireDomainDistributionPolicyDescription {
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
 }
+impl ServicePlacementRequireDomainDistributionPolicyDescription {
+    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
+        Self {
+            service_placement_policy_description,
+            domain_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementRequiredDomainPolicyDescription {
     #[serde(flatten)]
     pub service_placement_policy_description: ServicePlacementPolicyDescription,
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
+}
+impl ServicePlacementRequiredDomainPolicyDescription {
+    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
+        Self {
+            service_placement_policy_description,
+            domain_name: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceProperties {
@@ -5730,12 +9407,25 @@ pub struct ServiceProperties {
     #[serde(rename = "dnsName", default, skip_serializing_if = "Option::is_none")]
     pub dns_name: Option<String>,
 }
+impl ServiceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceReplicaDescription {
     #[serde(flatten)]
     pub service_replica_properties: ServiceReplicaProperties,
     #[serde(rename = "replicaName")]
     pub replica_name: String,
+}
+impl ServiceReplicaDescription {
+    pub fn new(service_replica_properties: ServiceReplicaProperties, replica_name: String) -> Self {
+        Self {
+            service_replica_properties,
+            replica_name,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceReplicaProperties {
@@ -5748,10 +9438,25 @@ pub struct ServiceReplicaProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<DiagnosticsRef>,
 }
+impl ServiceReplicaProperties {
+    pub fn new(os_type: OperatingSystemType, code_packages: Vec<ContainerCodePackageProperties>) -> Self {
+        Self {
+            os_type,
+            code_packages,
+            network_refs: Vec::new(),
+            diagnostics: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceResourceDescription {
     pub name: ServiceResourceName,
     pub properties: ServiceResourceProperties,
+}
+impl ServiceResourceDescription {
+    pub fn new(name: ServiceResourceName, properties: ServiceResourceProperties) -> Self {
+        Self { name, properties }
+    }
 }
 pub type ServiceResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5760,6 +9465,14 @@ pub struct ServiceResourceProperties {
     pub service_replica_properties: ServiceReplicaProperties,
     #[serde(flatten)]
     pub service_properties: ServiceProperties,
+}
+impl ServiceResourceProperties {
+    pub fn new(service_replica_properties: ServiceReplicaProperties) -> Self {
+        Self {
+            service_replica_properties,
+            service_properties: ServiceProperties::default(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServiceStatus {
@@ -5787,12 +9500,30 @@ pub struct ServiceTypeDescription {
     #[serde(rename = "Extensions", default, skip_serializing_if = "Option::is_none")]
     pub extensions: Option<ServiceTypeExtensionDescriptionList>,
 }
+impl ServiceTypeDescription {
+    pub fn new(kind: ServiceKind) -> Self {
+        Self {
+            kind,
+            is_stateful: None,
+            service_type_name: None,
+            placement_constraints: None,
+            load_metrics: None,
+            service_placement_policies: None,
+            extensions: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTypeExtensionDescription {
     #[serde(rename = "Key", default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
     #[serde(rename = "Value", default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl ServiceTypeExtensionDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ServiceTypeExtensionDescriptionList = Vec<ServiceTypeExtensionDescription>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -5812,6 +9543,11 @@ pub struct ServiceTypeHealthPolicy {
     #[serde(rename = "MaxPercentUnhealthyServices", default, skip_serializing_if = "Option::is_none")]
     pub max_percent_unhealthy_services: Option<i64>,
 }
+impl ServiceTypeHealthPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type ServiceTypeHealthPolicyMap = Vec<ServiceTypeHealthPolicyMapItem>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceTypeHealthPolicyMapItem {
@@ -5819,6 +9555,11 @@ pub struct ServiceTypeHealthPolicyMapItem {
     pub key: String,
     #[serde(rename = "Value")]
     pub value: ServiceTypeHealthPolicy,
+}
+impl ServiceTypeHealthPolicyMapItem {
+    pub fn new(key: String, value: ServiceTypeHealthPolicy) -> Self {
+        Self { key, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTypeInfo {
@@ -5831,11 +9572,21 @@ pub struct ServiceTypeInfo {
     #[serde(rename = "IsServiceGroup", default, skip_serializing_if = "Option::is_none")]
     pub is_service_group: Option<bool>,
 }
+impl ServiceTypeInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type ServiceTypeInfoList = Vec<ServiceTypeInfo>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTypeManifest {
     #[serde(rename = "Manifest", default, skip_serializing_if = "Option::is_none")]
     pub manifest: Option<String>,
+}
+impl ServiceTypeManifest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ServiceTypeName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5864,6 +9615,20 @@ pub struct ServiceUpdateDescription {
     #[serde(rename = "ScalingPolicies", default, skip_serializing_if = "Option::is_none")]
     pub scaling_policies: Option<ScalingPolicyDescriptionList>,
 }
+impl ServiceUpdateDescription {
+    pub fn new(service_kind: ServiceKind) -> Self {
+        Self {
+            service_kind,
+            flags: None,
+            placement_constraints: None,
+            correlation_scheme: None,
+            load_metrics: None,
+            service_placement_policies: None,
+            default_move_cost: None,
+            scaling_policies: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceUpgradeProgress {
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
@@ -5872,6 +9637,11 @@ pub struct ServiceUpgradeProgress {
     pub completed_replica_count: Option<String>,
     #[serde(rename = "PendingReplicaCount", default, skip_serializing_if = "Option::is_none")]
     pub pending_replica_count: Option<String>,
+}
+impl ServiceUpgradeProgress {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ServiceUpgradeProgressList = Vec<ServiceUpgradeProgress>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5887,6 +9657,17 @@ pub struct ServicesHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl ServicesHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            service_type_name: None,
+            max_percent_unhealthy_services: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Setting {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -5895,6 +9676,11 @@ pub struct Setting {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl Setting {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SettingType {
@@ -5912,10 +9698,22 @@ pub struct SingletonPartitionInformation {
     #[serde(flatten)]
     pub partition_information: PartitionInformation,
 }
+impl SingletonPartitionInformation {
+    pub fn new(partition_information: PartitionInformation) -> Self {
+        Self { partition_information }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SingletonPartitionSchemeDescription {
     #[serde(flatten)]
     pub partition_scheme_description: PartitionSchemeDescription,
+}
+impl SingletonPartitionSchemeDescription {
+    pub fn new(partition_scheme_description: PartitionSchemeDescription) -> Self {
+        Self {
+            partition_scheme_description,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StartClusterUpgradeDescription {
@@ -5950,12 +9748,25 @@ pub struct StartClusterUpgradeDescription {
     #[serde(rename = "InstanceCloseDelayDurationInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub instance_close_delay_duration_in_seconds: Option<InstanceCloseDelayDurationInSeconds>,
 }
+impl StartClusterUpgradeDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StartedChaosEvent {
     #[serde(flatten)]
     pub chaos_event: ChaosEvent,
     #[serde(rename = "ChaosParameters", default, skip_serializing_if = "Option::is_none")]
     pub chaos_parameters: Option<ChaosParameters>,
+}
+impl StartedChaosEvent {
+    pub fn new(chaos_event: ChaosEvent) -> Self {
+        Self {
+            chaos_event,
+            chaos_parameters: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulReplicaHealthReportExpiredEvent {
@@ -5980,6 +9791,33 @@ pub struct StatefulReplicaHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl StatefulReplicaHealthReportExpiredEvent {
+    pub fn new(
+        replica_event: ReplicaEvent,
+        replica_instance_id: i64,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            replica_event,
+            replica_instance_id,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulReplicaNewHealthReportEvent {
     #[serde(flatten)]
@@ -6003,6 +9841,33 @@ pub struct StatefulReplicaNewHealthReportEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl StatefulReplicaNewHealthReportEvent {
+    pub fn new(
+        replica_event: ReplicaEvent,
+        replica_instance_id: i64,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            replica_event,
+            replica_instance_id,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulServiceDescription {
     #[serde(flatten)]
@@ -6024,12 +9889,40 @@ pub struct StatefulServiceDescription {
     #[serde(rename = "ServicePlacementTimeLimitSeconds", default, skip_serializing_if = "Option::is_none")]
     pub service_placement_time_limit_seconds: Option<i64>,
 }
+impl StatefulServiceDescription {
+    pub fn new(
+        service_description: ServiceDescription,
+        target_replica_set_size: i64,
+        min_replica_set_size: i64,
+        has_persisted_state: bool,
+    ) -> Self {
+        Self {
+            service_description,
+            target_replica_set_size,
+            min_replica_set_size,
+            has_persisted_state,
+            flags: None,
+            replica_restart_wait_duration_seconds: None,
+            quorum_loss_wait_duration_seconds: None,
+            stand_by_replica_keep_duration_seconds: None,
+            service_placement_time_limit_seconds: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulServiceInfo {
     #[serde(flatten)]
     pub service_info: ServiceInfo,
     #[serde(rename = "HasPersistedState", default, skip_serializing_if = "Option::is_none")]
     pub has_persisted_state: Option<bool>,
+}
+impl StatefulServiceInfo {
+    pub fn new(service_info: ServiceInfo) -> Self {
+        Self {
+            service_info,
+            has_persisted_state: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulServicePartitionInfo {
@@ -6044,6 +9937,17 @@ pub struct StatefulServicePartitionInfo {
     #[serde(rename = "PrimaryEpoch", default, skip_serializing_if = "Option::is_none")]
     pub primary_epoch: Option<Epoch>,
 }
+impl StatefulServicePartitionInfo {
+    pub fn new(service_partition_info: ServicePartitionInfo) -> Self {
+        Self {
+            service_partition_info,
+            target_replica_set_size: None,
+            min_replica_set_size: None,
+            last_quorum_loss_duration: None,
+            primary_epoch: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulServiceReplicaHealth {
     #[serde(flatten)]
@@ -6051,12 +9955,28 @@ pub struct StatefulServiceReplicaHealth {
     #[serde(rename = "ReplicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<ReplicaId>,
 }
+impl StatefulServiceReplicaHealth {
+    pub fn new(replica_health: ReplicaHealth) -> Self {
+        Self {
+            replica_health,
+            replica_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulServiceReplicaHealthState {
     #[serde(flatten)]
     pub replica_health_state: ReplicaHealthState,
     #[serde(rename = "ReplicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<ReplicaId>,
+}
+impl StatefulServiceReplicaHealthState {
+    pub fn new(replica_health_state: ReplicaHealthState) -> Self {
+        Self {
+            replica_health_state,
+            replica_id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulServiceReplicaInfo {
@@ -6067,12 +9987,29 @@ pub struct StatefulServiceReplicaInfo {
     #[serde(rename = "ReplicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<ReplicaId>,
 }
+impl StatefulServiceReplicaInfo {
+    pub fn new(replica_info: ReplicaInfo) -> Self {
+        Self {
+            replica_info,
+            replica_role: None,
+            replica_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulServiceTypeDescription {
     #[serde(flatten)]
     pub service_type_description: ServiceTypeDescription,
     #[serde(rename = "HasPersistedState", default, skip_serializing_if = "Option::is_none")]
     pub has_persisted_state: Option<bool>,
+}
+impl StatefulServiceTypeDescription {
+    pub fn new(service_type_description: ServiceTypeDescription) -> Self {
+        Self {
+            service_type_description,
+            has_persisted_state: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatefulServiceUpdateDescription {
@@ -6090,6 +10027,19 @@ pub struct StatefulServiceUpdateDescription {
     pub stand_by_replica_keep_duration_seconds: Option<String>,
     #[serde(rename = "ServicePlacementTimeLimitSeconds", default, skip_serializing_if = "Option::is_none")]
     pub service_placement_time_limit_seconds: Option<String>,
+}
+impl StatefulServiceUpdateDescription {
+    pub fn new(service_update_description: ServiceUpdateDescription) -> Self {
+        Self {
+            service_update_description,
+            target_replica_set_size: None,
+            min_replica_set_size: None,
+            replica_restart_wait_duration_seconds: None,
+            quorum_loss_wait_duration_seconds: None,
+            stand_by_replica_keep_duration_seconds: None,
+            service_placement_time_limit_seconds: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessReplicaHealthReportExpiredEvent {
@@ -6112,6 +10062,31 @@ pub struct StatelessReplicaHealthReportExpiredEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl StatelessReplicaHealthReportExpiredEvent {
+    pub fn new(
+        replica_event: ReplicaEvent,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            replica_event,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessReplicaNewHealthReportEvent {
     #[serde(flatten)]
@@ -6133,6 +10108,31 @@ pub struct StatelessReplicaNewHealthReportEvent {
     #[serde(rename = "SourceUtcTimestamp")]
     pub source_utc_timestamp: String,
 }
+impl StatelessReplicaNewHealthReportEvent {
+    pub fn new(
+        replica_event: ReplicaEvent,
+        source_id: String,
+        property: String,
+        health_state: String,
+        time_to_live_ms: i64,
+        sequence_number: i64,
+        description: String,
+        remove_when_expired: bool,
+        source_utc_timestamp: String,
+    ) -> Self {
+        Self {
+            replica_event,
+            source_id,
+            property,
+            health_state,
+            time_to_live_ms,
+            sequence_number,
+            description,
+            remove_when_expired,
+            source_utc_timestamp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessServiceDescription {
     #[serde(flatten)]
@@ -6148,10 +10148,27 @@ pub struct StatelessServiceDescription {
     #[serde(rename = "InstanceCloseDelayDurationSeconds", default, skip_serializing_if = "Option::is_none")]
     pub instance_close_delay_duration_seconds: Option<i64>,
 }
+impl StatelessServiceDescription {
+    pub fn new(service_description: ServiceDescription, instance_count: i64) -> Self {
+        Self {
+            service_description,
+            instance_count,
+            min_instance_count: None,
+            min_instance_percentage: None,
+            flags: None,
+            instance_close_delay_duration_seconds: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessServiceInfo {
     #[serde(flatten)]
     pub service_info: ServiceInfo,
+}
+impl StatelessServiceInfo {
+    pub fn new(service_info: ServiceInfo) -> Self {
+        Self { service_info }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessServiceInstanceHealth {
@@ -6160,6 +10177,14 @@ pub struct StatelessServiceInstanceHealth {
     #[serde(rename = "InstanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<InstanceId>,
 }
+impl StatelessServiceInstanceHealth {
+    pub fn new(replica_health: ReplicaHealth) -> Self {
+        Self {
+            replica_health,
+            instance_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessServiceInstanceHealthState {
     #[serde(flatten)]
@@ -6167,12 +10192,28 @@ pub struct StatelessServiceInstanceHealthState {
     #[serde(rename = "ReplicaId", default, skip_serializing_if = "Option::is_none")]
     pub replica_id: Option<ReplicaId>,
 }
+impl StatelessServiceInstanceHealthState {
+    pub fn new(replica_health_state: ReplicaHealthState) -> Self {
+        Self {
+            replica_health_state,
+            replica_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessServiceInstanceInfo {
     #[serde(flatten)]
     pub replica_info: ReplicaInfo,
     #[serde(rename = "InstanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<InstanceId>,
+}
+impl StatelessServiceInstanceInfo {
+    pub fn new(replica_info: ReplicaInfo) -> Self {
+        Self {
+            replica_info,
+            instance_id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessServicePartitionInfo {
@@ -6185,12 +10226,30 @@ pub struct StatelessServicePartitionInfo {
     #[serde(rename = "MinInstancePercentage", default, skip_serializing_if = "Option::is_none")]
     pub min_instance_percentage: Option<MinInstancePercentage>,
 }
+impl StatelessServicePartitionInfo {
+    pub fn new(service_partition_info: ServicePartitionInfo) -> Self {
+        Self {
+            service_partition_info,
+            instance_count: None,
+            min_instance_count: None,
+            min_instance_percentage: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessServiceTypeDescription {
     #[serde(flatten)]
     pub service_type_description: ServiceTypeDescription,
     #[serde(rename = "UseImplicitHost", default, skip_serializing_if = "Option::is_none")]
     pub use_implicit_host: Option<bool>,
+}
+impl StatelessServiceTypeDescription {
+    pub fn new(service_type_description: ServiceTypeDescription) -> Self {
+        Self {
+            service_type_description,
+            use_implicit_host: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StatelessServiceUpdateDescription {
@@ -6205,12 +10264,28 @@ pub struct StatelessServiceUpdateDescription {
     #[serde(rename = "InstanceCloseDelayDurationSeconds", default, skip_serializing_if = "Option::is_none")]
     pub instance_close_delay_duration_seconds: Option<String>,
 }
+impl StatelessServiceUpdateDescription {
+    pub fn new(service_update_description: ServiceUpdateDescription) -> Self {
+        Self {
+            service_update_description,
+            instance_count: None,
+            min_instance_count: None,
+            min_instance_percentage: None,
+            instance_close_delay_duration_seconds: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoppedChaosEvent {
     #[serde(flatten)]
     pub chaos_event: ChaosEvent,
     #[serde(rename = "Reason", default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+}
+impl StoppedChaosEvent {
+    pub fn new(chaos_event: ChaosEvent) -> Self {
+        Self { chaos_event, reason: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringPropertyValue {
@@ -6219,6 +10294,11 @@ pub struct StringPropertyValue {
     #[serde(rename = "Data")]
     pub data: String,
 }
+impl StringPropertyValue {
+    pub fn new(property_value: PropertyValue, data: String) -> Self {
+        Self { property_value, data }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuccessfulPropertyBatchInfo {
     #[serde(flatten)]
@@ -6226,12 +10306,28 @@ pub struct SuccessfulPropertyBatchInfo {
     #[serde(rename = "Properties", default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl SuccessfulPropertyBatchInfo {
+    pub fn new(property_batch_info: PropertyBatchInfo) -> Self {
+        Self {
+            property_batch_info,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemApplicationHealthEvaluation {
     #[serde(flatten)]
     pub health_evaluation: HealthEvaluation,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl SystemApplicationHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 pub type TargetApplicationName = String;
 pub type TargetApplicationTypeVersion = String;
@@ -6242,12 +10338,22 @@ pub struct TcpConfig {
     pub port: i64,
     pub destination: GatewayDestination,
 }
+impl TcpConfig {
+    pub fn new(name: String, port: i64, destination: GatewayDestination) -> Self {
+        Self { name, port, destination }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TestErrorChaosEvent {
     #[serde(flatten)]
     pub chaos_event: ChaosEvent,
     #[serde(rename = "Reason", default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+}
+impl TestErrorChaosEvent {
+    pub fn new(chaos_event: ChaosEvent) -> Self {
+        Self { chaos_event, reason: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeBasedBackupScheduleDescription {
@@ -6260,6 +10366,20 @@ pub struct TimeBasedBackupScheduleDescription {
     #[serde(rename = "RunTimes")]
     pub run_times: TimeList,
 }
+impl TimeBasedBackupScheduleDescription {
+    pub fn new(
+        backup_schedule_description: BackupScheduleDescription,
+        schedule_frequency_type: BackupScheduleFrequencyType,
+        run_times: TimeList,
+    ) -> Self {
+        Self {
+            backup_schedule_description,
+            schedule_frequency_type,
+            run_days: None,
+            run_times,
+        }
+    }
+}
 pub type TimeList = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeOfDay {
@@ -6268,12 +10388,22 @@ pub struct TimeOfDay {
     #[serde(rename = "Minute", default, skip_serializing_if = "Option::is_none")]
     pub minute: Option<i32>,
 }
+impl TimeOfDay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeRange {
     #[serde(rename = "StartTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<TimeOfDay>,
     #[serde(rename = "EndTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<TimeOfDay>,
+}
+impl TimeRange {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type UnhealthyEvaluations = Vec<HealthEvaluationWrapper>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -6287,6 +10417,16 @@ pub struct UniformInt64RangePartitionSchemeDescription {
     #[serde(rename = "HighKey")]
     pub high_key: String,
 }
+impl UniformInt64RangePartitionSchemeDescription {
+    pub fn new(partition_scheme_description: PartitionSchemeDescription, count: i64, low_key: String, high_key: String) -> Self {
+        Self {
+            partition_scheme_description,
+            count,
+            low_key,
+            high_key,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UnplacedReplicaInformation {
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
@@ -6296,6 +10436,11 @@ pub struct UnplacedReplicaInformation {
     #[serde(rename = "UnplacedReplicaDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub unplaced_replica_details: Vec<String>,
 }
+impl UnplacedReplicaInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UnprovisionApplicationTypeDescriptionInfo {
     #[serde(rename = "ApplicationTypeVersion")]
@@ -6303,12 +10448,25 @@ pub struct UnprovisionApplicationTypeDescriptionInfo {
     #[serde(rename = "Async", default, skip_serializing_if = "Option::is_none")]
     pub async_: Option<bool>,
 }
+impl UnprovisionApplicationTypeDescriptionInfo {
+    pub fn new(application_type_version: ApplicationTypeVersion) -> Self {
+        Self {
+            application_type_version,
+            async_: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UnprovisionFabricDescription {
     #[serde(rename = "CodeVersion", default, skip_serializing_if = "Option::is_none")]
     pub code_version: Option<String>,
     #[serde(rename = "ConfigVersion", default, skip_serializing_if = "Option::is_none")]
     pub config_version: Option<String>,
+}
+impl UnprovisionFabricDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateClusterUpgradeDescription {
@@ -6324,6 +10482,11 @@ pub struct UpdateClusterUpgradeDescription {
     pub cluster_upgrade_health_policy: Option<ClusterUpgradeHealthPolicyObject>,
     #[serde(rename = "ApplicationHealthPolicyMap", default, skip_serializing_if = "Option::is_none")]
     pub application_health_policy_map: Option<ApplicationHealthPolicies>,
+}
+impl UpdateClusterUpgradeDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpgradeDomainDeltaNodesCheckHealthEvaluation {
@@ -6342,6 +10505,19 @@ pub struct UpgradeDomainDeltaNodesCheckHealthEvaluation {
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
 }
+impl UpgradeDomainDeltaNodesCheckHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            upgrade_domain_name: None,
+            baseline_error_count: None,
+            baseline_total_count: None,
+            max_percent_delta_unhealthy_nodes: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
+}
 pub type UpgradeDomainDurationString = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpgradeDomainInfo {
@@ -6349,6 +10525,11 @@ pub struct UpgradeDomainInfo {
     pub name: Option<UpgradeDomainName>,
     #[serde(rename = "State", default, skip_serializing_if = "Option::is_none")]
     pub state: Option<UpgradeDomainState>,
+}
+impl UpgradeDomainInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type UpgradeDomainInfoList = Vec<UpgradeDomainInfo>;
 pub type UpgradeDomainName = String;
@@ -6364,6 +10545,17 @@ pub struct UpgradeDomainNodesHealthEvaluation {
     pub total_count: Option<i64>,
     #[serde(rename = "UnhealthyEvaluations", default, skip_serializing_if = "Option::is_none")]
     pub unhealthy_evaluations: Option<UnhealthyEvaluations>,
+}
+impl UpgradeDomainNodesHealthEvaluation {
+    pub fn new(health_evaluation: HealthEvaluation) -> Self {
+        Self {
+            health_evaluation,
+            upgrade_domain_name: None,
+            max_percent_unhealthy_nodes: None,
+            total_count: None,
+            unhealthy_evaluations: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UpgradeDomainState {
@@ -6403,6 +10595,11 @@ pub struct UpgradeOrchestrationServiceState {
     #[serde(rename = "ServiceState", default, skip_serializing_if = "Option::is_none")]
     pub service_state: Option<String>,
 }
+impl UpgradeOrchestrationServiceState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpgradeOrchestrationServiceStateSummary {
     #[serde(rename = "CurrentCodeVersion", default, skip_serializing_if = "Option::is_none")]
@@ -6415,6 +10612,11 @@ pub struct UpgradeOrchestrationServiceStateSummary {
     pub target_manifest_version: Option<String>,
     #[serde(rename = "PendingUpgradeType", default, skip_serializing_if = "Option::is_none")]
     pub pending_upgrade_type: Option<String>,
+}
+impl UpgradeOrchestrationServiceStateSummary {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type UpgradeReplicaSetCheckTimeout = i64;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -6462,10 +10664,20 @@ pub struct UploadChunkRange {
     #[serde(rename = "EndPosition", default, skip_serializing_if = "Option::is_none")]
     pub end_position: Option<String>,
 }
+impl UploadChunkRange {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadSession {
     #[serde(rename = "UploadSessions", default, skip_serializing_if = "Vec::is_empty")]
     pub upload_sessions: Vec<UploadSessionInfo>,
+}
+impl UploadSession {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadSessionInfo {
@@ -6480,6 +10692,11 @@ pub struct UploadSessionInfo {
     #[serde(rename = "ExpectedRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub expected_ranges: Vec<UploadChunkRange>,
 }
+impl UploadSessionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageInfo {
     #[serde(rename = "UsedSpace", default, skip_serializing_if = "Option::is_none")]
@@ -6487,14 +10704,29 @@ pub struct UsageInfo {
     #[serde(rename = "FileCount", default, skip_serializing_if = "Option::is_none")]
     pub file_count: Option<String>,
 }
+impl UsageInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentityMap {}
+impl UserAssignedIdentityMap {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationFailedChaosEvent {
     #[serde(flatten)]
     pub chaos_event: ChaosEvent,
     #[serde(rename = "Reason", default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+}
+impl ValidationFailedChaosEvent {
+    pub fn new(chaos_event: ChaosEvent) -> Self {
+        Self { chaos_event, reason: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeProperties {
@@ -6507,6 +10739,17 @@ pub struct VolumeProperties {
     pub provider: VolumeProvider,
     #[serde(rename = "azureFileParameters", default, skip_serializing_if = "Option::is_none")]
     pub azure_file_parameters: Option<VolumeProviderParametersAzureFile>,
+}
+impl VolumeProperties {
+    pub fn new(provider: VolumeProvider) -> Self {
+        Self {
+            description: None,
+            status: None,
+            status_details: None,
+            provider,
+            azure_file_parameters: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum VolumeProvider {
@@ -6522,6 +10765,15 @@ pub struct VolumeProviderParametersAzureFile {
     #[serde(rename = "shareName")]
     pub share_name: String,
 }
+impl VolumeProviderParametersAzureFile {
+    pub fn new(account_name: String, share_name: String) -> Self {
+        Self {
+            account_name,
+            account_key: None,
+            share_name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeReference {
     pub name: String,
@@ -6530,10 +10782,24 @@ pub struct VolumeReference {
     #[serde(rename = "destinationPath")]
     pub destination_path: String,
 }
+impl VolumeReference {
+    pub fn new(name: String, destination_path: String) -> Self {
+        Self {
+            name,
+            read_only: None,
+            destination_path,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeResourceDescription {
     pub name: VolumeResourceName,
     pub properties: VolumeProperties,
+}
+impl VolumeResourceDescription {
+    pub fn new(name: VolumeResourceName, properties: VolumeProperties) -> Self {
+        Self { name, properties }
+    }
 }
 pub type VolumeResourceName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -6541,20 +10807,40 @@ pub struct WaitForInbuildReplicaSafetyCheck {
     #[serde(flatten)]
     pub partition_safety_check: PartitionSafetyCheck,
 }
+impl WaitForInbuildReplicaSafetyCheck {
+    pub fn new(partition_safety_check: PartitionSafetyCheck) -> Self {
+        Self { partition_safety_check }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WaitForPrimaryPlacementSafetyCheck {
     #[serde(flatten)]
     pub partition_safety_check: PartitionSafetyCheck,
+}
+impl WaitForPrimaryPlacementSafetyCheck {
+    pub fn new(partition_safety_check: PartitionSafetyCheck) -> Self {
+        Self { partition_safety_check }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WaitForPrimarySwapSafetyCheck {
     #[serde(flatten)]
     pub partition_safety_check: PartitionSafetyCheck,
 }
+impl WaitForPrimarySwapSafetyCheck {
+    pub fn new(partition_safety_check: PartitionSafetyCheck) -> Self {
+        Self { partition_safety_check }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WaitForReconfigurationSafetyCheck {
     #[serde(flatten)]
     pub partition_safety_check: PartitionSafetyCheck,
+}
+impl WaitForReconfigurationSafetyCheck {
+    pub fn new(partition_safety_check: PartitionSafetyCheck) -> Self {
+        Self { partition_safety_check }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WaitingChaosEvent {
@@ -6562,4 +10848,9 @@ pub struct WaitingChaosEvent {
     pub chaos_event: ChaosEvent,
     #[serde(rename = "Reason", default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+}
+impl WaitingChaosEvent {
+    pub fn new(chaos_event: ChaosEvent) -> Self {
+        Self { chaos_event, reason: None }
+    }
 }

@@ -9,10 +9,20 @@ pub struct CheckTrafficManagerRelativeDnsNameAvailabilityParameters {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl CheckTrafficManagerRelativeDnsNameAvailabilityParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
@@ -25,10 +35,20 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeleteOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub boolean: Option<bool>,
+}
+impl DeleteOperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsConfig {
@@ -39,12 +59,22 @@ pub struct DnsConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ttl: Option<i64>,
 }
+impl DnsConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoint {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointProperties>,
+}
+impl Endpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointProperties {
@@ -66,6 +96,11 @@ pub struct EndpointProperties {
     pub min_child_endpoints: Option<i64>,
     #[serde(rename = "geoMapping", default, skip_serializing_if = "Vec::is_empty")]
     pub geo_mapping: Vec<String>,
+}
+impl EndpointProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod endpoint_properties {
     use super::*;
@@ -89,6 +124,11 @@ pub struct GeographicHierarchyProperties {
     #[serde(rename = "geographicHierarchy", default, skip_serializing_if = "Option::is_none")]
     pub geographic_hierarchy: Option<Region>,
 }
+impl GeographicHierarchyProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapEndpoint {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -96,12 +136,22 @@ pub struct HeatMapEndpoint {
     #[serde(rename = "endpointId", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_id: Option<i64>,
 }
+impl HeatMapEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapModel {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HeatMapProperties>,
+}
+impl HeatMapModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapProperties {
@@ -113,6 +163,11 @@ pub struct HeatMapProperties {
     pub endpoints: Vec<HeatMapEndpoint>,
     #[serde(rename = "trafficFlows", default, skip_serializing_if = "Vec::is_empty")]
     pub traffic_flows: Vec<TrafficFlow>,
+}
+impl HeatMapProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorConfig {
@@ -130,6 +185,11 @@ pub struct MonitorConfig {
     pub timeout_in_seconds: Option<i64>,
     #[serde(rename = "toleratedNumberOfFailures", default, skip_serializing_if = "Option::is_none")]
     pub tolerated_number_of_failures: Option<i64>,
+}
+impl MonitorConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod monitor_config {
     use super::*;
@@ -158,10 +218,20 @@ pub struct Profile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProfileProperties>,
 }
+impl Profile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Profile>,
+}
+impl ProfileListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileProperties {
@@ -175,6 +245,11 @@ pub struct ProfileProperties {
     pub monitor_config: Option<MonitorConfig>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<Endpoint>,
+}
+impl ProfileProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod profile_properties {
     use super::*;
@@ -196,6 +271,11 @@ pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
 }
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryExperience {
     #[serde(rename = "endpointId")]
@@ -204,6 +284,15 @@ pub struct QueryExperience {
     pub query_count: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latency: Option<f64>,
+}
+impl QueryExperience {
+    pub fn new(endpoint_id: i64, query_count: i64) -> Self {
+        Self {
+            endpoint_id,
+            query_count,
+            latency: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Region {
@@ -214,6 +303,11 @@ pub struct Region {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<Region>,
 }
+impl Region {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -223,6 +317,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
     #[serde(flatten)]
@@ -231,6 +330,11 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+}
+impl TrackedResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficFlow {
@@ -243,12 +347,22 @@ pub struct TrafficFlow {
     #[serde(rename = "queryExperiences", default, skip_serializing_if = "Vec::is_empty")]
     pub query_experiences: Vec<QueryExperience>,
 }
+impl TrafficFlow {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerGeographicHierarchy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GeographicHierarchyProperties>,
+}
+impl TrafficManagerGeographicHierarchy {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerNameAvailability {
@@ -263,6 +377,11 @@ pub struct TrafficManagerNameAvailability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl TrafficManagerNameAvailability {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerUserMetricsKeyModel {
     #[serde(flatten)]
@@ -275,4 +394,9 @@ pub struct TrafficManagerUserMetricsKeyModel {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+}
+impl TrafficManagerUserMetricsKeyModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

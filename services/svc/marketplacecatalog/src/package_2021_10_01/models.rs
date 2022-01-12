@@ -11,6 +11,15 @@ pub struct Artifact {
     #[serde(rename = "type")]
     pub type_: serde_json::Value,
 }
+impl Artifact {
+    pub fn new(type_: serde_json::Value) -> Self {
+        Self {
+            name: None,
+            uri: None,
+            type_,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ArtifactType {
     Template,
@@ -63,6 +72,40 @@ pub struct AvailabilityEntity {
     #[serde(rename = "planAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub plan_availabilities: Vec<AvailabilityEntity>,
 }
+impl AvailabilityEntity {
+    pub fn new(
+        is_pi_required: bool,
+        pricing_audience: serde_json::Value,
+        is_stop_sell: bool,
+        has_free_trials: bool,
+        display_rank: i32,
+        remediation_required: bool,
+    ) -> Self {
+        Self {
+            actions: Vec::new(),
+            market: None,
+            is_pi_required,
+            app_id: None,
+            plan_id: None,
+            meter_id: None,
+            meter: None,
+            pricing_audience,
+            terms: Vec::new(),
+            pi_filter: None,
+            is_stop_sell,
+            has_free_trials,
+            asset_behaviors: Vec::new(),
+            consumption_unit_type: None,
+            display_rank,
+            partition_key: None,
+            remediation_required,
+            remediations: Vec::new(),
+            start_date: None,
+            end_date: None,
+            plan_availabilities: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingPlan {
     #[serde(rename = "billingPeriod", default, skip_serializing_if = "Option::is_none")]
@@ -73,6 +116,11 @@ pub struct BillingPlan {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price: Option<serde_json::Value>,
+}
+impl BillingPlan {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CspState {
@@ -284,6 +332,140 @@ pub struct CatalogItem {
     #[serde(rename = "storeFrontPricings", default, skip_serializing_if = "Option::is_none")]
     pub store_front_pricings: Option<serde_json::Value>,
 }
+impl CatalogItem {
+    pub fn new(
+        language: String,
+        has_standard_contract_amendments: bool,
+        offer_id: String,
+        legacy_id: String,
+        offer_type: serde_json::Value,
+        is_private: bool,
+        is_preview: bool,
+        is_stop_sell: bool,
+        fulfill_before_charge_eligible: bool,
+        big_id: String,
+        legal_terms_type: serde_json::Value,
+        is_third_party: bool,
+        popularity: f64,
+        has_free_trials: bool,
+        is_byol: bool,
+        is_macc: bool,
+        has_free_plans: bool,
+        is_quantifiable: bool,
+        has_payg_plans: bool,
+        is_reseller: bool,
+        is_excluded_from_search: bool,
+        offer_environment: serde_json::Value,
+        exclude_from_bootstrap: bool,
+        disable_send_email_on_purchase: bool,
+        hide_from_saas_blade: bool,
+        integrated_with_microsoft_graph_api: bool,
+    ) -> Self {
+        Self {
+            language,
+            display_name: None,
+            has_standard_contract_amendments,
+            publisher_mpn_id: None,
+            seller_id: None,
+            publisher_id: None,
+            partner_center_id: None,
+            publisher_display_name: None,
+            offer_id,
+            legacy_id,
+            determined_storefronts: Vec::new(),
+            summary: None,
+            long_summary: None,
+            description: None,
+            offer_type,
+            is_private,
+            is_preview,
+            is_stop_sell,
+            fulfill_before_charge_eligible,
+            marketing_material: None,
+            markets: Vec::new(),
+            isv_contact_details: None,
+            big_id,
+            ocp_solution_id: None,
+            legal_terms_uri: None,
+            csp_legal_terms_uri: None,
+            legal_terms_type,
+            privacy_policy_uri: None,
+            help_link: None,
+            support_uri: None,
+            version: None,
+            ui_definition_uri: None,
+            category_ids: Vec::new(),
+            market_code: None,
+            market_states: Vec::new(),
+            industry_ids: Vec::new(),
+            cloud_industry_categories: Vec::new(),
+            primary_product: None,
+            supported_products: Vec::new(),
+            applicable_products: Vec::new(),
+            service_type: None,
+            competencies: Vec::new(),
+            has_prices: None,
+            duration: None,
+            market_pricing_details: Vec::new(),
+            pricing: None,
+            solution_areas: Vec::new(),
+            screenshot_uris: Vec::new(),
+            links: Vec::new(),
+            filters: Vec::new(),
+            icon_file_uris: None,
+            artifacts: Vec::new(),
+            metadata: None,
+            images: Vec::new(),
+            videos: Vec::new(),
+            plans: Vec::new(),
+            resource_group_name: None,
+            definition_templates: None,
+            additional_properties: None,
+            restricted_audience: None,
+            is_third_party,
+            group_id: None,
+            hide_keys: Vec::new(),
+            keywords: Vec::new(),
+            popularity,
+            pricing_details_uri: None,
+            has_free_trials,
+            is_byol,
+            is_macc,
+            has_free_plans,
+            is_quantifiable,
+            alt_stack_reference: None,
+            has_payg_plans,
+            is_reseller,
+            ttl: None,
+            is_excluded_from_search,
+            applicable_store_fronts: None,
+            offer_version: None,
+            is_microsoft_product: None,
+            product_ownership_selling_motion: None,
+            document_links: Vec::new(),
+            offer_environment,
+            linked_add_ins: Vec::new(),
+            exclude_from_bootstrap,
+            hydration_notification_received_at: None,
+            big_cat_last_modified_date: None,
+            disable_send_email_on_purchase,
+            hide_from_saas_blade,
+            integrated_with_microsoft_graph_api,
+            multi_tenant_aad_app_id: None,
+            license_management_type: None,
+            license_model: None,
+            pbi_service_principal_ids: Vec::new(),
+            is_core_vm: None,
+            m365_certification_info: None,
+            download_link: None,
+            download_sample_link: None,
+            omex_asset_id: None,
+            mix_product_id: None,
+            app_free_type: None,
+            store_front_pricings: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CertificationType {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -292,6 +474,11 @@ pub struct Competency {
     pub competency_name: Option<String>,
     #[serde(rename = "competencyLevel", default, skip_serializing_if = "Option::is_none")]
     pub competency_level: Option<String>,
+}
+impl Competency {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CurrencyDecorator {}
@@ -306,12 +493,25 @@ pub struct DefinitionTemplates {
     #[serde(rename = "deploymentFragmentFileUris", default, skip_serializing_if = "Option::is_none")]
     pub deployment_fragment_file_uris: Option<serde_json::Value>,
 }
+impl DefinitionTemplates {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Duration {
     #[serde(rename = "durationValue")]
     pub duration_value: i64,
     #[serde(rename = "durationUnit")]
     pub duration_unit: serde_json::Value,
+}
+impl Duration {
+    pub fn new(duration_value: i64, duration_unit: serde_json::Value) -> Self {
+        Self {
+            duration_value,
+            duration_unit,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EnvironmentInfo {}
@@ -321,6 +521,11 @@ pub struct Filter {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl Filter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IconKind {}
@@ -333,6 +538,11 @@ pub struct Image {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Image {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -340,10 +550,20 @@ pub struct ImageGroup {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub items: Vec<Image>,
 }
+impl ImageGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncludedQuantityProperty {
     #[serde(flatten)]
     pub included_quantity_property2: IncludedQuantityProperty2,
+}
+impl IncludedQuantityProperty {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncludedQuantityProperty2 {
@@ -352,10 +572,20 @@ pub struct IncludedQuantityProperty2 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<String>,
 }
+impl IncludedQuantityProperty2 {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LeadGeneration {
     #[serde(rename = "productId", default, skip_serializing_if = "Option::is_none")]
     pub product_id: Option<String>,
+}
+impl LeadGeneration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LegalTermsType {
@@ -372,6 +602,11 @@ pub struct LinkProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
+impl LinkProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct M365CertificationInfo {
     #[serde(rename = "m365CertificationType")]
@@ -380,6 +615,15 @@ pub struct M365CertificationInfo {
     pub m365_certification_details_url: Option<String>,
     #[serde(rename = "m365CertificationId", default, skip_serializing_if = "Option::is_none")]
     pub m365_certification_id: Option<String>,
+}
+impl M365CertificationInfo {
+    pub fn new(m365_certification_type: serde_json::Value) -> Self {
+        Self {
+            m365_certification_type,
+            m365_certification_details_url: None,
+            m365_certification_id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketPricingDetailsItem {
@@ -390,12 +634,22 @@ pub struct MarketPricingDetailsItem {
     #[serde(rename = "marketStates", default, skip_serializing_if = "Vec::is_empty")]
     pub market_states: Vec<String>,
 }
+impl MarketPricingDetailsItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MarketingMaterial {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[serde(rename = "learnUri", default, skip_serializing_if = "Option::is_none")]
     pub learn_uri: Option<String>,
+}
+impl MarketingMaterial {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Meter {
@@ -412,12 +666,22 @@ pub struct Meter {
     #[serde(rename = "includedQuantityProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub included_quantity_properties: Vec<IncludedQuantityProperty>,
 }
+impl Meter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OfferMetadata {
     #[serde(rename = "leadGeneration", default, skip_serializing_if = "Option::is_none")]
     pub lead_generation: Option<serde_json::Value>,
     #[serde(rename = "testDrive", default, skip_serializing_if = "Option::is_none")]
     pub test_drive: Option<serde_json::Value>,
+}
+impl OfferMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OfferType {
@@ -453,6 +717,11 @@ pub struct OpenProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl OpenProperty {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperatingSystem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -462,12 +731,22 @@ pub struct OperatingSystem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl OperatingSystem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PiFilter {
     #[serde(rename = "exclusionProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub exclusion_properties: Vec<String>,
     #[serde(rename = "inclusionProperties", default, skip_serializing_if = "Vec::is_empty")]
     pub inclusion_properties: Vec<String>,
+}
+impl PiFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageResultOfCatalogItem {
@@ -477,6 +756,11 @@ pub struct PageResultOfCatalogItem {
     pub next_page_link: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl PageResultOfCatalogItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
@@ -563,6 +847,64 @@ pub struct Plan {
     #[serde(rename = "displayRank", default, skip_serializing_if = "Option::is_none")]
     pub display_rank: Option<String>,
 }
+impl Plan {
+    pub fn new(
+        type_: serde_json::Value,
+        is_private: bool,
+        is_hidden: bool,
+        has_free_trials: bool,
+        is_byol: bool,
+        is_free: bool,
+        is_payg: bool,
+        is_stop_sell: bool,
+        csp_state: serde_json::Value,
+        is_quantifiable: bool,
+    ) -> Self {
+        Self {
+            id: None,
+            display_name: None,
+            summary: None,
+            description: None,
+            restricted_audience: None,
+            sku_id: None,
+            plan_id: None,
+            legacy_plan_id: None,
+            keywords: Vec::new(),
+            type_,
+            lead_generation: None,
+            test_drive: None,
+            availabilities: Vec::new(),
+            category_ids: Vec::new(),
+            conversion_paths: Vec::new(),
+            metadata: None,
+            operating_system: None,
+            ui_definition_uri: None,
+            artifacts: Vec::new(),
+            version: None,
+            item_name: None,
+            is_private,
+            is_hidden,
+            has_free_trials,
+            is_byol,
+            is_free,
+            is_payg,
+            is_stop_sell,
+            alt_stack_reference: None,
+            stack_type: None,
+            csp_state,
+            resource_provider_namespace: None,
+            resource_type: None,
+            min_quantity: None,
+            max_quantity: None,
+            is_quantifiable,
+            call_to_action: None,
+            redirect_url: None,
+            service_identifier: None,
+            vm_security_type: None,
+            display_rank: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlanPrice {
     #[serde(rename = "planId", default, skip_serializing_if = "Option::is_none")]
@@ -570,6 +912,15 @@ pub struct PlanPrice {
     #[serde(rename = "currencyDecorator")]
     pub currency_decorator: serde_json::Value,
     pub price: f64,
+}
+impl PlanPrice {
+    pub fn new(currency_decorator: serde_json::Value, price: f64) -> Self {
+        Self {
+            plan_id: None,
+            currency_decorator,
+            price,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreviewImage {
@@ -579,6 +930,11 @@ pub struct PreviewImage {
     pub uri: Option<String>,
     #[serde(rename = "imagePurpose", default, skip_serializing_if = "Option::is_none")]
     pub image_purpose: Option<String>,
+}
+impl PreviewImage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Price {
@@ -590,12 +946,27 @@ pub struct Price {
     pub list_price: f64,
     pub msrp: f64,
 }
+impl Price {
+    pub fn new(is_pi_required: bool, list_price: f64, msrp: f64) -> Self {
+        Self {
+            currency_code: None,
+            is_pi_required,
+            list_price,
+            msrp,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pricing {
     #[serde(rename = "currencyCode", default, skip_serializing_if = "Option::is_none")]
     pub currency_code: Option<String>,
     #[serde(rename = "planPrices", default, skip_serializing_if = "Vec::is_empty")]
     pub plan_prices: Vec<PlanPrice>,
+}
+impl Pricing {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PricingAudience {
@@ -621,10 +992,20 @@ pub struct ProductVideo {
     #[serde(rename = "previewImage", default, skip_serializing_if = "Option::is_none")]
     pub preview_image: Option<serde_json::Value>,
 }
+impl ProductVideo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProrationPolicy {
     #[serde(rename = "minimumProratedUnits", default, skip_serializing_if = "Option::is_none")]
     pub minimum_prorated_units: Option<String>,
+}
+impl ProrationPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Remediation {
@@ -632,6 +1013,11 @@ pub struct Remediation {
     pub remediation_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl Remediation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestrictedAudience {
@@ -641,6 +1027,11 @@ pub struct RestrictedAudience {
     pub tenants: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub users: Vec<String>,
+}
+impl RestrictedAudience {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServiceDurationUnit {
@@ -679,12 +1070,22 @@ pub struct Term {
     #[serde(rename = "billingPlan", default, skip_serializing_if = "Option::is_none")]
     pub billing_plan: Option<serde_json::Value>,
 }
+impl Term {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TermDescriptionParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameter: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl TermDescriptionParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestDrive {
@@ -707,12 +1108,25 @@ pub struct TestDrive {
     #[serde(rename = "powerBiDashboardLink", default, skip_serializing_if = "Option::is_none")]
     pub power_bi_dashboard_link: Option<String>,
 }
+impl TestDrive {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UiPricing {
     #[serde(rename = "pricingOptions")]
     pub pricing_options: serde_json::Value,
     #[serde(rename = "hasPrices", default, skip_serializing_if = "Option::is_none")]
     pub has_prices: Option<bool>,
+}
+impl UiPricing {
+    pub fn new(pricing_options: serde_json::Value) -> Self {
+        Self {
+            pricing_options,
+            has_prices: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum VmSecurityType {

@@ -11,6 +11,11 @@ pub struct CheckNameAvailabilityResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl CheckNameAvailabilityResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -25,6 +30,14 @@ pub struct CustomDomain {
     #[serde(rename = "useSubDomainName", default, skip_serializing_if = "Option::is_none")]
     pub use_sub_domain_name: Option<bool>,
 }
+impl CustomDomain {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            use_sub_domain_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoints {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -35,6 +48,11 @@ pub struct Endpoints {
     pub table: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file: Option<String>,
+}
+impl Endpoints {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -49,6 +67,11 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccount {
     #[serde(flatten)]
@@ -56,11 +79,21 @@ pub struct StorageAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountProperties>,
 }
+impl StorageAccount {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountCheckNameAvailabilityParameters {
     pub name: String,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl StorageAccountCheckNameAvailabilityParameters {
+    pub fn new(name: String) -> Self {
+        Self { name, type_: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountCreateParameters {
@@ -70,6 +103,15 @@ pub struct StorageAccountCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesCreateParameters>,
 }
+impl StorageAccountCreateParameters {
+    pub fn new(location: String) -> Self {
+        Self {
+            location,
+            tags: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountKeys {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -77,10 +119,20 @@ pub struct StorageAccountKeys {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
 }
+impl StorageAccountKeys {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageAccount>,
+}
+impl StorageAccountListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountProperties {
@@ -106,6 +158,11 @@ pub struct StorageAccountProperties {
     pub custom_domain: Option<CustomDomain>,
     #[serde(rename = "secondaryEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub secondary_endpoints: Option<Endpoints>,
+}
+impl StorageAccountProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod storage_account_properties {
     use super::*;
@@ -145,6 +202,11 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "accountType")]
     pub account_type: storage_account_properties_create_parameters::AccountType,
 }
+impl StorageAccountPropertiesCreateParameters {
+    pub fn new(account_type: storage_account_properties_create_parameters::AccountType) -> Self {
+        Self { account_type }
+    }
+}
 pub mod storage_account_properties_create_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -168,6 +230,11 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
 }
+impl StorageAccountPropertiesUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod storage_account_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -189,12 +256,22 @@ pub struct StorageAccountRegenerateKeyParameters {
     #[serde(rename = "keyName")]
     pub key_name: String,
 }
+impl StorageAccountRegenerateKeyParameters {
+    pub fn new(key_name: String) -> Self {
+        Self { key_name }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesUpdateParameters>,
+}
+impl StorageAccountUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Usage {
@@ -203,6 +280,16 @@ pub struct Usage {
     pub current_value: i32,
     pub limit: i32,
     pub name: UsageName,
+}
+impl Usage {
+    pub fn new(unit: usage::Unit, current_value: i32, limit: i32, name: UsageName) -> Self {
+        Self {
+            unit,
+            current_value,
+            limit,
+            name,
+        }
+    }
 }
 pub mod usage {
     use super::*;
@@ -221,10 +308,20 @@ pub struct UsageListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
+impl UsageListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
+}
+impl UsageName {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
