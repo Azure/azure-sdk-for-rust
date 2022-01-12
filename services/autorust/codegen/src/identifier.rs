@@ -174,6 +174,8 @@ fn is_keyword(word: &str) -> bool {
             | "where"
             | "while"
             | "yield"
+        // required for Default::default support
+            | "default"
     )
 }
 
