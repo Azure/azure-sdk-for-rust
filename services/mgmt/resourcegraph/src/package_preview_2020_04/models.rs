@@ -8,6 +8,11 @@ pub struct Column {
     #[serde(rename = "type")]
     pub type_: ColumnDataType,
 }
+impl Column {
+    pub fn new(name: String, type_: ColumnDataType) -> Self {
+        Self { name, type_ }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ColumnDataType {
     #[serde(rename = "string")]
@@ -26,6 +31,11 @@ pub struct DateTimeInterval {
     pub start: String,
     pub end: String,
 }
+impl DateTimeInterval {
+    pub fn new(start: String, end: String) -> Self {
+        Self { start, end }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
     pub code: String,
@@ -33,14 +43,33 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetails>,
 }
+impl Error {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetails {
     pub code: String,
     pub message: String,
 }
+impl ErrorDetails {
+    pub fn new(code: String, message: String) -> Self {
+        Self { code, message }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: Error,
+}
+impl ErrorResponse {
+    pub fn new(error: Error) -> Self {
+        Self { error }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Facet {
@@ -48,17 +77,32 @@ pub struct Facet {
     #[serde(rename = "resultType")]
     pub result_type: String,
 }
+impl Facet {
+    pub fn new(expression: String, result_type: String) -> Self {
+        Self { expression, result_type }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetError {
     #[serde(flatten)]
     pub facet: Facet,
     pub errors: Vec<ErrorDetails>,
 }
+impl FacetError {
+    pub fn new(facet: Facet, errors: Vec<ErrorDetails>) -> Self {
+        Self { facet, errors }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetRequest {
     pub expression: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<FacetRequestOptions>,
+}
+impl FacetRequest {
+    pub fn new(expression: String) -> Self {
+        Self { expression, options: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FacetRequestOptions {
@@ -70,6 +114,11 @@ pub struct FacetRequestOptions {
     pub filter: Option<String>,
     #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
     pub top: Option<i32>,
+}
+impl FacetRequestOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod facet_request_options {
     use super::*;
@@ -95,6 +144,16 @@ pub struct FacetResult {
     pub count: i32,
     pub data: serde_json::Value,
 }
+impl FacetResult {
+    pub fn new(facet: Facet, total_records: i64, count: i32, data: serde_json::Value) -> Self {
+        Self {
+            facet,
+            total_records,
+            count,
+            data,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -103,6 +162,11 @@ pub struct Operation {
     pub display: Option<operation::Display>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -117,11 +181,21 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -135,6 +209,17 @@ pub struct QueryRequest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub facets: Vec<FacetRequest>,
 }
+impl QueryRequest {
+    pub fn new(query: String) -> Self {
+        Self {
+            subscriptions: Vec::new(),
+            management_group_id: None,
+            query,
+            options: None,
+            facets: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryRequestOptions {
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
@@ -145,6 +230,11 @@ pub struct QueryRequestOptions {
     pub skip: Option<i32>,
     #[serde(rename = "resultFormat", default, skip_serializing_if = "Option::is_none")]
     pub result_format: Option<query_request_options::ResultFormat>,
+}
+impl QueryRequestOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod query_request_options {
     use super::*;
@@ -168,6 +258,18 @@ pub struct QueryResponse {
     pub data: serde_json::Value,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub facets: Vec<Facet>,
+}
+impl QueryResponse {
+    pub fn new(total_records: i64, count: i64, result_truncated: query_response::ResultTruncated, data: serde_json::Value) -> Self {
+        Self {
+            total_records,
+            count,
+            result_truncated,
+            skip_token: None,
+            data,
+            facets: Vec::new(),
+        }
+    }
 }
 pub mod query_response {
     use super::*;
@@ -194,6 +296,18 @@ pub struct ResourceChangeData {
     #[serde(rename = "propertyChanges", default, skip_serializing_if = "Vec::is_empty")]
     pub property_changes: Vec<ResourcePropertyChange>,
 }
+impl ResourceChangeData {
+    pub fn new(change_id: String, before_snapshot: serde_json::Value, after_snapshot: serde_json::Value) -> Self {
+        Self {
+            resource_id: None,
+            change_id,
+            before_snapshot,
+            after_snapshot,
+            change_type: None,
+            property_changes: Vec::new(),
+        }
+    }
+}
 pub mod resource_change_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -210,12 +324,22 @@ pub struct ResourceChangeDetailsRequestParameters {
     #[serde(rename = "changeId")]
     pub change_id: String,
 }
+impl ResourceChangeDetailsRequestParameters {
+    pub fn new(resource_id: String, change_id: String) -> Self {
+        Self { resource_id, change_id }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceChangeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub changes: Vec<ResourceChangeData>,
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<serde_json::Value>,
+}
+impl ResourceChangeList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceChangesRequestParameters {
@@ -229,6 +353,17 @@ pub struct ResourceChangesRequestParameters {
     #[serde(rename = "fetchPropertyChanges", default, skip_serializing_if = "Option::is_none")]
     pub fetch_property_changes: Option<bool>,
 }
+impl ResourceChangesRequestParameters {
+    pub fn new(resource_id: String, interval: serde_json::Value) -> Self {
+        Self {
+            resource_id,
+            interval,
+            skip_token: None,
+            top: None,
+            fetch_property_changes: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourcePropertyChange {
     #[serde(rename = "propertyName")]
@@ -241,6 +376,21 @@ pub struct ResourcePropertyChange {
     pub change_category: resource_property_change::ChangeCategory,
     #[serde(rename = "propertyChangeType")]
     pub property_change_type: resource_property_change::PropertyChangeType,
+}
+impl ResourcePropertyChange {
+    pub fn new(
+        property_name: String,
+        change_category: resource_property_change::ChangeCategory,
+        property_change_type: resource_property_change::PropertyChangeType,
+    ) -> Self {
+        Self {
+            property_name,
+            before_value: None,
+            after_value: None,
+            change_category,
+            property_change_type,
+        }
+    }
 }
 pub mod resource_property_change {
     use super::*;
@@ -264,6 +414,15 @@ pub struct ResourceSnapshotData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<serde_json::Value>,
 }
+impl ResourceSnapshotData {
+    pub fn new(timestamp: String) -> Self {
+        Self {
+            snapshot_id: None,
+            timestamp,
+            content: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourcesHistoryRequest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -274,6 +433,11 @@ pub struct ResourcesHistoryRequest {
     pub options: Option<ResourcesHistoryRequestOptions>,
     #[serde(rename = "managementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub management_group_id: Option<String>,
+}
+impl ResourcesHistoryRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourcesHistoryRequestOptions {
@@ -287,6 +451,11 @@ pub struct ResourcesHistoryRequestOptions {
     pub skip_token: Option<String>,
     #[serde(rename = "resultFormat", default, skip_serializing_if = "Option::is_none")]
     pub result_format: Option<resources_history_request_options::ResultFormat>,
+}
+impl ResourcesHistoryRequestOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resources_history_request_options {
     use super::*;
@@ -303,4 +472,9 @@ pub type Row = Vec<serde_json::Value>;
 pub struct Table {
     pub columns: Vec<Column>,
     pub rows: Vec<Row>,
+}
+impl Table {
+    pub fn new(columns: Vec<Column>, rows: Vec<Row>) -> Self {
+        Self { columns, rows }
+    }
 }

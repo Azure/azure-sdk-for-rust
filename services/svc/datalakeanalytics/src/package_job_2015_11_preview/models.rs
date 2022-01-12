@@ -17,6 +17,18 @@ pub struct HiveJobProperties {
     #[serde(rename = "executedStatementCount", default, skip_serializing_if = "Option::is_none")]
     pub executed_statement_count: Option<i32>,
 }
+impl HiveJobProperties {
+    pub fn new(job_properties: JobProperties) -> Self {
+        Self {
+            job_properties,
+            statement_info: Vec::new(),
+            logs_location: None,
+            warehouse_location: None,
+            statement_count: None,
+            executed_statement_count: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HiveJobStatementInfo {
     #[serde(rename = "logLocation", default, skip_serializing_if = "Option::is_none")]
@@ -28,6 +40,11 @@ pub struct HiveJobStatementInfo {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
+impl HiveJobStatementInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDataPath {
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
@@ -36,6 +53,11 @@ pub struct JobDataPath {
     pub command: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<String>,
+}
+impl JobDataPath {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobErrorDetails {
@@ -68,6 +90,11 @@ pub struct JobErrorDetails {
     #[serde(rename = "startOffset", default, skip_serializing_if = "Option::is_none")]
     pub start_offset: Option<i32>,
 }
+impl JobErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod job_error_details {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -84,6 +111,11 @@ pub struct JobInfoListResult {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl JobInfoListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInformation {
@@ -117,6 +149,28 @@ pub struct JobInformation {
     #[serde(rename = "hierarchyQueueNode", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_queue_node: Option<String>,
     pub properties: JobProperties,
+}
+impl JobInformation {
+    pub fn new(name: String, type_: job_information::Type, properties: JobProperties) -> Self {
+        Self {
+            job_id: None,
+            name,
+            type_,
+            submitter: None,
+            error_message: Vec::new(),
+            degree_of_parallelism: None,
+            degree_of_parallelism_percent: None,
+            priority: None,
+            submit_time: None,
+            start_time: None,
+            end_time: None,
+            state: None,
+            result: None,
+            state_audit_records: Vec::new(),
+            hierarchy_queue_node: None,
+            properties,
+        }
+    }
 }
 pub mod job_information {
     use super::*;
@@ -171,6 +225,11 @@ pub struct JobInnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl JobInnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod job_inner_error {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -187,6 +246,15 @@ pub struct JobProperties {
     #[serde(rename = "type")]
     pub type_: String,
 }
+impl JobProperties {
+    pub fn new(script: String, type_: String) -> Self {
+        Self {
+            runtime_version: None,
+            script,
+            type_,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -195,6 +263,11 @@ pub struct JobResource {
     pub resource_path: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<job_resource::Type>,
+}
+impl JobResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_resource {
     use super::*;
@@ -215,12 +288,22 @@ pub struct JobStateAuditRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
+impl JobStateAuditRecord {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatistics {
     #[serde(rename = "lastUpdateTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_update_time_utc: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stages: Vec<JobStatisticsVertexStage>,
+}
+impl JobStatistics {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatisticsVertexStage {
@@ -265,6 +348,11 @@ pub struct JobStatisticsVertexStage {
     #[serde(rename = "totalSucceededTime", default, skip_serializing_if = "Option::is_none")]
     pub total_succeeded_time: Option<String>,
 }
+impl JobStatisticsVertexStage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct USqlJobProperties {
     #[serde(flatten)]
@@ -293,6 +381,25 @@ pub struct USqlJobProperties {
     pub yarn_application_time_stamp: Option<i64>,
     #[serde(rename = "compileMode", default, skip_serializing_if = "Option::is_none")]
     pub compile_mode: Option<u_sql_job_properties::CompileMode>,
+}
+impl USqlJobProperties {
+    pub fn new(job_properties: JobProperties) -> Self {
+        Self {
+            job_properties,
+            resources: Vec::new(),
+            statistics: None,
+            debug_data: None,
+            algebra_file_path: None,
+            total_compilation_time: None,
+            total_pause_time: None,
+            total_queued_time: None,
+            total_running_time: None,
+            root_process_node_id: None,
+            yarn_application_id: None,
+            yarn_application_time_stamp: None,
+            compile_mode: None,
+        }
+    }
 }
 pub mod u_sql_job_properties {
     use super::*;

@@ -9,10 +9,20 @@ pub struct ApplicationInsightsComponentPricingPlan {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PricingPlanProperties>,
 }
+impl ApplicationInsightsComponentPricingPlan {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
@@ -25,12 +35,22 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EaSubscriptionMigrationDate {
     #[serde(rename = "isGrandFatherableSubscription", default, skip_serializing_if = "Option::is_none")]
     pub is_grand_fatherable_subscription: Option<bool>,
     #[serde(rename = "optedInDate", default, skip_serializing_if = "Option::is_none")]
     pub opted_in_date: Option<String>,
+}
+impl EaSubscriptionMigrationDate {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PricingPlanProperties {
@@ -49,6 +69,11 @@ pub struct PricingPlanProperties {
     #[serde(rename = "maxHistoryCap", default, skip_serializing_if = "Option::is_none")]
     pub max_history_cap: Option<f64>,
 }
+impl PricingPlanProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -57,4 +82,9 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

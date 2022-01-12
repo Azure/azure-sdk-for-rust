@@ -9,6 +9,11 @@ pub struct ErrorAdditionalInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22,10 +27,20 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentMetricsResult {
@@ -37,4 +52,9 @@ pub struct RoleAssignmentMetricsResult {
     pub role_assignments_current_count: Option<i64>,
     #[serde(rename = "roleAssignmentsRemainingCount", default, skip_serializing_if = "Option::is_none")]
     pub role_assignments_remaining_count: Option<i64>,
+}
+impl RoleAssignmentMetricsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

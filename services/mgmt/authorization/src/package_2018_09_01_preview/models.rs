@@ -13,6 +13,11 @@ pub struct ClassicAdministrator {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClassicAdministratorProperties>,
 }
+impl ClassicAdministrator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClassicAdministratorListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -20,12 +25,22 @@ pub struct ClassicAdministratorListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ClassicAdministratorListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClassicAdministratorProperties {
     #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
     pub email_address: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
+}
+impl ClassicAdministratorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignment {
@@ -38,6 +53,11 @@ pub struct DenyAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DenyAssignmentProperties>,
 }
+impl DenyAssignment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentFilter {
     #[serde(rename = "denyAssignmentName", default, skip_serializing_if = "Option::is_none")]
@@ -47,12 +67,22 @@ pub struct DenyAssignmentFilter {
     #[serde(rename = "gdprExportPrincipalId", default, skip_serializing_if = "Option::is_none")]
     pub gdpr_export_principal_id: Option<String>,
 }
+impl DenyAssignmentFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DenyAssignment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DenyAssignmentListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentPermission {
@@ -64,6 +94,11 @@ pub struct DenyAssignmentPermission {
     pub data_actions: Vec<String>,
     #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_data_actions: Vec<String>,
+}
+impl DenyAssignmentPermission {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DenyAssignmentProperties {
@@ -84,12 +119,22 @@ pub struct DenyAssignmentProperties {
     #[serde(rename = "isSystemProtected", default, skip_serializing_if = "Option::is_none")]
     pub is_system_protected: Option<bool>,
 }
+impl DenyAssignmentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
@@ -104,10 +149,20 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Permission {
@@ -120,12 +175,22 @@ pub struct Permission {
     #[serde(rename = "notDataActions", default, skip_serializing_if = "Vec::is_empty")]
     pub not_data_actions: Vec<String>,
 }
+impl Permission {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PermissionGetResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Permission>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PermissionGetResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Principal {
@@ -137,6 +202,11 @@ pub struct Principal {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+}
+impl Principal {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderOperation {
@@ -153,6 +223,11 @@ pub struct ProviderOperation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
 }
+impl ProviderOperation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderOperationsMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -168,12 +243,22 @@ pub struct ProviderOperationsMetadata {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub operations: Vec<ProviderOperation>,
 }
+impl ProviderOperationsMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderOperationsMetadataListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProviderOperationsMetadata>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ProviderOperationsMetadataListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceType {
@@ -183,6 +268,11 @@ pub struct ResourceType {
     pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub operations: Vec<ProviderOperation>,
+}
+impl ResourceType {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignment {
@@ -195,9 +285,19 @@ pub struct RoleAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentPropertiesWithScope>,
 }
+impl RoleAssignment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentCreateParameters {
     pub properties: RoleAssignmentProperties,
+}
+impl RoleAssignmentCreateParameters {
+    pub fn new(properties: RoleAssignmentProperties) -> Self {
+        Self { properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentFilter {
@@ -206,12 +306,22 @@ pub struct RoleAssignmentFilter {
     #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
 }
+impl RoleAssignmentFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleAssignmentListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentProperties {
@@ -223,6 +333,16 @@ pub struct RoleAssignmentProperties {
     pub principal_type: Option<role_assignment_properties::PrincipalType>,
     #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
+}
+impl RoleAssignmentProperties {
+    pub fn new(role_definition_id: String, principal_id: String) -> Self {
+        Self {
+            role_definition_id,
+            principal_id,
+            principal_type: None,
+            can_delegate: None,
+        }
+    }
 }
 pub mod role_assignment_properties {
     use super::*;
@@ -247,6 +367,11 @@ pub struct RoleAssignmentPropertiesWithScope {
     #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
 }
+impl RoleAssignmentPropertiesWithScope {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod role_assignment_properties_with_scope {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -268,6 +393,11 @@ pub struct RoleDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleDefinitionProperties>,
 }
+impl RoleDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleDefinitionFilter {
     #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
@@ -275,12 +405,22 @@ pub struct RoleDefinitionFilter {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl RoleDefinitionFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleDefinitionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleDefinitionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleDefinitionProperties {
@@ -294,4 +434,9 @@ pub struct RoleDefinitionProperties {
     pub permissions: Vec<Permission>,
     #[serde(rename = "assignableScopes", default, skip_serializing_if = "Vec::is_empty")]
     pub assignable_scopes: Vec<String>,
+}
+impl RoleDefinitionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

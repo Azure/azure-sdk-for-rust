@@ -35,6 +35,11 @@ pub struct SparkJob {
     #[serde(rename = "totalDuration", default, skip_serializing_if = "Option::is_none")]
     pub total_duration: Option<String>,
 }
+impl SparkJob {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkJobListViewResponse {
     #[serde(rename = "nJobs", default, skip_serializing_if = "Option::is_none")]
@@ -42,8 +47,18 @@ pub struct SparkJobListViewResponse {
     #[serde(rename = "sparkJobs", default, skip_serializing_if = "Vec::is_empty")]
     pub spark_jobs: Vec<SparkJob>,
 }
+impl SparkJobListViewResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlQueryStringDataModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
+}
+impl SqlQueryStringDataModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

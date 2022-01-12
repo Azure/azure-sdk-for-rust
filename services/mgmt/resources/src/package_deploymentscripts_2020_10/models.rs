@@ -8,6 +8,14 @@ pub struct AzureCliScript {
     pub deployment_script: DeploymentScript,
     pub properties: AzureCliScriptProperties,
 }
+impl AzureCliScript {
+    pub fn new(deployment_script: DeploymentScript, properties: AzureCliScriptProperties) -> Self {
+        Self {
+            deployment_script,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureCliScriptProperties {
     #[serde(flatten)]
@@ -17,11 +25,28 @@ pub struct AzureCliScriptProperties {
     #[serde(rename = "azCliVersion")]
     pub az_cli_version: String,
 }
+impl AzureCliScriptProperties {
+    pub fn new(script_configuration_base: ScriptConfigurationBase, az_cli_version: String) -> Self {
+        Self {
+            deployment_script_properties_base: DeploymentScriptPropertiesBase::default(),
+            script_configuration_base,
+            az_cli_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzurePowerShellScript {
     #[serde(flatten)]
     pub deployment_script: DeploymentScript,
     pub properties: AzurePowerShellScriptProperties,
+}
+impl AzurePowerShellScript {
+    pub fn new(deployment_script: DeploymentScript, properties: AzurePowerShellScriptProperties) -> Self {
+        Self {
+            deployment_script,
+            properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzurePowerShellScriptProperties {
@@ -32,6 +57,15 @@ pub struct AzurePowerShellScriptProperties {
     #[serde(rename = "azPowerShellVersion")]
     pub az_power_shell_version: String,
 }
+impl AzurePowerShellScriptProperties {
+    pub fn new(script_configuration_base: ScriptConfigurationBase, az_power_shell_version: String) -> Self {
+        Self {
+            deployment_script_properties_base: DeploymentScriptPropertiesBase::default(),
+            script_configuration_base,
+            az_power_shell_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -41,10 +75,20 @@ pub struct AzureResourceBase {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl AzureResourceBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerConfiguration {
     #[serde(rename = "containerGroupName", default, skip_serializing_if = "Option::is_none")]
     pub container_group_name: Option<String>,
+}
+impl ContainerConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentScript {
@@ -58,6 +102,18 @@ pub struct DeploymentScript {
     pub kind: deployment_script::Kind,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+}
+impl DeploymentScript {
+    pub fn new(location: String, kind: deployment_script::Kind) -> Self {
+        Self {
+            azure_resource_base: AzureResourceBase::default(),
+            identity: None,
+            location,
+            tags: None,
+            kind,
+            system_data: None,
+        }
+    }
 }
 pub mod deployment_script {
     use super::*;
@@ -75,6 +131,11 @@ pub struct DeploymentScriptListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl DeploymentScriptListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentScriptPropertiesBase {
     #[serde(rename = "containerSettings", default, skip_serializing_if = "Option::is_none")]
@@ -89,6 +150,11 @@ pub struct DeploymentScriptPropertiesBase {
     pub status: Option<ScriptStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outputs: Option<serde_json::Value>,
+}
+impl DeploymentScriptPropertiesBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod deployment_script_properties_base {
     use super::*;
@@ -120,10 +186,20 @@ pub struct DeploymentScriptUpdateParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl DeploymentScriptUpdateParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentScriptsError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl DeploymentScriptsError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentVariable {
@@ -133,12 +209,26 @@ pub struct EnvironmentVariable {
     #[serde(rename = "secureValue", default, skip_serializing_if = "Option::is_none")]
     pub secure_value: Option<String>,
 }
+impl EnvironmentVariable {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            value: None,
+            secure_value: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -153,10 +243,20 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub log: Option<String>,
+}
+impl LogProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServiceIdentity {
@@ -166,6 +266,11 @@ pub struct ManagedServiceIdentity {
     pub tenant_id: Option<String>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ManagedServiceIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod managed_service_identity {
     use super::*;
@@ -193,6 +298,20 @@ pub struct ScriptConfigurationBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
+impl ScriptConfigurationBase {
+    pub fn new(retention_interval: String) -> Self {
+        Self {
+            primary_script_uri: None,
+            supporting_script_uris: Vec::new(),
+            script_content: None,
+            arguments: None,
+            environment_variables: Vec::new(),
+            force_update_tag: None,
+            retention_interval,
+            timeout: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptLog {
     #[serde(flatten)]
@@ -200,10 +319,20 @@ pub struct ScriptLog {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogProperties>,
 }
+impl ScriptLog {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptLogsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScriptLog>,
+}
+impl ScriptLogsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptStatus {
@@ -220,6 +349,11 @@ pub struct ScriptStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl ScriptStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountConfiguration {
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
@@ -227,12 +361,22 @@ pub struct StorageAccountConfiguration {
     #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_key: Option<String>,
 }
+impl StorageAccountConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+}
+impl UserAssignedIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -248,6 +392,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

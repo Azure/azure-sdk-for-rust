@@ -7,6 +7,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18,6 +23,11 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplate {
     #[serde(flatten)]
@@ -28,12 +38,27 @@ pub struct ImageTemplate {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl ImageTemplate {
+    pub fn new(tracked_resource: TrackedResource, identity: ImageTemplateIdentity) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+            identity,
+            system_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateCustomizer {
     #[serde(rename = "type")]
     pub type_: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl ImageTemplateCustomizer {
+    pub fn new(type_: String) -> Self {
+        Self { type_, name: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateDistributor {
@@ -43,6 +68,15 @@ pub struct ImageTemplateDistributor {
     pub run_output_name: String,
     #[serde(rename = "artifactTags", default, skip_serializing_if = "Option::is_none")]
     pub artifact_tags: Option<serde_json::Value>,
+}
+impl ImageTemplateDistributor {
+    pub fn new(type_: String, run_output_name: String) -> Self {
+        Self {
+            type_,
+            run_output_name,
+            artifact_tags: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateFileCustomizer {
@@ -55,12 +89,27 @@ pub struct ImageTemplateFileCustomizer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<String>,
 }
+impl ImageTemplateFileCustomizer {
+    pub fn new(image_template_customizer: ImageTemplateCustomizer) -> Self {
+        Self {
+            image_template_customizer,
+            source_uri: None,
+            sha256_checksum: None,
+            destination: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageTemplateIdentity {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<image_template_identity::Type>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ImageTemplateIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod image_template_identity {
     use super::*;
@@ -82,6 +131,11 @@ pub struct ImageTemplateLastRunStatus {
     pub run_sub_state: Option<image_template_last_run_status::RunSubState>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ImageTemplateLastRunStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod image_template_last_run_status {
     use super::*;
@@ -109,6 +163,11 @@ pub struct ImageTemplateListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ImageTemplateListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateManagedImageDistributor {
     #[serde(flatten)]
@@ -117,12 +176,29 @@ pub struct ImageTemplateManagedImageDistributor {
     pub image_id: String,
     pub location: String,
 }
+impl ImageTemplateManagedImageDistributor {
+    pub fn new(image_template_distributor: ImageTemplateDistributor, image_id: String, location: String) -> Self {
+        Self {
+            image_template_distributor,
+            image_id,
+            location,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateManagedImageSource {
     #[serde(flatten)]
     pub image_template_source: ImageTemplateSource,
     #[serde(rename = "imageId")]
     pub image_id: String,
+}
+impl ImageTemplateManagedImageSource {
+    pub fn new(image_template_source: ImageTemplateSource, image_id: String) -> Self {
+        Self {
+            image_template_source,
+            image_id,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplatePlatformImageSource {
@@ -141,6 +217,19 @@ pub struct ImageTemplatePlatformImageSource {
     #[serde(rename = "planInfo", default, skip_serializing_if = "Option::is_none")]
     pub plan_info: Option<PlatformImagePurchasePlan>,
 }
+impl ImageTemplatePlatformImageSource {
+    pub fn new(image_template_source: ImageTemplateSource) -> Self {
+        Self {
+            image_template_source,
+            publisher: None,
+            offer: None,
+            sku: None,
+            version: None,
+            exact_version: None,
+            plan_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplatePowerShellCustomizer {
     #[serde(flatten)]
@@ -157,6 +246,19 @@ pub struct ImageTemplatePowerShellCustomizer {
     pub run_as_system: Option<bool>,
     #[serde(rename = "validExitCodes", default, skip_serializing_if = "Vec::is_empty")]
     pub valid_exit_codes: Vec<i64>,
+}
+impl ImageTemplatePowerShellCustomizer {
+    pub fn new(image_template_customizer: ImageTemplateCustomizer) -> Self {
+        Self {
+            image_template_customizer,
+            script_uri: None,
+            sha256_checksum: None,
+            inline: Vec::new(),
+            run_elevated: None,
+            run_as_system: None,
+            valid_exit_codes: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateProperties {
@@ -175,6 +277,20 @@ pub struct ImageTemplateProperties {
     #[serde(rename = "vmProfile", default, skip_serializing_if = "Option::is_none")]
     pub vm_profile: Option<ImageTemplateVmProfile>,
 }
+impl ImageTemplateProperties {
+    pub fn new(source: ImageTemplateSource, distribute: Vec<ImageTemplateDistributor>) -> Self {
+        Self {
+            source,
+            customize: Vec::new(),
+            distribute,
+            provisioning_state: None,
+            provisioning_error: None,
+            last_run_status: None,
+            build_timeout_in_minutes: None,
+            vm_profile: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateRestartCustomizer {
     #[serde(flatten)]
@@ -185,6 +301,16 @@ pub struct ImageTemplateRestartCustomizer {
     pub restart_check_command: Option<String>,
     #[serde(rename = "restartTimeout", default, skip_serializing_if = "Option::is_none")]
     pub restart_timeout: Option<String>,
+}
+impl ImageTemplateRestartCustomizer {
+    pub fn new(image_template_customizer: ImageTemplateCustomizer) -> Self {
+        Self {
+            image_template_customizer,
+            restart_command: None,
+            restart_check_command: None,
+            restart_timeout: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateSharedImageDistributor {
@@ -198,6 +324,17 @@ pub struct ImageTemplateSharedImageDistributor {
     pub exclude_from_latest: Option<bool>,
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<image_template_shared_image_distributor::StorageAccountType>,
+}
+impl ImageTemplateSharedImageDistributor {
+    pub fn new(image_template_distributor: ImageTemplateDistributor, gallery_image_id: String, replication_regions: Vec<String>) -> Self {
+        Self {
+            image_template_distributor,
+            gallery_image_id,
+            replication_regions,
+            exclude_from_latest: None,
+            storage_account_type: None,
+        }
+    }
 }
 pub mod image_template_shared_image_distributor {
     use super::*;
@@ -216,6 +353,14 @@ pub struct ImageTemplateSharedImageVersionSource {
     #[serde(rename = "imageVersionId")]
     pub image_version_id: String,
 }
+impl ImageTemplateSharedImageVersionSource {
+    pub fn new(image_template_source: ImageTemplateSource, image_version_id: String) -> Self {
+        Self {
+            image_template_source,
+            image_version_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateShellCustomizer {
     #[serde(flatten)]
@@ -227,10 +372,25 @@ pub struct ImageTemplateShellCustomizer {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inline: Vec<String>,
 }
+impl ImageTemplateShellCustomizer {
+    pub fn new(image_template_customizer: ImageTemplateCustomizer) -> Self {
+        Self {
+            image_template_customizer,
+            script_uri: None,
+            sha256_checksum: None,
+            inline: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateSource {
     #[serde(rename = "type")]
     pub type_: String,
+}
+impl ImageTemplateSource {
+    pub fn new(type_: String) -> Self {
+        Self { type_ }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageTemplateUpdateParameters {
@@ -239,10 +399,22 @@ pub struct ImageTemplateUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl ImageTemplateUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateVhdDistributor {
     #[serde(flatten)]
     pub image_template_distributor: ImageTemplateDistributor,
+}
+impl ImageTemplateVhdDistributor {
+    pub fn new(image_template_distributor: ImageTemplateDistributor) -> Self {
+        Self {
+            image_template_distributor,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageTemplateVmProfile {
@@ -255,6 +427,11 @@ pub struct ImageTemplateVmProfile {
     #[serde(rename = "vnetConfig", default, skip_serializing_if = "Option::is_none")]
     pub vnet_config: Option<VirtualNetworkConfig>,
 }
+impl ImageTemplateVmProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateWindowsUpdateCustomizer {
     #[serde(flatten)]
@@ -265,6 +442,16 @@ pub struct ImageTemplateWindowsUpdateCustomizer {
     pub filters: Vec<String>,
     #[serde(rename = "updateLimit", default, skip_serializing_if = "Option::is_none")]
     pub update_limit: Option<i64>,
+}
+impl ImageTemplateWindowsUpdateCustomizer {
+    pub fn new(image_template_customizer: ImageTemplateCustomizer) -> Self {
+        Self {
+            image_template_customizer,
+            search_criteria: None,
+            filters: Vec::new(),
+            update_limit: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -279,6 +466,11 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -292,6 +484,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -299,6 +496,11 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlatformImagePurchasePlan {
@@ -309,12 +511,26 @@ pub struct PlatformImagePurchasePlan {
     #[serde(rename = "planPublisher")]
     pub plan_publisher: String,
 }
+impl PlatformImagePurchasePlan {
+    pub fn new(plan_name: String, plan_product: String, plan_publisher: String) -> Self {
+        Self {
+            plan_name,
+            plan_product,
+            plan_publisher,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProvisioningError {
     #[serde(rename = "provisioningErrorCode", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_error_code: Option<provisioning_error::ProvisioningErrorCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ProvisioningError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod provisioning_error {
     use super::*;
@@ -351,6 +567,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunOutput {
     #[serde(flatten)]
@@ -358,12 +579,25 @@ pub struct RunOutput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunOutputProperties>,
 }
+impl RunOutput {
+    pub fn new(sub_resource: SubResource) -> Self {
+        Self {
+            sub_resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunOutputCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RunOutput>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RunOutputCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunOutputProperties {
@@ -374,6 +608,11 @@ pub struct RunOutputProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
+impl RunOutputProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -381,6 +620,15 @@ pub struct SubResource {
     pub name: String,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl SubResource {
+    pub fn new(name: String) -> Self {
+        Self {
+            id: None,
+            name,
+            type_: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
@@ -390,12 +638,26 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkConfig {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
     #[serde(rename = "proxyVmSize", default, skip_serializing_if = "Option::is_none")]
     pub proxy_vm_size: Option<String>,
+}
+impl VirtualNetworkConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -411,6 +673,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

@@ -7,6 +7,11 @@ pub struct AdmCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdmCredentialProperties>,
 }
+impl AdmCredential {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdmCredentialProperties {
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
@@ -16,10 +21,20 @@ pub struct AdmCredentialProperties {
     #[serde(rename = "authTokenUrl", default, skip_serializing_if = "Option::is_none")]
     pub auth_token_url: Option<String>,
 }
+impl AdmCredentialProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApnsCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApnsCredentialProperties>,
+}
+impl ApnsCredential {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApnsCredentialProperties {
@@ -32,10 +47,20 @@ pub struct ApnsCredentialProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
 }
+impl ApnsCredentialProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaiduCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaiduCredentialProperties>,
+}
+impl BaiduCredential {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaiduCredentialProperties {
@@ -45,6 +70,11 @@ pub struct BaiduCredentialProperties {
     pub baidu_end_point: Option<String>,
     #[serde(rename = "baiduSecretKey", default, skip_serializing_if = "Option::is_none")]
     pub baidu_secret_key: Option<String>,
+}
+impl BaiduCredentialProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckAvailabilityParameters {
@@ -61,6 +91,19 @@ pub struct CheckAvailabilityParameters {
     #[serde(rename = "isAvailiable", default, skip_serializing_if = "Option::is_none")]
     pub is_availiable: Option<bool>,
 }
+impl CheckAvailabilityParameters {
+    pub fn new(name: String, location: String) -> Self {
+        Self {
+            id: None,
+            name,
+            type_: None,
+            location,
+            tags: None,
+            sku: None,
+            is_availiable: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckAvailabilityResult {
     #[serde(flatten)]
@@ -68,10 +111,23 @@ pub struct CheckAvailabilityResult {
     #[serde(rename = "isAvailiable", default, skip_serializing_if = "Option::is_none")]
     pub is_availiable: Option<bool>,
 }
+impl CheckAvailabilityResult {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            is_availiable: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GcmCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GcmCredentialProperties>,
+}
+impl GcmCredential {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GcmCredentialProperties {
@@ -80,10 +136,20 @@ pub struct GcmCredentialProperties {
     #[serde(rename = "googleApiKey", default, skip_serializing_if = "Option::is_none")]
     pub google_api_key: Option<String>,
 }
+impl GcmCredentialProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MpnsCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MpnsCredentialProperties>,
+}
+impl MpnsCredential {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MpnsCredentialProperties {
@@ -94,12 +160,25 @@ pub struct MpnsCredentialProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
 }
+impl MpnsCredentialProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamespaceCreateOrUpdateParameters {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamespaceProperties>,
+}
+impl NamespaceCreateOrUpdateParameters {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceListResult {
@@ -108,12 +187,22 @@ pub struct NamespaceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl NamespaceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespacePatchParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+}
+impl NamespacePatchParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceProperties {
@@ -140,6 +229,11 @@ pub struct NamespaceProperties {
     #[serde(rename = "namespaceType", default, skip_serializing_if = "Option::is_none")]
     pub namespace_type: Option<namespace_properties::NamespaceType>,
 }
+impl NamespaceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod namespace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -155,11 +249,24 @@ pub struct NamespaceResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamespaceProperties>,
 }
+impl NamespaceResource {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotificationHubCreateOrUpdateParameters {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: NotificationHubProperties,
+}
+impl NotificationHubCreateOrUpdateParameters {
+    pub fn new(resource: Resource, properties: NotificationHubProperties) -> Self {
+        Self { resource, properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationHubListResult {
@@ -167,6 +274,11 @@ pub struct NotificationHubListResult {
     pub value: Vec<NotificationHubResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl NotificationHubListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationHubProperties {
@@ -189,12 +301,25 @@ pub struct NotificationHubProperties {
     #[serde(rename = "baiduCredential", default, skip_serializing_if = "Option::is_none")]
     pub baidu_credential: Option<BaiduCredential>,
 }
+impl NotificationHubProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotificationHubResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NotificationHubProperties>,
+}
+impl NotificationHubResource {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PnsCredentialsProperties {
@@ -211,6 +336,11 @@ pub struct PnsCredentialsProperties {
     #[serde(rename = "baiduCredential", default, skip_serializing_if = "Option::is_none")]
     pub baidu_credential: Option<BaiduCredential>,
 }
+impl PnsCredentialsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PnsCredentialsResource {
     #[serde(flatten)]
@@ -218,10 +348,23 @@ pub struct PnsCredentialsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PnsCredentialsProperties>,
 }
+impl PnsCredentialsResource {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicykeyResource {
     #[serde(rename = "policyKey", default, skip_serializing_if = "Option::is_none")]
     pub policy_key: Option<String>,
+}
+impl PolicykeyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -237,6 +380,18 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+            sku: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceListKeys {
     #[serde(rename = "primaryConnectionString", default, skip_serializing_if = "Option::is_none")]
@@ -250,11 +405,21 @@ pub struct ResourceListKeys {
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
 }
+impl ResourceListKeys {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedAccessAuthorizationRuleCreateOrUpdateParameters {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: SharedAccessAuthorizationRuleProperties,
+}
+impl SharedAccessAuthorizationRuleCreateOrUpdateParameters {
+    pub fn new(resource: Resource, properties: SharedAccessAuthorizationRuleProperties) -> Self {
+        Self { resource, properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleListResult {
@@ -263,10 +428,20 @@ pub struct SharedAccessAuthorizationRuleListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl SharedAccessAuthorizationRuleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub rights: Vec<String>,
+}
+impl SharedAccessAuthorizationRuleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedAccessAuthorizationRuleResource {
@@ -274,6 +449,14 @@ pub struct SharedAccessAuthorizationRuleResource {
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedAccessAuthorizationRuleProperties>,
+}
+impl SharedAccessAuthorizationRuleResource {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
@@ -286,6 +469,17 @@ pub struct Sku {
     pub family: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
+}
+impl Sku {
+    pub fn new(name: sku::Name) -> Self {
+        Self {
+            name,
+            tier: None,
+            size: None,
+            family: None,
+            capacity: None,
+        }
+    }
 }
 pub mod sku {
     use super::*;
@@ -301,10 +495,20 @@ pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
+impl SubResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WnsCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WnsCredentialProperties>,
+}
+impl WnsCredential {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WnsCredentialProperties {
@@ -314,4 +518,9 @@ pub struct WnsCredentialProperties {
     pub secret_key: Option<String>,
     #[serde(rename = "windowsLiveEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub windows_live_endpoint: Option<String>,
+}
+impl WnsCredentialProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

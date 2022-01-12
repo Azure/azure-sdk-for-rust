@@ -19,6 +19,11 @@ pub struct AppComponent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
+impl AppComponent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppComponentsMap {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -31,6 +36,17 @@ pub struct AppComponentsMap {
     pub name: Option<String>,
     pub value: serde_json::Value,
 }
+impl AppComponentsMap {
+    pub fn new(value: serde_json::Value) -> Self {
+        Self {
+            resource_id: None,
+            test_id: None,
+            test_run_id: None,
+            name: None,
+            value,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientMetricsFilters {
     #[serde(rename = "testRunId", default, skip_serializing_if = "Option::is_none")]
@@ -40,6 +56,11 @@ pub struct ClientMetricsFilters {
     #[serde(rename = "timeRange", default, skip_serializing_if = "Option::is_none")]
     pub time_range: Option<TimeRange>,
 }
+impl ClientMetricsFilters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientMetricsResults {
     #[serde(rename = "testRunId", default, skip_serializing_if = "Option::is_none")]
@@ -47,15 +68,30 @@ pub struct ClientMetricsResults {
     #[serde(rename = "timeSeries", default, skip_serializing_if = "Option::is_none")]
     pub time_series: Option<Series>,
 }
+impl ClientMetricsResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
 }
+impl DefaultErrorResponseBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultServerMetricsConfigListModel {
     #[serde(rename = "defaultMetrics", default, skip_serializing_if = "Option::is_none")]
     pub default_metrics: Option<serde_json::Value>,
+}
+impl DefaultServerMetricsConfigListModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultServerMetricsConfigModel {
@@ -70,6 +106,11 @@ pub struct DefaultServerMetricsConfigModel {
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
 }
+impl DefaultServerMetricsConfigModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -80,6 +121,11 @@ pub struct ErrorResponseBody {
     pub target: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseBody>,
+}
+impl ErrorResponseBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileUrl {
@@ -92,10 +138,20 @@ pub struct FileUrl {
     #[serde(rename = "expireTime", default, skip_serializing_if = "Option::is_none")]
     pub expire_time: Option<String>,
 }
+impl FileUrl {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileUrlList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FileUrl>,
+}
+impl FileUrlList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileUrlPath {
@@ -106,6 +162,11 @@ pub struct FileUrlPath {
     #[serde(rename = "expireTime", default, skip_serializing_if = "Option::is_none")]
     pub expire_time: Option<String>,
 }
+impl FileUrlPath {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileValidateResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -113,12 +174,22 @@ pub struct FileValidateResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
+impl FileValidateResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filters {
     #[serde(rename = "requestSamplerValues", default, skip_serializing_if = "Vec::is_empty")]
     pub request_sampler_values: Vec<String>,
     #[serde(rename = "errorFiltersValues", default, skip_serializing_if = "Vec::is_empty")]
     pub error_filters_values: Vec<String>,
+}
+impl Filters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputTestArtifacts {
@@ -131,10 +202,20 @@ pub struct InputTestArtifacts {
     #[serde(rename = "additionalUrls", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_urls: Vec<FileUrl>,
 }
+impl InputTestArtifacts {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadTestConfig {
     #[serde(rename = "engineInstances", default, skip_serializing_if = "Option::is_none")]
     pub engine_instances: Option<i32>,
+}
+impl LoadTestConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalizedName {
@@ -143,6 +224,11 @@ pub struct LocalizedName {
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
+impl LocalizedName {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputTestArtifacts {
     #[serde(rename = "resultUrl")]
@@ -150,10 +236,20 @@ pub struct OutputTestArtifacts {
     #[serde(rename = "logsUrl")]
     pub logs_url: FileUrl,
 }
+impl OutputTestArtifacts {
+    pub fn new(result_url: FileUrl, logs_url: FileUrl) -> Self {
+        Self { result_url, logs_url }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PassFailCriteria {
     #[serde(rename = "passFailMetrics", default, skip_serializing_if = "Option::is_none")]
     pub pass_fail_metrics: Option<serde_json::Value>,
+}
+impl PassFailCriteria {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PassFailMetric {
@@ -172,6 +268,11 @@ pub struct PassFailMetric {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<String>,
 }
+impl PassFailMetric {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceMetricModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -188,12 +289,31 @@ pub struct ResourceMetricModel {
     #[serde(rename = "resourceType")]
     pub resource_type: String,
 }
+impl ResourceMetricModel {
+    pub fn new(resource_id: String, metricnamespace: String, name: ServerMetricName, aggregation: String, resource_type: String) -> Self {
+        Self {
+            id: None,
+            resource_id,
+            metricnamespace,
+            display_description: None,
+            name,
+            aggregation,
+            unit: None,
+            resource_type,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl SecretMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Series {
@@ -206,11 +326,21 @@ pub struct Series {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errors: Option<serde_json::Value>,
 }
+impl Series {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerMetricName {
     pub value: String,
     #[serde(rename = "localizedValue")]
     pub localized_value: String,
+}
+impl ServerMetricName {
+    pub fn new(value: String, localized_value: String) -> Self {
+        Self { value, localized_value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerMetricsModel {
@@ -223,10 +353,20 @@ pub struct ServerMetricsModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<serde_json::Value>,
 }
+impl ServerMetricsModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedResourceType {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
+}
+impl SupportedResourceType {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TestArtifacts {
@@ -234,6 +374,14 @@ pub struct TestArtifacts {
     pub input_artifacts: InputTestArtifacts,
     #[serde(rename = "outputArtifacts", default, skip_serializing_if = "Option::is_none")]
     pub output_artifacts: Option<OutputTestArtifacts>,
+}
+impl TestArtifacts {
+    pub fn new(input_artifacts: InputTestArtifacts) -> Self {
+        Self {
+            input_artifacts,
+            output_artifacts: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestModel {
@@ -264,12 +412,22 @@ pub struct TestModel {
     #[serde(rename = "environmentVariables", default, skip_serializing_if = "Option::is_none")]
     pub environment_variables: Option<serde_json::Value>,
 }
+impl TestModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestModelResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TestModel>,
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+}
+impl TestModelResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestRunModel {
@@ -320,12 +478,22 @@ pub struct TestRunModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<i64>,
 }
+impl TestRunModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestRunModelResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TestRunModel>,
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+}
+impl TestRunModelResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TestRunStatisticsModel {
@@ -358,6 +526,11 @@ pub struct TestRunStatisticsModel {
     #[serde(rename = "sentKBytesPerSec", default, skip_serializing_if = "Option::is_none")]
     pub sent_k_bytes_per_sec: Option<f64>,
 }
+impl TestRunStatisticsModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeRange {
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -365,10 +538,20 @@ pub struct TimeRange {
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
+impl TimeRange {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeries {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
+}
+impl TimeSeries {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

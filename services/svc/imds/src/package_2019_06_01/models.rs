@@ -10,6 +10,11 @@ pub struct AttestedData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encoding: Option<String>,
 }
+impl AttestedData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Compute {
     #[serde(rename = "azEnvironment", default, skip_serializing_if = "Option::is_none")]
@@ -59,6 +64,11 @@ pub struct Compute {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub zone: Option<String>,
 }
+impl Compute {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataDisk {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -80,20 +90,40 @@ pub struct DataDisk {
     #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
     pub write_accelerator_enabled: Option<String>,
 }
+impl DataDisk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskImage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+}
+impl DiskImage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<String>,
 }
+impl EncryptionSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityErrorResponse {
@@ -101,6 +131,11 @@ pub struct IdentityErrorResponse {
     pub error: Option<identity_error_response::Error>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_description: Option<String>,
+}
+impl IdentityErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod identity_error_response {
     use super::*;
@@ -137,6 +172,11 @@ pub struct IdentityInfoResponse {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
+impl IdentityInfoResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityTokenResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -160,6 +200,11 @@ pub struct IdentityTokenResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub msi_res_id: Option<String>,
 }
+impl IdentityTokenResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -173,12 +218,22 @@ pub struct ImageReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
+impl ImageReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Instance {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compute: Option<Compute>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<Network>,
+}
+impl Instance {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Ipv4Properties {
@@ -187,10 +242,20 @@ pub struct Ipv4Properties {
     #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<String>,
 }
+impl Ipv4Properties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Ipv6Properties {
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
+}
+impl Ipv6Properties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDisk {
@@ -199,10 +264,20 @@ pub struct ManagedDisk {
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<String>,
 }
+impl ManagedDisk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Network {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub interface: Vec<NetworkInterface>,
+}
+impl Network {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterface {
@@ -213,6 +288,11 @@ pub struct NetworkInterface {
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
 }
+impl NetworkInterface {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod network_interface {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -222,10 +302,20 @@ pub mod network_interface {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub subnet: Vec<SubnetProperties>,
     }
+    impl Ipv4 {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Ipv6 {
         #[serde(rename = "ipAddress", default, skip_serializing_if = "Vec::is_empty")]
         pub ip_address: Vec<Ipv6Properties>,
+    }
+    impl Ipv6 {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -251,6 +341,11 @@ pub struct OsDisk {
     #[serde(rename = "writeAcceleratorEnabled", default, skip_serializing_if = "Option::is_none")]
     pub write_accelerator_enabled: Option<String>,
 }
+impl OsDisk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlanProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -260,12 +355,22 @@ pub struct PlanProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
 }
+impl PlanProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicKeysProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[serde(rename = "keyData", default, skip_serializing_if = "Option::is_none")]
     pub key_data: Option<String>,
+}
+impl PublicKeysProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfile {
@@ -276,6 +381,11 @@ pub struct StorageProfile {
     #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disks: Vec<DataDisk>,
 }
+impl StorageProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubnetProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -283,8 +393,18 @@ pub struct SubnetProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
 }
+impl SubnetProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHardDisk {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
+}
+impl VirtualHardDisk {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

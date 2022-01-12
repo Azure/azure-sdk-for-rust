@@ -10,6 +10,14 @@ pub struct Compatibility {
     #[serde(rename = "deviceModel")]
     pub device_model: String,
 }
+impl Compatibility {
+    pub fn new(device_manufacturer: String, device_model: String) -> Self {
+        Self {
+            device_manufacturer,
+            device_model,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Deployment {
     #[serde(rename = "deploymentId")]
@@ -33,6 +41,29 @@ pub struct Deployment {
     #[serde(rename = "isCompleted", default, skip_serializing_if = "Option::is_none")]
     pub is_completed: Option<bool>,
 }
+impl Deployment {
+    pub fn new(
+        deployment_id: String,
+        deployment_type: DeploymentType,
+        start_date_time: String,
+        device_group_type: DeviceGroupType,
+        device_group_definition: Vec<String>,
+        update_id: UpdateId,
+    ) -> Self {
+        Self {
+            deployment_id,
+            deployment_type,
+            device_class_id: None,
+            start_date_time,
+            device_group_type,
+            device_group_definition,
+            update_id,
+            is_canceled: None,
+            is_retried: None,
+            is_completed: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentDeviceState {
     #[serde(rename = "deviceId")]
@@ -44,12 +75,27 @@ pub struct DeploymentDeviceState {
     #[serde(rename = "deviceState")]
     pub device_state: DeviceDeploymentState,
 }
+impl DeploymentDeviceState {
+    pub fn new(device_id: String, retry_count: i32, moved_on_to_new_deployment: bool, device_state: DeviceDeploymentState) -> Self {
+        Self {
+            device_id,
+            retry_count,
+            moved_on_to_new_deployment,
+            device_state,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentDeviceStatesFilter {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
     #[serde(rename = "deviceState", default, skip_serializing_if = "Option::is_none")]
     pub device_state: Option<DeviceState>,
+}
+impl DeploymentDeviceStatesFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentFilter {
@@ -59,6 +105,11 @@ pub struct DeploymentFilter {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl DeploymentFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeploymentState {
@@ -82,6 +133,19 @@ pub struct DeploymentStatus {
     pub devices_completed_succeeded_count: Option<i32>,
     #[serde(rename = "devicesCanceledCount", default, skip_serializing_if = "Option::is_none")]
     pub devices_canceled_count: Option<i32>,
+}
+impl DeploymentStatus {
+    pub fn new(deployment_state: DeploymentState) -> Self {
+        Self {
+            deployment_state,
+            total_devices: None,
+            devices_incompatible_count: None,
+            devices_in_progress_count: None,
+            devices_completed_failed_count: None,
+            devices_completed_succeeded_count: None,
+            devices_canceled_count: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeploymentType {
@@ -110,6 +174,22 @@ pub struct Device {
     #[serde(rename = "lastDeploymentId", default, skip_serializing_if = "Option::is_none")]
     pub last_deployment_id: Option<String>,
 }
+impl Device {
+    pub fn new(device_id: String, device_class_id: String, manufacturer: String, model: String, on_latest_update: bool) -> Self {
+        Self {
+            device_id,
+            device_class_id,
+            manufacturer,
+            model,
+            group_id: None,
+            last_attempted_update_id: None,
+            deployment_status: None,
+            installed_update_id: None,
+            on_latest_update,
+            last_deployment_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceClass {
     #[serde(rename = "deviceClassId")]
@@ -118,6 +198,16 @@ pub struct DeviceClass {
     pub model: String,
     #[serde(rename = "bestCompatibleUpdateId")]
     pub best_compatible_update_id: UpdateId,
+}
+impl DeviceClass {
+    pub fn new(device_class_id: String, manufacturer: String, model: String, best_compatible_update_id: UpdateId) -> Self {
+        Self {
+            device_class_id,
+            manufacturer,
+            model,
+            best_compatible_update_id,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeviceDeploymentState {
@@ -131,6 +221,11 @@ pub enum DeviceDeploymentState {
 pub struct DeviceFilter {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+}
+impl DeviceFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DeviceGroupType {
@@ -155,6 +250,11 @@ pub struct DeviceTag {
     #[serde(rename = "deviceCount")]
     pub device_count: i64,
 }
+impl DeviceTag {
+    pub fn new(tag_name: String, device_count: i64) -> Self {
+        Self { tag_name, device_count }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
     pub code: String,
@@ -167,6 +267,18 @@ pub struct Error {
     pub innererror: Option<InnerError>,
     #[serde(rename = "occurredDateTime", default, skip_serializing_if = "Option::is_none")]
     pub occurred_date_time: Option<String>,
+}
+impl Error {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            target: None,
+            details: Vec::new(),
+            innererror: None,
+            occurred_date_time: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct File {
@@ -182,10 +294,27 @@ pub struct File {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
+impl File {
+    pub fn new(file_id: String, file_name: String, size_in_bytes: i64, hashes: serde_json::Value) -> Self {
+        Self {
+            file_id,
+            file_name,
+            size_in_bytes,
+            hashes,
+            mime_type: None,
+            etag: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileImportMetadata {
     pub filename: String,
     pub url: String,
+}
+impl FileImportMetadata {
+    pub fn new(filename: String, url: String) -> Self {
+        Self { filename, url }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Group {
@@ -199,6 +328,17 @@ pub struct Group {
     #[serde(rename = "deviceCount", default, skip_serializing_if = "Option::is_none")]
     pub device_count: Option<i64>,
 }
+impl Group {
+    pub fn new(group_id: String, group_type: GroupType, tags: Vec<String>, created_date_time: String) -> Self {
+        Self {
+            group_id,
+            group_type,
+            tags,
+            created_date_time,
+            device_count: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupBestUpdatesFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -207,6 +347,11 @@ pub struct GroupBestUpdatesFilter {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl GroupBestUpdatesFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum GroupType {
@@ -219,11 +364,25 @@ pub struct ImportManifestMetadata {
     pub size_in_bytes: i64,
     pub hashes: serde_json::Value,
 }
+impl ImportManifestMetadata {
+    pub fn new(url: String, size_in_bytes: i64, hashes: serde_json::Value) -> Self {
+        Self {
+            url,
+            size_in_bytes,
+            hashes,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportUpdateInput {
     #[serde(rename = "importManifest")]
     pub import_manifest: ImportManifestMetadata,
     pub files: Vec<FileImportMetadata>,
+}
+impl ImportUpdateInput {
+    pub fn new(import_manifest: ImportManifestMetadata, files: Vec<FileImportMetadata>) -> Self {
+        Self { import_manifest, files }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InnerError {
@@ -234,6 +393,16 @@ pub struct InnerError {
     pub error_detail: Option<String>,
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Box<Option<InnerError>>,
+}
+impl InnerError {
+    pub fn new(code: String) -> Self {
+        Self {
+            code,
+            message: None,
+            error_detail: None,
+            inner_error: Box::new(None),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
@@ -255,10 +424,30 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
+impl Operation {
+    pub fn new(operation_id: String, status: OperationStatus, last_action_date_time: String, created_date_time: String) -> Self {
+        Self {
+            operation_id,
+            status,
+            update_id: None,
+            resource_location: None,
+            error: None,
+            trace_id: None,
+            last_action_date_time,
+            created_date_time,
+            etag: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<OperationFilterStatus>,
+}
+impl OperationFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperationFilterStatus {
@@ -280,12 +469,22 @@ pub struct PageableListOfDeploymentDeviceStates {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PageableListOfDeploymentDeviceStates {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeployments {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Deployment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PageableListOfDeployments {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeviceClasses {
@@ -294,12 +493,22 @@ pub struct PageableListOfDeviceClasses {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PageableListOfDeviceClasses {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDeviceTags {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DeviceTag>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PageableListOfDeviceTags {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfDevices {
@@ -308,12 +517,22 @@ pub struct PageableListOfDevices {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PageableListOfDevices {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfGroups {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Group>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PageableListOfGroups {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfOperations {
@@ -322,12 +541,22 @@ pub struct PageableListOfOperations {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PageableListOfOperations {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfStrings {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PageableListOfStrings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfUpdatableDevices {
@@ -336,6 +565,11 @@ pub struct PageableListOfUpdatableDevices {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PageableListOfUpdatableDevices {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageableListOfUpdateIds {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -343,12 +577,22 @@ pub struct PageableListOfUpdateIds {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PageableListOfUpdateIds {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdatableDevices {
     #[serde(rename = "updateId")]
     pub update_id: UpdateId,
     #[serde(rename = "deviceCount")]
     pub device_count: i64,
+}
+impl UpdatableDevices {
+    pub fn new(update_id: UpdateId, device_count: i64) -> Self {
+        Self { update_id, device_count }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Update {
@@ -368,6 +612,28 @@ pub struct Update {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
+impl Update {
+    pub fn new(
+        update_id: UpdateId,
+        update_type: String,
+        installed_criteria: String,
+        compatibility: Vec<Compatibility>,
+        manifest_version: String,
+        imported_date_time: String,
+        created_date_time: String,
+    ) -> Self {
+        Self {
+            update_id,
+            update_type,
+            installed_criteria,
+            compatibility,
+            manifest_version,
+            imported_date_time,
+            created_date_time,
+            etag: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateCompliance {
     #[serde(rename = "totalDeviceCount")]
@@ -379,9 +645,29 @@ pub struct UpdateCompliance {
     #[serde(rename = "updatesInProgressDeviceCount")]
     pub updates_in_progress_device_count: i64,
 }
+impl UpdateCompliance {
+    pub fn new(
+        total_device_count: i64,
+        on_latest_update_device_count: i64,
+        new_updates_available_device_count: i64,
+        updates_in_progress_device_count: i64,
+    ) -> Self {
+        Self {
+            total_device_count,
+            on_latest_update_device_count,
+            new_updates_available_device_count,
+            updates_in_progress_device_count,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpdateId {
     pub provider: String,
     pub name: String,
     pub version: String,
+}
+impl UpdateId {
+    pub fn new(provider: String, name: String, version: String) -> Self {
+        Self { provider, name, version }
+    }
 }

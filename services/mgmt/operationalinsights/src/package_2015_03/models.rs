@@ -19,6 +19,11 @@ pub struct AvailableServiceTier {
     #[serde(rename = "LastSkuUpdate", default, skip_serializing_if = "Option::is_none")]
     pub last_sku_update: Option<String>,
 }
+impl AvailableServiceTier {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod available_service_tier {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -40,6 +45,14 @@ pub struct CoreSummary {
     #[serde(rename = "numberOfDocuments")]
     pub number_of_documents: i64,
 }
+impl CoreSummary {
+    pub fn new(number_of_documents: i64) -> Self {
+        Self {
+            status: None,
+            number_of_documents,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkTarget {
     #[serde(rename = "customerId", default, skip_serializing_if = "Option::is_none")]
@@ -51,12 +64,22 @@ pub struct LinkTarget {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
+impl LinkTarget {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -69,11 +92,21 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
@@ -85,6 +118,11 @@ pub struct ProxyResource {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -98,6 +136,17 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SavedSearch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -110,6 +159,17 @@ pub struct SavedSearch {
     pub e_tag: Option<String>,
     pub properties: SavedSearchProperties,
 }
+impl SavedSearch {
+    pub fn new(properties: SavedSearchProperties) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            e_tag: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SavedSearchProperties {
     pub category: String,
@@ -121,6 +181,17 @@ pub struct SavedSearchProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<Tag>,
 }
+impl SavedSearchProperties {
+    pub fn new(category: String, display_name: String, query: String) -> Self {
+        Self {
+            category,
+            display_name,
+            query,
+            version: None,
+            tags: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SavedSearchesListResult {
     #[serde(rename = "__metadata", default, skip_serializing_if = "Option::is_none")]
@@ -128,12 +199,22 @@ pub struct SavedSearchesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SavedSearch>,
 }
+impl SavedSearchesListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchGetSchemaResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<SearchMetadata>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SearchSchemaValue>,
+}
+impl SearchGetSchemaResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchMetadata {
@@ -172,12 +253,22 @@ pub struct SearchMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<SearchMetadataSchema>,
 }
+impl SearchMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchMetadataSchema {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
+}
+impl SearchMetadataSchema {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SearchSchemaValue {
@@ -193,12 +284,30 @@ pub struct SearchSchemaValue {
     #[serde(rename = "ownerType", default, skip_serializing_if = "Vec::is_empty")]
     pub owner_type: Vec<String>,
 }
+impl SearchSchemaValue {
+    pub fn new(indexed: bool, stored: bool, facet: bool) -> Self {
+        Self {
+            name: None,
+            display_name: None,
+            type_: None,
+            indexed,
+            stored,
+            facet,
+            owner_type: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchSort {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order: Option<search_sort::Order>,
+}
+impl SearchSort {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod search_sort {
     use super::*;
@@ -217,10 +326,20 @@ pub struct SharedKeys {
     #[serde(rename = "secondarySharedKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_shared_key: Option<String>,
 }
+impl SharedKeys {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
     pub id: String,
     pub key: String,
+}
+impl StorageAccount {
+    pub fn new(id: String, key: String) -> Self {
+        Self { id, key }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageInsight {
@@ -231,12 +350,22 @@ pub struct StorageInsight {
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
 }
+impl StorageInsight {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageInsightListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageInsight>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl StorageInsightListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageInsightProperties {
@@ -249,11 +378,26 @@ pub struct StorageInsightProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<StorageInsightStatus>,
 }
+impl StorageInsightProperties {
+    pub fn new(storage_account: StorageAccount) -> Self {
+        Self {
+            containers: Vec::new(),
+            tables: Vec::new(),
+            storage_account,
+            status: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageInsightStatus {
     pub state: storage_insight_status::State,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl StorageInsightStatus {
+    pub fn new(state: storage_insight_status::State) -> Self {
+        Self { state, description: None }
+    }
 }
 pub mod storage_insight_status {
     use super::*;
@@ -270,10 +414,20 @@ pub struct Tag {
     pub name: String,
     pub value: String,
 }
+impl Tag {
+    pub fn new(name: String, value: String) -> Self {
+        Self { name, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspacePurgeBody {
     pub table: String,
     pub filters: Vec<WorkspacePurgeBodyFilters>,
+}
+impl WorkspacePurgeBody {
+    pub fn new(table: String, filters: Vec<WorkspacePurgeBodyFilters>) -> Self {
+        Self { table, filters }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspacePurgeBodyFilters {
@@ -286,14 +440,29 @@ pub struct WorkspacePurgeBodyFilters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
+impl WorkspacePurgeBodyFilters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspacePurgeResponse {
     #[serde(rename = "operationId")]
     pub operation_id: String,
 }
+impl WorkspacePurgeResponse {
+    pub fn new(operation_id: String) -> Self {
+        Self { operation_id }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspacePurgeStatusResponse {
     pub status: workspace_purge_status_response::Status,
+}
+impl WorkspacePurgeStatusResponse {
+    pub fn new(status: workspace_purge_status_response::Status) -> Self {
+        Self { status }
+    }
 }
 pub mod workspace_purge_status_response {
     use super::*;

@@ -8,6 +8,15 @@ pub struct DataSource {
     pub configuration: DataSourceConfiguration,
     pub sinks: Vec<SinkConfiguration>,
 }
+impl DataSource {
+    pub fn new(kind: data_source::Kind, configuration: DataSourceConfiguration, sinks: Vec<SinkConfiguration>) -> Self {
+        Self {
+            kind,
+            configuration,
+            sinks,
+        }
+    }
+}
 pub mod data_source {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -27,12 +36,22 @@ pub struct DataSourceConfiguration {
     #[serde(rename = "eventLogs", default, skip_serializing_if = "Vec::is_empty")]
     pub event_logs: Vec<EventLogConfiguration>,
 }
+impl DataSourceConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EtwEventConfiguration {
@@ -41,10 +60,20 @@ pub struct EtwEventConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<String>,
 }
+impl EtwEventConfiguration {
+    pub fn new(name: String, id: i64) -> Self {
+        Self { name, id, filter: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EtwProviderConfiguration {
     pub id: String,
     pub events: Vec<EtwEventConfiguration>,
+}
+impl EtwProviderConfiguration {
+    pub fn new(id: String, events: Vec<EtwEventConfiguration>) -> Self {
+        Self { id, events }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventLogConfiguration {
@@ -52,6 +81,11 @@ pub struct EventLogConfiguration {
     pub log_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<String>,
+}
+impl EventLogConfiguration {
+    pub fn new(log_name: String) -> Self {
+        Self { log_name, filter: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettings {
@@ -61,6 +95,11 @@ pub struct GuestDiagnosticSettings {
     pub data_sources: Vec<DataSource>,
     #[serde(rename = "proxySetting", default, skip_serializing_if = "Option::is_none")]
     pub proxy_setting: Option<String>,
+}
+impl GuestDiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod guest_diagnostic_settings {
     use super::*;
@@ -75,6 +114,13 @@ pub struct GuestDiagnosticSettingsAssociation {
     #[serde(rename = "guestDiagnosticSettingsName")]
     pub guest_diagnostic_settings_name: String,
 }
+impl GuestDiagnosticSettingsAssociation {
+    pub fn new(guest_diagnostic_settings_name: String) -> Self {
+        Self {
+            guest_diagnostic_settings_name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsAssociationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -82,11 +128,21 @@ pub struct GuestDiagnosticSettingsAssociationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl GuestDiagnosticSettingsAssociationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestDiagnosticSettingsAssociationResource {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: GuestDiagnosticSettingsAssociation,
+}
+impl GuestDiagnosticSettingsAssociationResource {
+    pub fn new(resource: Resource, properties: GuestDiagnosticSettingsAssociation) -> Self {
+        Self { resource, properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsAssociationResourcePatch {
@@ -95,12 +151,22 @@ pub struct GuestDiagnosticSettingsAssociationResourcePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GuestDiagnosticSettingsAssociation>,
 }
+impl GuestDiagnosticSettingsAssociationResourcePatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GuestDiagnosticSettingsResource>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl GuestDiagnosticSettingsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsPatchResource {
@@ -109,11 +175,21 @@ pub struct GuestDiagnosticSettingsPatchResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GuestDiagnosticSettings>,
 }
+impl GuestDiagnosticSettingsPatchResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestDiagnosticSettingsResource {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: GuestDiagnosticSettings,
+}
+impl GuestDiagnosticSettingsResource {
+    pub fn new(resource: Resource, properties: GuestDiagnosticSettings) -> Self {
+        Self { resource, properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PerformanceCounterConfiguration {
@@ -122,6 +198,15 @@ pub struct PerformanceCounterConfiguration {
     pub sampling_period: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instance: Option<String>,
+}
+impl PerformanceCounterConfiguration {
+    pub fn new(name: String, sampling_period: String) -> Self {
+        Self {
+            name,
+            sampling_period,
+            instance: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -135,9 +220,25 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SinkConfiguration {
     pub kind: sink_configuration::Kind,
+}
+impl SinkConfiguration {
+    pub fn new(kind: sink_configuration::Kind) -> Self {
+        Self { kind }
+    }
 }
 pub mod sink_configuration {
     use super::*;

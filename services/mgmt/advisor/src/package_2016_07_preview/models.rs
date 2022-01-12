@@ -13,6 +13,11 @@ pub struct OperationDisplayInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
+impl OperationDisplayInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -20,12 +25,22 @@ pub struct OperationEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayInfo>,
 }
+impl OperationEntity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
+}
+impl OperationEntityListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendationProperties {
@@ -47,6 +62,11 @@ pub struct RecommendationProperties {
     pub risk: Option<recommendation_properties::Risk>,
     #[serde(rename = "shortDescription", default, skip_serializing_if = "Option::is_none")]
     pub short_description: Option<ShortDescription>,
+}
+impl RecommendationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod recommendation_properties {
     use super::*;
@@ -83,6 +103,11 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceRecommendationBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -96,6 +121,11 @@ pub struct ResourceRecommendationBase {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl ResourceRecommendationBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceRecommendationBaseListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -103,12 +133,22 @@ pub struct ResourceRecommendationBaseListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceRecommendationBase>,
 }
+impl ResourceRecommendationBaseListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShortDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub problem: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub solution: Option<String>,
+}
+impl ShortDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SuppressionContract {
@@ -118,4 +158,9 @@ pub struct SuppressionContract {
     pub suppression_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ttl: Option<String>,
+}
+impl SuppressionContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

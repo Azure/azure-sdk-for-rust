@@ -7,12 +7,22 @@ pub struct ErrorResponse {
     pub code: String,
     pub message: String,
 }
+impl ErrorResponse {
+    pub fn new(code: String, message: String) -> Self {
+        Self { code, message }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -27,11 +37,21 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -47,12 +67,29 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+            sku: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+}
+impl Sku {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Workspace {
@@ -61,6 +98,14 @@ pub struct Workspace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
 }
+impl Workspace {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceKeysResponse {
     #[serde(rename = "primaryToken", default, skip_serializing_if = "Option::is_none")]
@@ -68,12 +113,22 @@ pub struct WorkspaceKeysResponse {
     #[serde(rename = "secondaryToken", default, skip_serializing_if = "Option::is_none")]
     pub secondary_token: Option<String>,
 }
+impl WorkspaceKeysResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WorkspaceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceProperties {
@@ -93,6 +148,20 @@ pub struct WorkspaceProperties {
     pub studio_endpoint: Option<String>,
     #[serde(rename = "keyVaultIdentifierId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_identifier_id: Option<String>,
+}
+impl WorkspaceProperties {
+    pub fn new(user_storage_account_id: String, owner_email: String) -> Self {
+        Self {
+            user_storage_account_id,
+            owner_email,
+            workspace_type: None,
+            workspace_state: None,
+            workspace_id: None,
+            creation_time: None,
+            studio_endpoint: None,
+            key_vault_identifier_id: None,
+        }
+    }
 }
 pub mod workspace_properties {
     use super::*;
@@ -124,6 +193,11 @@ pub struct WorkspacePropertiesUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
+impl WorkspacePropertiesUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod workspace_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -143,4 +217,9 @@ pub struct WorkspaceUpdateParameters {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspacePropertiesUpdateParameters>,
+}
+impl WorkspaceUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

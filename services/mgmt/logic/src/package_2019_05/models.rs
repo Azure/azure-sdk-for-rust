@@ -13,12 +13,35 @@ pub struct As2AcknowledgementConnectionSettings {
     #[serde(rename = "unfoldHttpHeaders")]
     pub unfold_http_headers: bool,
 }
+impl As2AcknowledgementConnectionSettings {
+    pub fn new(
+        ignore_certificate_name_mismatch: bool,
+        support_http_status_code_continue: bool,
+        keep_http_connection_alive: bool,
+        unfold_http_headers: bool,
+    ) -> Self {
+        Self {
+            ignore_certificate_name_mismatch,
+            support_http_status_code_continue,
+            keep_http_connection_alive,
+            unfold_http_headers,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2AgreementContent {
     #[serde(rename = "receiveAgreement")]
     pub receive_agreement: As2OneWayAgreement,
     #[serde(rename = "sendAgreement")]
     pub send_agreement: As2OneWayAgreement,
+}
+impl As2AgreementContent {
+    pub fn new(receive_agreement: As2OneWayAgreement, send_agreement: As2OneWayAgreement) -> Self {
+        Self {
+            receive_agreement,
+            send_agreement,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2EnvelopeSettings {
@@ -33,12 +56,37 @@ pub struct As2EnvelopeSettings {
     #[serde(rename = "autogenerateFileName")]
     pub autogenerate_file_name: bool,
 }
+impl As2EnvelopeSettings {
+    pub fn new(
+        message_content_type: String,
+        transmit_file_name_in_mime_header: bool,
+        file_name_template: String,
+        suspend_message_on_file_name_generation_error: bool,
+        autogenerate_file_name: bool,
+    ) -> Self {
+        Self {
+            message_content_type,
+            transmit_file_name_in_mime_header,
+            file_name_template,
+            suspend_message_on_file_name_generation_error,
+            autogenerate_file_name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2ErrorSettings {
     #[serde(rename = "suspendDuplicateMessage")]
     pub suspend_duplicate_message: bool,
     #[serde(rename = "resendIfMDNNotReceived")]
     pub resend_if_mdn_not_received: bool,
+}
+impl As2ErrorSettings {
+    pub fn new(suspend_duplicate_message: bool, resend_if_mdn_not_received: bool) -> Self {
+        Self {
+            suspend_duplicate_message,
+            resend_if_mdn_not_received,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2MdnSettings {
@@ -61,6 +109,28 @@ pub struct As2MdnSettings {
     #[serde(rename = "micHashingAlgorithm")]
     pub mic_hashing_algorithm: HashingAlgorithm,
 }
+impl As2MdnSettings {
+    pub fn new(
+        need_mdn: bool,
+        sign_mdn: bool,
+        send_mdn_asynchronously: bool,
+        sign_outbound_mdn_if_optional: bool,
+        send_inbound_mdn_to_message_box: bool,
+        mic_hashing_algorithm: HashingAlgorithm,
+    ) -> Self {
+        Self {
+            need_mdn,
+            sign_mdn,
+            send_mdn_asynchronously,
+            receipt_delivery_url: None,
+            disposition_notification_to: None,
+            sign_outbound_mdn_if_optional,
+            mdn_text: None,
+            send_inbound_mdn_to_message_box,
+            mic_hashing_algorithm,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2MessageConnectionSettings {
     #[serde(rename = "ignoreCertificateNameMismatch")]
@@ -72,6 +142,21 @@ pub struct As2MessageConnectionSettings {
     #[serde(rename = "unfoldHttpHeaders")]
     pub unfold_http_headers: bool,
 }
+impl As2MessageConnectionSettings {
+    pub fn new(
+        ignore_certificate_name_mismatch: bool,
+        support_http_status_code_continue: bool,
+        keep_http_connection_alive: bool,
+        unfold_http_headers: bool,
+    ) -> Self {
+        Self {
+            ignore_certificate_name_mismatch,
+            support_http_status_code_continue,
+            keep_http_connection_alive,
+            unfold_http_headers,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2OneWayAgreement {
     #[serde(rename = "senderBusinessIdentity")]
@@ -80,6 +165,19 @@ pub struct As2OneWayAgreement {
     pub receiver_business_identity: BusinessIdentity,
     #[serde(rename = "protocolSettings")]
     pub protocol_settings: As2ProtocolSettings,
+}
+impl As2OneWayAgreement {
+    pub fn new(
+        sender_business_identity: BusinessIdentity,
+        receiver_business_identity: BusinessIdentity,
+        protocol_settings: As2ProtocolSettings,
+    ) -> Self {
+        Self {
+            sender_business_identity,
+            receiver_business_identity,
+            protocol_settings,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2ProtocolSettings {
@@ -97,6 +195,27 @@ pub struct As2ProtocolSettings {
     pub envelope_settings: As2EnvelopeSettings,
     #[serde(rename = "errorSettings")]
     pub error_settings: As2ErrorSettings,
+}
+impl As2ProtocolSettings {
+    pub fn new(
+        message_connection_settings: As2MessageConnectionSettings,
+        acknowledgement_connection_settings: As2AcknowledgementConnectionSettings,
+        mdn_settings: As2MdnSettings,
+        security_settings: As2SecuritySettings,
+        validation_settings: As2ValidationSettings,
+        envelope_settings: As2EnvelopeSettings,
+        error_settings: As2ErrorSettings,
+    ) -> Self {
+        Self {
+            message_connection_settings,
+            acknowledgement_connection_settings,
+            mdn_settings,
+            security_settings,
+            validation_settings,
+            envelope_settings,
+            error_settings,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2SecuritySettings {
@@ -121,6 +240,30 @@ pub struct As2SecuritySettings {
     #[serde(rename = "sha2AlgorithmFormat", default, skip_serializing_if = "Option::is_none")]
     pub sha2_algorithm_format: Option<String>,
 }
+impl As2SecuritySettings {
+    pub fn new(
+        override_group_signing_certificate: bool,
+        enable_nrr_for_inbound_encoded_messages: bool,
+        enable_nrr_for_inbound_decoded_messages: bool,
+        enable_nrr_for_outbound_mdn: bool,
+        enable_nrr_for_outbound_encoded_messages: bool,
+        enable_nrr_for_outbound_decoded_messages: bool,
+        enable_nrr_for_inbound_mdn: bool,
+    ) -> Self {
+        Self {
+            override_group_signing_certificate,
+            signing_certificate_name: None,
+            encryption_certificate_name: None,
+            enable_nrr_for_inbound_encoded_messages,
+            enable_nrr_for_inbound_decoded_messages,
+            enable_nrr_for_outbound_mdn,
+            enable_nrr_for_outbound_encoded_messages,
+            enable_nrr_for_outbound_decoded_messages,
+            enable_nrr_for_inbound_mdn,
+            sha2_algorithm_format: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct As2ValidationSettings {
     #[serde(rename = "overrideMessageProperties")]
@@ -144,6 +287,32 @@ pub struct As2ValidationSettings {
     #[serde(rename = "signingAlgorithm", default, skip_serializing_if = "Option::is_none")]
     pub signing_algorithm: Option<SigningAlgorithm>,
 }
+impl As2ValidationSettings {
+    pub fn new(
+        override_message_properties: bool,
+        encrypt_message: bool,
+        sign_message: bool,
+        compress_message: bool,
+        check_duplicate_message: bool,
+        interchange_duplicates_validity_days: i32,
+        check_certificate_revocation_list_on_send: bool,
+        check_certificate_revocation_list_on_receive: bool,
+        encryption_algorithm: EncryptionAlgorithm,
+    ) -> Self {
+        Self {
+            override_message_properties,
+            encrypt_message,
+            sign_message,
+            compress_message,
+            check_duplicate_message,
+            interchange_duplicates_validity_days,
+            check_certificate_revocation_list_on_send,
+            check_certificate_revocation_list_on_receive,
+            encryption_algorithm,
+            signing_algorithm: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgreementContent {
     #[serde(rename = "aS2", default, skip_serializing_if = "Option::is_none")]
@@ -152,6 +321,11 @@ pub struct AgreementContent {
     pub x12: Option<X12AgreementContent>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edifact: Option<EdifactAgreementContent>,
+}
+impl AgreementContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AgreementType {
@@ -174,12 +348,22 @@ pub struct ApiDeploymentParameterMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<ApiDeploymentParameterVisibility>,
 }
+impl ApiDeploymentParameterMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiDeploymentParameterMetadataSet {
     #[serde(rename = "packageContentLink", default, skip_serializing_if = "Option::is_none")]
     pub package_content_link: Option<ApiDeploymentParameterMetadata>,
     #[serde(rename = "redisCacheConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub redis_cache_connection_string: Option<ApiDeploymentParameterMetadata>,
+}
+impl ApiDeploymentParameterMetadataSet {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApiDeploymentParameterVisibility {
@@ -194,6 +378,11 @@ pub struct ApiOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiOperationPropertiesDefinition>,
 }
+impl ApiOperation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiOperationAnnotation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -203,12 +392,22 @@ pub struct ApiOperationAnnotation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub revision: Option<i64>,
 }
+impl ApiOperationAnnotation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiOperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApiOperation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ApiOperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiOperationPropertiesDefinition {
@@ -237,6 +436,11 @@ pub struct ApiOperationPropertiesDefinition {
     #[serde(rename = "isNotification", default, skip_serializing_if = "Option::is_none")]
     pub is_notification: Option<bool>,
 }
+impl ApiOperationPropertiesDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiReference {
     #[serde(flatten)]
@@ -256,10 +460,20 @@ pub struct ApiReference {
     #[serde(rename = "integrationServiceEnvironment", default, skip_serializing_if = "Option::is_none")]
     pub integration_service_environment: Option<ResourceReference>,
 }
+impl ApiReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceBackendService {
     #[serde(rename = "serviceUrl", default, skip_serializing_if = "Option::is_none")]
     pub service_url: Option<String>,
+}
+impl ApiResourceBackendService {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceDefinitions {
@@ -267,6 +481,11 @@ pub struct ApiResourceDefinitions {
     pub original_swagger_url: Option<String>,
     #[serde(rename = "modifiedSwaggerUrl", default, skip_serializing_if = "Option::is_none")]
     pub modified_swagger_url: Option<String>,
+}
+impl ApiResourceDefinitions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceGeneralInformation {
@@ -282,6 +501,11 @@ pub struct ApiResourceGeneralInformation {
     pub release_tag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<ApiTier>,
+}
+impl ApiResourceGeneralInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceMetadata {
@@ -306,12 +530,22 @@ pub struct ApiResourceMetadata {
     #[serde(rename = "deploymentParameters", default, skip_serializing_if = "Option::is_none")]
     pub deployment_parameters: Option<ApiDeploymentParameterMetadataSet>,
 }
+impl ApiResourceMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourcePolicies {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(rename = "contentLink", default, skip_serializing_if = "Option::is_none")]
     pub content_link: Option<String>,
+}
+impl ApiResourcePolicies {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiResourceProperties {
@@ -342,6 +576,11 @@ pub struct ApiResourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<ApiTier>,
 }
+impl ApiResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ApiTier {
     NotSpecified,
@@ -366,6 +605,11 @@ pub struct ArtifactContentPropertiesDefinition {
     #[serde(rename = "contentLink", default, skip_serializing_if = "Option::is_none")]
     pub content_link: Option<ContentLink>,
 }
+impl ArtifactContentPropertiesDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactProperties {
     #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
@@ -375,16 +619,34 @@ pub struct ArtifactProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
+impl ArtifactProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssemblyCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssemblyDefinition>,
+}
+impl AssemblyCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssemblyDefinition {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: AssemblyProperties,
+}
+impl AssemblyDefinition {
+    pub fn new(properties: AssemblyProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssemblyProperties {
@@ -398,6 +660,17 @@ pub struct AssemblyProperties {
     pub assembly_culture: Option<String>,
     #[serde(rename = "assemblyPublicKeyToken", default, skip_serializing_if = "Option::is_none")]
     pub assembly_public_key_token: Option<String>,
+}
+impl AssemblyProperties {
+    pub fn new(assembly_name: String) -> Self {
+        Self {
+            artifact_content_properties_definition: ArtifactContentPropertiesDefinition::default(),
+            assembly_name,
+            assembly_version: None,
+            assembly_culture: None,
+            assembly_public_key_token: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AzureAsyncOperationState {
@@ -414,10 +687,24 @@ pub struct AzureResourceErrorInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<AzureResourceErrorInfo>,
 }
+impl AzureResourceErrorInfo {
+    pub fn new(error_info: ErrorInfo, message: String) -> Self {
+        Self {
+            error_info,
+            message,
+            details: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct B2bPartnerContent {
     #[serde(rename = "businessIdentities", default, skip_serializing_if = "Vec::is_empty")]
     pub business_identities: Vec<BusinessIdentity>,
+}
+impl B2bPartnerContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchConfiguration {
@@ -425,10 +712,23 @@ pub struct BatchConfiguration {
     pub resource: Resource,
     pub properties: BatchConfigurationProperties,
 }
+impl BatchConfiguration {
+    pub fn new(properties: BatchConfigurationProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchConfigurationCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BatchConfiguration>,
+}
+impl BatchConfigurationCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchConfigurationProperties {
@@ -443,6 +743,17 @@ pub struct BatchConfigurationProperties {
     #[serde(rename = "changedTime", default, skip_serializing_if = "Option::is_none")]
     pub changed_time: Option<String>,
 }
+impl BatchConfigurationProperties {
+    pub fn new(batch_group_name: String, release_criteria: BatchReleaseCriteria) -> Self {
+        Self {
+            artifact_properties: ArtifactProperties::default(),
+            batch_group_name,
+            release_criteria,
+            created_time: None,
+            changed_time: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchReleaseCriteria {
     #[serde(rename = "messageCount", default, skip_serializing_if = "Option::is_none")]
@@ -452,15 +763,30 @@ pub struct BatchReleaseCriteria {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recurrence: Option<WorkflowTriggerRecurrence>,
 }
+impl BatchReleaseCriteria {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BusinessIdentity {
     pub qualifier: String,
     pub value: String,
 }
+impl BusinessIdentity {
+    pub fn new(qualifier: String, value: String) -> Self {
+        Self { qualifier, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CallbackUrl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl CallbackUrl {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentHash {
@@ -468,6 +794,11 @@ pub struct ContentHash {
     pub algorithm: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl ContentHash {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentLink {
@@ -482,10 +813,20 @@ pub struct ContentLink {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<Object>,
 }
+impl ContentLink {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Correlation {
     #[serde(rename = "clientTrackingId", default, skip_serializing_if = "Option::is_none")]
     pub client_tracking_id: Option<String>,
+}
+impl Correlation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DayOfWeek {
@@ -522,12 +863,47 @@ pub struct EdifactAcknowledgementSettings {
     #[serde(rename = "rolloverAcknowledgementControlNumber")]
     pub rollover_acknowledgement_control_number: bool,
 }
+impl EdifactAcknowledgementSettings {
+    pub fn new(
+        need_technical_acknowledgement: bool,
+        batch_technical_acknowledgements: bool,
+        need_functional_acknowledgement: bool,
+        batch_functional_acknowledgements: bool,
+        need_loop_for_valid_messages: bool,
+        send_synchronous_acknowledgement: bool,
+        acknowledgement_control_number_lower_bound: i32,
+        acknowledgement_control_number_upper_bound: i32,
+        rollover_acknowledgement_control_number: bool,
+    ) -> Self {
+        Self {
+            need_technical_acknowledgement,
+            batch_technical_acknowledgements,
+            need_functional_acknowledgement,
+            batch_functional_acknowledgements,
+            need_loop_for_valid_messages,
+            send_synchronous_acknowledgement,
+            acknowledgement_control_number_prefix: None,
+            acknowledgement_control_number_suffix: None,
+            acknowledgement_control_number_lower_bound,
+            acknowledgement_control_number_upper_bound,
+            rollover_acknowledgement_control_number,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactAgreementContent {
     #[serde(rename = "receiveAgreement")]
     pub receive_agreement: EdifactOneWayAgreement,
     #[serde(rename = "sendAgreement")]
     pub send_agreement: EdifactOneWayAgreement,
+}
+impl EdifactAgreementContent {
+    pub fn new(receive_agreement: EdifactOneWayAgreement, send_agreement: EdifactOneWayAgreement) -> Self {
+        Self {
+            receive_agreement,
+            send_agreement,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EdifactCharacterSet {
@@ -594,6 +970,32 @@ pub struct EdifactDelimiterOverride {
     #[serde(rename = "targetNamespace", default, skip_serializing_if = "Option::is_none")]
     pub target_namespace: Option<String>,
 }
+impl EdifactDelimiterOverride {
+    pub fn new(
+        data_element_separator: i32,
+        component_separator: i32,
+        segment_terminator: i32,
+        repetition_separator: i32,
+        segment_terminator_suffix: SegmentTerminatorSuffix,
+        decimal_point_indicator: EdifactDecimalIndicator,
+        release_indicator: i32,
+    ) -> Self {
+        Self {
+            message_id: None,
+            message_version: None,
+            message_release: None,
+            data_element_separator,
+            component_separator,
+            segment_terminator,
+            repetition_separator,
+            segment_terminator_suffix,
+            decimal_point_indicator,
+            release_indicator,
+            message_association_assigned_code: None,
+            target_namespace: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdifactEnvelopeOverride {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
@@ -626,6 +1028,11 @@ pub struct EdifactEnvelopeOverride {
     pub association_assigned_code: Option<String>,
     #[serde(rename = "applicationPassword", default, skip_serializing_if = "Option::is_none")]
     pub application_password: Option<String>,
+}
+impl EdifactEnvelopeOverride {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactEnvelopeSettings {
@@ -712,6 +1119,68 @@ pub struct EdifactEnvelopeSettings {
     #[serde(rename = "receiverInternalSubIdentification", default, skip_serializing_if = "Option::is_none")]
     pub receiver_internal_sub_identification: Option<String>,
 }
+impl EdifactEnvelopeSettings {
+    pub fn new(
+        apply_delimiter_string_advice: bool,
+        create_grouping_segments: bool,
+        enable_default_group_headers: bool,
+        interchange_control_number_lower_bound: i64,
+        interchange_control_number_upper_bound: i64,
+        rollover_interchange_control_number: bool,
+        group_control_number_lower_bound: i64,
+        group_control_number_upper_bound: i64,
+        rollover_group_control_number: bool,
+        overwrite_existing_transaction_set_control_number: bool,
+        transaction_set_control_number_lower_bound: i64,
+        transaction_set_control_number_upper_bound: i64,
+        rollover_transaction_set_control_number: bool,
+        is_test_interchange: bool,
+    ) -> Self {
+        Self {
+            group_association_assigned_code: None,
+            communication_agreement_id: None,
+            apply_delimiter_string_advice,
+            create_grouping_segments,
+            enable_default_group_headers,
+            recipient_reference_password_value: None,
+            recipient_reference_password_qualifier: None,
+            application_reference_id: None,
+            processing_priority_code: None,
+            interchange_control_number_lower_bound,
+            interchange_control_number_upper_bound,
+            rollover_interchange_control_number,
+            interchange_control_number_prefix: None,
+            interchange_control_number_suffix: None,
+            sender_reverse_routing_address: None,
+            receiver_reverse_routing_address: None,
+            functional_group_id: None,
+            group_controlling_agency_code: None,
+            group_message_version: None,
+            group_message_release: None,
+            group_control_number_lower_bound,
+            group_control_number_upper_bound,
+            rollover_group_control_number,
+            group_control_number_prefix: None,
+            group_control_number_suffix: None,
+            group_application_receiver_qualifier: None,
+            group_application_receiver_id: None,
+            group_application_sender_qualifier: None,
+            group_application_sender_id: None,
+            group_application_password: None,
+            overwrite_existing_transaction_set_control_number,
+            transaction_set_control_number_prefix: None,
+            transaction_set_control_number_suffix: None,
+            transaction_set_control_number_lower_bound,
+            transaction_set_control_number_upper_bound,
+            rollover_transaction_set_control_number,
+            is_test_interchange,
+            sender_internal_identification: None,
+            sender_internal_sub_identification: None,
+            receiver_internal_identification: None,
+            receiver_internal_sub_identification: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactFramingSettings {
     #[serde(rename = "serviceCodeListDirectoryVersion", default, skip_serializing_if = "Option::is_none")]
@@ -737,15 +1206,52 @@ pub struct EdifactFramingSettings {
     #[serde(rename = "segmentTerminatorSuffix")]
     pub segment_terminator_suffix: SegmentTerminatorSuffix,
 }
+impl EdifactFramingSettings {
+    pub fn new(
+        protocol_version: i32,
+        data_element_separator: i32,
+        component_separator: i32,
+        segment_terminator: i32,
+        release_indicator: i32,
+        repetition_separator: i32,
+        character_set: EdifactCharacterSet,
+        decimal_point_indicator: EdifactDecimalIndicator,
+        segment_terminator_suffix: SegmentTerminatorSuffix,
+    ) -> Self {
+        Self {
+            service_code_list_directory_version: None,
+            character_encoding: None,
+            protocol_version,
+            data_element_separator,
+            component_separator,
+            segment_terminator,
+            release_indicator,
+            repetition_separator,
+            character_set,
+            decimal_point_indicator,
+            segment_terminator_suffix,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactMessageFilter {
     #[serde(rename = "messageFilterType")]
     pub message_filter_type: MessageFilterType,
 }
+impl EdifactMessageFilter {
+    pub fn new(message_filter_type: MessageFilterType) -> Self {
+        Self { message_filter_type }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactMessageIdentifier {
     #[serde(rename = "messageId")]
     pub message_id: String,
+}
+impl EdifactMessageIdentifier {
+    pub fn new(message_id: String) -> Self {
+        Self { message_id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactOneWayAgreement {
@@ -755,6 +1261,19 @@ pub struct EdifactOneWayAgreement {
     pub receiver_business_identity: BusinessIdentity,
     #[serde(rename = "protocolSettings")]
     pub protocol_settings: EdifactProtocolSettings,
+}
+impl EdifactOneWayAgreement {
+    pub fn new(
+        sender_business_identity: BusinessIdentity,
+        receiver_business_identity: BusinessIdentity,
+        protocol_settings: EdifactProtocolSettings,
+    ) -> Self {
+        Self {
+            sender_business_identity,
+            receiver_business_identity,
+            protocol_settings,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactProcessingSettings {
@@ -768,6 +1287,23 @@ pub struct EdifactProcessingSettings {
     pub create_empty_xml_tags_for_trailing_separators: bool,
     #[serde(rename = "useDotAsDecimalSeparator")]
     pub use_dot_as_decimal_separator: bool,
+}
+impl EdifactProcessingSettings {
+    pub fn new(
+        mask_security_info: bool,
+        preserve_interchange: bool,
+        suspend_interchange_on_error: bool,
+        create_empty_xml_tags_for_trailing_separators: bool,
+        use_dot_as_decimal_separator: bool,
+    ) -> Self {
+        Self {
+            mask_security_info,
+            preserve_interchange,
+            suspend_interchange_on_error,
+            create_empty_xml_tags_for_trailing_separators,
+            use_dot_as_decimal_separator,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactProtocolSettings {
@@ -794,6 +1330,31 @@ pub struct EdifactProtocolSettings {
     #[serde(rename = "edifactDelimiterOverrides", default, skip_serializing_if = "Vec::is_empty")]
     pub edifact_delimiter_overrides: Vec<EdifactDelimiterOverride>,
 }
+impl EdifactProtocolSettings {
+    pub fn new(
+        validation_settings: EdifactValidationSettings,
+        framing_settings: EdifactFramingSettings,
+        envelope_settings: EdifactEnvelopeSettings,
+        acknowledgement_settings: EdifactAcknowledgementSettings,
+        message_filter: EdifactMessageFilter,
+        processing_settings: EdifactProcessingSettings,
+        schema_references: Vec<EdifactSchemaReference>,
+    ) -> Self {
+        Self {
+            validation_settings,
+            framing_settings,
+            envelope_settings,
+            acknowledgement_settings,
+            message_filter,
+            processing_settings,
+            envelope_overrides: Vec::new(),
+            message_filter_list: Vec::new(),
+            schema_references,
+            validation_overrides: Vec::new(),
+            edifact_delimiter_overrides: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactSchemaReference {
     #[serde(rename = "messageId")]
@@ -811,6 +1372,19 @@ pub struct EdifactSchemaReference {
     #[serde(rename = "schemaName")]
     pub schema_name: String,
 }
+impl EdifactSchemaReference {
+    pub fn new(message_id: String, message_version: String, message_release: String, schema_name: String) -> Self {
+        Self {
+            message_id,
+            message_version,
+            message_release,
+            sender_application_id: None,
+            sender_application_qualifier: None,
+            association_assigned_code: None,
+            schema_name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactValidationOverride {
     #[serde(rename = "messageId")]
@@ -827,6 +1401,27 @@ pub struct EdifactValidationOverride {
     pub trailing_separator_policy: TrailingSeparatorPolicy,
     #[serde(rename = "trimLeadingAndTrailingSpacesAndZeroes")]
     pub trim_leading_and_trailing_spaces_and_zeroes: bool,
+}
+impl EdifactValidationOverride {
+    pub fn new(
+        message_id: String,
+        enforce_character_set: bool,
+        validate_edi_types: bool,
+        validate_xsd_types: bool,
+        allow_leading_and_trailing_spaces_and_zeroes: bool,
+        trailing_separator_policy: TrailingSeparatorPolicy,
+        trim_leading_and_trailing_spaces_and_zeroes: bool,
+    ) -> Self {
+        Self {
+            message_id,
+            enforce_character_set,
+            validate_edi_types,
+            validate_xsd_types,
+            allow_leading_and_trailing_spaces_and_zeroes,
+            trailing_separator_policy,
+            trim_leading_and_trailing_spaces_and_zeroes,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactValidationSettings {
@@ -851,6 +1446,33 @@ pub struct EdifactValidationSettings {
     #[serde(rename = "trailingSeparatorPolicy")]
     pub trailing_separator_policy: TrailingSeparatorPolicy,
 }
+impl EdifactValidationSettings {
+    pub fn new(
+        validate_character_set: bool,
+        check_duplicate_interchange_control_number: bool,
+        interchange_control_number_validity_days: i32,
+        check_duplicate_group_control_number: bool,
+        check_duplicate_transaction_set_control_number: bool,
+        validate_edi_types: bool,
+        validate_xsd_types: bool,
+        allow_leading_and_trailing_spaces_and_zeroes: bool,
+        trim_leading_and_trailing_spaces_and_zeroes: bool,
+        trailing_separator_policy: TrailingSeparatorPolicy,
+    ) -> Self {
+        Self {
+            validate_character_set,
+            check_duplicate_interchange_control_number,
+            interchange_control_number_validity_days,
+            check_duplicate_group_control_number,
+            check_duplicate_transaction_set_control_number,
+            validate_edi_types,
+            validate_xsd_types,
+            allow_leading_and_trailing_spaces_and_zeroes,
+            trim_leading_and_trailing_spaces_and_zeroes,
+            trailing_separator_policy,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EncryptionAlgorithm {
     NotSpecified,
@@ -870,6 +1492,11 @@ pub enum EncryptionAlgorithm {
 pub struct ErrorInfo {
     pub code: String,
 }
+impl ErrorInfo {
+    pub fn new(code: String) -> Self {
+        Self { code }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -877,10 +1504,20 @@ pub struct ErrorProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorProperties>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorResponseCode {
@@ -909,6 +1546,11 @@ pub struct Expression {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<AzureResourceErrorInfo>,
 }
+impl Expression {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressionRoot {
     #[serde(flatten)]
@@ -916,10 +1558,20 @@ pub struct ExpressionRoot {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
 }
+impl ExpressionRoot {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressionTraces {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<ExpressionRoot>,
+}
+impl ExpressionTraces {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtendedErrorInfo {
@@ -929,6 +1581,16 @@ pub struct ExtendedErrorInfo {
     pub details: Vec<ExtendedErrorInfo>,
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<Object>,
+}
+impl ExtendedErrorInfo {
+    pub fn new(code: ErrorResponseCode, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+            inner_error: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowAccessControlConfiguration {
@@ -941,12 +1603,22 @@ pub struct FlowAccessControlConfiguration {
     #[serde(rename = "workflowManagement", default, skip_serializing_if = "Option::is_none")]
     pub workflow_management: Option<FlowAccessControlConfigurationPolicy>,
 }
+impl FlowAccessControlConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowAccessControlConfigurationPolicy {
     #[serde(rename = "allowedCallerIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_caller_ip_addresses: Vec<IpAddressRange>,
     #[serde(rename = "openAuthenticationPolicies", default, skip_serializing_if = "Option::is_none")]
     pub open_authentication_policies: Option<OpenAuthenticationAccessPolicies>,
+}
+impl FlowAccessControlConfigurationPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowEndpoints {
@@ -955,6 +1627,11 @@ pub struct FlowEndpoints {
     #[serde(rename = "accessEndpointIpAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub access_endpoint_ip_addresses: Vec<IpAddress>,
 }
+impl FlowEndpoints {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FlowEndpointsConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -962,10 +1639,20 @@ pub struct FlowEndpointsConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub connector: Option<FlowEndpoints>,
 }
+impl FlowEndpointsConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenerateUpgradedDefinitionParameters {
     #[serde(rename = "targetSchemaVersion", default, skip_serializing_if = "Option::is_none")]
     pub target_schema_version: Option<String>,
+}
+impl GenerateUpgradedDefinitionParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetCallbackUrlParameters {
@@ -973,6 +1660,11 @@ pub struct GetCallbackUrlParameters {
     pub not_after: Option<String>,
     #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
     pub key_type: Option<KeyType>,
+}
+impl GetCallbackUrlParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum HashingAlgorithm {
@@ -998,16 +1690,34 @@ pub struct IntegrationAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<IntegrationAccountSku>,
 }
+impl IntegrationAccount {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountAgreement {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: IntegrationAccountAgreementProperties,
 }
+impl IntegrationAccountAgreement {
+    pub fn new(properties: IntegrationAccountAgreementProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountAgreementFilter {
     #[serde(rename = "agreementType")]
     pub agreement_type: AgreementType,
+}
+impl IntegrationAccountAgreementFilter {
+    pub fn new(agreement_type: AgreementType) -> Self {
+        Self { agreement_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountAgreementListResult {
@@ -1015,6 +1725,11 @@ pub struct IntegrationAccountAgreementListResult {
     pub value: Vec<IntegrationAccountAgreement>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl IntegrationAccountAgreementListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountAgreementProperties {
@@ -1036,11 +1751,41 @@ pub struct IntegrationAccountAgreementProperties {
     pub guest_identity: BusinessIdentity,
     pub content: AgreementContent,
 }
+impl IntegrationAccountAgreementProperties {
+    pub fn new(
+        agreement_type: AgreementType,
+        host_partner: String,
+        guest_partner: String,
+        host_identity: BusinessIdentity,
+        guest_identity: BusinessIdentity,
+        content: AgreementContent,
+    ) -> Self {
+        Self {
+            created_time: None,
+            changed_time: None,
+            metadata: None,
+            agreement_type,
+            host_partner,
+            guest_partner,
+            host_identity,
+            guest_identity,
+            content,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountCertificate {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: IntegrationAccountCertificateProperties,
+}
+impl IntegrationAccountCertificate {
+    pub fn new(properties: IntegrationAccountCertificateProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountCertificateListResult {
@@ -1048,6 +1793,11 @@ pub struct IntegrationAccountCertificateListResult {
     pub value: Vec<IntegrationAccountCertificate>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl IntegrationAccountCertificateListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountCertificateProperties {
@@ -1062,6 +1812,11 @@ pub struct IntegrationAccountCertificateProperties {
     #[serde(rename = "publicCertificate", default, skip_serializing_if = "Option::is_none")]
     pub public_certificate: Option<String>,
 }
+impl IntegrationAccountCertificateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1069,16 +1824,34 @@ pub struct IntegrationAccountListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl IntegrationAccountListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountMap {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: IntegrationAccountMapProperties,
 }
+impl IntegrationAccountMap {
+    pub fn new(properties: IntegrationAccountMapProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountMapFilter {
     #[serde(rename = "mapType")]
     pub map_type: MapType,
+}
+impl IntegrationAccountMapFilter {
+    pub fn new(map_type: MapType) -> Self {
+        Self { map_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountMapListResult {
@@ -1086,6 +1859,11 @@ pub struct IntegrationAccountMapListResult {
     pub value: Vec<IntegrationAccountMap>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl IntegrationAccountMapListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountMapProperties {
@@ -1106,12 +1884,31 @@ pub struct IntegrationAccountMapProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
+impl IntegrationAccountMapProperties {
+    pub fn new(map_type: MapType) -> Self {
+        Self {
+            map_type,
+            parameters_schema: None,
+            created_time: None,
+            changed_time: None,
+            content: None,
+            content_type: None,
+            content_link: None,
+            metadata: None,
+        }
+    }
+}
 pub mod integration_account_map_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ParametersSchema {
         #[serde(rename = "ref", default, skip_serializing_if = "Option::is_none")]
         pub ref_: Option<String>,
+    }
+    impl ParametersSchema {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1120,10 +1917,23 @@ pub struct IntegrationAccountPartner {
     pub resource: Resource,
     pub properties: IntegrationAccountPartnerProperties,
 }
+impl IntegrationAccountPartner {
+    pub fn new(properties: IntegrationAccountPartnerProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountPartnerFilter {
     #[serde(rename = "partnerType")]
     pub partner_type: PartnerType,
+}
+impl IntegrationAccountPartnerFilter {
+    pub fn new(partner_type: PartnerType) -> Self {
+        Self { partner_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountPartnerListResult {
@@ -1131,6 +1941,11 @@ pub struct IntegrationAccountPartnerListResult {
     pub value: Vec<IntegrationAccountPartner>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl IntegrationAccountPartnerListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountPartnerProperties {
@@ -1144,6 +1959,17 @@ pub struct IntegrationAccountPartnerProperties {
     pub metadata: Option<serde_json::Value>,
     pub content: PartnerContent,
 }
+impl IntegrationAccountPartnerProperties {
+    pub fn new(partner_type: PartnerType, content: PartnerContent) -> Self {
+        Self {
+            partner_type,
+            created_time: None,
+            changed_time: None,
+            metadata: None,
+            content,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountProperties {
     #[serde(rename = "integrationServiceEnvironment", default, skip_serializing_if = "Option::is_none")]
@@ -1151,16 +1977,34 @@ pub struct IntegrationAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<WorkflowState>,
 }
+impl IntegrationAccountProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSchema {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: IntegrationAccountSchemaProperties,
 }
+impl IntegrationAccountSchema {
+    pub fn new(properties: IntegrationAccountSchemaProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSchemaFilter {
     #[serde(rename = "schemaType")]
     pub schema_type: SchemaType,
+}
+impl IntegrationAccountSchemaFilter {
+    pub fn new(schema_type: SchemaType) -> Self {
+        Self { schema_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountSchemaListResult {
@@ -1168,6 +2012,11 @@ pub struct IntegrationAccountSchemaListResult {
     pub value: Vec<IntegrationAccountSchema>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl IntegrationAccountSchemaListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSchemaProperties {
@@ -1192,16 +2041,45 @@ pub struct IntegrationAccountSchemaProperties {
     #[serde(rename = "contentLink", default, skip_serializing_if = "Option::is_none")]
     pub content_link: Option<ContentLink>,
 }
+impl IntegrationAccountSchemaProperties {
+    pub fn new(schema_type: SchemaType) -> Self {
+        Self {
+            schema_type,
+            target_namespace: None,
+            document_name: None,
+            file_name: None,
+            created_time: None,
+            changed_time: None,
+            metadata: None,
+            content: None,
+            content_type: None,
+            content_link: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSession {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: IntegrationAccountSessionProperties,
 }
+impl IntegrationAccountSession {
+    pub fn new(properties: IntegrationAccountSessionProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSessionFilter {
     #[serde(rename = "changedTime")]
     pub changed_time: String,
+}
+impl IntegrationAccountSessionFilter {
+    pub fn new(changed_time: String) -> Self {
+        Self { changed_time }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountSessionListResult {
@@ -1209,6 +2087,11 @@ pub struct IntegrationAccountSessionListResult {
     pub value: Vec<IntegrationAccountSession>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl IntegrationAccountSessionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationAccountSessionProperties {
@@ -1219,9 +2102,19 @@ pub struct IntegrationAccountSessionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<Object>,
 }
+impl IntegrationAccountSessionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSku {
     pub name: IntegrationAccountSkuName,
+}
+impl IntegrationAccountSku {
+    pub fn new(name: IntegrationAccountSkuName) -> Self {
+        Self { name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationAccountSkuName {
@@ -1235,6 +2128,11 @@ pub struct IntegrationServiceEnvironmenEncryptionConfiguration {
     #[serde(rename = "encryptionKeyReference", default, skip_serializing_if = "Option::is_none")]
     pub encryption_key_reference: Option<IntegrationServiceEnvironmenEncryptionKeyReference>,
 }
+impl IntegrationServiceEnvironmenEncryptionConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmenEncryptionKeyReference {
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
@@ -1243,6 +2141,11 @@ pub struct IntegrationServiceEnvironmenEncryptionKeyReference {
     pub key_name: Option<String>,
     #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
     pub key_version: Option<String>,
+}
+impl IntegrationServiceEnvironmenEncryptionKeyReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironment {
@@ -1255,10 +2158,20 @@ pub struct IntegrationServiceEnvironment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
 }
+impl IntegrationServiceEnvironment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentAccessEndpoint {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IntegrationServiceEnvironmentAccessEndpointType>,
+}
+impl IntegrationServiceEnvironmentAccessEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationServiceEnvironmentAccessEndpointType {
@@ -1273,6 +2186,11 @@ pub struct IntegrationServiceEnvironmentListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl IntegrationServiceEnvironmentListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentManagedApi {
     #[serde(flatten)]
@@ -1280,10 +2198,20 @@ pub struct IntegrationServiceEnvironmentManagedApi {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IntegrationServiceEnvironmentManagedApiProperties>,
 }
+impl IntegrationServiceEnvironmentManagedApi {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentManagedApiDeploymentParameters {
     #[serde(rename = "contentLinkDefinition", default, skip_serializing_if = "Option::is_none")]
     pub content_link_definition: Option<ContentLink>,
+}
+impl IntegrationServiceEnvironmentManagedApiDeploymentParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentManagedApiListResult {
@@ -1292,12 +2220,22 @@ pub struct IntegrationServiceEnvironmentManagedApiListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl IntegrationServiceEnvironmentManagedApiListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentManagedApiProperties {
     #[serde(flatten)]
     pub api_resource_properties: ApiResourceProperties,
     #[serde(rename = "deploymentParameters", default, skip_serializing_if = "Option::is_none")]
     pub deployment_parameters: Option<IntegrationServiceEnvironmentManagedApiDeploymentParameters>,
+}
+impl IntegrationServiceEnvironmentManagedApiProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentNetworkDependency {
@@ -1307,6 +2245,11 @@ pub struct IntegrationServiceEnvironmentNetworkDependency {
     pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<IntegrationServiceEnvironmentNetworkEndpoint>,
+}
+impl IntegrationServiceEnvironmentNetworkDependency {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationServiceEnvironmentNetworkDependencyCategoryType {
@@ -1332,6 +2275,11 @@ pub struct IntegrationServiceEnvironmentNetworkDependencyHealth {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<IntegrationServiceEnvironmentNetworkDependencyHealthState>,
 }
+impl IntegrationServiceEnvironmentNetworkDependencyHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationServiceEnvironmentNetworkDependencyHealthState {
     NotSpecified,
@@ -1355,8 +2303,18 @@ pub struct IntegrationServiceEnvironmentNetworkEndpoint {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ports: Vec<String>,
 }
+impl IntegrationServiceEnvironmentNetworkEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentNetworkHealth {}
+impl IntegrationServiceEnvironmentNetworkHealth {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1372,12 +2330,22 @@ pub struct IntegrationServiceEnvironmentProperties {
     #[serde(rename = "encryptionConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub encryption_configuration: Option<IntegrationServiceEnvironmenEncryptionConfiguration>,
 }
+impl IntegrationServiceEnvironmentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<IntegrationServiceEnvironmentSkuName>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
+}
+impl IntegrationServiceEnvironmentSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentSkuCapacity {
@@ -1390,6 +2358,11 @@ pub struct IntegrationServiceEnvironmentSkuCapacity {
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<IntegrationServiceEnvironmentSkuScaleType>,
 }
+impl IntegrationServiceEnvironmentSkuCapacity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentSkuDefinition {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
@@ -1398,6 +2371,11 @@ pub struct IntegrationServiceEnvironmentSkuDefinition {
     pub sku: Option<integration_service_environment_sku_definition::Sku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<IntegrationServiceEnvironmentSkuCapacity>,
+}
+impl IntegrationServiceEnvironmentSkuDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod integration_service_environment_sku_definition {
     use super::*;
@@ -1408,6 +2386,11 @@ pub mod integration_service_environment_sku_definition {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub tier: Option<String>,
     }
+    impl Sku {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationServiceEnvironmentSkuList {
@@ -1415,6 +2398,11 @@ pub struct IntegrationServiceEnvironmentSkuList {
     pub value: Vec<IntegrationServiceEnvironmentSkuDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl IntegrationServiceEnvironmentSkuList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationServiceEnvironmentSkuName {
@@ -1437,15 +2425,34 @@ pub struct IntegrationServiceEnvironmentSubnetNetworkHealth {
     #[serde(rename = "networkDependencyHealthState")]
     pub network_dependency_health_state: IntegrationServiceEnvironmentNetworkEndPointAccessibilityState,
 }
+impl IntegrationServiceEnvironmentSubnetNetworkHealth {
+    pub fn new(network_dependency_health_state: IntegrationServiceEnvironmentNetworkEndPointAccessibilityState) -> Self {
+        Self {
+            outbound_network_dependencies: Vec::new(),
+            outbound_network_health: None,
+            network_dependency_health_state,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAddress {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
 }
+impl IpAddress {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAddressRange {
     #[serde(rename = "addressRange", default, skip_serializing_if = "Option::is_none")]
     pub address_range: Option<String>,
+}
+impl IpAddressRange {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonSchema {
@@ -1453,6 +2460,11 @@ pub struct JsonSchema {
     pub title: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
+}
+impl JsonSchema {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum KeyType {
@@ -1467,6 +2479,11 @@ pub struct KeyVaultKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<key_vault_key::Attributes>,
 }
+impl KeyVaultKey {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod key_vault_key {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1478,6 +2495,11 @@ pub mod key_vault_key {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub updated: Option<i64>,
     }
+    impl Attributes {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultKeyCollection {
@@ -1485,6 +2507,11 @@ pub struct KeyVaultKeyCollection {
     pub value: Vec<KeyVaultKey>,
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
+}
+impl KeyVaultKeyCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultKeyReference {
@@ -1494,6 +2521,15 @@ pub struct KeyVaultKeyReference {
     pub key_name: String,
     #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
     pub key_version: Option<String>,
+}
+impl KeyVaultKeyReference {
+    pub fn new(key_vault: key_vault_key_reference::KeyVault, key_name: String) -> Self {
+        Self {
+            key_vault,
+            key_name,
+            key_version: None,
+        }
+    }
 }
 pub mod key_vault_key_reference {
     use super::*;
@@ -1506,6 +2542,11 @@ pub mod key_vault_key_reference {
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
     }
+    impl KeyVault {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultReference {
@@ -1514,12 +2555,25 @@ pub struct KeyVaultReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl KeyVaultReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListKeyVaultKeysDefinition {
     #[serde(rename = "keyVault")]
     pub key_vault: KeyVaultReference,
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
+}
+impl ListKeyVaultKeysDefinition {
+    pub fn new(key_vault: KeyVaultReference) -> Self {
+        Self {
+            key_vault,
+            skip_token: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedApi {
@@ -1528,12 +2582,22 @@ pub struct ManagedApi {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiResourceProperties>,
 }
+impl ManagedApi {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedApiListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedApi>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ManagedApiListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedServiceIdentity {
@@ -1545,6 +2609,16 @@ pub struct ManagedServiceIdentity {
     pub principal_id: Option<String>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ManagedServiceIdentity {
+    pub fn new(type_: managed_service_identity::Type) -> Self {
+        Self {
+            type_,
+            tenant_id: None,
+            principal_id: None,
+            user_assigned_identities: None,
+        }
+    }
 }
 pub mod managed_service_identity {
     use super::*;
@@ -1578,12 +2652,27 @@ pub struct NetworkConfiguration {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subnets: Vec<ResourceReference>,
 }
+impl NetworkConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Object {}
+impl Object {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenAuthenticationAccessPolicies {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policies: Option<serde_json::Value>,
+}
+impl OpenAuthenticationAccessPolicies {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenAuthenticationAccessPolicy {
@@ -1592,12 +2681,22 @@ pub struct OpenAuthenticationAccessPolicy {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub claims: Vec<OpenAuthenticationPolicyClaim>,
 }
+impl OpenAuthenticationAccessPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenAuthenticationPolicyClaim {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl OpenAuthenticationPolicyClaim {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OpenAuthenticationProviderType {
@@ -1615,6 +2714,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Object>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1628,6 +2732,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -1635,6 +2744,11 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResult {
@@ -1657,6 +2771,11 @@ pub struct OperationResult {
     #[serde(rename = "iterationCount", default, skip_serializing_if = "Option::is_none")]
     pub iteration_count: Option<i32>,
 }
+impl OperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultProperties {
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -1671,6 +2790,11 @@ pub struct OperationResultProperties {
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
+}
+impl OperationResultProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ParameterType {
@@ -1688,6 +2812,11 @@ pub enum ParameterType {
 pub struct PartnerContent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub b2b: Option<B2bPartnerContent>,
+}
+impl PartnerContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PartnerType {
@@ -1719,6 +2848,11 @@ pub struct RecurrenceSchedule {
     #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
     pub monthly_occurrences: Vec<RecurrenceScheduleOccurrence>,
 }
+impl RecurrenceSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecurrenceScheduleOccurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1726,10 +2860,20 @@ pub struct RecurrenceScheduleOccurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub occurrence: Option<i32>,
 }
+impl RecurrenceScheduleOccurrence {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateActionParameter {
     #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
     pub key_type: Option<KeyType>,
+}
+impl RegenerateActionParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepetitionIndex {
@@ -1737,6 +2881,14 @@ pub struct RepetitionIndex {
     pub scope_name: Option<String>,
     #[serde(rename = "itemIndex")]
     pub item_index: i32,
+}
+impl RepetitionIndex {
+    pub fn new(item_index: i32) -> Self {
+        Self {
+            scope_name: None,
+            item_index,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Request {
@@ -1747,6 +2899,11 @@ pub struct Request {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
 }
+impl Request {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestHistory {
     #[serde(flatten)]
@@ -1754,12 +2911,22 @@ pub struct RequestHistory {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RequestHistoryProperties>,
 }
+impl RequestHistory {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestHistoryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RequestHistory>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RequestHistoryListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestHistoryProperties {
@@ -1771,6 +2938,11 @@ pub struct RequestHistoryProperties {
     pub request: Option<Request>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response: Option<Response>,
+}
+impl RequestHistoryProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -1785,6 +2957,11 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1794,6 +2971,11 @@ pub struct ResourceReference {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl ResourceReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Response {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1802,6 +2984,11 @@ pub struct Response {
     pub status_code: Option<i32>,
     #[serde(rename = "bodyLink", default, skip_serializing_if = "Option::is_none")]
     pub body_link: Option<ContentLink>,
+}
+impl Response {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RetryHistory {
@@ -1818,6 +3005,11 @@ pub struct RetryHistory {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl RetryHistory {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunActionCorrelation {
     #[serde(flatten)]
@@ -1825,12 +3017,22 @@ pub struct RunActionCorrelation {
     #[serde(rename = "actionTrackingId", default, skip_serializing_if = "Option::is_none")]
     pub action_tracking_id: Option<String>,
 }
+impl RunActionCorrelation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunCorrelation {
     #[serde(rename = "clientTrackingId", default, skip_serializing_if = "Option::is_none")]
     pub client_tracking_id: Option<String>,
     #[serde(rename = "clientKeywords", default, skip_serializing_if = "Vec::is_empty")]
     pub client_keywords: Vec<String>,
+}
+impl RunCorrelation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SchemaType {
@@ -1852,6 +3054,11 @@ pub enum SegmentTerminatorSuffix {
 pub struct SetTriggerStateActionDefinition {
     pub source: WorkflowTriggerReference,
 }
+impl SetTriggerStateActionDefinition {
+    pub fn new(source: WorkflowTriggerReference) -> Self {
+        Self { source }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SigningAlgorithm {
     NotSpecified,
@@ -1870,6 +3077,11 @@ pub struct Sku {
     pub name: SkuName,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<ResourceReference>,
+}
+impl Sku {
+    pub fn new(name: SkuName) -> Self {
+        Self { name, plan: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SkuName {
@@ -1891,6 +3103,11 @@ pub struct SubResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
+impl SubResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerCustomDynamicList {
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
@@ -1906,6 +3123,11 @@ pub struct SwaggerCustomDynamicList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
+impl SwaggerCustomDynamicList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerCustomDynamicProperties {
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
@@ -1914,6 +3136,11 @@ pub struct SwaggerCustomDynamicProperties {
     pub value_path: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+}
+impl SwaggerCustomDynamicProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerCustomDynamicSchema {
@@ -1924,6 +3151,11 @@ pub struct SwaggerCustomDynamicSchema {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
+impl SwaggerCustomDynamicSchema {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerCustomDynamicTree {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1932,6 +3164,11 @@ pub struct SwaggerCustomDynamicTree {
     pub open: Option<SwaggerCustomDynamicTreeCommand>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub browse: Option<SwaggerCustomDynamicTreeCommand>,
+}
+impl SwaggerCustomDynamicTree {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerCustomDynamicTreeCommand {
@@ -1952,6 +3189,11 @@ pub struct SwaggerCustomDynamicTreeCommand {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
+impl SwaggerCustomDynamicTreeCommand {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerCustomDynamicTreeParameter {
     #[serde(rename = "selectedItemValuePath", default, skip_serializing_if = "Option::is_none")]
@@ -1963,12 +3205,22 @@ pub struct SwaggerCustomDynamicTreeParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
 }
+impl SwaggerCustomDynamicTreeParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerCustomDynamicTreeSettings {
     #[serde(rename = "CanSelectParentNodes", default, skip_serializing_if = "Option::is_none")]
     pub can_select_parent_nodes: Option<bool>,
     #[serde(rename = "CanSelectLeafNodes", default, skip_serializing_if = "Option::is_none")]
     pub can_select_leaf_nodes: Option<bool>,
+}
+impl SwaggerCustomDynamicTreeSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerExternalDocumentation {
@@ -1978,6 +3230,11 @@ pub struct SwaggerExternalDocumentation {
     pub uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub extensions: Option<serde_json::Value>,
+}
+impl SwaggerExternalDocumentation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SwaggerSchema {
@@ -2022,6 +3279,11 @@ pub struct SwaggerSchema {
     #[serde(rename = "dynamicTree", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_tree: Option<SwaggerCustomDynamicTree>,
 }
+impl SwaggerSchema {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SwaggerSchemaType {
     String,
@@ -2048,6 +3310,11 @@ pub struct SwaggerXml {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub extensions: Option<serde_json::Value>,
 }
+impl SwaggerXml {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TrackEventsOperationOptions {
     None,
@@ -2066,12 +3333,28 @@ pub struct TrackingEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<TrackingEventErrorInfo>,
 }
+impl TrackingEvent {
+    pub fn new(event_level: EventLevel, event_time: String, record_type: TrackingRecordType) -> Self {
+        Self {
+            event_level,
+            event_time,
+            record_type,
+            record: None,
+            error: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackingEventErrorInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+}
+impl TrackingEventErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackingEventsDefinition {
@@ -2080,6 +3363,15 @@ pub struct TrackingEventsDefinition {
     #[serde(rename = "trackEventsOptions", default, skip_serializing_if = "Option::is_none")]
     pub track_events_options: Option<TrackEventsOperationOptions>,
     pub events: Vec<TrackingEvent>,
+}
+impl TrackingEventsDefinition {
+    pub fn new(source_type: String, events: Vec<TrackingEvent>) -> Self {
+        Self {
+            source_type,
+            track_events_options: None,
+            events,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TrackingRecordType {
@@ -2125,10 +3417,20 @@ pub struct Workflow {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
 }
+impl Workflow {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<WorkflowState>,
+}
+impl WorkflowFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowListResult {
@@ -2137,12 +3439,22 @@ pub struct WorkflowListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl WorkflowListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowOutputParameter {
     #[serde(flatten)]
     pub workflow_parameter: WorkflowParameter,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Object>,
+}
+impl WorkflowOutputParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowParameter {
@@ -2154,6 +3466,11 @@ pub struct WorkflowParameter {
     pub metadata: Option<Object>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl WorkflowParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowProperties {
@@ -2183,6 +3500,11 @@ pub struct WorkflowProperties {
     pub definition: Option<Object>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+}
+impl WorkflowProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum WorkflowProvisioningState {
@@ -2216,6 +3538,11 @@ pub struct WorkflowReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl WorkflowReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRun {
     #[serde(flatten)]
@@ -2226,6 +3553,11 @@ pub struct WorkflowRun {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl WorkflowRun {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunAction {
@@ -2238,10 +3570,20 @@ pub struct WorkflowRunAction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl WorkflowRunAction {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<WorkflowStatus>,
+}
+impl WorkflowRunActionFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionListResult {
@@ -2249,6 +3591,11 @@ pub struct WorkflowRunActionListResult {
     pub value: Vec<WorkflowRunAction>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WorkflowRunActionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionProperties {
@@ -2275,11 +3622,24 @@ pub struct WorkflowRunActionProperties {
     #[serde(rename = "retryHistory", default, skip_serializing_if = "Vec::is_empty")]
     pub retry_history: Vec<RetryHistory>,
 }
+impl WorkflowRunActionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowRunActionRepetitionDefinition {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: WorkflowRunActionRepetitionProperties,
+}
+impl WorkflowRunActionRepetitionDefinition {
+    pub fn new(properties: WorkflowRunActionRepetitionProperties) -> Self {
+        Self {
+            resource: Resource::default(),
+            properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionRepetitionDefinitionCollection {
@@ -2288,6 +3648,11 @@ pub struct WorkflowRunActionRepetitionDefinitionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkflowRunActionRepetitionDefinition>,
 }
+impl WorkflowRunActionRepetitionDefinitionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionRepetitionProperties {
     #[serde(flatten)]
@@ -2295,10 +3660,20 @@ pub struct WorkflowRunActionRepetitionProperties {
     #[serde(rename = "repetitionIndexes", default, skip_serializing_if = "Vec::is_empty")]
     pub repetition_indexes: Vec<RepetitionIndex>,
 }
+impl WorkflowRunActionRepetitionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<WorkflowStatus>,
+}
+impl WorkflowRunFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunListResult {
@@ -2306,6 +3681,11 @@ pub struct WorkflowRunListResult {
     pub value: Vec<WorkflowRun>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WorkflowRunListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunProperties {
@@ -2333,6 +3713,11 @@ pub struct WorkflowRunProperties {
     pub outputs: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response: Option<WorkflowRunTrigger>,
+}
+impl WorkflowRunProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunTrigger {
@@ -2364,6 +3749,11 @@ pub struct WorkflowRunTrigger {
     pub error: Option<Object>,
     #[serde(rename = "trackedProperties", default, skip_serializing_if = "Option::is_none")]
     pub tracked_properties: Option<Object>,
+}
+impl WorkflowRunTrigger {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum WorkflowState {
@@ -2401,6 +3791,11 @@ pub struct WorkflowTrigger {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl WorkflowTrigger {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerCallbackUrl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2416,10 +3811,20 @@ pub struct WorkflowTriggerCallbackUrl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub queries: Option<WorkflowTriggerListCallbackUrlQueries>,
 }
+impl WorkflowTriggerCallbackUrl {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<WorkflowState>,
+}
+impl WorkflowTriggerFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerHistory {
@@ -2432,10 +3837,20 @@ pub struct WorkflowTriggerHistory {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl WorkflowTriggerHistory {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerHistoryFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<WorkflowStatus>,
+}
+impl WorkflowTriggerHistoryFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerHistoryListResult {
@@ -2443,6 +3858,11 @@ pub struct WorkflowTriggerHistoryListResult {
     pub value: Vec<WorkflowTriggerHistory>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WorkflowTriggerHistoryListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerHistoryProperties {
@@ -2471,6 +3891,11 @@ pub struct WorkflowTriggerHistoryProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub run: Option<ResourceReference>,
 }
+impl WorkflowTriggerHistoryProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerListCallbackUrlQueries {
     #[serde(rename = "api-version", default, skip_serializing_if = "Option::is_none")]
@@ -2484,12 +3909,22 @@ pub struct WorkflowTriggerListCallbackUrlQueries {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub se: Option<String>,
 }
+impl WorkflowTriggerListCallbackUrlQueries {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkflowTrigger>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WorkflowTriggerListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerProperties {
@@ -2511,6 +3946,11 @@ pub struct WorkflowTriggerProperties {
     pub recurrence: Option<WorkflowTriggerRecurrence>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workflow: Option<ResourceReference>,
+}
+impl WorkflowTriggerProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum WorkflowTriggerProvisioningState {
@@ -2548,6 +3988,11 @@ pub struct WorkflowTriggerRecurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<RecurrenceSchedule>,
 }
+impl WorkflowTriggerRecurrence {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerReference {
     #[serde(flatten)]
@@ -2559,6 +4004,11 @@ pub struct WorkflowTriggerReference {
     #[serde(rename = "triggerName", default, skip_serializing_if = "Option::is_none")]
     pub trigger_name: Option<String>,
 }
+impl WorkflowTriggerReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowVersion {
     #[serde(flatten)]
@@ -2566,12 +4016,22 @@ pub struct WorkflowVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkflowVersionProperties>,
 }
+impl WorkflowVersion {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowVersionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkflowVersion>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WorkflowVersionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowVersionProperties {
@@ -2600,6 +4060,11 @@ pub struct WorkflowVersionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
+impl WorkflowVersionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum WsdlImportMethod {
     NotSpecified,
@@ -2612,6 +4077,11 @@ pub struct WsdlService {
     pub qualified_name: Option<String>,
     #[serde(rename = "EndpointQualifiedNames", default, skip_serializing_if = "Vec::is_empty")]
     pub endpoint_qualified_names: Vec<String>,
+}
+impl WsdlService {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12AcknowledgementSettings {
@@ -2646,12 +4116,53 @@ pub struct X12AcknowledgementSettings {
     #[serde(rename = "rolloverAcknowledgementControlNumber")]
     pub rollover_acknowledgement_control_number: bool,
 }
+impl X12AcknowledgementSettings {
+    pub fn new(
+        need_technical_acknowledgement: bool,
+        batch_technical_acknowledgements: bool,
+        need_functional_acknowledgement: bool,
+        batch_functional_acknowledgements: bool,
+        need_implementation_acknowledgement: bool,
+        batch_implementation_acknowledgements: bool,
+        need_loop_for_valid_messages: bool,
+        send_synchronous_acknowledgement: bool,
+        acknowledgement_control_number_lower_bound: i32,
+        acknowledgement_control_number_upper_bound: i32,
+        rollover_acknowledgement_control_number: bool,
+    ) -> Self {
+        Self {
+            need_technical_acknowledgement,
+            batch_technical_acknowledgements,
+            need_functional_acknowledgement,
+            functional_acknowledgement_version: None,
+            batch_functional_acknowledgements,
+            need_implementation_acknowledgement,
+            implementation_acknowledgement_version: None,
+            batch_implementation_acknowledgements,
+            need_loop_for_valid_messages,
+            send_synchronous_acknowledgement,
+            acknowledgement_control_number_prefix: None,
+            acknowledgement_control_number_suffix: None,
+            acknowledgement_control_number_lower_bound,
+            acknowledgement_control_number_upper_bound,
+            rollover_acknowledgement_control_number,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12AgreementContent {
     #[serde(rename = "receiveAgreement")]
     pub receive_agreement: X12OneWayAgreement,
     #[serde(rename = "sendAgreement")]
     pub send_agreement: X12OneWayAgreement,
+}
+impl X12AgreementContent {
+    pub fn new(receive_agreement: X12OneWayAgreement, send_agreement: X12OneWayAgreement) -> Self {
+        Self {
+            receive_agreement,
+            send_agreement,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum X12CharacterSet {
@@ -2690,6 +4201,28 @@ pub struct X12DelimiterOverrides {
     #[serde(rename = "targetNamespace", default, skip_serializing_if = "Option::is_none")]
     pub target_namespace: Option<String>,
 }
+impl X12DelimiterOverrides {
+    pub fn new(
+        data_element_separator: i32,
+        component_separator: i32,
+        segment_terminator: i32,
+        segment_terminator_suffix: SegmentTerminatorSuffix,
+        replace_character: i32,
+        replace_separators_in_payload: bool,
+    ) -> Self {
+        Self {
+            protocol_version: None,
+            message_id: None,
+            data_element_separator,
+            component_separator,
+            segment_terminator,
+            segment_terminator_suffix,
+            replace_character,
+            replace_separators_in_payload,
+            target_namespace: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12EnvelopeOverride {
     #[serde(rename = "targetNamespace")]
@@ -2712,6 +4245,32 @@ pub struct X12EnvelopeOverride {
     pub date_format: X12DateFormat,
     #[serde(rename = "timeFormat")]
     pub time_format: X12TimeFormat,
+}
+impl X12EnvelopeOverride {
+    pub fn new(
+        target_namespace: String,
+        protocol_version: String,
+        message_id: String,
+        responsible_agency_code: String,
+        header_version: String,
+        sender_application_id: String,
+        receiver_application_id: String,
+        date_format: X12DateFormat,
+        time_format: X12TimeFormat,
+    ) -> Self {
+        Self {
+            target_namespace,
+            protocol_version,
+            message_id,
+            responsible_agency_code,
+            header_version,
+            sender_application_id,
+            receiver_application_id,
+            functional_identifier_code: None,
+            date_format,
+            time_format,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12EnvelopeSettings {
@@ -2764,6 +4323,58 @@ pub struct X12EnvelopeSettings {
     #[serde(rename = "usageIndicator")]
     pub usage_indicator: UsageIndicator,
 }
+impl X12EnvelopeSettings {
+    pub fn new(
+        control_standards_id: i32,
+        use_control_standards_id_as_repetition_character: bool,
+        sender_application_id: String,
+        receiver_application_id: String,
+        control_version_number: String,
+        interchange_control_number_lower_bound: i32,
+        interchange_control_number_upper_bound: i32,
+        rollover_interchange_control_number: bool,
+        enable_default_group_headers: bool,
+        group_control_number_lower_bound: i32,
+        group_control_number_upper_bound: i32,
+        rollover_group_control_number: bool,
+        group_header_agency_code: String,
+        group_header_version: String,
+        transaction_set_control_number_lower_bound: i32,
+        transaction_set_control_number_upper_bound: i32,
+        rollover_transaction_set_control_number: bool,
+        overwrite_existing_transaction_set_control_number: bool,
+        group_header_date_format: X12DateFormat,
+        group_header_time_format: X12TimeFormat,
+        usage_indicator: UsageIndicator,
+    ) -> Self {
+        Self {
+            control_standards_id,
+            use_control_standards_id_as_repetition_character,
+            sender_application_id,
+            receiver_application_id,
+            control_version_number,
+            interchange_control_number_lower_bound,
+            interchange_control_number_upper_bound,
+            rollover_interchange_control_number,
+            enable_default_group_headers,
+            functional_group_id: None,
+            group_control_number_lower_bound,
+            group_control_number_upper_bound,
+            rollover_group_control_number,
+            group_header_agency_code,
+            group_header_version,
+            transaction_set_control_number_lower_bound,
+            transaction_set_control_number_upper_bound,
+            rollover_transaction_set_control_number,
+            transaction_set_control_number_prefix: None,
+            transaction_set_control_number_suffix: None,
+            overwrite_existing_transaction_set_control_number,
+            group_header_date_format,
+            group_header_time_format,
+            usage_indicator,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12FramingSettings {
     #[serde(rename = "dataElementSeparator")]
@@ -2781,15 +4392,46 @@ pub struct X12FramingSettings {
     #[serde(rename = "segmentTerminatorSuffix")]
     pub segment_terminator_suffix: SegmentTerminatorSuffix,
 }
+impl X12FramingSettings {
+    pub fn new(
+        data_element_separator: i32,
+        component_separator: i32,
+        replace_separators_in_payload: bool,
+        replace_character: i32,
+        segment_terminator: i32,
+        character_set: X12CharacterSet,
+        segment_terminator_suffix: SegmentTerminatorSuffix,
+    ) -> Self {
+        Self {
+            data_element_separator,
+            component_separator,
+            replace_separators_in_payload,
+            replace_character,
+            segment_terminator,
+            character_set,
+            segment_terminator_suffix,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12MessageFilter {
     #[serde(rename = "messageFilterType")]
     pub message_filter_type: MessageFilterType,
 }
+impl X12MessageFilter {
+    pub fn new(message_filter_type: MessageFilterType) -> Self {
+        Self { message_filter_type }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12MessageIdentifier {
     #[serde(rename = "messageId")]
     pub message_id: String,
+}
+impl X12MessageIdentifier {
+    pub fn new(message_id: String) -> Self {
+        Self { message_id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12OneWayAgreement {
@@ -2799,6 +4441,19 @@ pub struct X12OneWayAgreement {
     pub receiver_business_identity: BusinessIdentity,
     #[serde(rename = "protocolSettings")]
     pub protocol_settings: X12ProtocolSettings,
+}
+impl X12OneWayAgreement {
+    pub fn new(
+        sender_business_identity: BusinessIdentity,
+        receiver_business_identity: BusinessIdentity,
+        protocol_settings: X12ProtocolSettings,
+    ) -> Self {
+        Self {
+            sender_business_identity,
+            receiver_business_identity,
+            protocol_settings,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12ProcessingSettings {
@@ -2814,6 +4469,25 @@ pub struct X12ProcessingSettings {
     pub create_empty_xml_tags_for_trailing_separators: bool,
     #[serde(rename = "useDotAsDecimalSeparator")]
     pub use_dot_as_decimal_separator: bool,
+}
+impl X12ProcessingSettings {
+    pub fn new(
+        mask_security_info: bool,
+        convert_implied_decimal: bool,
+        preserve_interchange: bool,
+        suspend_interchange_on_error: bool,
+        create_empty_xml_tags_for_trailing_separators: bool,
+        use_dot_as_decimal_separator: bool,
+    ) -> Self {
+        Self {
+            mask_security_info,
+            convert_implied_decimal,
+            preserve_interchange,
+            suspend_interchange_on_error,
+            create_empty_xml_tags_for_trailing_separators,
+            use_dot_as_decimal_separator,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12ProtocolSettings {
@@ -2842,6 +4516,33 @@ pub struct X12ProtocolSettings {
     #[serde(rename = "x12DelimiterOverrides", default, skip_serializing_if = "Vec::is_empty")]
     pub x12_delimiter_overrides: Vec<X12DelimiterOverrides>,
 }
+impl X12ProtocolSettings {
+    pub fn new(
+        validation_settings: X12ValidationSettings,
+        framing_settings: X12FramingSettings,
+        envelope_settings: X12EnvelopeSettings,
+        acknowledgement_settings: X12AcknowledgementSettings,
+        message_filter: X12MessageFilter,
+        security_settings: X12SecuritySettings,
+        processing_settings: X12ProcessingSettings,
+        schema_references: Vec<X12SchemaReference>,
+    ) -> Self {
+        Self {
+            validation_settings,
+            framing_settings,
+            envelope_settings,
+            acknowledgement_settings,
+            message_filter,
+            security_settings,
+            processing_settings,
+            envelope_overrides: Vec::new(),
+            validation_overrides: Vec::new(),
+            message_filter_list: Vec::new(),
+            schema_references,
+            x12_delimiter_overrides: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12SchemaReference {
     #[serde(rename = "messageId")]
@@ -2853,6 +4554,16 @@ pub struct X12SchemaReference {
     #[serde(rename = "schemaName")]
     pub schema_name: String,
 }
+impl X12SchemaReference {
+    pub fn new(message_id: String, schema_version: String, schema_name: String) -> Self {
+        Self {
+            message_id,
+            sender_application_id: None,
+            schema_version,
+            schema_name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12SecuritySettings {
     #[serde(rename = "authorizationQualifier")]
@@ -2863,6 +4574,16 @@ pub struct X12SecuritySettings {
     pub security_qualifier: String,
     #[serde(rename = "passwordValue", default, skip_serializing_if = "Option::is_none")]
     pub password_value: Option<String>,
+}
+impl X12SecuritySettings {
+    pub fn new(authorization_qualifier: String, security_qualifier: String) -> Self {
+        Self {
+            authorization_qualifier,
+            authorization_value: None,
+            security_qualifier,
+            password_value: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum X12TimeFormat {
@@ -2893,6 +4614,27 @@ pub struct X12ValidationOverride {
     #[serde(rename = "trailingSeparatorPolicy")]
     pub trailing_separator_policy: TrailingSeparatorPolicy,
 }
+impl X12ValidationOverride {
+    pub fn new(
+        message_id: String,
+        validate_edi_types: bool,
+        validate_xsd_types: bool,
+        allow_leading_and_trailing_spaces_and_zeroes: bool,
+        validate_character_set: bool,
+        trim_leading_and_trailing_spaces_and_zeroes: bool,
+        trailing_separator_policy: TrailingSeparatorPolicy,
+    ) -> Self {
+        Self {
+            message_id,
+            validate_edi_types,
+            validate_xsd_types,
+            allow_leading_and_trailing_spaces_and_zeroes,
+            validate_character_set,
+            trim_leading_and_trailing_spaces_and_zeroes,
+            trailing_separator_policy,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12ValidationSettings {
     #[serde(rename = "validateCharacterSet")]
@@ -2916,10 +4658,42 @@ pub struct X12ValidationSettings {
     #[serde(rename = "trailingSeparatorPolicy")]
     pub trailing_separator_policy: TrailingSeparatorPolicy,
 }
+impl X12ValidationSettings {
+    pub fn new(
+        validate_character_set: bool,
+        check_duplicate_interchange_control_number: bool,
+        interchange_control_number_validity_days: i32,
+        check_duplicate_group_control_number: bool,
+        check_duplicate_transaction_set_control_number: bool,
+        validate_edi_types: bool,
+        validate_xsd_types: bool,
+        allow_leading_and_trailing_spaces_and_zeroes: bool,
+        trim_leading_and_trailing_spaces_and_zeroes: bool,
+        trailing_separator_policy: TrailingSeparatorPolicy,
+    ) -> Self {
+        Self {
+            validate_character_set,
+            check_duplicate_interchange_control_number,
+            interchange_control_number_validity_days,
+            check_duplicate_group_control_number,
+            check_duplicate_transaction_set_control_number,
+            validate_edi_types,
+            validate_xsd_types,
+            allow_leading_and_trailing_spaces_and_zeroes,
+            trim_leading_and_trailing_spaces_and_zeroes,
+            trailing_separator_policy,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+}
+impl UserAssignedIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

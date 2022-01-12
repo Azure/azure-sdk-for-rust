@@ -11,6 +11,15 @@ pub struct AdGroupUser {
     #[serde(rename = "objectId")]
     pub object_id: String,
 }
+impl AdGroupUser {
+    pub fn new(user: User, tenant_id: String, object_id: String) -> Self {
+        Self {
+            user,
+            tenant_id,
+            object_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiToken {
     #[serde(flatten)]
@@ -22,21 +31,46 @@ pub struct ApiToken {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
 }
+impl ApiToken {
+    pub fn new(permission: Permission) -> Self {
+        Self {
+            permission,
+            id: None,
+            token: None,
+            expiry: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiTokenCollection {
     pub value: Vec<ApiToken>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ApiTokenCollection {
+    pub fn new(value: Vec<ApiToken>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Attestation {
     #[serde(rename = "type")]
     pub type_: String,
 }
+impl Attestation {
+    pub fn new(type_: String) -> Self {
+        Self { type_ }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudPropertyJobData {
     #[serde(flatten)]
     pub job_data: JobData,
+}
+impl CloudPropertyJobData {
+    pub fn new(job_data: JobData) -> Self {
+        Self { job_data }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Collection {
@@ -44,10 +78,20 @@ pub struct Collection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl Collection {
+    pub fn new(value: Vec<serde_json::Value>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandJobData {
     #[serde(flatten)]
     pub job_data: JobData,
+}
+impl CommandJobData {
+    pub fn new(job_data: JobData) -> Self {
+        Self { job_data }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContinuousDataExport {
@@ -63,11 +107,29 @@ pub struct ContinuousDataExport {
     pub enabled: bool,
     pub sources: Vec<String>,
 }
+impl ContinuousDataExport {
+    pub fn new(endpoint: Endpoint, enabled: bool, sources: Vec<String>) -> Self {
+        Self {
+            id: None,
+            etag: None,
+            display_name: None,
+            endpoint,
+            status: None,
+            enabled,
+            sources,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContinuousDataExportCollection {
     pub value: Vec<ContinuousDataExport>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ContinuousDataExportCollection {
+    pub fn new(value: Vec<ContinuousDataExport>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Device {
@@ -86,13 +148,28 @@ pub struct Device {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub simulated: Option<bool>,
 }
+impl Device {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceCloudProperties {}
+impl DeviceCloudProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCollection {
     pub value: Vec<Device>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DeviceCollection {
+    pub fn new(value: Vec<Device>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceCommand {
@@ -109,11 +186,21 @@ pub struct DeviceCommand {
     #[serde(rename = "responseCode", default, skip_serializing_if = "Option::is_none")]
     pub response_code: Option<i64>,
 }
+impl DeviceCommand {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCommandCollection {
     pub value: Vec<DeviceCommand>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl DeviceCommandCollection {
+    pub fn new(value: Vec<DeviceCommand>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCredentials {
@@ -126,6 +213,16 @@ pub struct DeviceCredentials {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tpm: Option<Tpm>,
 }
+impl DeviceCredentials {
+    pub fn new(id_scope: String) -> Self {
+        Self {
+            id_scope,
+            symmetric_key: None,
+            x509: None,
+            tpm: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -133,20 +230,40 @@ pub struct DeviceGroup {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
+impl DeviceGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceGroupCollection {
     pub value: Vec<DeviceGroup>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl DeviceGroupCollection {
+    pub fn new(value: Vec<DeviceGroup>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceProperties {}
+impl DeviceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceTelemetry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
+}
+impl DeviceTelemetry {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTemplate {
@@ -164,17 +281,40 @@ pub struct DeviceTemplate {
     #[serde(rename = "solutionModel", default, skip_serializing_if = "Option::is_none")]
     pub solution_model: Option<serde_json::Value>,
 }
+impl DeviceTemplate {
+    pub fn new(types: Vec<String>, capability_model: serde_json::Value) -> Self {
+        Self {
+            id: None,
+            types,
+            etag: None,
+            display_name: None,
+            description: None,
+            capability_model,
+            solution_model: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTemplateCollection {
     pub value: Vec<DeviceTemplate>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl DeviceTemplateCollection {
+    pub fn new(value: Vec<DeviceTemplate>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailUser {
     #[serde(flatten)]
     pub user: User,
     pub email: String,
+}
+impl EmailUser {
+    pub fn new(user: User, email: String) -> Self {
+        Self { user, email }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Endpoint {
@@ -184,10 +324,24 @@ pub struct Endpoint {
     pub connection_string: String,
     pub name: String,
 }
+impl Endpoint {
+    pub fn new(type_: String, connection_string: String, name: String) -> Self {
+        Self {
+            type_,
+            connection_string,
+            name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsEndpoint {
     #[serde(flatten)]
     pub endpoint: Endpoint,
+}
+impl EventHubsEndpoint {
+    pub fn new(endpoint: Endpoint) -> Self {
+        Self { endpoint }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Job {
@@ -206,11 +360,30 @@ pub struct Job {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
+impl Job {
+    pub fn new(group: String, data: Vec<JobData>) -> Self {
+        Self {
+            id: None,
+            display_name: None,
+            description: None,
+            group,
+            batch: None,
+            cancellation_threshold: None,
+            data,
+            status: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobBatch {
     #[serde(rename = "type")]
     pub type_: job_batch::Type,
     pub value: f64,
+}
+impl JobBatch {
+    pub fn new(type_: job_batch::Type, value: f64) -> Self {
+        Self { type_, value }
+    }
 }
 pub mod job_batch {
     use super::*;
@@ -230,6 +403,11 @@ pub struct JobCancellationThreshold {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub batch: Option<bool>,
 }
+impl JobCancellationThreshold {
+    pub fn new(type_: job_cancellation_threshold::Type, value: f64) -> Self {
+        Self { type_, value, batch: None }
+    }
+}
 pub mod job_cancellation_threshold {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -246,6 +424,11 @@ pub struct JobCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl JobCollection {
+    pub fn new(value: Vec<Job>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobData {
     #[serde(rename = "type")]
@@ -255,6 +438,16 @@ pub struct JobData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
 }
+impl JobData {
+    pub fn new(type_: String, target: String, path: String) -> Self {
+        Self {
+            type_,
+            target,
+            path,
+            value: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDeviceStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -262,20 +455,40 @@ pub struct JobDeviceStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
+impl JobDeviceStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDeviceStatusCollection {
     pub value: Vec<JobDeviceStatus>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl JobDeviceStatusCollection {
+    pub fn new(value: Vec<JobDeviceStatus>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Permission {
     pub roles: Vec<RoleAssignment>,
+}
+impl Permission {
+    pub fn new(roles: Vec<RoleAssignment>) -> Self {
+        Self { roles }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyJobData {
     #[serde(flatten)]
     pub job_data: JobData,
+}
+impl PropertyJobData {
+    pub fn new(job_data: JobData) -> Self {
+        Self { job_data }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Role {
@@ -284,9 +497,19 @@ pub struct Role {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
+impl Role {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignment {
     pub role: String,
+}
+impl RoleAssignment {
+    pub fn new(role: String) -> Self {
+        Self { role }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleCollection {
@@ -294,15 +517,30 @@ pub struct RoleCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl RoleCollection {
+    pub fn new(value: Vec<Role>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueEndpoint {
     #[serde(flatten)]
     pub endpoint: Endpoint,
 }
+impl ServiceBusQueueEndpoint {
+    pub fn new(endpoint: Endpoint) -> Self {
+        Self { endpoint }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicEndpoint {
     #[serde(flatten)]
     pub endpoint: Endpoint,
+}
+impl ServiceBusTopicEndpoint {
+    pub fn new(endpoint: Endpoint) -> Self {
+        Self { endpoint }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalUser {
@@ -313,10 +551,24 @@ pub struct ServicePrincipalUser {
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
 }
+impl ServicePrincipalUser {
+    pub fn new(user: User) -> Self {
+        Self {
+            user,
+            tenant_id: None,
+            object_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageEndpoint {
     #[serde(flatten)]
     pub endpoint: Endpoint,
+}
+impl StorageEndpoint {
+    pub fn new(endpoint: Endpoint) -> Self {
+        Self { endpoint }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKey {
@@ -325,6 +577,14 @@ pub struct SymmetricKey {
     #[serde(rename = "secondaryKey")]
     pub secondary_key: String,
 }
+impl SymmetricKey {
+    pub fn new(primary_key: String, secondary_key: String) -> Self {
+        Self {
+            primary_key,
+            secondary_key,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
     #[serde(flatten)]
@@ -332,16 +592,34 @@ pub struct SymmetricKeyAttestation {
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
+impl SymmetricKeyAttestation {
+    pub fn new(attestation: Attestation, symmetric_key: SymmetricKey) -> Self {
+        Self {
+            attestation,
+            symmetric_key,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tpm {
     #[serde(rename = "endorsementKey")]
     pub endorsement_key: String,
+}
+impl Tpm {
+    pub fn new(endorsement_key: String) -> Self {
+        Self { endorsement_key }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
     #[serde(flatten)]
     pub attestation: Attestation,
     pub tpm: Tpm,
+}
+impl TpmAttestation {
+    pub fn new(attestation: Attestation, tpm: Tpm) -> Self {
+        Self { attestation, tpm }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct User {
@@ -352,22 +630,46 @@ pub struct User {
     #[serde(rename = "type")]
     pub type_: String,
 }
+impl User {
+    pub fn new(permission: Permission, type_: String) -> Self {
+        Self {
+            permission,
+            id: None,
+            type_,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     pub value: Vec<User>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl UserCollection {
+    pub fn new(value: Vec<User>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509 {
     #[serde(rename = "clientCertificates", default, skip_serializing_if = "Option::is_none")]
     pub client_certificates: Option<X509Certificates>,
+}
+impl X509 {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
     #[serde(flatten)]
     pub attestation: Attestation,
     pub x509: X509,
+}
+impl X509Attestation {
+    pub fn new(attestation: Attestation, x509: X509) -> Self {
+        Self { attestation, x509 }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509Certificate {
@@ -376,14 +678,29 @@ pub struct X509Certificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<X509CertificateInfo>,
 }
+impl X509Certificate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509CertificateInfo {
     #[serde(rename = "sha1Thumbprint")]
     pub sha1_thumbprint: String,
+}
+impl X509CertificateInfo {
+    pub fn new(sha1_thumbprint: String) -> Self {
+        Self { sha1_thumbprint }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Certificates {
     pub primary: X509Certificate,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<X509Certificate>,
+}
+impl X509Certificates {
+    pub fn new(primary: X509Certificate) -> Self {
+        Self { primary, secondary: None }
+    }
 }

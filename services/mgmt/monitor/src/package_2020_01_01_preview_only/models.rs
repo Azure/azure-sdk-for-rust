@@ -9,6 +9,11 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettings {
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
@@ -24,6 +29,11 @@ pub struct ManagementGroupDiagnosticSettings {
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
 }
+impl ManagementGroupDiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettingsResource {
     #[serde(flatten)]
@@ -31,15 +41,30 @@ pub struct ManagementGroupDiagnosticSettingsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupDiagnosticSettings>,
 }
+impl ManagementGroupDiagnosticSettingsResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementGroupDiagnosticSettingsResource>,
 }
+impl ManagementGroupDiagnosticSettingsResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementGroupLogSettings {
     pub category: String,
     pub enabled: bool,
+}
+impl ManagementGroupLogSettings {
+    pub fn new(category: String, enabled: bool) -> Self {
+        Self { category, enabled }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupProxyOnlyResource {
@@ -51,4 +76,9 @@ pub struct ManagementGroupProxyOnlyResource {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+}
+impl ManagementGroupProxyOnlyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

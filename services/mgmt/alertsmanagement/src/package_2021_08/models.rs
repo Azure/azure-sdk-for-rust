@@ -7,6 +7,11 @@ pub struct Action {
     #[serde(rename = "actionType")]
     pub action_type: action::ActionType,
 }
+impl Action {
+    pub fn new(action_type: action::ActionType) -> Self {
+        Self { action_type }
+    }
+}
 pub mod action {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -22,6 +27,11 @@ pub struct AddActionGroups {
     #[serde(rename = "actionGroupIds")]
     pub action_group_ids: Vec<String>,
 }
+impl AddActionGroups {
+    pub fn new(action: Action, action_group_ids: Vec<String>) -> Self {
+        Self { action, action_group_ids }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertProcessingRule {
     #[serde(flatten)]
@@ -30,6 +40,15 @@ pub struct AlertProcessingRule {
     pub properties: Option<AlertProcessingRuleProperties>,
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+}
+impl AlertProcessingRule {
+    pub fn new(managed_resource: ManagedResource) -> Self {
+        Self {
+            managed_resource,
+            properties: None,
+            system_data: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertProcessingRuleProperties {
@@ -44,12 +63,29 @@ pub struct AlertProcessingRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
+impl AlertProcessingRuleProperties {
+    pub fn new(scopes: Scopes, actions: Vec<Action>) -> Self {
+        Self {
+            scopes,
+            conditions: None,
+            schedule: None,
+            actions,
+            description: None,
+            enabled: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertProcessingRulesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertProcessingRule>,
+}
+impl AlertProcessingRulesList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Condition {
@@ -59,6 +95,11 @@ pub struct Condition {
     pub operator: Option<condition::Operator>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
+}
+impl Condition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod condition {
     use super::*;
@@ -90,6 +131,11 @@ pub struct DailyRecurrence {
     #[serde(flatten)]
     pub recurrence: Recurrence,
 }
+impl DailyRecurrence {
+    pub fn new(recurrence: Recurrence) -> Self {
+        Self { recurrence }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DaysOfWeek {
     Sunday,
@@ -108,6 +154,15 @@ pub struct ManagedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl ManagedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorServiceDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -115,11 +170,24 @@ pub struct MonitorServiceDetails {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
+impl MonitorServiceDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorServiceList {
     #[serde(flatten)]
     pub alerts_meta_data_properties: AlertsMetaDataProperties,
     pub data: Vec<MonitorServiceDetails>,
+}
+impl MonitorServiceList {
+    pub fn new(alerts_meta_data_properties: AlertsMetaDataProperties, data: Vec<MonitorServiceDetails>) -> Self {
+        Self {
+            alerts_meta_data_properties,
+            data,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonthlyRecurrence {
@@ -128,6 +196,11 @@ pub struct MonthlyRecurrence {
     #[serde(rename = "daysOfMonth")]
     pub days_of_month: Vec<i32>,
 }
+impl MonthlyRecurrence {
+    pub fn new(recurrence: Recurrence, days_of_month: Vec<i32>) -> Self {
+        Self { recurrence, days_of_month }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -135,10 +208,20 @@ pub struct PatchObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl PatchObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl PatchProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Recurrence {
@@ -148,6 +231,15 @@ pub struct Recurrence {
     pub start_time: Option<String>,
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+}
+impl Recurrence {
+    pub fn new(recurrence_type: recurrence::RecurrenceType) -> Self {
+        Self {
+            recurrence_type,
+            start_time: None,
+            end_time: None,
+        }
+    }
 }
 pub mod recurrence {
     use super::*;
@@ -163,6 +255,11 @@ pub struct RemoveAllActionGroups {
     #[serde(flatten)]
     pub action: Action,
 }
+impl RemoveAllActionGroups {
+    pub fn new(action: Action) -> Self {
+        Self { action }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -171,6 +268,11 @@ pub struct Resource {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Schedule {
@@ -183,6 +285,11 @@ pub struct Schedule {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recurrences: Vec<Recurrence>,
 }
+impl Schedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type Scopes = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WeeklyRecurrence {
@@ -191,6 +298,11 @@ pub struct WeeklyRecurrence {
     #[serde(rename = "daysOfWeek")]
     pub days_of_week: Vec<DaysOfWeek>,
 }
+impl WeeklyRecurrence {
+    pub fn new(recurrence: Recurrence, days_of_week: Vec<DaysOfWeek>) -> Self {
+        Self { recurrence, days_of_week }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Alert {
     #[serde(flatten)]
@@ -198,14 +310,29 @@ pub struct Alert {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertProperties>,
 }
+impl Alert {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertContext {}
+impl AlertContext {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertModification {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertModificationProperties>,
+}
+impl AlertModification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertModificationItem {
@@ -223,6 +350,11 @@ pub struct AlertModificationItem {
     pub comments: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl AlertModificationItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod alert_modification_item {
     use super::*;
@@ -246,6 +378,11 @@ pub struct AlertModificationProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub modifications: Vec<AlertModificationItem>,
 }
+impl AlertModificationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -255,6 +392,11 @@ pub struct AlertProperties {
     #[serde(rename = "egressConfig", default, skip_serializing_if = "Option::is_none")]
     pub egress_config: Option<EgressConfig>,
 }
+impl AlertProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -262,15 +404,30 @@ pub struct AlertsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Alert>,
 }
+impl AlertsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsMetaData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertsMetaDataProperties>,
 }
+impl AlertsMetaData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsMetaDataProperties {
     #[serde(rename = "metadataIdentifier")]
     pub metadata_identifier: alerts_meta_data_properties::MetadataIdentifier,
+}
+impl AlertsMetaDataProperties {
+    pub fn new(metadata_identifier: alerts_meta_data_properties::MetadataIdentifier) -> Self {
+        Self { metadata_identifier }
+    }
 }
 pub mod alerts_meta_data_properties {
     use super::*;
@@ -286,6 +443,11 @@ pub struct AlertsSummary {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertsSummaryGroup>,
 }
+impl AlertsSummary {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSummaryGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -296,6 +458,11 @@ pub struct AlertsSummaryGroup {
     pub groupedby: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<AlertsSummaryGroupItem>,
+}
+impl AlertsSummaryGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSummaryGroupItem {
@@ -308,12 +475,27 @@ pub struct AlertsSummaryGroupItem {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<AlertsSummaryGroupItem>,
 }
+impl AlertsSummaryGroupItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EgressConfig {}
+impl EgressConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseBody {
@@ -325,6 +507,11 @@ pub struct ErrorResponseBody {
     pub target: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseBody>,
+}
+impl ErrorResponseBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Essentials {
@@ -362,6 +549,11 @@ pub struct Essentials {
     pub monitor_condition_resolved_date_time: Option<String>,
     #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_user_name: Option<String>,
+}
+impl Essentials {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod essentials {
     use super::*;
@@ -424,6 +616,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -437,12 +634,22 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     pub value: Vec<Operation>,
+}
+impl OperationsList {
+    pub fn new(value: Vec<Operation>) -> Self {
+        Self { next_link: None, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroup {
@@ -451,6 +658,11 @@ pub struct SmartGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SmartGroupProperties>,
 }
+impl SmartGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupAggregatedProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -458,12 +670,22 @@ pub struct SmartGroupAggregatedProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl SmartGroupAggregatedProperty {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupModification {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SmartGroupModificationProperties>,
+}
+impl SmartGroupModification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupModificationItem {
@@ -481,6 +703,11 @@ pub struct SmartGroupModificationItem {
     pub comments: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl SmartGroupModificationItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod smart_group_modification_item {
     use super::*;
@@ -500,6 +727,11 @@ pub struct SmartGroupModificationProperties {
     pub modifications: Vec<SmartGroupModificationItem>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SmartGroupModificationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupProperties {
@@ -532,6 +764,11 @@ pub struct SmartGroupProperties {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl SmartGroupProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod smart_group_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -556,6 +793,11 @@ pub struct SmartGroupsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SmartGroup>,
 }
+impl SmartGroupsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
@@ -570,6 +812,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

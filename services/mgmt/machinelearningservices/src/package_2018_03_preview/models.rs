@@ -9,6 +9,11 @@ pub struct Aks {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<aks::Properties>,
 }
+impl Aks {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
+}
 pub mod aks {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -24,6 +29,11 @@ pub mod aks {
         #[serde(rename = "sslConfiguration", default, skip_serializing_if = "Option::is_none")]
         pub ssl_configuration: Option<SslConfiguration>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksComputeSecrets {
@@ -36,12 +46,27 @@ pub struct AksComputeSecrets {
     #[serde(rename = "imagePullSecretName", default, skip_serializing_if = "Option::is_none")]
     pub image_pull_secret_name: Option<String>,
 }
+impl AksComputeSecrets {
+    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+        Self {
+            compute_secrets,
+            user_kube_config: None,
+            admin_kube_config: None,
+            image_pull_secret_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchAi {
     #[serde(flatten)]
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<batch_ai::Properties>,
+}
+impl BatchAi {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod batch_ai {
     use super::*;
@@ -53,6 +78,11 @@ pub mod batch_ai {
         pub vm_priority: Option<String>,
         #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
         pub scale_settings: Option<ScaleSettings>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -74,6 +104,20 @@ pub struct Compute {
     #[serde(rename = "provisioningErrors", default, skip_serializing_if = "Vec::is_empty")]
     pub provisioning_errors: Vec<MachineLearningServiceError>,
 }
+impl Compute {
+    pub fn new(compute_type: ComputeType) -> Self {
+        Self {
+            compute_type,
+            compute_location: None,
+            provisioning_state: None,
+            description: None,
+            created_on: None,
+            modified_on: None,
+            resource_id: None,
+            provisioning_errors: Vec::new(),
+        }
+    }
+}
 pub mod compute {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -94,10 +138,20 @@ pub struct ComputeResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Compute>,
 }
+impl ComputeResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeSecrets {
     #[serde(rename = "computeType")]
     pub compute_type: ComputeType,
+}
+impl ComputeSecrets {
+    pub fn new(compute_type: ComputeType) -> Self {
+        Self { compute_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComputeType {
@@ -115,10 +169,20 @@ pub struct DataFactory {
     #[serde(flatten)]
     pub compute: Compute,
 }
+impl DataFactory {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
     pub code: String,
     pub message: String,
+}
+impl ErrorDetail {
+    pub fn new(code: String, message: String) -> Self {
+        Self { code, message }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
@@ -127,12 +191,26 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
 }
+impl ErrorResponse {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HdInsight {
     #[serde(flatten)]
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hd_insight::Properties>,
+}
+impl HdInsight {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod hd_insight {
     use super::*;
@@ -145,6 +223,11 @@ pub mod hd_insight {
         #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
         pub administrator_account: Option<VirtualMachineSshCredentials>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
@@ -154,6 +237,11 @@ pub struct Identity {
     pub tenant_id: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
+}
+impl Identity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod identity {
     use super::*;
@@ -173,10 +261,20 @@ pub struct ListWorkspaceKeysResult {
     #[serde(rename = "containerRegistryCredentials", default, skip_serializing_if = "Option::is_none")]
     pub container_registry_credentials: Option<RegistryListCredentialsResult>,
 }
+impl ListWorkspaceKeysResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineLearningServiceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl MachineLearningServiceError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -184,6 +282,11 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -198,11 +301,21 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedComputeResourcesList {
@@ -211,12 +324,22 @@ pub struct PaginatedComputeResourcesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PaginatedComputeResourcesList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Password {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl Password {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListCredentialsResult {
@@ -226,6 +349,11 @@ pub struct RegistryListCredentialsResult {
     pub username: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub passwords: Vec<Password>,
+}
+impl RegistryListCredentialsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -242,6 +370,11 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScaleSettings {
     #[serde(rename = "maxNodeCount", default, skip_serializing_if = "Option::is_none")]
@@ -251,12 +384,22 @@ pub struct ScaleSettings {
     #[serde(rename = "autoScaleEnabled", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_enabled: Option<bool>,
 }
+impl ScaleSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalCredentials {
     #[serde(rename = "clientId")]
     pub client_id: String,
     #[serde(rename = "clientSecret")]
     pub client_secret: String,
+}
+impl ServicePrincipalCredentials {
+    pub fn new(client_id: String, client_secret: String) -> Self {
+        Self { client_id, client_secret }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SslConfiguration {
@@ -268,6 +411,11 @@ pub struct SslConfiguration {
     pub key: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
+}
+impl SslConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod ssl_configuration {
     use super::*;
@@ -286,12 +434,22 @@ pub struct SystemService {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
+impl SystemService {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachine {
     #[serde(flatten)]
     pub compute: Compute,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<virtual_machine::Properties>,
+}
+impl VirtualMachine {
+    pub fn new(compute: Compute) -> Self {
+        Self { compute, properties: None }
+    }
 }
 pub mod virtual_machine {
     use super::*;
@@ -306,6 +464,11 @@ pub mod virtual_machine {
         #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
         pub administrator_account: Option<VirtualMachineSshCredentials>,
     }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
@@ -313,6 +476,14 @@ pub struct VirtualMachineSecrets {
     pub compute_secrets: ComputeSecrets,
     #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
     pub administrator_account: Option<VirtualMachineSshCredentials>,
+}
+impl VirtualMachineSecrets {
+    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+        Self {
+            compute_secrets,
+            administrator_account: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSshCredentials {
@@ -325,6 +496,11 @@ pub struct VirtualMachineSshCredentials {
     #[serde(rename = "privateKeyData", default, skip_serializing_if = "Option::is_none")]
     pub private_key_data: Option<String>,
 }
+impl VirtualMachineSshCredentials {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workspace {
     #[serde(flatten)]
@@ -332,12 +508,22 @@ pub struct Workspace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceProperties>,
 }
+impl Workspace {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workspace>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl WorkspaceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceProperties {
@@ -364,6 +550,11 @@ pub struct WorkspaceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
 }
+impl WorkspaceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod workspace_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -384,10 +575,20 @@ pub struct WorkspacePropertiesUpdateParameters {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
+impl WorkspacePropertiesUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspacePropertiesUpdateParameters>,
+}
+impl WorkspaceUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

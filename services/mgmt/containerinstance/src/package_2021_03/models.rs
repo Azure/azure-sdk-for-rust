@@ -13,12 +13,27 @@ pub struct AzureFileVolume {
     #[serde(rename = "storageAccountKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_key: Option<String>,
 }
+impl AzureFileVolume {
+    pub fn new(share_name: String, storage_account_name: String) -> Self {
+        Self {
+            share_name,
+            read_only: None,
+            storage_account_name,
+            storage_account_key: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CachedImagesListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CachedImages>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl CachedImagesListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Capabilities {
@@ -35,6 +50,11 @@ pub struct Capabilities {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<capabilities::Capabilities>,
 }
+impl Capabilities {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod capabilities {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -46,6 +66,11 @@ pub mod capabilities {
         #[serde(rename = "maxGpuCount", default, skip_serializing_if = "Option::is_none")]
         pub max_gpu_count: Option<f64>,
     }
+    impl Capabilities {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilitiesListResult {
@@ -54,10 +79,20 @@ pub struct CapabilitiesListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl CapabilitiesListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
@@ -70,10 +105,20 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Container {
     pub name: String,
     pub properties: ContainerProperties,
+}
+impl Container {
+    pub fn new(name: String, properties: ContainerProperties) -> Self {
+        Self { name, properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerAttachResponse {
@@ -82,10 +127,20 @@ pub struct ContainerAttachResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
+impl ContainerAttachResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerExec {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub command: Vec<String>,
+}
+impl ContainerExec {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerExecRequest {
@@ -93,6 +148,11 @@ pub struct ContainerExecRequest {
     pub command: Option<String>,
     #[serde(rename = "terminalSize", default, skip_serializing_if = "Option::is_none")]
     pub terminal_size: Option<container_exec_request::TerminalSize>,
+}
+impl ContainerExecRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod container_exec_request {
     use super::*;
@@ -103,6 +163,11 @@ pub mod container_exec_request {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub cols: Option<i64>,
     }
+    impl TerminalSize {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerExecResponse {
@@ -110,6 +175,11 @@ pub struct ContainerExecResponse {
     pub web_socket_uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+}
+impl ContainerExecResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerGroup {
@@ -119,6 +189,11 @@ pub struct ContainerGroup {
     pub identity: Option<ContainerGroupIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<container_group::Properties>,
+}
+impl ContainerGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod container_group {
     use super::*;
@@ -152,6 +227,26 @@ pub mod container_group {
         #[serde(rename = "initContainers", default, skip_serializing_if = "Vec::is_empty")]
         pub init_containers: Vec<InitContainerDefinition>,
     }
+    impl Properties {
+        pub fn new(containers: Vec<Container>, os_type: properties::OsType) -> Self {
+            Self {
+                provisioning_state: None,
+                containers,
+                image_registry_credentials: Vec::new(),
+                restart_policy: None,
+                ip_address: None,
+                os_type,
+                volumes: Vec::new(),
+                instance_view: None,
+                diagnostics: None,
+                network_profile: None,
+                dns_config: None,
+                sku: None,
+                encryption_properties: None,
+                init_containers: Vec::new(),
+            }
+        }
+    }
     pub mod properties {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -172,12 +267,22 @@ pub mod container_group {
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub state: Option<String>,
         }
+        impl InstanceView {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerGroupDiagnostics {
     #[serde(rename = "logAnalytics", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics: Option<LogAnalytics>,
+}
+impl ContainerGroupDiagnostics {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerGroupIdentity {
@@ -189,6 +294,11 @@ pub struct ContainerGroupIdentity {
     pub type_: Option<container_group_identity::Type>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ContainerGroupIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod container_group_identity {
     use super::*;
@@ -208,9 +318,19 @@ pub struct ContainerGroupListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ContainerGroupListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerGroupNetworkProfile {
     pub id: String,
+}
+impl ContainerGroupNetworkProfile {
+    pub fn new(id: String) -> Self {
+        Self { id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerGroupSku {
@@ -227,6 +347,16 @@ pub struct ContainerHttpGet {
     #[serde(rename = "httpHeaders", default, skip_serializing_if = "Option::is_none")]
     pub http_headers: Option<HttpHeaders>,
 }
+impl ContainerHttpGet {
+    pub fn new(port: i32) -> Self {
+        Self {
+            path: None,
+            port,
+            scheme: None,
+            http_headers: None,
+        }
+    }
+}
 pub mod container_http_get {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -242,6 +372,11 @@ pub struct ContainerPort {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<container_port::Protocol>,
     pub port: i32,
+}
+impl ContainerPort {
+    pub fn new(port: i32) -> Self {
+        Self { protocol: None, port }
+    }
 }
 pub mod container_port {
     use super::*;
@@ -270,6 +405,11 @@ pub struct ContainerProbe {
     #[serde(rename = "timeoutSeconds", default, skip_serializing_if = "Option::is_none")]
     pub timeout_seconds: Option<i32>,
 }
+impl ContainerProbe {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
     pub image: String,
@@ -289,6 +429,21 @@ pub struct ContainerProperties {
     #[serde(rename = "readinessProbe", default, skip_serializing_if = "Option::is_none")]
     pub readiness_probe: Option<ContainerProbe>,
 }
+impl ContainerProperties {
+    pub fn new(image: String, resources: ResourceRequirements) -> Self {
+        Self {
+            image,
+            command: Vec::new(),
+            ports: Vec::new(),
+            environment_variables: Vec::new(),
+            instance_view: None,
+            resources,
+            volume_mounts: Vec::new(),
+            liveness_probe: None,
+            readiness_probe: None,
+        }
+    }
+}
 pub mod container_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -301,6 +456,11 @@ pub mod container_properties {
         pub previous_state: Option<ContainerState>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub events: Vec<Event>,
+    }
+    impl InstanceView {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -316,6 +476,11 @@ pub struct ContainerState {
     #[serde(rename = "detailStatus", default, skip_serializing_if = "Option::is_none")]
     pub detail_status: Option<String>,
 }
+impl ContainerState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DnsConfiguration {
     #[serde(rename = "nameServers")]
@@ -325,8 +490,22 @@ pub struct DnsConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<String>,
 }
+impl DnsConfiguration {
+    pub fn new(name_servers: Vec<String>) -> Self {
+        Self {
+            name_servers,
+            search_domains: None,
+            options: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmptyDirVolume {}
+impl EmptyDirVolume {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionProperties {
     #[serde(rename = "vaultBaseUrl")]
@@ -336,6 +515,15 @@ pub struct EncryptionProperties {
     #[serde(rename = "keyVersion")]
     pub key_version: String,
 }
+impl EncryptionProperties {
+    pub fn new(vault_base_url: String, key_name: String, key_version: String) -> Self {
+        Self {
+            vault_base_url,
+            key_name,
+            key_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentVariable {
     pub name: String,
@@ -343,6 +531,15 @@ pub struct EnvironmentVariable {
     pub value: Option<String>,
     #[serde(rename = "secureValue", default, skip_serializing_if = "Option::is_none")]
     pub secure_value: Option<String>,
+}
+impl EnvironmentVariable {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            value: None,
+            secure_value: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Event {
@@ -359,6 +556,11 @@ pub struct Event {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Event {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GitRepoVolume {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -367,10 +569,24 @@ pub struct GitRepoVolume {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub revision: Option<String>,
 }
+impl GitRepoVolume {
+    pub fn new(repository: String) -> Self {
+        Self {
+            directory: None,
+            repository,
+            revision: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GpuResource {
     pub count: i32,
     pub sku: gpu_resource::Sku,
+}
+impl GpuResource {
+    pub fn new(count: i32, sku: gpu_resource::Sku) -> Self {
+        Self { count, sku }
+    }
 }
 pub mod gpu_resource {
     use super::*;
@@ -388,6 +604,11 @@ pub struct HttpHeaders {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl HttpHeaders {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageRegistryCredential {
     pub server: String,
@@ -395,10 +616,24 @@ pub struct ImageRegistryCredential {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
+impl ImageRegistryCredential {
+    pub fn new(server: String, username: String) -> Self {
+        Self {
+            server,
+            username,
+            password: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InitContainerDefinition {
     pub name: String,
     pub properties: InitContainerPropertiesDefinition,
+}
+impl InitContainerDefinition {
+    pub fn new(name: String, properties: InitContainerPropertiesDefinition) -> Self {
+        Self { name, properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InitContainerPropertiesDefinition {
@@ -413,6 +648,11 @@ pub struct InitContainerPropertiesDefinition {
     #[serde(rename = "volumeMounts", default, skip_serializing_if = "Vec::is_empty")]
     pub volume_mounts: Vec<VolumeMount>,
 }
+impl InitContainerPropertiesDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod init_container_properties_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -426,6 +666,11 @@ pub mod init_container_properties_definition {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub events: Vec<Event>,
     }
+    impl InstanceView {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpAddress {
@@ -438,6 +683,17 @@ pub struct IpAddress {
     pub dns_name_label: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+}
+impl IpAddress {
+    pub fn new(ports: Vec<Port>, type_: ip_address::Type) -> Self {
+        Self {
+            ports,
+            type_,
+            ip: None,
+            dns_name_label: None,
+            fqdn: None,
+        }
+    }
 }
 pub mod ip_address {
     use super::*;
@@ -460,6 +716,17 @@ pub struct LogAnalytics {
     #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<serde_json::Value>,
 }
+impl LogAnalytics {
+    pub fn new(workspace_id: String, workspace_key: String) -> Self {
+        Self {
+            workspace_id,
+            workspace_key,
+            log_type: None,
+            metadata: None,
+            workspace_resource_id: None,
+        }
+    }
+}
 pub mod log_analytics {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -473,6 +740,11 @@ pub struct Logs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
 }
+impl Logs {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     pub name: String,
@@ -481,6 +753,16 @@ pub struct Operation {
     pub properties: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operation::Origin>,
+}
+impl Operation {
+    pub fn new(name: String, display: operation::Display) -> Self {
+        Self {
+            name,
+            display,
+            properties: None,
+            origin: None,
+        }
+    }
 }
 pub mod operation {
     use super::*;
@@ -495,6 +777,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
         User,
@@ -508,11 +795,21 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Port {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<port::Protocol>,
     pub port: i32,
+}
+impl Port {
+    pub fn new(port: i32) -> Self {
+        Self { protocol: None, port }
+    }
 }
 pub mod port {
     use super::*;
@@ -537,6 +834,11 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceLimits {
     #[serde(rename = "memoryInGB", default, skip_serializing_if = "Option::is_none")]
@@ -546,6 +848,11 @@ pub struct ResourceLimits {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gpu: Option<GpuResource>,
 }
+impl ResourceLimits {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRequests {
     #[serde(rename = "memoryInGB")]
@@ -554,14 +861,33 @@ pub struct ResourceRequests {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gpu: Option<GpuResource>,
 }
+impl ResourceRequests {
+    pub fn new(memory_in_gb: f64, cpu: f64) -> Self {
+        Self {
+            memory_in_gb,
+            cpu,
+            gpu: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceRequirements {
     pub requests: ResourceRequests,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limits: Option<ResourceLimits>,
 }
+impl ResourceRequirements {
+    pub fn new(requests: ResourceRequests) -> Self {
+        Self { requests, limits: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretVolume {}
+impl SecretVolume {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -573,6 +899,11 @@ pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<usage::Name>,
 }
+impl Usage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod usage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -582,11 +913,21 @@ pub mod usage {
         #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
         pub localized_value: Option<String>,
     }
+    impl Name {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+}
+impl UsageListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Volume {
@@ -600,6 +941,17 @@ pub struct Volume {
     #[serde(rename = "gitRepo", default, skip_serializing_if = "Option::is_none")]
     pub git_repo: Option<GitRepoVolume>,
 }
+impl Volume {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            azure_file: None,
+            empty_dir: None,
+            secret: None,
+            git_repo: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeMount {
     pub name: String,
@@ -608,9 +960,23 @@ pub struct VolumeMount {
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
     pub read_only: Option<bool>,
 }
+impl VolumeMount {
+    pub fn new(name: String, mount_path: String) -> Self {
+        Self {
+            name,
+            mount_path,
+            read_only: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CachedImages {
     #[serde(rename = "osType")]
     pub os_type: String,
     pub image: String,
+}
+impl CachedImages {
+    pub fn new(os_type: String, image: String) -> Self {
+        Self { os_type, image }
+    }
 }

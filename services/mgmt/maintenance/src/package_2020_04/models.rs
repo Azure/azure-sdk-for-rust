@@ -9,6 +9,11 @@ pub struct ApplyUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplyUpdateProperties>,
 }
+impl ApplyUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplyUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -17,6 +22,11 @@ pub struct ApplyUpdateProperties {
     pub resource_id: Option<String>,
     #[serde(rename = "lastUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_update_time: Option<String>,
+}
+impl ApplyUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod apply_update_properties {
     use super::*;
@@ -38,12 +48,22 @@ pub struct ConfigurationAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationAssignmentProperties>,
 }
+impl ConfigurationAssignment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationAssignmentProperties {
     #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_configuration_id: Option<String>,
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+}
+impl ConfigurationAssignmentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
@@ -52,20 +72,40 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListConfigurationAssignmentsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConfigurationAssignment>,
+}
+impl ListConfigurationAssignmentsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListMaintenanceConfigurationsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MaintenanceConfiguration>,
 }
+impl ListMaintenanceConfigurationsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListUpdatesResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Update>,
+}
+impl ListUpdatesResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaintenanceConfiguration {
@@ -78,6 +118,11 @@ pub struct MaintenanceConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MaintenanceConfigurationProperties>,
 }
+impl MaintenanceConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaintenanceConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -86,6 +131,11 @@ pub struct MaintenanceConfigurationProperties {
     pub extension_properties: Option<serde_json::Value>,
     #[serde(rename = "maintenanceScope", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_scope: Option<maintenance_configuration_properties::MaintenanceScope>,
+}
+impl MaintenanceConfigurationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod maintenance_configuration_properties {
     use super::*;
@@ -102,6 +152,11 @@ pub struct MaintenanceError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
+impl MaintenanceError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -112,6 +167,11 @@ pub struct Operation {
     pub origin: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationInfo {
@@ -124,10 +184,20 @@ pub struct OperationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -137,6 +207,11 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Update {
@@ -152,6 +227,11 @@ pub struct Update {
     pub not_before: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UpdateProperties>,
+}
+impl Update {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod update {
     use super::*;
@@ -182,4 +262,9 @@ pub mod update {
 pub struct UpdateProperties {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+}
+impl UpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

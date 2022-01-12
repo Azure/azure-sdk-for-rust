@@ -9,6 +9,14 @@ pub struct OrchestratorProfile {
     #[serde(rename = "orchestratorVersion")]
     pub orchestrator_version: String,
 }
+impl OrchestratorProfile {
+    pub fn new(orchestrator_type: String, orchestrator_version: String) -> Self {
+        Self {
+            orchestrator_type,
+            orchestrator_version,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfile {
     #[serde(rename = "orchestratorType")]
@@ -17,6 +25,16 @@ pub struct OrchestratorVersionProfile {
     pub orchestrator_version: String,
     pub default: bool,
     pub upgrades: Vec<OrchestratorProfile>,
+}
+impl OrchestratorVersionProfile {
+    pub fn new(orchestrator_type: String, orchestrator_version: String, default: bool, upgrades: Vec<OrchestratorProfile>) -> Self {
+        Self {
+            orchestrator_type,
+            orchestrator_version,
+            default,
+            upgrades,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileListResult {
@@ -28,7 +46,22 @@ pub struct OrchestratorVersionProfileListResult {
     pub type_: Option<String>,
     pub properties: OrchestratorVersionProfileProperties,
 }
+impl OrchestratorVersionProfileListResult {
+    pub fn new(properties: OrchestratorVersionProfileProperties) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileProperties {
     pub orchestrators: Vec<OrchestratorVersionProfile>,
+}
+impl OrchestratorVersionProfileProperties {
+    pub fn new(orchestrators: Vec<OrchestratorVersionProfile>) -> Self {
+        Self { orchestrators }
+    }
 }

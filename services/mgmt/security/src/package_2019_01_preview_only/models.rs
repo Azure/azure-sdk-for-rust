@@ -9,6 +9,11 @@ pub struct AlertsSuppressionRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertsSuppressionRuleProperties>,
 }
+impl AlertsSuppressionRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsSuppressionRuleProperties {
     #[serde(rename = "alertType")]
@@ -23,6 +28,19 @@ pub struct AlertsSuppressionRuleProperties {
     pub comment: Option<String>,
     #[serde(rename = "suppressionAlertsScope", default, skip_serializing_if = "Option::is_none")]
     pub suppression_alerts_scope: Option<SuppressionAlertsScope>,
+}
+impl AlertsSuppressionRuleProperties {
+    pub fn new(alert_type: String, reason: String, state: alerts_suppression_rule_properties::State) -> Self {
+        Self {
+            alert_type,
+            last_modified_utc: None,
+            expiration_date_utc: None,
+            reason,
+            state,
+            comment: None,
+            suppression_alerts_scope: None,
+        }
+    }
 }
 pub mod alerts_suppression_rule_properties {
     use super::*;
@@ -39,10 +57,20 @@ pub struct AlertsSuppressionRulesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl AlertsSuppressionRulesList {
+    pub fn new(value: Vec<AlertsSuppressionRule>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessmentLinks {
     #[serde(rename = "azurePortalUri", default, skip_serializing_if = "Option::is_none")]
     pub azure_portal_uri: Option<String>,
+}
+impl AssessmentLinks {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentStatus {
@@ -51,6 +79,15 @@ pub struct AssessmentStatus {
     pub cause: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl AssessmentStatus {
+    pub fn new(code: assessment_status::Code) -> Self {
+        Self {
+            code,
+            cause: None,
+            description: None,
+        }
+    }
 }
 pub mod assessment_status {
     use super::*;
@@ -66,6 +103,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -79,12 +121,22 @@ pub struct CloudErrorBody {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceAssessment {
@@ -93,11 +145,21 @@ pub struct RegulatoryComplianceAssessment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceAssessmentProperties>,
 }
+impl RegulatoryComplianceAssessment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceAssessmentList {
     pub value: Vec<RegulatoryComplianceAssessment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RegulatoryComplianceAssessmentList {
+    pub fn new(value: Vec<RegulatoryComplianceAssessment>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceAssessmentProperties {
@@ -118,6 +180,11 @@ pub struct RegulatoryComplianceAssessmentProperties {
     #[serde(rename = "unsupportedResources", default, skip_serializing_if = "Option::is_none")]
     pub unsupported_resources: Option<i64>,
 }
+impl RegulatoryComplianceAssessmentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod regulatory_compliance_assessment_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -135,11 +202,21 @@ pub struct RegulatoryComplianceControl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceControlProperties>,
 }
+impl RegulatoryComplianceControl {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceControlList {
     pub value: Vec<RegulatoryComplianceControl>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RegulatoryComplianceControlList {
+    pub fn new(value: Vec<RegulatoryComplianceControl>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceControlProperties {
@@ -153,6 +230,11 @@ pub struct RegulatoryComplianceControlProperties {
     pub failed_assessments: Option<i64>,
     #[serde(rename = "skippedAssessments", default, skip_serializing_if = "Option::is_none")]
     pub skipped_assessments: Option<i64>,
+}
+impl RegulatoryComplianceControlProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod regulatory_compliance_control_properties {
     use super::*;
@@ -171,11 +253,21 @@ pub struct RegulatoryComplianceStandard {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceStandardProperties>,
 }
+impl RegulatoryComplianceStandard {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceStandardList {
     pub value: Vec<RegulatoryComplianceStandard>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RegulatoryComplianceStandardList {
+    pub fn new(value: Vec<RegulatoryComplianceStandard>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceStandardProperties {
@@ -189,6 +281,11 @@ pub struct RegulatoryComplianceStandardProperties {
     pub skipped_controls: Option<i64>,
     #[serde(rename = "unsupportedControls", default, skip_serializing_if = "Option::is_none")]
     pub unsupported_controls: Option<i64>,
+}
+impl RegulatoryComplianceStandardProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod regulatory_compliance_standard_properties {
     use super::*;
@@ -209,9 +306,19 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceDetails {
     pub source: resource_details::Source,
+}
+impl ResourceDetails {
+    pub fn new(source: resource_details::Source) -> Self {
+        Self { source }
+    }
 }
 pub mod resource_details {
     use super::*;
@@ -227,12 +334,22 @@ pub struct ScopeElement {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
 }
+impl ScopeElement {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessment {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAssessmentProperties>,
+}
+impl SecurityAssessment {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentList {
@@ -241,6 +358,11 @@ pub struct SecurityAssessmentList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl SecurityAssessmentList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentMetadata {
     #[serde(flatten)]
@@ -248,12 +370,22 @@ pub struct SecurityAssessmentMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAssessmentMetadataProperties>,
 }
+impl SecurityAssessmentMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentMetadataList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityAssessmentMetadata>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl SecurityAssessmentMetadataList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentMetadataProperties {
@@ -278,6 +410,27 @@ pub struct SecurityAssessmentMetadataProperties {
     pub preview: Option<bool>,
     #[serde(rename = "assessmentType")]
     pub assessment_type: security_assessment_metadata_properties::AssessmentType,
+}
+impl SecurityAssessmentMetadataProperties {
+    pub fn new(
+        display_name: String,
+        severity: security_assessment_metadata_properties::Severity,
+        assessment_type: security_assessment_metadata_properties::AssessmentType,
+    ) -> Self {
+        Self {
+            display_name,
+            policy_definition_id: None,
+            description: None,
+            remediation_description: None,
+            categories: Vec::new(),
+            severity,
+            user_impact: None,
+            implementation_effort: None,
+            threats: Vec::new(),
+            preview: None,
+            assessment_type,
+        }
+    }
 }
 pub mod security_assessment_metadata_properties {
     use super::*;
@@ -318,8 +471,24 @@ pub struct SecurityAssessmentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub links: Option<AssessmentLinks>,
 }
+impl SecurityAssessmentProperties {
+    pub fn new(resource_details: ResourceDetails, status: AssessmentStatus) -> Self {
+        Self {
+            resource_details,
+            display_name: None,
+            status,
+            additional_data: None,
+            links: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuppressionAlertsScope {
     #[serde(rename = "allOf")]
     pub all_of: Vec<ScopeElement>,
+}
+impl SuppressionAlertsScope {
+    pub fn new(all_of: Vec<ScopeElement>) -> Self {
+        Self { all_of }
+    }
 }

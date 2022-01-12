@@ -15,6 +15,17 @@ pub struct AzureFileShareProtectionPolicy {
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
 }
+impl AzureFileShareProtectionPolicy {
+    pub fn new(protection_policy: ProtectionPolicy) -> Self {
+        Self {
+            protection_policy,
+            work_load_type: None,
+            schedule_policy: None,
+            retention_policy: None,
+            time_zone: None,
+        }
+    }
+}
 pub mod azure_file_share_protection_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -55,6 +66,17 @@ pub struct AzureFileShareRecoveryPoint {
     #[serde(rename = "recoveryPointSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_size_in_gb: Option<i32>,
 }
+impl AzureFileShareRecoveryPoint {
+    pub fn new(recovery_point: RecoveryPoint) -> Self {
+        Self {
+            recovery_point,
+            recovery_point_type: None,
+            recovery_point_time: None,
+            file_share_snapshot_uri: None,
+            recovery_point_size_in_gb: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFileShareRestoreRequest {
     #[serde(flatten)]
@@ -71,6 +93,19 @@ pub struct AzureFileShareRestoreRequest {
     pub restore_file_specs: Vec<RestoreFileSpecs>,
     #[serde(rename = "targetDetails", default, skip_serializing_if = "Option::is_none")]
     pub target_details: Option<TargetAfsRestoreInfo>,
+}
+impl AzureFileShareRestoreRequest {
+    pub fn new(restore_request: RestoreRequest) -> Self {
+        Self {
+            restore_request,
+            recovery_type: None,
+            source_resource_id: None,
+            copy_options: None,
+            restore_request_type: None,
+            restore_file_specs: Vec::new(),
+            target_details: None,
+        }
+    }
 }
 pub mod azure_file_share_restore_request {
     use super::*;
@@ -116,6 +151,11 @@ pub struct AzureFileshareProtectedItem {
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureFileshareProtectedItemExtendedInfo>,
 }
+impl AzureFileshareProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod azure_fileshare_protected_item {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -149,15 +189,30 @@ pub struct AzureFileshareProtectedItemExtendedInfo {
     #[serde(rename = "resourceStateSyncTime", default, skip_serializing_if = "Option::is_none")]
     pub resource_state_sync_time: Option<String>,
 }
+impl AzureFileshareProtectedItemExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSClassicComputeVmProtectedItem {
     #[serde(flatten)]
     pub azure_iaa_svm_protected_item: AzureIaaSvmProtectedItem,
 }
+impl AzureIaaSClassicComputeVmProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSComputeVmProtectedItem {
     #[serde(flatten)]
     pub azure_iaa_svm_protected_item: AzureIaaSvmProtectedItem,
+}
+impl AzureIaaSComputeVmProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSvmErrorInfo {
@@ -170,6 +225,11 @@ pub struct AzureIaaSvmErrorInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
 }
+impl AzureIaaSvmErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSvmHealthDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -180,6 +240,11 @@ pub struct AzureIaaSvmHealthDetails {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
+}
+impl AzureIaaSvmHealthDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureIaaSvmJob {
@@ -196,6 +261,18 @@ pub struct AzureIaaSvmJob {
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureIaaSvmJobExtendedInfo>,
 }
+impl AzureIaaSvmJob {
+    pub fn new(job: Job) -> Self {
+        Self {
+            job,
+            duration: None,
+            actions_info: Vec::new(),
+            error_details: Vec::new(),
+            virtual_machine_version: None,
+            extended_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSvmJobExtendedInfo {
     #[serde(rename = "tasksList", default, skip_serializing_if = "Vec::is_empty")]
@@ -210,6 +287,11 @@ pub struct AzureIaaSvmJobExtendedInfo {
     pub estimated_remaining_duration: Option<String>,
     #[serde(rename = "dynamicErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_error_message: Option<String>,
+}
+impl AzureIaaSvmJobExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSvmJobTaskDetails {
@@ -229,6 +311,11 @@ pub struct AzureIaaSvmJobTaskDetails {
     pub progress_percentage: Option<f64>,
     #[serde(rename = "taskExecutionDetails", default, skip_serializing_if = "Option::is_none")]
     pub task_execution_details: Option<String>,
+}
+impl AzureIaaSvmJobTaskDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureIaaSvmProtectedItem {
@@ -256,6 +343,11 @@ pub struct AzureIaaSvmProtectedItem {
     pub extended_info: Option<AzureIaaSvmProtectedItemExtendedInfo>,
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
     pub extended_properties: Option<ExtendedProperties>,
+}
+impl AzureIaaSvmProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod azure_iaa_svm_protected_item {
     use super::*;
@@ -286,6 +378,11 @@ pub struct AzureIaaSvmProtectedItemExtendedInfo {
     #[serde(rename = "policyInconsistent", default, skip_serializing_if = "Option::is_none")]
     pub policy_inconsistent: Option<bool>,
 }
+impl AzureIaaSvmProtectedItemExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureIaaSvmProtectionPolicy {
     #[serde(flatten)]
@@ -299,6 +396,17 @@ pub struct AzureIaaSvmProtectionPolicy {
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
 }
+impl AzureIaaSvmProtectionPolicy {
+    pub fn new(protection_policy: ProtectionPolicy) -> Self {
+        Self {
+            protection_policy,
+            schedule_policy: None,
+            retention_policy: None,
+            instant_rp_retention_range_in_days: None,
+            time_zone: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureSqlProtectedItem {
     #[serde(flatten)]
@@ -309,6 +417,11 @@ pub struct AzureSqlProtectedItem {
     pub protection_state: Option<azure_sql_protected_item::ProtectionState>,
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureSqlProtectedItemExtendedInfo>,
+}
+impl AzureSqlProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod azure_sql_protected_item {
     use super::*;
@@ -332,12 +445,25 @@ pub struct AzureSqlProtectedItemExtendedInfo {
     #[serde(rename = "policyState", default, skip_serializing_if = "Option::is_none")]
     pub policy_state: Option<String>,
 }
+impl AzureSqlProtectedItemExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSqlProtectionPolicy {
     #[serde(flatten)]
     pub protection_policy: ProtectionPolicy,
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+}
+impl AzureSqlProtectionPolicy {
+    pub fn new(protection_policy: ProtectionPolicy) -> Self {
+        Self {
+            protection_policy,
+            retention_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureStorageErrorInfo {
@@ -347,6 +473,11 @@ pub struct AzureStorageErrorInfo {
     pub error_string: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
+}
+impl AzureStorageErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureStorageJob {
@@ -365,6 +496,19 @@ pub struct AzureStorageJob {
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureStorageJobExtendedInfo>,
 }
+impl AzureStorageJob {
+    pub fn new(job: Job) -> Self {
+        Self {
+            job,
+            duration: None,
+            actions_info: Vec::new(),
+            error_details: Vec::new(),
+            storage_account_name: None,
+            storage_account_version: None,
+            extended_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureStorageJobExtendedInfo {
     #[serde(rename = "tasksList", default, skip_serializing_if = "Vec::is_empty")]
@@ -374,12 +518,22 @@ pub struct AzureStorageJobExtendedInfo {
     #[serde(rename = "dynamicErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_error_message: Option<String>,
 }
+impl AzureStorageJobExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureStorageJobTaskDetails {
     #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+}
+impl AzureStorageJobTaskDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureVmWorkloadProtectedItem {
@@ -409,6 +563,11 @@ pub struct AzureVmWorkloadProtectedItem {
     pub protected_item_health_status: Option<azure_vm_workload_protected_item::ProtectedItemHealthStatus>,
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureVmWorkloadProtectedItemExtendedInfo>,
+}
+impl AzureVmWorkloadProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod azure_vm_workload_protected_item {
     use super::*;
@@ -449,6 +608,11 @@ pub struct AzureVmWorkloadProtectedItemExtendedInfo {
     #[serde(rename = "policyState", default, skip_serializing_if = "Option::is_none")]
     pub policy_state: Option<String>,
 }
+impl AzureVmWorkloadProtectedItemExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureVmWorkloadProtectionPolicy {
     #[serde(flatten)]
@@ -461,6 +625,17 @@ pub struct AzureVmWorkloadProtectionPolicy {
     pub sub_protection_policy: Vec<SubProtectionPolicy>,
     #[serde(rename = "makePolicyConsistent", default, skip_serializing_if = "Option::is_none")]
     pub make_policy_consistent: Option<bool>,
+}
+impl AzureVmWorkloadProtectionPolicy {
+    pub fn new(protection_policy: ProtectionPolicy) -> Self {
+        Self {
+            protection_policy,
+            work_load_type: None,
+            settings: None,
+            sub_protection_policy: Vec::new(),
+            make_policy_consistent: None,
+        }
+    }
 }
 pub mod azure_vm_workload_protection_policy {
     use super::*;
@@ -494,15 +669,30 @@ pub struct AzureVmWorkloadSapAseDatabaseProtectedItem {
     #[serde(flatten)]
     pub azure_vm_workload_protected_item: AzureVmWorkloadProtectedItem,
 }
+impl AzureVmWorkloadSapAseDatabaseProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureVmWorkloadSapHanaDatabaseProtectedItem {
     #[serde(flatten)]
     pub azure_vm_workload_protected_item: AzureVmWorkloadProtectedItem,
 }
+impl AzureVmWorkloadSapHanaDatabaseProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureVmWorkloadSqlDatabaseProtectedItem {
     #[serde(flatten)]
     pub azure_vm_workload_protected_item: AzureVmWorkloadProtectedItem,
+}
+impl AzureVmWorkloadSqlDatabaseProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWorkloadErrorInfo {
@@ -516,6 +706,11 @@ pub struct AzureWorkloadErrorInfo {
     pub recommendations: Vec<String>,
     #[serde(rename = "additionalDetails", default, skip_serializing_if = "Option::is_none")]
     pub additional_details: Option<String>,
+}
+impl AzureWorkloadErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadJob {
@@ -532,6 +727,18 @@ pub struct AzureWorkloadJob {
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureWorkloadJobExtendedInfo>,
 }
+impl AzureWorkloadJob {
+    pub fn new(job: Job) -> Self {
+        Self {
+            job,
+            workload_type: None,
+            duration: None,
+            actions_info: Vec::new(),
+            error_details: Vec::new(),
+            extended_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWorkloadJobExtendedInfo {
     #[serde(rename = "tasksList", default, skip_serializing_if = "Vec::is_empty")]
@@ -541,12 +748,22 @@ pub struct AzureWorkloadJobExtendedInfo {
     #[serde(rename = "dynamicErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_error_message: Option<String>,
 }
+impl AzureWorkloadJobExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWorkloadJobTaskDetails {
     #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+}
+impl AzureWorkloadJobTaskDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadPointInTimeRecoveryPoint {
@@ -555,12 +772,28 @@ pub struct AzureWorkloadPointInTimeRecoveryPoint {
     #[serde(rename = "timeRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub time_ranges: Vec<PointInTimeRange>,
 }
+impl AzureWorkloadPointInTimeRecoveryPoint {
+    pub fn new(azure_workload_recovery_point: AzureWorkloadRecoveryPoint) -> Self {
+        Self {
+            azure_workload_recovery_point,
+            time_ranges: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadPointInTimeRestoreRequest {
     #[serde(flatten)]
     pub azure_workload_restore_request: AzureWorkloadRestoreRequest,
     #[serde(rename = "pointInTime", default, skip_serializing_if = "Option::is_none")]
     pub point_in_time: Option<String>,
+}
+impl AzureWorkloadPointInTimeRestoreRequest {
+    pub fn new(azure_workload_restore_request: AzureWorkloadRestoreRequest) -> Self {
+        Self {
+            azure_workload_restore_request,
+            point_in_time: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadRecoveryPoint {
@@ -570,6 +803,15 @@ pub struct AzureWorkloadRecoveryPoint {
     pub recovery_point_time_in_utc: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<azure_workload_recovery_point::Type>,
+}
+impl AzureWorkloadRecoveryPoint {
+    pub fn new(recovery_point: RecoveryPoint) -> Self {
+        Self {
+            recovery_point,
+            recovery_point_time_in_utc: None,
+            type_: None,
+        }
+    }
 }
 pub mod azure_workload_recovery_point {
     use super::*;
@@ -596,6 +838,18 @@ pub struct AzureWorkloadRestoreRequest {
     #[serde(rename = "recoveryMode", default, skip_serializing_if = "Option::is_none")]
     pub recovery_mode: Option<azure_workload_restore_request::RecoveryMode>,
 }
+impl AzureWorkloadRestoreRequest {
+    pub fn new(restore_request: RestoreRequest) -> Self {
+        Self {
+            restore_request,
+            recovery_type: None,
+            source_resource_id: None,
+            property_bag: None,
+            target_info: None,
+            recovery_mode: None,
+        }
+    }
+}
 pub mod azure_workload_restore_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -618,6 +872,13 @@ pub struct AzureWorkloadSapHanaPointInTimeRecoveryPoint {
     #[serde(flatten)]
     pub azure_workload_point_in_time_recovery_point: AzureWorkloadPointInTimeRecoveryPoint,
 }
+impl AzureWorkloadSapHanaPointInTimeRecoveryPoint {
+    pub fn new(azure_workload_point_in_time_recovery_point: AzureWorkloadPointInTimeRecoveryPoint) -> Self {
+        Self {
+            azure_workload_point_in_time_recovery_point,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSapHanaPointInTimeRestoreRequest {
     #[serde(flatten)]
@@ -625,15 +886,37 @@ pub struct AzureWorkloadSapHanaPointInTimeRestoreRequest {
     #[serde(rename = "pointInTime", default, skip_serializing_if = "Option::is_none")]
     pub point_in_time: Option<String>,
 }
+impl AzureWorkloadSapHanaPointInTimeRestoreRequest {
+    pub fn new(azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest) -> Self {
+        Self {
+            azure_workload_sap_hana_restore_request,
+            point_in_time: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSapHanaRecoveryPoint {
     #[serde(flatten)]
     pub azure_workload_recovery_point: AzureWorkloadRecoveryPoint,
 }
+impl AzureWorkloadSapHanaRecoveryPoint {
+    pub fn new(azure_workload_recovery_point: AzureWorkloadRecoveryPoint) -> Self {
+        Self {
+            azure_workload_recovery_point,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSapHanaRestoreRequest {
     #[serde(flatten)]
     pub azure_workload_restore_request: AzureWorkloadRestoreRequest,
+}
+impl AzureWorkloadSapHanaRestoreRequest {
+    pub fn new(azure_workload_restore_request: AzureWorkloadRestoreRequest) -> Self {
+        Self {
+            azure_workload_restore_request,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSqlPointInTimeRecoveryPoint {
@@ -642,12 +925,28 @@ pub struct AzureWorkloadSqlPointInTimeRecoveryPoint {
     #[serde(rename = "timeRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub time_ranges: Vec<PointInTimeRange>,
 }
+impl AzureWorkloadSqlPointInTimeRecoveryPoint {
+    pub fn new(azure_workload_sql_recovery_point: AzureWorkloadSqlRecoveryPoint) -> Self {
+        Self {
+            azure_workload_sql_recovery_point,
+            time_ranges: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSqlPointInTimeRestoreRequest {
     #[serde(flatten)]
     pub azure_workload_sql_restore_request: AzureWorkloadSqlRestoreRequest,
     #[serde(rename = "pointInTime", default, skip_serializing_if = "Option::is_none")]
     pub point_in_time: Option<String>,
+}
+impl AzureWorkloadSqlPointInTimeRestoreRequest {
+    pub fn new(azure_workload_sql_restore_request: AzureWorkloadSqlRestoreRequest) -> Self {
+        Self {
+            azure_workload_sql_restore_request,
+            point_in_time: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSqlRecoveryPoint {
@@ -656,12 +955,25 @@ pub struct AzureWorkloadSqlRecoveryPoint {
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureWorkloadSqlRecoveryPointExtendedInfo>,
 }
+impl AzureWorkloadSqlRecoveryPoint {
+    pub fn new(azure_workload_recovery_point: AzureWorkloadRecoveryPoint) -> Self {
+        Self {
+            azure_workload_recovery_point,
+            extended_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureWorkloadSqlRecoveryPointExtendedInfo {
     #[serde(rename = "dataDirectoryTimeInUTC", default, skip_serializing_if = "Option::is_none")]
     pub data_directory_time_in_utc: Option<String>,
     #[serde(rename = "dataDirectoryPaths", default, skip_serializing_if = "Vec::is_empty")]
     pub data_directory_paths: Vec<SqlDataDirectory>,
+}
+impl AzureWorkloadSqlRecoveryPointExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSqlRestoreRequest {
@@ -674,6 +986,16 @@ pub struct AzureWorkloadSqlRestoreRequest {
     #[serde(rename = "alternateDirectoryPaths", default, skip_serializing_if = "Vec::is_empty")]
     pub alternate_directory_paths: Vec<SqlDataDirectoryMapping>,
 }
+impl AzureWorkloadSqlRestoreRequest {
+    pub fn new(azure_workload_restore_request: AzureWorkloadRestoreRequest) -> Self {
+        Self {
+            azure_workload_restore_request,
+            should_use_alternate_target_location: None,
+            is_non_recoverable: None,
+            alternate_directory_paths: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BekDetails {
     #[serde(rename = "secretUrl", default, skip_serializing_if = "Option::is_none")]
@@ -682,6 +1004,11 @@ pub struct BekDetails {
     pub secret_vault_id: Option<String>,
     #[serde(rename = "secretData", default, skip_serializing_if = "Option::is_none")]
     pub secret_data: Option<String>,
+}
+impl BekDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BmsrpQueryObject {
@@ -693,6 +1020,11 @@ pub struct BmsrpQueryObject {
     pub restore_point_query_type: Option<bmsrp_query_object::RestorePointQueryType>,
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<bool>,
+}
+impl BmsrpQueryObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod bmsrp_query_object {
     use super::*;
@@ -718,6 +1050,11 @@ pub struct BackupResourceVaultConfig {
     pub enhanced_security_state: Option<backup_resource_vault_config::EnhancedSecurityState>,
     #[serde(rename = "softDeleteFeatureState", default, skip_serializing_if = "Option::is_none")]
     pub soft_delete_feature_state: Option<backup_resource_vault_config::SoftDeleteFeatureState>,
+}
+impl BackupResourceVaultConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod backup_resource_vault_config {
     use super::*;
@@ -759,6 +1096,11 @@ pub struct BackupResourceVaultConfigResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackupResourceVaultConfig>,
 }
+impl BackupResourceVaultConfigResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DpmProtectedItem {
     #[serde(flatten)]
@@ -771,6 +1113,11 @@ pub struct DpmProtectedItem {
     pub protection_state: Option<dpm_protected_item::ProtectionState>,
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<DpmProtectedItemExtendedInfo>,
+}
+impl DpmProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod dpm_protected_item {
     use super::*;
@@ -816,10 +1163,20 @@ pub struct DpmProtectedItemExtendedInfo {
     #[serde(rename = "totalDiskStorageSizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub total_disk_storage_size_in_bytes: Option<String>,
 }
+impl DpmProtectedItemExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DailyRetentionFormat {
     #[serde(rename = "daysOfTheMonth", default, skip_serializing_if = "Vec::is_empty")]
     pub days_of_the_month: Vec<Day>,
+}
+impl DailyRetentionFormat {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DailyRetentionSchedule {
@@ -828,12 +1185,22 @@ pub struct DailyRetentionSchedule {
     #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
     pub retention_duration: Option<RetentionDuration>,
 }
+impl DailyRetentionSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Day {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub date: Option<i32>,
     #[serde(rename = "isLast", default, skip_serializing_if = "Option::is_none")]
     pub is_last: Option<bool>,
+}
+impl Day {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskExclusionProperties {
@@ -842,6 +1209,11 @@ pub struct DiskExclusionProperties {
     #[serde(rename = "isInclusionList", default, skip_serializing_if = "Option::is_none")]
     pub is_inclusion_list: Option<bool>,
 }
+impl DiskExclusionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -849,12 +1221,22 @@ pub struct DiskInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl DiskInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DpmErrorInfo {
     #[serde(rename = "errorString", default, skip_serializing_if = "Option::is_none")]
     pub error_string: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
+}
+impl DpmErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DpmJob {
@@ -877,6 +1259,21 @@ pub struct DpmJob {
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<DpmJobExtendedInfo>,
 }
+impl DpmJob {
+    pub fn new(job: Job) -> Self {
+        Self {
+            job,
+            duration: None,
+            dpm_server_name: None,
+            container_name: None,
+            container_type: None,
+            workload_type: None,
+            actions_info: Vec::new(),
+            error_details: Vec::new(),
+            extended_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DpmJobExtendedInfo {
     #[serde(rename = "tasksList", default, skip_serializing_if = "Vec::is_empty")]
@@ -885,6 +1282,11 @@ pub struct DpmJobExtendedInfo {
     pub property_bag: Option<serde_json::Value>,
     #[serde(rename = "dynamicErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_error_message: Option<String>,
+}
+impl DpmJobExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DpmJobTaskDetails {
@@ -899,6 +1301,11 @@ pub struct DpmJobTaskDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
+impl DpmJobTaskDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionDetails {
     #[serde(rename = "encryptionEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -912,6 +1319,11 @@ pub struct EncryptionDetails {
     #[serde(rename = "secretKeyVaultId", default, skip_serializing_if = "Option::is_none")]
     pub secret_key_vault_id: Option<String>,
 }
+impl EncryptionDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -920,6 +1332,11 @@ pub struct ErrorDetail {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
+}
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportJobsOperationResultInfo {
@@ -934,10 +1351,26 @@ pub struct ExportJobsOperationResultInfo {
     #[serde(rename = "excelFileBlobSasKey", default, skip_serializing_if = "Option::is_none")]
     pub excel_file_blob_sas_key: Option<String>,
 }
+impl ExportJobsOperationResultInfo {
+    pub fn new(operation_result_info_base: OperationResultInfoBase) -> Self {
+        Self {
+            operation_result_info_base,
+            blob_url: None,
+            blob_sas_key: None,
+            excel_file_blob_url: None,
+            excel_file_blob_sas_key: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedProperties {
     #[serde(rename = "diskExclusionProperties", default, skip_serializing_if = "Option::is_none")]
     pub disk_exclusion_properties: Option<DiskExclusionProperties>,
+}
+impl ExtendedProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenericProtectedItem {
@@ -955,6 +1388,11 @@ pub struct GenericProtectedItem {
     pub source_associations: Option<serde_json::Value>,
     #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
     pub fabric_name: Option<String>,
+}
+impl GenericProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod generic_protected_item {
     use super::*;
@@ -980,6 +1418,16 @@ pub struct GenericProtectionPolicy {
     #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
     pub fabric_name: Option<String>,
 }
+impl GenericProtectionPolicy {
+    pub fn new(protection_policy: ProtectionPolicy) -> Self {
+        Self {
+            protection_policy,
+            sub_protection_policy: Vec::new(),
+            time_zone: None,
+            fabric_name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenericRecoveryPoint {
     #[serde(flatten)]
@@ -993,10 +1441,26 @@ pub struct GenericRecoveryPoint {
     #[serde(rename = "recoveryPointAdditionalInfo", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_additional_info: Option<String>,
 }
+impl GenericRecoveryPoint {
+    pub fn new(recovery_point: RecoveryPoint) -> Self {
+        Self {
+            recovery_point,
+            friendly_name: None,
+            recovery_point_type: None,
+            recovery_point_time: None,
+            recovery_point_additional_info: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetProtectedItemQueryObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expand: Option<String>,
+}
+impl GetProtectedItemQueryObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IaasVmRecoveryPoint {
@@ -1028,6 +1492,26 @@ pub struct IaasVmRecoveryPoint {
     pub os_type: Option<String>,
     #[serde(rename = "recoveryPointDiskConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_disk_configuration: Option<RecoveryPointDiskConfiguration>,
+}
+impl IaasVmRecoveryPoint {
+    pub fn new(recovery_point: RecoveryPoint) -> Self {
+        Self {
+            recovery_point,
+            recovery_point_type: None,
+            recovery_point_time: None,
+            recovery_point_additional_info: None,
+            source_vm_storage_type: None,
+            is_source_vm_encrypted: None,
+            key_and_secret: None,
+            is_instant_ilr_session_active: None,
+            recovery_point_tier_details: Vec::new(),
+            is_managed_virtual_machine: None,
+            virtual_machine_size: None,
+            original_storage_account_option: None,
+            os_type: None,
+            recovery_point_disk_configuration: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IaasVmRestoreRequest {
@@ -1064,6 +1548,28 @@ pub struct IaasVmRestoreRequest {
     #[serde(rename = "restoreDiskLunList", default, skip_serializing_if = "Vec::is_empty")]
     pub restore_disk_lun_list: Vec<i32>,
 }
+impl IaasVmRestoreRequest {
+    pub fn new(restore_request: RestoreRequest) -> Self {
+        Self {
+            restore_request,
+            recovery_point_id: None,
+            recovery_type: None,
+            source_resource_id: None,
+            target_virtual_machine_id: None,
+            target_resource_group_id: None,
+            storage_account_id: None,
+            virtual_network_id: None,
+            subnet_id: None,
+            target_domain_name_id: None,
+            region: None,
+            affinity_group: None,
+            create_new_cloud_service: None,
+            original_storage_account_option: None,
+            encryption_details: None,
+            restore_disk_lun_list: Vec::new(),
+        }
+    }
+}
 pub mod iaas_vm_restore_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1093,6 +1599,20 @@ pub struct Job {
     pub activity_id: Option<String>,
     #[serde(rename = "jobType")]
     pub job_type: String,
+}
+impl Job {
+    pub fn new(job_type: String) -> Self {
+        Self {
+            entity_friendly_name: None,
+            backup_management_type: None,
+            operation: None,
+            status: None,
+            start_time: None,
+            end_time: None,
+            activity_id: None,
+            job_type,
+        }
+    }
 }
 pub mod job {
     use super::*;
@@ -1126,6 +1646,11 @@ pub struct JobQueryObject {
     pub start_time: Option<String>,
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+}
+impl JobQueryObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_query_object {
     use super::*;
@@ -1175,12 +1700,22 @@ pub struct JobResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Job>,
 }
+impl JobResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobResourceList {
     #[serde(flatten)]
     pub resource_list: ResourceList,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobResource>,
+}
+impl JobResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KekDetails {
@@ -1191,6 +1726,11 @@ pub struct KekDetails {
     #[serde(rename = "keyBackupData", default, skip_serializing_if = "Option::is_none")]
     pub key_backup_data: Option<String>,
 }
+impl KekDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyAndSecretDetails {
     #[serde(rename = "kekDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1200,12 +1740,25 @@ pub struct KeyAndSecretDetails {
     #[serde(rename = "encryptionMechanism", default, skip_serializing_if = "Option::is_none")]
     pub encryption_mechanism: Option<String>,
 }
+impl KeyAndSecretDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSchedulePolicy {
     #[serde(flatten)]
     pub schedule_policy: SchedulePolicy,
     #[serde(rename = "scheduleFrequencyInMins", default, skip_serializing_if = "Option::is_none")]
     pub schedule_frequency_in_mins: Option<i32>,
+}
+impl LogSchedulePolicy {
+    pub fn new(schedule_policy: SchedulePolicy) -> Self {
+        Self {
+            schedule_policy,
+            schedule_frequency_in_mins: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LongTermRetentionPolicy {
@@ -1220,10 +1773,26 @@ pub struct LongTermRetentionPolicy {
     #[serde(rename = "yearlySchedule", default, skip_serializing_if = "Option::is_none")]
     pub yearly_schedule: Option<YearlyRetentionSchedule>,
 }
+impl LongTermRetentionPolicy {
+    pub fn new(retention_policy: RetentionPolicy) -> Self {
+        Self {
+            retention_policy,
+            daily_schedule: None,
+            weekly_schedule: None,
+            monthly_schedule: None,
+            yearly_schedule: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LongTermSchedulePolicy {
     #[serde(flatten)]
     pub schedule_policy: SchedulePolicy,
+}
+impl LongTermSchedulePolicy {
+    pub fn new(schedule_policy: SchedulePolicy) -> Self {
+        Self { schedule_policy }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MabErrorInfo {
@@ -1231,6 +1800,11 @@ pub struct MabErrorInfo {
     pub error_string: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recommendations: Vec<String>,
+}
+impl MabErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MabFileFolderProtectedItem {
@@ -1251,6 +1825,11 @@ pub struct MabFileFolderProtectedItem {
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<MabFileFolderProtectedItemExtendedInfo>,
 }
+impl MabFileFolderProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MabFileFolderProtectedItemExtendedInfo {
     #[serde(rename = "lastRefreshedAt", default, skip_serializing_if = "Option::is_none")]
@@ -1259,6 +1838,11 @@ pub struct MabFileFolderProtectedItemExtendedInfo {
     pub oldest_recovery_point: Option<String>,
     #[serde(rename = "recoveryPointCount", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_count: Option<i32>,
+}
+impl MabFileFolderProtectedItemExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MabJob {
@@ -1278,6 +1862,20 @@ pub struct MabJob {
     pub error_details: Vec<MabErrorInfo>,
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<MabJobExtendedInfo>,
+}
+impl MabJob {
+    pub fn new(job: Job) -> Self {
+        Self {
+            job,
+            duration: None,
+            actions_info: Vec::new(),
+            mab_server_name: None,
+            mab_server_type: None,
+            workload_type: None,
+            error_details: Vec::new(),
+            extended_info: None,
+        }
+    }
 }
 pub mod mab_job {
     use super::*;
@@ -1339,6 +1937,11 @@ pub struct MabJobExtendedInfo {
     #[serde(rename = "dynamicErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub dynamic_error_message: Option<String>,
 }
+impl MabJobExtendedInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MabJobTaskDetails {
     #[serde(rename = "taskId", default, skip_serializing_if = "Option::is_none")]
@@ -1352,6 +1955,11 @@ pub struct MabJobTaskDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
+impl MabJobTaskDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MabProtectionPolicy {
     #[serde(flatten)]
@@ -1360,6 +1968,15 @@ pub struct MabProtectionPolicy {
     pub schedule_policy: Option<SchedulePolicy>,
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+}
+impl MabProtectionPolicy {
+    pub fn new(protection_policy: ProtectionPolicy) -> Self {
+        Self {
+            protection_policy,
+            schedule_policy: None,
+            retention_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonthlyRetentionSchedule {
@@ -1373,6 +1990,11 @@ pub struct MonthlyRetentionSchedule {
     pub retention_times: Vec<String>,
     #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
     pub retention_duration: Option<RetentionDuration>,
+}
+impl MonthlyRetentionSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod monthly_retention_schedule {
     use super::*;
@@ -1390,10 +2012,23 @@ pub struct OperationResultInfo {
     #[serde(rename = "jobList", default, skip_serializing_if = "Vec::is_empty")]
     pub job_list: Vec<String>,
 }
+impl OperationResultInfo {
+    pub fn new(operation_result_info_base: OperationResultInfoBase) -> Self {
+        Self {
+            operation_result_info_base,
+            job_list: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResultInfoBase {
     #[serde(rename = "objectType")]
     pub object_type: String,
+}
+impl OperationResultInfoBase {
+    pub fn new(object_type: String) -> Self {
+        Self { object_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultInfoBaseResource {
@@ -1402,12 +2037,22 @@ pub struct OperationResultInfoBaseResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<OperationResultInfoBase>,
 }
+impl OperationResultInfoBaseResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationWorkerResponse {
     #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<operation_worker_response::StatusCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
+}
+impl OperationWorkerResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation_worker_response {
     use super::*;
@@ -1470,6 +2115,11 @@ pub struct PointInTimeRange {
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
+impl PointInTimeRange {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectedItem {
     #[serde(rename = "protectedItemType", default, skip_serializing_if = "Option::is_none")]
@@ -1500,6 +2150,11 @@ pub struct ProtectedItem {
     pub is_deferred_delete_schedule_upcoming: Option<bool>,
     #[serde(rename = "isRehydrate", default, skip_serializing_if = "Option::is_none")]
     pub is_rehydrate: Option<bool>,
+}
+impl ProtectedItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod protected_item {
     use super::*;
@@ -1570,6 +2225,11 @@ pub struct ProtectedItemQueryObject {
     #[serde(rename = "backupSetName", default, skip_serializing_if = "Option::is_none")]
     pub backup_set_name: Option<String>,
 }
+impl ProtectedItemQueryObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod protected_item_query_object {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1626,6 +2286,11 @@ pub struct ProtectedItemResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProtectedItem>,
 }
+impl ProtectedItemResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectedItemResourceList {
     #[serde(flatten)]
@@ -1633,12 +2298,25 @@ pub struct ProtectedItemResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectedItemResource>,
 }
+impl ProtectedItemResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProtectionPolicy {
     #[serde(rename = "protectedItemsCount", default, skip_serializing_if = "Option::is_none")]
     pub protected_items_count: Option<i32>,
     #[serde(rename = "backupManagementType")]
     pub backup_management_type: String,
+}
+impl ProtectionPolicy {
+    pub fn new(backup_management_type: String) -> Self {
+        Self {
+            protected_items_count: None,
+            backup_management_type,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionPolicyQueryObject {
@@ -1648,6 +2326,11 @@ pub struct ProtectionPolicyQueryObject {
     pub fabric_name: Option<String>,
     #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
     pub workload_type: Option<protection_policy_query_object::WorkloadType>,
+}
+impl ProtectionPolicyQueryObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod protection_policy_query_object {
     use super::*;
@@ -1698,6 +2381,11 @@ pub struct ProtectionPolicyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProtectionPolicy>,
 }
+impl ProtectionPolicyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionPolicyResourceList {
     #[serde(flatten)]
@@ -1705,10 +2393,20 @@ pub struct ProtectionPolicyResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProtectionPolicyResource>,
 }
+impl ProtectionPolicyResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPoint {
     #[serde(rename = "objectType")]
     pub object_type: String,
+}
+impl RecoveryPoint {
+    pub fn new(object_type: String) -> Self {
+        Self { object_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoveryPointDiskConfiguration {
@@ -1721,12 +2419,22 @@ pub struct RecoveryPointDiskConfiguration {
     #[serde(rename = "excludedDiskList", default, skip_serializing_if = "Vec::is_empty")]
     pub excluded_disk_list: Vec<DiskInformation>,
 }
+impl RecoveryPointDiskConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoveryPointResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecoveryPoint>,
+}
+impl RecoveryPointResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoveryPointResourceList {
@@ -1735,12 +2443,22 @@ pub struct RecoveryPointResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RecoveryPointResource>,
 }
+impl RecoveryPointResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoveryPointTierInformation {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<recovery_point_tier_information::Type>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<recovery_point_tier_information::Status>,
+}
+impl RecoveryPointTierInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod recovery_point_tier_information {
     use super::*;
@@ -1775,10 +2493,20 @@ pub struct Resource {
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoreFileSpecs {
@@ -1789,10 +2517,20 @@ pub struct RestoreFileSpecs {
     #[serde(rename = "targetFolderPath", default, skip_serializing_if = "Option::is_none")]
     pub target_folder_path: Option<String>,
 }
+impl RestoreFileSpecs {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestoreRequest {
     #[serde(rename = "objectType")]
     pub object_type: String,
+}
+impl RestoreRequest {
+    pub fn new(object_type: String) -> Self {
+        Self { object_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoreRequestResource {
@@ -1801,12 +2539,22 @@ pub struct RestoreRequestResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RestoreRequest>,
 }
+impl RestoreRequestResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RetentionDuration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
     #[serde(rename = "durationType", default, skip_serializing_if = "Option::is_none")]
     pub duration_type: Option<retention_duration::DurationType>,
+}
+impl RetentionDuration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod retention_duration {
     use super::*;
@@ -1824,6 +2572,11 @@ pub struct RetentionPolicy {
     #[serde(rename = "retentionPolicyType")]
     pub retention_policy_type: String,
 }
+impl RetentionPolicy {
+    pub fn new(retention_policy_type: String) -> Self {
+        Self { retention_policy_type }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlDataDirectory {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -1832,6 +2585,11 @@ pub struct SqlDataDirectory {
     pub path: Option<String>,
     #[serde(rename = "logicalName", default, skip_serializing_if = "Option::is_none")]
     pub logical_name: Option<String>,
+}
+impl SqlDataDirectory {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod sql_data_directory {
     use super::*;
@@ -1853,6 +2611,11 @@ pub struct SqlDataDirectoryMapping {
     #[serde(rename = "targetPath", default, skip_serializing_if = "Option::is_none")]
     pub target_path: Option<String>,
 }
+impl SqlDataDirectoryMapping {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod sql_data_directory_mapping {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1867,6 +2630,11 @@ pub struct SchedulePolicy {
     #[serde(rename = "schedulePolicyType")]
     pub schedule_policy_type: String,
 }
+impl SchedulePolicy {
+    pub fn new(schedule_policy_type: String) -> Self {
+        Self { schedule_policy_type }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Settings {
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
@@ -1876,12 +2644,25 @@ pub struct Settings {
     #[serde(rename = "isCompression", default, skip_serializing_if = "Option::is_none")]
     pub is_compression: Option<bool>,
 }
+impl Settings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SimpleRetentionPolicy {
     #[serde(flatten)]
     pub retention_policy: RetentionPolicy,
     #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
     pub retention_duration: Option<RetentionDuration>,
+}
+impl SimpleRetentionPolicy {
+    pub fn new(retention_policy: RetentionPolicy) -> Self {
+        Self {
+            retention_policy,
+            retention_duration: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SimpleSchedulePolicy {
@@ -1895,6 +2676,17 @@ pub struct SimpleSchedulePolicy {
     pub schedule_run_times: Vec<String>,
     #[serde(rename = "scheduleWeeklyFrequency", default, skip_serializing_if = "Option::is_none")]
     pub schedule_weekly_frequency: Option<i32>,
+}
+impl SimpleSchedulePolicy {
+    pub fn new(schedule_policy: SchedulePolicy) -> Self {
+        Self {
+            schedule_policy,
+            schedule_run_frequency: None,
+            schedule_run_days: Vec::new(),
+            schedule_run_times: Vec::new(),
+            schedule_weekly_frequency: None,
+        }
+    }
 }
 pub mod simple_schedule_policy {
     use super::*;
@@ -1914,6 +2706,11 @@ pub struct SubProtectionPolicy {
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
+impl SubProtectionPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod sub_protection_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1932,6 +2729,11 @@ pub struct TargetAfsRestoreInfo {
     #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_id: Option<String>,
 }
+impl TargetAfsRestoreInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetRestoreInfo {
     #[serde(rename = "overwriteOption", default, skip_serializing_if = "Option::is_none")]
@@ -1940,6 +2742,11 @@ pub struct TargetRestoreInfo {
     pub container_id: Option<String>,
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+}
+impl TargetRestoreInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod target_restore_info {
     use super::*;
@@ -1955,20 +2762,42 @@ pub struct ValidateIaasVmRestoreOperationRequest {
     #[serde(flatten)]
     pub validate_restore_operation_request: ValidateRestoreOperationRequest,
 }
+impl ValidateIaasVmRestoreOperationRequest {
+    pub fn new(validate_restore_operation_request: ValidateRestoreOperationRequest) -> Self {
+        Self {
+            validate_restore_operation_request,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateOperationRequest {
     #[serde(rename = "objectType")]
     pub object_type: String,
+}
+impl ValidateOperationRequest {
+    pub fn new(object_type: String) -> Self {
+        Self { object_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateOperationResponse {
     #[serde(rename = "validationResults", default, skip_serializing_if = "Vec::is_empty")]
     pub validation_results: Vec<ErrorDetail>,
 }
+impl ValidateOperationResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateOperationsResponse {
     #[serde(rename = "validateOperationResponse", default, skip_serializing_if = "Option::is_none")]
     pub validate_operation_response: Option<ValidateOperationResponse>,
+}
+impl ValidateOperationsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateRestoreOperationRequest {
@@ -1977,12 +2806,25 @@ pub struct ValidateRestoreOperationRequest {
     #[serde(rename = "restoreRequest", default, skip_serializing_if = "Option::is_none")]
     pub restore_request: Option<RestoreRequest>,
 }
+impl ValidateRestoreOperationRequest {
+    pub fn new(validate_operation_request: ValidateOperationRequest) -> Self {
+        Self {
+            validate_operation_request,
+            restore_request: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WeeklyRetentionFormat {
     #[serde(rename = "daysOfTheWeek", default, skip_serializing_if = "Vec::is_empty")]
     pub days_of_the_week: Vec<String>,
     #[serde(rename = "weeksOfTheMonth", default, skip_serializing_if = "Vec::is_empty")]
     pub weeks_of_the_month: Vec<String>,
+}
+impl WeeklyRetentionFormat {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WeeklyRetentionSchedule {
@@ -1992,6 +2834,11 @@ pub struct WeeklyRetentionSchedule {
     pub retention_times: Vec<String>,
     #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
     pub retention_duration: Option<RetentionDuration>,
+}
+impl WeeklyRetentionSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct YearlyRetentionSchedule {
@@ -2007,6 +2854,11 @@ pub struct YearlyRetentionSchedule {
     pub retention_times: Vec<String>,
     #[serde(rename = "retentionDuration", default, skip_serializing_if = "Option::is_none")]
     pub retention_duration: Option<RetentionDuration>,
+}
+impl YearlyRetentionSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod yearly_retention_schedule {
     use super::*;

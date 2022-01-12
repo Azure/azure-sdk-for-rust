@@ -9,12 +9,22 @@ pub struct Amount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<f64>,
 }
+impl Amount {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscription {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BillingSubscriptionProperties>,
+}
+impl BillingSubscription {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscriptionAlias {
@@ -23,12 +33,22 @@ pub struct BillingSubscriptionAlias {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BillingSubscriptionAliasProperties>,
 }
+impl BillingSubscriptionAlias {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscriptionAliasListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BillingSubscriptionAlias>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl BillingSubscriptionAliasListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscriptionAliasProperties {
@@ -37,12 +57,22 @@ pub struct BillingSubscriptionAliasProperties {
     #[serde(rename = "billingSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub billing_subscription_id: Option<String>,
 }
+impl BillingSubscriptionAliasProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscriptionMergeRequest {
     #[serde(rename = "targetBillingSubscriptionName", default, skip_serializing_if = "Option::is_none")]
     pub target_billing_subscription_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<i32>,
+}
+impl BillingSubscriptionMergeRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscriptionProperties {
@@ -119,6 +149,11 @@ pub struct BillingSubscriptionProperties {
     #[serde(rename = "termEndDate", default, skip_serializing_if = "Option::is_none")]
     pub term_end_date: Option<String>,
 }
+impl BillingSubscriptionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod billing_subscription_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -153,12 +188,22 @@ pub struct BillingSubscriptionSplitRequest {
     #[serde(rename = "termDuration", default, skip_serializing_if = "Option::is_none")]
     pub term_duration: Option<String>,
 }
+impl BillingSubscriptionSplitRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscriptionsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BillingSubscription>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl BillingSubscriptionsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DetachPaymentMethodEligibilityError {
@@ -168,6 +213,11 @@ pub struct DetachPaymentMethodEligibilityError {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<DetachPaymentMethodErrorDetails>,
+}
+impl DetachPaymentMethodEligibilityError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DetachPaymentMethodEligibilityErrorCode {
@@ -182,6 +232,11 @@ pub struct DetachPaymentMethodEligibilityResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<DetachPaymentMethodEligibilityError>,
 }
+impl DetachPaymentMethodEligibilityResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DetachPaymentMethodErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -189,12 +244,22 @@ pub struct DetachPaymentMethodErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl DetachPaymentMethodErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnrollmentAccountSubscriptionDetails {
     #[serde(rename = "subscriptionEnrollmentAccountStatus", default, skip_serializing_if = "Option::is_none")]
     pub subscription_enrollment_account_status: Option<enrollment_account_subscription_details::SubscriptionEnrollmentAccountStatus>,
     #[serde(rename = "enrollmentAccountStartDate", default, skip_serializing_if = "Option::is_none")]
     pub enrollment_account_start_date: Option<String>,
+}
+impl EnrollmentAccountSubscriptionDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod enrollment_account_subscription_details {
     use super::*;
@@ -219,10 +284,20 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<ErrorSubDetails>,
 }
+impl ErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ErrorSubDetails = Vec<serde_json::Value>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -259,10 +334,20 @@ pub struct MoveBillingSubscriptionRequest {
     #[serde(rename = "destinationInvoiceSectionId", default, skip_serializing_if = "Option::is_none")]
     pub destination_invoice_section_id: Option<String>,
 }
+impl MoveBillingSubscriptionRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NextBillingCycleDetails {
     #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
     pub billing_frequency: Option<String>,
+}
+impl NextBillingCycleDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -272,6 +357,11 @@ pub struct Operation {
     pub is_data_action: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -286,6 +376,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -294,12 +389,22 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethod {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PaymentMethodProperties>,
+}
+impl PaymentMethod {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodLink {
@@ -308,10 +413,20 @@ pub struct PaymentMethodLink {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PaymentMethodLinkProperties>,
 }
+impl PaymentMethodLink {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodLinkProperties {
     #[serde(rename = "paymentMethod", default, skip_serializing_if = "Option::is_none")]
     pub payment_method: Option<PaymentMethodProjectionProperties>,
+}
+impl PaymentMethodLinkProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodLinksListResult {
@@ -320,12 +435,22 @@ pub struct PaymentMethodLinksListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PaymentMethodLinksListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodLogo {
     #[serde(rename = "mimeType", default, skip_serializing_if = "Option::is_none")]
     pub mime_type: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+}
+impl PaymentMethodLogo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodProjectionProperties {
@@ -347,6 +472,11 @@ pub struct PaymentMethodProjectionProperties {
     pub logos: Vec<PaymentMethodLogo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<payment_method_projection_properties::Status>,
+}
+impl PaymentMethodProjectionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod payment_method_projection_properties {
     use super::*;
@@ -382,6 +512,11 @@ pub struct PaymentMethodProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<payment_method_properties::Status>,
 }
+impl PaymentMethodProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod payment_method_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -402,12 +537,22 @@ pub struct PaymentMethodResource {
     #[serde(rename = "paymentMethodId", default, skip_serializing_if = "Option::is_none")]
     pub payment_method_id: Option<String>,
 }
+impl PaymentMethodResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PaymentMethod>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PaymentMethodsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RenewalTermDetails {
@@ -422,12 +567,22 @@ pub struct RenewalTermDetails {
     #[serde(rename = "termDuration", default, skip_serializing_if = "Option::is_none")]
     pub term_duration: Option<String>,
 }
+impl RenewalTermDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Reseller {
     #[serde(rename = "resellerId", default, skip_serializing_if = "Option::is_none")]
     pub reseller_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl Reseller {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -438,6 +593,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateMoveBillingSubscriptionEligibilityError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -447,10 +607,20 @@ pub struct ValidateMoveBillingSubscriptionEligibilityError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
+impl ValidateMoveBillingSubscriptionEligibilityError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateMoveBillingSubscriptionEligibilityResult {
     #[serde(rename = "isMoveEligible", default, skip_serializing_if = "Option::is_none")]
     pub is_move_eligible: Option<bool>,
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<ValidateMoveBillingSubscriptionEligibilityError>,
+}
+impl ValidateMoveBillingSubscriptionEligibilityResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

@@ -7,3 +7,8 @@ pub struct StsTokenResponseMessage {
     #[serde(rename = "AccessToken")]
     pub access_token: String,
 }
+impl StsTokenResponseMessage {
+    pub fn new(access_token: String) -> Self {
+        Self { access_token }
+    }
+}

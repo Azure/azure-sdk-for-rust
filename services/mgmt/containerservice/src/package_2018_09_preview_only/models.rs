@@ -7,6 +7,11 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18,12 +23,22 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
     #[serde(rename = "vnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub vnet_cidr: Option<String>,
     #[serde(rename = "peerVnetId", default, skip_serializing_if = "Option::is_none")]
     pub peer_vnet_id: Option<String>,
+}
+impl NetworkProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OsType {
@@ -120,6 +135,15 @@ pub struct OpenShiftManagedCluster {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OpenShiftManagedClusterProperties>,
 }
+impl OpenShiftManagedCluster {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            plan: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAadIdentityProvider {
     #[serde(flatten)]
@@ -132,6 +156,17 @@ pub struct OpenShiftManagedClusterAadIdentityProvider {
     pub tenant_id: Option<String>,
     #[serde(rename = "customerAdminGroupId", default, skip_serializing_if = "Option::is_none")]
     pub customer_admin_group_id: Option<String>,
+}
+impl OpenShiftManagedClusterAadIdentityProvider {
+    pub fn new(open_shift_managed_cluster_base_identity_provider: OpenShiftManagedClusterBaseIdentityProvider) -> Self {
+        Self {
+            open_shift_managed_cluster_base_identity_provider,
+            client_id: None,
+            secret: None,
+            tenant_id: None,
+            customer_admin_group_id: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAgentPoolProfile {
@@ -146,14 +181,36 @@ pub struct OpenShiftManagedClusterAgentPoolProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<OpenShiftAgentPoolProfileRole>,
 }
+impl OpenShiftManagedClusterAgentPoolProfile {
+    pub fn new(name: String, count: i32, vm_size: OpenShiftContainerServiceVmSize) -> Self {
+        Self {
+            name,
+            count,
+            vm_size,
+            subnet_cidr: None,
+            os_type: None,
+            role: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterAuthProfile {
     #[serde(rename = "identityProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub identity_providers: Vec<OpenShiftManagedClusterIdentityProvider>,
 }
+impl OpenShiftManagedClusterAuthProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterBaseIdentityProvider {
     pub kind: String,
+}
+impl OpenShiftManagedClusterBaseIdentityProvider {
+    pub fn new(kind: String) -> Self {
+        Self { kind }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterIdentityProvider {
@@ -162,12 +219,22 @@ pub struct OpenShiftManagedClusterIdentityProvider {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<OpenShiftManagedClusterBaseIdentityProvider>,
 }
+impl OpenShiftManagedClusterIdentityProvider {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OpenShiftManagedCluster>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OpenShiftManagedClusterListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterMasterPoolProfile {
@@ -180,6 +247,17 @@ pub struct OpenShiftManagedClusterMasterPoolProfile {
     pub subnet_cidr: Option<String>,
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
+}
+impl OpenShiftManagedClusterMasterPoolProfile {
+    pub fn new(count: i32, vm_size: OpenShiftContainerServiceVmSize) -> Self {
+        Self {
+            name: None,
+            count,
+            vm_size,
+            subnet_cidr: None,
+            os_type: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterProperties {
@@ -202,6 +280,21 @@ pub struct OpenShiftManagedClusterProperties {
     #[serde(rename = "authProfile", default, skip_serializing_if = "Option::is_none")]
     pub auth_profile: Option<OpenShiftManagedClusterAuthProfile>,
 }
+impl OpenShiftManagedClusterProperties {
+    pub fn new(open_shift_version: String) -> Self {
+        Self {
+            provisioning_state: None,
+            open_shift_version,
+            public_hostname: None,
+            fqdn: None,
+            network_profile: None,
+            router_profiles: Vec::new(),
+            master_pool_profile: None,
+            agent_pool_profiles: Vec::new(),
+            auth_profile: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftRouterProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -210,6 +303,11 @@ pub struct OpenShiftRouterProfile {
     pub public_subdomain: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+}
+impl OpenShiftRouterProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PurchasePlan {
@@ -221,6 +319,11 @@ pub struct PurchasePlan {
     pub promotion_code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+}
+impl PurchasePlan {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -234,8 +337,24 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl TagsObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

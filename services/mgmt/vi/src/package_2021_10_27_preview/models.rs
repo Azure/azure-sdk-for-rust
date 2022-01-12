@@ -7,6 +7,11 @@ pub struct AccessToken {
     #[serde(rename = "accessToken", default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
 }
+impl AccessToken {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Account {
     #[serde(flatten)]
@@ -18,11 +23,26 @@ pub struct Account {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl Account {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+            identity: None,
+            system_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountCheckNameAvailabilityParameters {
     pub name: String,
     #[serde(rename = "type")]
     pub type_: account_check_name_availability_parameters::Type,
+}
+impl AccountCheckNameAvailabilityParameters {
+    pub fn new(name: String, type_: account_check_name_availability_parameters::Type) -> Self {
+        Self { name, type_ }
+    }
 }
 pub mod account_check_name_availability_parameters {
     use super::*;
@@ -39,6 +59,11 @@ pub struct AccountList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl AccountList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountPatch {
     #[serde(flatten)]
@@ -47,6 +72,11 @@ pub struct AccountPatch {
     pub properties: Option<AccountPropertiesForPatchRequest>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
+}
+impl AccountPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountPropertiesForPatchRequest {
@@ -58,6 +88,11 @@ pub struct AccountPropertiesForPatchRequest {
     pub media_services: Option<MediaServicesForPatchRequest>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<account_properties_for_patch_request::ProvisioningState>,
+}
+impl AccountPropertiesForPatchRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod account_properties_for_patch_request {
     use super::*;
@@ -84,6 +119,11 @@ pub struct AccountPropertiesForPutRequest {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<account_properties_for_put_request::ProvisioningState>,
 }
+impl AccountPropertiesForPutRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod account_properties_for_put_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -105,6 +145,11 @@ pub struct CheckNameAvailabilityResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl CheckNameAvailabilityResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod check_name_availability_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -120,6 +165,11 @@ pub struct ClassicAccount {
     pub location: Option<String>,
     #[serde(rename = "mediaServices", default, skip_serializing_if = "Option::is_none")]
     pub media_services: Option<ClassicAccountMediaServices>,
+}
+impl ClassicAccount {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClassicAccountMediaServices {
@@ -140,12 +190,22 @@ pub struct ClassicAccountMediaServices {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
 }
+impl ClassicAccountMediaServices {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClassicAccountSlim {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+}
+impl ClassicAccountSlim {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
@@ -156,10 +216,20 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
+impl ErrorDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenerateAccessTokenParameters {
@@ -170,6 +240,16 @@ pub struct GenerateAccessTokenParameters {
     pub video_id: Option<String>,
     #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
+}
+impl GenerateAccessTokenParameters {
+    pub fn new(permission_type: generate_access_token_parameters::PermissionType, scope: generate_access_token_parameters::Scope) -> Self {
+        Self {
+            permission_type,
+            scope,
+            video_id: None,
+            project_id: None,
+        }
+    }
 }
 pub mod generate_access_token_parameters {
     use super::*;
@@ -196,6 +276,16 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<UserAssignedIdentities>,
 }
+impl ManagedServiceIdentity {
+    pub fn new(type_: ManagedServiceIdentityType) -> Self {
+        Self {
+            principal_id: None,
+            tenant_id: None,
+            type_,
+            user_assigned_identities: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ManagedServiceIdentityType {
     None,
@@ -209,12 +299,22 @@ pub struct MediaServicesForPatchRequest {
     #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identity: Option<String>,
 }
+impl MediaServicesForPatchRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaServicesForPutRequest {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identity: Option<String>,
+}
+impl MediaServicesForPutRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -229,6 +329,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -240,12 +345,22 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -256,10 +371,20 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl Tags {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
@@ -269,8 +394,22 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentities {}
+impl UserAssignedIdentities {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -278,12 +417,22 @@ pub struct UserAssignedIdentity {
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
+impl UserAssignedIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserClassicAccountList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ClassicAccountSlim>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl UserClassicAccountList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -299,6 +448,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

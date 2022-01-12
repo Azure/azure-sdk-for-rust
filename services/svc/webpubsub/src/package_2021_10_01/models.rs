@@ -7,6 +7,11 @@ pub struct ClientTokenResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
+impl ClientTokenResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -20,10 +25,20 @@ pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inner: Option<InnerError>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inner: Box<Option<InnerError>>,
+}
+impl InnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

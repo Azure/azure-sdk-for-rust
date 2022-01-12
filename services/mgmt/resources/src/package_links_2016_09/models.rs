@@ -9,6 +9,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -22,6 +27,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -29,6 +39,11 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceLink {
@@ -41,10 +56,20 @@ pub struct ResourceLink {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ResourceLinkProperties>,
 }
+impl ResourceLink {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceLinkFilter {
     #[serde(rename = "targetId")]
     pub target_id: String,
+}
+impl ResourceLinkFilter {
+    pub fn new(target_id: String) -> Self {
+        Self { target_id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceLinkProperties {
@@ -55,9 +80,23 @@ pub struct ResourceLinkProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
 }
+impl ResourceLinkProperties {
+    pub fn new(target_id: String) -> Self {
+        Self {
+            source_id: None,
+            target_id,
+            notes: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceLinkResult {
     pub value: Vec<ResourceLink>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ResourceLinkResult {
+    pub fn new(value: Vec<ResourceLink>) -> Self {
+        Self { value, next_link: None }
+    }
 }

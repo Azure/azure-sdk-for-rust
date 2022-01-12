@@ -7,10 +7,20 @@ pub struct AzureTrackedResourceLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
+impl AzureTrackedResourceLocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
@@ -25,10 +35,20 @@ pub struct CloudErrorBody {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ETag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+}
+impl ETag {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
@@ -37,10 +57,20 @@ pub struct ErrorAdditionalInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Kind {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+}
+impl Kind {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -51,6 +81,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnector {
     #[serde(flatten)]
@@ -59,6 +94,11 @@ pub struct SecurityConnector {
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityConnectorProperties>,
+}
+impl SecurityConnector {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnectorProperties {
@@ -70,6 +110,11 @@ pub struct SecurityConnectorProperties {
     pub offerings: Vec<CloudOffering>,
     #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
     pub organizational_data: Option<security_connector_properties::OrganizationalData>,
+}
+impl SecurityConnectorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod security_connector_properties {
     use super::*;
@@ -92,6 +137,11 @@ pub mod security_connector_properties {
         #[serde(rename = "excludedAccountIds", default, skip_serializing_if = "Vec::is_empty")]
         pub excluded_account_ids: Vec<String>,
     }
+    impl OrganizationalData {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod organizational_data {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -107,10 +157,20 @@ pub struct SecurityConnectorsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl SecurityConnectorsList {
+    pub fn new(value: Vec<SecurityConnector>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tags {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl Tags {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
@@ -125,12 +185,25 @@ pub struct TrackedResource {
     #[serde(flatten)]
     pub tags: Tags,
 }
+impl TrackedResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudOffering {
     #[serde(rename = "offeringType")]
     pub offering_type: cloud_offering::OfferingType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl CloudOffering {
+    pub fn new(offering_type: cloud_offering::OfferingType) -> Self {
+        Self {
+            offering_type,
+            description: None,
+        }
+    }
 }
 pub mod cloud_offering {
     use super::*;
@@ -148,12 +221,25 @@ pub struct CspmMonitorAwsOffering {
     #[serde(rename = "nativeCloudConnection", default, skip_serializing_if = "Option::is_none")]
     pub native_cloud_connection: Option<cspm_monitor_aws_offering::NativeCloudConnection>,
 }
+impl CspmMonitorAwsOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self {
+            cloud_offering,
+            native_cloud_connection: None,
+        }
+    }
+}
 pub mod cspm_monitor_aws_offering {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct NativeCloudConnection {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
+    }
+    impl NativeCloudConnection {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -169,6 +255,17 @@ pub struct DefenderForContainersAwsOffering {
     #[serde(rename = "kinesisToS3", default, skip_serializing_if = "Option::is_none")]
     pub kinesis_to_s3: Option<defender_for_containers_aws_offering::KinesisToS3>,
 }
+impl DefenderForContainersAwsOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self {
+            cloud_offering,
+            kubernetes_service: None,
+            kubernetes_scuba_reader: None,
+            cloud_watch_to_kinesis: None,
+            kinesis_to_s3: None,
+        }
+    }
+}
 pub mod defender_for_containers_aws_offering {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -176,20 +273,40 @@ pub mod defender_for_containers_aws_offering {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
+    impl KubernetesService {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KubernetesScubaReader {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
+    }
+    impl KubernetesScubaReader {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct CloudWatchToKinesis {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
+    impl CloudWatchToKinesis {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KinesisToS3 {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
+    }
+    impl KinesisToS3 {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -201,6 +318,15 @@ pub struct DefenderForServersAwsOffering {
     #[serde(rename = "arcAutoProvisioning", default, skip_serializing_if = "Option::is_none")]
     pub arc_auto_provisioning: Option<defender_for_servers_aws_offering::ArcAutoProvisioning>,
 }
+impl DefenderForServersAwsOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self {
+            cloud_offering,
+            defender_for_servers: None,
+            arc_auto_provisioning: None,
+        }
+    }
+}
 pub mod defender_for_servers_aws_offering {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -208,12 +334,22 @@ pub mod defender_for_servers_aws_offering {
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
     }
+    impl DefenderForServers {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ArcAutoProvisioning {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
         #[serde(rename = "servicePrincipalSecretMetadata", default, skip_serializing_if = "Option::is_none")]
         pub service_principal_secret_metadata: Option<arc_auto_provisioning::ServicePrincipalSecretMetadata>,
+    }
+    impl ArcAutoProvisioning {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     pub mod arc_auto_provisioning {
         use super::*;
@@ -225,6 +361,11 @@ pub mod defender_for_servers_aws_offering {
             pub parameter_store_region: Option<String>,
             #[serde(rename = "parameterNameInStore", default, skip_serializing_if = "Option::is_none")]
             pub parameter_name_in_store: Option<String>,
+        }
+        impl ServicePrincipalSecretMetadata {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
     }
 }
@@ -242,6 +383,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

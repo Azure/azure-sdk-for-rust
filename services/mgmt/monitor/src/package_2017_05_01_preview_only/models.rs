@@ -21,10 +21,20 @@ pub struct DiagnosticSettings {
     #[serde(rename = "logAnalyticsDestinationType", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_destination_type: Option<String>,
 }
+impl DiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategory {
     #[serde(rename = "categoryType", default, skip_serializing_if = "Option::is_none")]
     pub category_type: Option<diagnostic_settings_category::CategoryType>,
+}
+impl DiagnosticSettingsCategory {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod diagnostic_settings_category {
     use super::*;
@@ -41,10 +51,20 @@ pub struct DiagnosticSettingsCategoryResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticSettingsCategory>,
 }
+impl DiagnosticSettingsCategoryResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategoryResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiagnosticSettingsCategoryResource>,
+}
+impl DiagnosticSettingsCategoryResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsResource {
@@ -53,10 +73,20 @@ pub struct DiagnosticSettingsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticSettings>,
 }
+impl DiagnosticSettingsResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiagnosticSettingsResource>,
+}
+impl DiagnosticSettingsResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -65,11 +95,24 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
     pub value: String,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
+}
+impl LocalizableString {
+    pub fn new(value: String) -> Self {
+        Self {
+            value,
+            localized_value: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSettings {
@@ -79,12 +122,26 @@ pub struct LogSettings {
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
+impl LogSettings {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            category: None,
+            enabled,
+            retention_policy: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl MetadataValue {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metric {
@@ -101,12 +158,31 @@ pub struct Metric {
     pub unit: Unit,
     pub timeseries: Vec<TimeSeriesElement>,
 }
+impl Metric {
+    pub fn new(id: String, type_: String, name: LocalizableString, unit: Unit, timeseries: Vec<TimeSeriesElement>) -> Self {
+        Self {
+            id,
+            type_,
+            name,
+            display_description: None,
+            error_code: None,
+            error_message: None,
+            unit,
+            timeseries,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailability {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retention: Option<String>,
+}
+impl MetricAvailability {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricDefinition {
@@ -131,6 +207,11 @@ pub struct MetricDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<LocalizableString>,
 }
+impl MetricDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod metric_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -147,6 +228,11 @@ pub mod metric_definition {
 pub struct MetricDefinitionCollection {
     pub value: Vec<MetricDefinition>,
 }
+impl MetricDefinitionCollection {
+    pub fn new(value: Vec<MetricDefinition>) -> Self {
+        Self { value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricSettings {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
@@ -156,6 +242,16 @@ pub struct MetricSettings {
     pub enabled: bool,
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+}
+impl MetricSettings {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            time_grain: None,
+            category: None,
+            enabled,
+            retention_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricValue {
@@ -172,6 +268,18 @@ pub struct MetricValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl MetricValue {
+    pub fn new(time_stamp: String) -> Self {
+        Self {
+            time_stamp,
+            average: None,
+            minimum: None,
+            maximum: None,
+            total: None,
+            count: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyOnlyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -180,6 +288,11 @@ pub struct ProxyOnlyResource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl ProxyOnlyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Response {
@@ -190,10 +303,25 @@ pub struct Response {
     pub interval: Option<String>,
     pub value: Vec<Metric>,
 }
+impl Response {
+    pub fn new(timespan: String, value: Vec<Metric>) -> Self {
+        Self {
+            cost: None,
+            timespan,
+            interval: None,
+            value,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
     pub enabled: bool,
     pub days: i32,
+}
+impl RetentionPolicy {
+    pub fn new(enabled: bool, days: i32) -> Self {
+        Self { enabled, days }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDiagnosticSettings {
@@ -210,6 +338,11 @@ pub struct SubscriptionDiagnosticSettings {
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
 }
+impl SubscriptionDiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDiagnosticSettingsResource {
     #[serde(flatten)]
@@ -217,16 +350,31 @@ pub struct SubscriptionDiagnosticSettingsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionDiagnosticSettings>,
 }
+impl SubscriptionDiagnosticSettingsResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionDiagnosticSettingsResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubscriptionDiagnosticSettingsResource>,
+}
+impl SubscriptionDiagnosticSettingsResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionLogSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     pub enabled: bool,
+}
+impl SubscriptionLogSettings {
+    pub fn new(enabled: bool) -> Self {
+        Self { category: None, enabled }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionProxyOnlyResource {
@@ -239,12 +387,22 @@ pub struct SubscriptionProxyOnlyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
+impl SubscriptionProxyOnlyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesElement {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadatavalues: Vec<MetadataValue>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data: Vec<MetricValue>,
+}
+impl TimeSeriesElement {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Unit {

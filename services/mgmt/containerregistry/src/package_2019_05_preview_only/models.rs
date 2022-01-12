@@ -9,6 +9,11 @@ pub struct ActiveDirectoryObject {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
+impl ActiveDirectoryObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenerateCredentialsParameters {
     #[serde(rename = "tokenId", default, skip_serializing_if = "Option::is_none")]
@@ -17,6 +22,11 @@ pub struct GenerateCredentialsParameters {
     pub expiry: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<generate_credentials_parameters::Name>,
+}
+impl GenerateCredentialsParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod generate_credentials_parameters {
     use super::*;
@@ -35,6 +45,11 @@ pub struct GenerateCredentialsResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub passwords: Vec<TokenPassword>,
 }
+impl GenerateCredentialsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -46,6 +61,11 @@ pub struct ProxyResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeMap {
     #[serde(flatten)]
@@ -53,12 +73,22 @@ pub struct ScopeMap {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopeMapProperties>,
 }
+impl ScopeMap {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeMapListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScopeMap>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ScopeMapListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScopeMapProperties {
@@ -71,6 +101,17 @@ pub struct ScopeMapProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scope_map_properties::ProvisioningState>,
     pub actions: Vec<String>,
+}
+impl ScopeMapProperties {
+    pub fn new(actions: Vec<String>) -> Self {
+        Self {
+            description: None,
+            type_: None,
+            creation_date: None,
+            provisioning_state: None,
+            actions,
+        }
+    }
 }
 pub mod scope_map_properties {
     use super::*;
@@ -91,10 +132,20 @@ pub struct ScopeMapPropertiesUpdateParameters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
 }
+impl ScopeMapPropertiesUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeMapUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopeMapPropertiesUpdateParameters>,
+}
+impl ScopeMapUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -110,6 +161,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;
@@ -135,6 +191,11 @@ pub struct Token {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TokenProperties>,
 }
+impl Token {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenCertificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -145,6 +206,11 @@ pub struct TokenCertificate {
     pub thumbprint: Option<String>,
     #[serde(rename = "encodedPemCertificate", default, skip_serializing_if = "Option::is_none")]
     pub encoded_pem_certificate: Option<String>,
+}
+impl TokenCertificate {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod token_certificate {
     use super::*;
@@ -165,12 +231,22 @@ pub struct TokenCredentialsProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub passwords: Vec<TokenPassword>,
 }
+impl TokenCredentialsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Token>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl TokenListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenPassword {
@@ -182,6 +258,11 @@ pub struct TokenPassword {
     pub name: Option<token_password::Name>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl TokenPassword {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod token_password {
     use super::*;
@@ -205,6 +286,11 @@ pub struct TokenProperties {
     pub credentials: Option<TokenCredentialsProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<token_properties::Status>,
+}
+impl TokenProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod token_properties {
     use super::*;
@@ -230,6 +316,11 @@ pub struct TokenUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TokenUpdateProperties>,
 }
+impl TokenUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenUpdateProperties {
     #[serde(rename = "scopeMapId", default, skip_serializing_if = "Option::is_none")]
@@ -238,6 +329,11 @@ pub struct TokenUpdateProperties {
     pub status: Option<token_update_properties::Status>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<TokenCredentialsProperties>,
+}
+impl TokenUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod token_update_properties {
     use super::*;

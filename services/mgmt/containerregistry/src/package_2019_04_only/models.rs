@@ -7,12 +7,26 @@ pub struct AgentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cpu: Option<i32>,
 }
+impl AgentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Argument {
     pub name: String,
     pub value: String,
     #[serde(rename = "isSecret", default, skip_serializing_if = "Option::is_none")]
     pub is_secret: Option<bool>,
+}
+impl Argument {
+    pub fn new(name: String, value: String) -> Self {
+        Self {
+            name,
+            value,
+            is_secret: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthInfo {
@@ -25,6 +39,17 @@ pub struct AuthInfo {
     pub scope: Option<String>,
     #[serde(rename = "expiresIn", default, skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<i32>,
+}
+impl AuthInfo {
+    pub fn new(token_type: auth_info::TokenType, token: String) -> Self {
+        Self {
+            token_type,
+            token,
+            refresh_token: None,
+            scope: None,
+            expires_in: None,
+        }
+    }
 }
 pub mod auth_info {
     use super::*;
@@ -48,6 +73,11 @@ pub struct AuthInfoUpdateParameters {
     #[serde(rename = "expiresIn", default, skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<i32>,
 }
+impl AuthInfoUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod auth_info_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -70,6 +100,11 @@ pub struct BaseImageDependency {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
 }
+impl BaseImageDependency {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod base_image_dependency {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -85,6 +120,15 @@ pub struct BaseImageTrigger {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<base_image_trigger::Status>,
     pub name: String,
+}
+impl BaseImageTrigger {
+    pub fn new(base_image_trigger_type: base_image_trigger::BaseImageTriggerType, name: String) -> Self {
+        Self {
+            base_image_trigger_type,
+            status: None,
+            name,
+        }
+    }
 }
 pub mod base_image_trigger {
     use super::*;
@@ -112,6 +156,15 @@ pub struct BaseImageTriggerUpdateParameters {
     pub status: Option<base_image_trigger_update_parameters::Status>,
     pub name: String,
 }
+impl BaseImageTriggerUpdateParameters {
+    pub fn new(name: String) -> Self {
+        Self {
+            base_image_trigger_type: None,
+            status: None,
+            name,
+        }
+    }
+}
 pub mod base_image_trigger_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -137,6 +190,11 @@ pub struct Credentials {
     #[serde(rename = "customRegistries", default, skip_serializing_if = "Option::is_none")]
     pub custom_registries: Option<serde_json::Value>,
 }
+impl Credentials {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomRegistryCredentials {
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -145,6 +203,11 @@ pub struct CustomRegistryCredentials {
     pub password: Option<SecretObject>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
+}
+impl CustomRegistryCredentials {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildRequest {
@@ -172,6 +235,24 @@ pub struct DockerBuildRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
+impl DockerBuildRequest {
+    pub fn new(run_request: RunRequest, docker_file_path: String, platform: PlatformProperties) -> Self {
+        Self {
+            run_request,
+            image_names: Vec::new(),
+            is_push_enabled: None,
+            no_cache: None,
+            docker_file_path,
+            target: None,
+            arguments: Vec::new(),
+            timeout: None,
+            platform,
+            agent_configuration: None,
+            source_location: None,
+            credentials: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildStep {
     #[serde(flatten)]
@@ -189,6 +270,19 @@ pub struct DockerBuildStep {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arguments: Vec<Argument>,
 }
+impl DockerBuildStep {
+    pub fn new(task_step_properties: TaskStepProperties, docker_file_path: String) -> Self {
+        Self {
+            task_step_properties,
+            image_names: Vec::new(),
+            is_push_enabled: None,
+            no_cache: None,
+            docker_file_path,
+            target: None,
+            arguments: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildStepUpdateParameters {
     #[serde(flatten)]
@@ -205,6 +299,19 @@ pub struct DockerBuildStepUpdateParameters {
     pub arguments: Vec<Argument>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+}
+impl DockerBuildStepUpdateParameters {
+    pub fn new(task_step_update_parameters: TaskStepUpdateParameters) -> Self {
+        Self {
+            task_step_update_parameters,
+            image_names: Vec::new(),
+            is_push_enabled: None,
+            no_cache: None,
+            docker_file_path: None,
+            arguments: Vec::new(),
+            target: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncodedTaskRunRequest {
@@ -226,6 +333,21 @@ pub struct EncodedTaskRunRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
+impl EncodedTaskRunRequest {
+    pub fn new(run_request: RunRequest, encoded_task_content: String, platform: PlatformProperties) -> Self {
+        Self {
+            run_request,
+            encoded_task_content,
+            encoded_values_content: None,
+            values: Vec::new(),
+            timeout: None,
+            platform,
+            agent_configuration: None,
+            source_location: None,
+            credentials: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncodedTaskStep {
     #[serde(flatten)]
@@ -237,6 +359,16 @@ pub struct EncodedTaskStep {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
 }
+impl EncodedTaskStep {
+    pub fn new(task_step_properties: TaskStepProperties, encoded_task_content: String) -> Self {
+        Self {
+            task_step_properties,
+            encoded_task_content,
+            encoded_values_content: None,
+            values: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncodedTaskStepUpdateParameters {
     #[serde(flatten)]
@@ -247,6 +379,16 @@ pub struct EncodedTaskStepUpdateParameters {
     pub encoded_values_content: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
+}
+impl EncodedTaskStepUpdateParameters {
+    pub fn new(task_step_update_parameters: TaskStepUpdateParameters) -> Self {
+        Self {
+            task_step_update_parameters,
+            encoded_task_content: None,
+            encoded_values_content: None,
+            values: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileTaskRunRequest {
@@ -268,6 +410,21 @@ pub struct FileTaskRunRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
+impl FileTaskRunRequest {
+    pub fn new(run_request: RunRequest, task_file_path: String, platform: PlatformProperties) -> Self {
+        Self {
+            run_request,
+            task_file_path,
+            values_file_path: None,
+            values: Vec::new(),
+            timeout: None,
+            platform,
+            agent_configuration: None,
+            source_location: None,
+            credentials: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileTaskStep {
     #[serde(flatten)]
@@ -278,6 +435,16 @@ pub struct FileTaskStep {
     pub values_file_path: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
+}
+impl FileTaskStep {
+    pub fn new(task_step_properties: TaskStepProperties, task_file_path: String) -> Self {
+        Self {
+            task_step_properties,
+            task_file_path,
+            values_file_path: None,
+            values: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileTaskStepUpdateParameters {
@@ -290,6 +457,16 @@ pub struct FileTaskStepUpdateParameters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
 }
+impl FileTaskStepUpdateParameters {
+    pub fn new(task_step_update_parameters: TaskStepUpdateParameters) -> Self {
+        Self {
+            task_step_update_parameters,
+            task_file_path: None,
+            values_file_path: None,
+            values: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProperties {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -300,6 +477,11 @@ pub struct IdentityProperties {
     pub type_: Option<identity_properties::Type>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl IdentityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod identity_properties {
     use super::*;
@@ -323,6 +505,11 @@ pub struct ImageDescriptor {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
 }
+impl ImageDescriptor {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageUpdateTrigger {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -332,6 +519,11 @@ pub struct ImageUpdateTrigger {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub images: Vec<ImageDescriptor>,
 }
+impl ImageUpdateTrigger {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlatformProperties {
     pub os: platform_properties::Os,
@@ -339,6 +531,15 @@ pub struct PlatformProperties {
     pub architecture: Option<platform_properties::Architecture>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variant: Option<platform_properties::Variant>,
+}
+impl PlatformProperties {
+    pub fn new(os: platform_properties::Os) -> Self {
+        Self {
+            os,
+            architecture: None,
+            variant: None,
+        }
+    }
 }
 pub mod platform_properties {
     use super::*;
@@ -375,6 +576,11 @@ pub struct PlatformUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variant: Option<platform_update_parameters::Variant>,
 }
+impl PlatformUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod platform_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -410,6 +616,11 @@ pub struct ProxyResource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -422,12 +633,28 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Run {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunProperties>,
+}
+impl Run {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunFilter {
@@ -447,6 +674,11 @@ pub struct RunFilter {
     pub is_archive_enabled: Option<bool>,
     #[serde(rename = "taskName", default, skip_serializing_if = "Option::is_none")]
     pub task_name: Option<String>,
+}
+impl RunFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod run_filter {
     use super::*;
@@ -474,12 +706,22 @@ pub struct RunGetLogResult {
     #[serde(rename = "logLink", default, skip_serializing_if = "Option::is_none")]
     pub log_link: Option<String>,
 }
+impl RunGetLogResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Run>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RunListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunProperties {
@@ -522,6 +764,11 @@ pub struct RunProperties {
     #[serde(rename = "timerTrigger", default, skip_serializing_if = "Option::is_none")]
     pub timer_trigger: Option<TimerTriggerDescriptor>,
 }
+impl RunProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod run_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -559,10 +806,23 @@ pub struct RunRequest {
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
 }
+impl RunRequest {
+    pub fn new(type_: String) -> Self {
+        Self {
+            type_,
+            is_archive_enabled: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunUpdateParameters {
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
+}
+impl RunUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretObject {
@@ -570,6 +830,11 @@ pub struct SecretObject {
     pub value: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<secret_object::Type>,
+}
+impl SecretObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod secret_object {
     use super::*;
@@ -586,6 +851,15 @@ pub struct SetValue {
     #[serde(rename = "isSecret", default, skip_serializing_if = "Option::is_none")]
     pub is_secret: Option<bool>,
 }
+impl SetValue {
+    pub fn new(name: String, value: String) -> Self {
+        Self {
+            name,
+            value,
+            is_secret: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceProperties {
     #[serde(rename = "sourceControlType")]
@@ -596,6 +870,16 @@ pub struct SourceProperties {
     pub branch: Option<String>,
     #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
     pub source_control_auth_properties: Option<AuthInfo>,
+}
+impl SourceProperties {
+    pub fn new(source_control_type: source_properties::SourceControlType, repository_url: String) -> Self {
+        Self {
+            source_control_type,
+            repository_url,
+            branch: None,
+            source_control_auth_properties: None,
+        }
+    }
 }
 pub mod source_properties {
     use super::*;
@@ -609,6 +893,11 @@ pub mod source_properties {
 pub struct SourceRegistryCredentials {
     #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
     pub login_mode: Option<source_registry_credentials::LoginMode>,
+}
+impl SourceRegistryCredentials {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod source_registry_credentials {
     use super::*;
@@ -627,6 +916,16 @@ pub struct SourceTrigger {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<source_trigger::Status>,
     pub name: String,
+}
+impl SourceTrigger {
+    pub fn new(source_repository: SourceProperties, source_trigger_events: Vec<String>, name: String) -> Self {
+        Self {
+            source_repository,
+            source_trigger_events,
+            status: None,
+            name,
+        }
+    }
 }
 pub mod source_trigger {
     use super::*;
@@ -658,6 +957,11 @@ pub struct SourceTriggerDescriptor {
     #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
     pub provider_type: Option<String>,
 }
+impl SourceTriggerDescriptor {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceTriggerUpdateParameters {
     #[serde(rename = "sourceRepository", default, skip_serializing_if = "Option::is_none")]
@@ -667,6 +971,16 @@ pub struct SourceTriggerUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<source_trigger_update_parameters::Status>,
     pub name: String,
+}
+impl SourceTriggerUpdateParameters {
+    pub fn new(name: String) -> Self {
+        Self {
+            source_repository: None,
+            source_trigger_events: Vec::new(),
+            status: None,
+            name,
+        }
+    }
 }
 pub mod source_trigger_update_parameters {
     use super::*;
@@ -692,6 +1006,11 @@ pub struct SourceUpdateParameters {
     #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
     pub source_control_auth_properties: Option<AuthInfoUpdateParameters>,
 }
+impl SourceUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod source_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -707,6 +1026,11 @@ pub struct SourceUploadDefinition {
     #[serde(rename = "relativePath", default, skip_serializing_if = "Option::is_none")]
     pub relative_path: Option<String>,
 }
+impl SourceUploadDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Task {
     #[serde(flatten)]
@@ -716,12 +1040,26 @@ pub struct Task {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TaskProperties>,
 }
+impl Task {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            identity: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Task>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl TaskListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskProperties {
@@ -741,6 +1079,21 @@ pub struct TaskProperties {
     pub trigger: Option<TriggerProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
+}
+impl TaskProperties {
+    pub fn new(platform: PlatformProperties, step: TaskStepProperties) -> Self {
+        Self {
+            provisioning_state: None,
+            creation_date: None,
+            status: None,
+            platform,
+            agent_configuration: None,
+            timeout: None,
+            step,
+            trigger: None,
+            credentials: None,
+        }
+    }
 }
 pub mod task_properties {
     use super::*;
@@ -776,6 +1129,11 @@ pub struct TaskPropertiesUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
+impl TaskPropertiesUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod task_properties_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -793,6 +1151,15 @@ pub struct TaskRunRequest {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
 }
+impl TaskRunRequest {
+    pub fn new(run_request: RunRequest, task_name: String) -> Self {
+        Self {
+            run_request,
+            task_name,
+            values: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepProperties {
     #[serde(rename = "type")]
@@ -803,6 +1170,16 @@ pub struct TaskStepProperties {
     pub context_path: Option<String>,
     #[serde(rename = "contextAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub context_access_token: Option<String>,
+}
+impl TaskStepProperties {
+    pub fn new(type_: task_step_properties::Type) -> Self {
+        Self {
+            type_,
+            base_image_dependencies: Vec::new(),
+            context_path: None,
+            context_access_token: None,
+        }
+    }
 }
 pub mod task_step_properties {
     use super::*;
@@ -822,6 +1199,15 @@ pub struct TaskStepUpdateParameters {
     #[serde(rename = "contextAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub context_access_token: Option<String>,
 }
+impl TaskStepUpdateParameters {
+    pub fn new(type_: task_step_update_parameters::Type) -> Self {
+        Self {
+            type_,
+            context_path: None,
+            context_access_token: None,
+        }
+    }
+}
 pub mod task_step_update_parameters {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -840,12 +1226,26 @@ pub struct TaskUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl TaskUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimerTrigger {
     pub schedule: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<timer_trigger::Status>,
     pub name: String,
+}
+impl TimerTrigger {
+    pub fn new(schedule: String, name: String) -> Self {
+        Self {
+            schedule,
+            status: None,
+            name,
+        }
+    }
 }
 pub mod timer_trigger {
     use super::*;
@@ -867,6 +1267,11 @@ pub struct TimerTriggerDescriptor {
     #[serde(rename = "scheduleOccurrence", default, skip_serializing_if = "Option::is_none")]
     pub schedule_occurrence: Option<String>,
 }
+impl TimerTriggerDescriptor {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimerTriggerUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -874,6 +1279,15 @@ pub struct TimerTriggerUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<timer_trigger_update_parameters::Status>,
     pub name: String,
+}
+impl TimerTriggerUpdateParameters {
+    pub fn new(name: String) -> Self {
+        Self {
+            schedule: None,
+            status: None,
+            name,
+        }
+    }
 }
 pub mod timer_trigger_update_parameters {
     use super::*;
@@ -897,6 +1311,11 @@ pub struct TriggerProperties {
     #[serde(rename = "baseImageTrigger", default, skip_serializing_if = "Option::is_none")]
     pub base_image_trigger: Option<BaseImageTrigger>,
 }
+impl TriggerProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerUpdateParameters {
     #[serde(rename = "timerTriggers", default, skip_serializing_if = "Vec::is_empty")]
@@ -906,10 +1325,20 @@ pub struct TriggerUpdateParameters {
     #[serde(rename = "baseImageTrigger", default, skip_serializing_if = "Option::is_none")]
     pub base_image_trigger: Option<BaseImageTriggerUpdateParameters>,
 }
+impl TriggerUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentityProperties {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+}
+impl UserIdentityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

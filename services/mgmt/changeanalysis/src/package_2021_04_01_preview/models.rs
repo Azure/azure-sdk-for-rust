@@ -9,12 +9,22 @@ pub struct Change {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ChangeProperties>,
 }
+impl Change {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChangeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Change>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ChangeList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChangeProperties {
@@ -29,12 +39,22 @@ pub struct ChangeProperties {
     #[serde(rename = "propertyChanges", default, skip_serializing_if = "Vec::is_empty")]
     pub property_changes: Vec<PropertyChange>,
 }
+impl ChangeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChangeSnapshots {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ChangeSnapshotsProperties>,
+}
+impl ChangeSnapshots {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChangeSnapshotsProperties {
@@ -44,6 +64,11 @@ pub struct ChangeSnapshotsProperties {
     pub after_snapshot: Option<serde_json::Value>,
     #[serde(rename = "isHidden", default, skip_serializing_if = "Option::is_none")]
     pub is_hidden: Option<bool>,
+}
+impl ChangeSnapshotsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ChangeType {
@@ -58,6 +83,11 @@ pub struct ErrorAdditionalInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -71,10 +101,20 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Level {
@@ -103,6 +143,11 @@ pub struct PropertyChange {
     #[serde(rename = "isDataMasked", default, skip_serializing_if = "Option::is_none")]
     pub is_data_masked: Option<bool>,
 }
+impl PropertyChange {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod property_change {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -116,6 +161,11 @@ pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
 }
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -124,6 +174,11 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceGraphChangeData {
@@ -137,6 +192,11 @@ pub struct ResourceGraphChangeData {
     pub after_snapshot: Option<serde_json::Value>,
     #[serde(rename = "changeType", default, skip_serializing_if = "Option::is_none")]
     pub change_type: Option<resource_graph_change_data::ChangeType>,
+}
+impl ResourceGraphChangeData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_graph_change_data {
     use super::*;
@@ -155,12 +215,26 @@ pub struct ResourceGraphSnapshotData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<serde_json::Value>,
 }
+impl ResourceGraphSnapshotData {
+    pub fn new(timestamp: String) -> Self {
+        Self {
+            snapshot_id: None,
+            timestamp,
+            content: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<ResourceProviderOperationDisplay>,
+}
+impl ResourceProviderOperationDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationDisplay {
@@ -173,10 +247,20 @@ pub struct ResourceProviderOperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl ResourceProviderOperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperationDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ResourceProviderOperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

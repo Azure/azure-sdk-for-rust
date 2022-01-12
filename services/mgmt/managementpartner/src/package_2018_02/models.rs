@@ -11,6 +11,11 @@ pub struct Error {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl Error {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type ErrorResponseCode = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedErrorInfo {
@@ -18,6 +23,11 @@ pub struct ExtendedErrorInfo {
     pub code: Option<ErrorResponseCode>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ExtendedErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ManagementPartnerState {
@@ -35,12 +45,22 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationResponse>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResponse {
@@ -50,6 +70,11 @@ pub struct OperationResponse {
     pub display: Option<OperationDisplay>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+}
+impl OperationResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerProperties {
@@ -70,6 +95,11 @@ pub struct PartnerProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<ManagementPartnerState>,
 }
+impl PartnerProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PartnerResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -82,4 +112,9 @@ pub struct PartnerResponse {
     pub properties: Option<PartnerProperties>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl PartnerResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

@@ -11,12 +11,22 @@ pub struct AccessInformationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl AccessInformationCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessInformationContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessInformationContractProperties>,
+}
+impl AccessInformationContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessInformationContractProperties {
@@ -26,6 +36,11 @@ pub struct AccessInformationContractProperties {
     pub principal_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl AccessInformationContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessInformationCreateParameterProperties {
@@ -38,10 +53,20 @@ pub struct AccessInformationCreateParameterProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
+impl AccessInformationCreateParameterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessInformationCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessInformationCreateParameterProperties>,
+}
+impl AccessInformationCreateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessInformationSecretsContract {
@@ -56,15 +81,30 @@ pub struct AccessInformationSecretsContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
+impl AccessInformationSecretsContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessInformationUpdateParameterProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
+impl AccessInformationUpdateParameterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessInformationUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessInformationUpdateParameterProperties>,
+}
+impl AccessInformationUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdditionalLocation {
@@ -86,6 +126,22 @@ pub struct AdditionalLocation {
     pub disable_gateway: Option<bool>,
     #[serde(rename = "platformVersion", default, skip_serializing_if = "Option::is_none")]
     pub platform_version: Option<additional_location::PlatformVersion>,
+}
+impl AdditionalLocation {
+    pub fn new(location: String, sku: ApiManagementServiceSkuProperties) -> Self {
+        Self {
+            location,
+            sku,
+            zones: Vec::new(),
+            public_ip_addresses: Vec::new(),
+            private_ip_addresses: Vec::new(),
+            public_ip_address_id: None,
+            virtual_network_configuration: None,
+            gateway_regional_url: None,
+            disable_gateway: None,
+            platform_version: None,
+        }
+    }
 }
 pub mod additional_location {
     use super::*;
@@ -110,6 +166,11 @@ pub struct ApiCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ApiCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiContactInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -119,12 +180,22 @@ pub struct ApiContactInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
 }
+impl ApiContactInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiContractProperties>,
+}
+impl ApiContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiContractProperties {
@@ -142,6 +213,19 @@ pub struct ApiContractProperties {
     #[serde(rename = "apiVersionSet", default, skip_serializing_if = "Option::is_none")]
     pub api_version_set: Option<ApiVersionSetContractDetails>,
 }
+impl ApiContractProperties {
+    pub fn new(path: String) -> Self {
+        Self {
+            api_entity_base_contract: ApiEntityBaseContract::default(),
+            source_api_id: None,
+            display_name: None,
+            service_url: None,
+            path,
+            protocols: Vec::new(),
+            api_version_set: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiContractUpdateProperties {
     #[serde(flatten)]
@@ -155,10 +239,20 @@ pub struct ApiContractUpdateProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub protocols: Vec<String>,
 }
+impl ApiContractUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiCreateOrUpdateParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiCreateOrUpdateProperties>,
+}
+impl ApiCreateOrUpdateParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiCreateOrUpdateProperties {
@@ -172,6 +266,17 @@ pub struct ApiCreateOrUpdateProperties {
     pub wsdl_selector: Option<api_create_or_update_properties::WsdlSelector>,
     #[serde(rename = "apiType", default, skip_serializing_if = "Option::is_none")]
     pub api_type: Option<api_create_or_update_properties::ApiType>,
+}
+impl ApiCreateOrUpdateProperties {
+    pub fn new(api_contract_properties: ApiContractProperties) -> Self {
+        Self {
+            api_contract_properties,
+            value: None,
+            format: None,
+            wsdl_selector: None,
+            api_type: None,
+        }
+    }
 }
 pub mod api_create_or_update_properties {
     use super::*;
@@ -206,6 +311,11 @@ pub mod api_create_or_update_properties {
         pub wsdl_service_name: Option<String>,
         #[serde(rename = "wsdlEndpointName", default, skip_serializing_if = "Option::is_none")]
         pub wsdl_endpoint_name: Option<String>,
+    }
+    impl WsdlSelector {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ApiType {
@@ -252,6 +362,11 @@ pub struct ApiEntityBaseContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub license: Option<ApiLicenseInformation>,
 }
+impl ApiEntityBaseContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod api_entity_base_contract {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -275,6 +390,11 @@ pub struct ApiExportResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<api_export_result::Value>,
 }
+impl ApiExportResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod api_export_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -293,6 +413,11 @@ pub mod api_export_result {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub link: Option<String>,
     }
+    impl Value {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiLicenseInformation {
@@ -301,10 +426,20 @@ pub struct ApiLicenseInformation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
+impl ApiLicenseInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementServiceApplyNetworkConfigurationParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+}
+impl ApiManagementServiceApplyNetworkConfigurationParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementServiceBackupRestoreParameters {
@@ -320,6 +455,18 @@ pub struct ApiManagementServiceBackupRestoreParameters {
     pub access_key: Option<String>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+}
+impl ApiManagementServiceBackupRestoreParameters {
+    pub fn new(storage_account: String, container_name: String, backup_name: String) -> Self {
+        Self {
+            storage_account,
+            container_name,
+            backup_name,
+            access_type: None,
+            access_key: None,
+            client_id: None,
+        }
+    }
 }
 pub mod api_management_service_backup_restore_parameters {
     use super::*;
@@ -390,6 +537,11 @@ pub struct ApiManagementServiceBaseProperties {
     #[serde(rename = "platformVersion", default, skip_serializing_if = "Option::is_none")]
     pub platform_version: Option<api_management_service_base_properties::PlatformVersion>,
 }
+impl ApiManagementServiceBaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod api_management_service_base_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -424,15 +576,30 @@ pub mod api_management_service_base_properties {
 pub struct ApiManagementServiceCheckNameAvailabilityParameters {
     pub name: String,
 }
+impl ApiManagementServiceCheckNameAvailabilityParameters {
+    pub fn new(name: String) -> Self {
+        Self { name }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementServiceGetDomainOwnershipIdentifierResult {
     #[serde(rename = "domainOwnershipIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub domain_ownership_identifier: Option<String>,
 }
+impl ApiManagementServiceGetDomainOwnershipIdentifierResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementServiceGetSsoTokenResult {
     #[serde(rename = "redirectUri", default, skip_serializing_if = "Option::is_none")]
     pub redirect_uri: Option<String>,
+}
+impl ApiManagementServiceGetSsoTokenResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementServiceIdentity {
@@ -444,6 +611,16 @@ pub struct ApiManagementServiceIdentity {
     pub tenant_id: Option<String>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ApiManagementServiceIdentity {
+    pub fn new(type_: api_management_service_identity::Type) -> Self {
+        Self {
+            type_,
+            principal_id: None,
+            tenant_id: None,
+            user_assigned_identities: None,
+        }
+    }
 }
 pub mod api_management_service_identity {
     use super::*;
@@ -462,6 +639,11 @@ pub struct ApiManagementServiceListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ApiManagementServiceListResult {
+    pub fn new(value: Vec<ApiManagementServiceResource>) -> Self {
+        Self { value, next_link: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementServiceNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
@@ -470,6 +652,11 @@ pub struct ApiManagementServiceNameAvailabilityResult {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<api_management_service_name_availability_result::Reason>,
+}
+impl ApiManagementServiceNameAvailabilityResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod api_management_service_name_availability_result {
     use super::*;
@@ -489,6 +676,15 @@ pub struct ApiManagementServiceProperties {
     #[serde(rename = "publisherName")]
     pub publisher_name: String,
 }
+impl ApiManagementServiceProperties {
+    pub fn new(publisher_email: String, publisher_name: String) -> Self {
+        Self {
+            api_management_service_base_properties: ApiManagementServiceBaseProperties::default(),
+            publisher_email,
+            publisher_name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementServiceResource {
     #[serde(flatten)]
@@ -505,10 +701,29 @@ pub struct ApiManagementServiceResource {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
+impl ApiManagementServiceResource {
+    pub fn new(properties: ApiManagementServiceProperties, sku: ApiManagementServiceSkuProperties, location: String) -> Self {
+        Self {
+            apim_resource: ApimResource::default(),
+            properties,
+            sku,
+            identity: None,
+            system_data: None,
+            location,
+            etag: None,
+            zones: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementServiceSkuProperties {
     pub name: api_management_service_sku_properties::Name,
     pub capacity: i32,
+}
+impl ApiManagementServiceSkuProperties {
+    pub fn new(name: api_management_service_sku_properties::Name, capacity: i32) -> Self {
+        Self { name, capacity }
+    }
 }
 pub mod api_management_service_sku_properties {
     use super::*;
@@ -537,6 +752,11 @@ pub struct ApiManagementServiceUpdateParameters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
 }
+impl ApiManagementServiceUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementServiceUpdateProperties {
     #[serde(flatten)]
@@ -545,6 +765,11 @@ pub struct ApiManagementServiceUpdateProperties {
     pub publisher_email: Option<String>,
     #[serde(rename = "publisherName", default, skip_serializing_if = "Option::is_none")]
     pub publisher_name: Option<String>,
+}
+impl ApiManagementServiceUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSku {
@@ -575,12 +800,22 @@ pub struct ApiManagementSku {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<ApiManagementSkuRestrictions>,
 }
+impl ApiManagementSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSkuCapabilities {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl ApiManagementSkuCapabilities {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSkuCapacity {
@@ -592,6 +827,11 @@ pub struct ApiManagementSkuCapacity {
     pub default: Option<i32>,
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<api_management_sku_capacity::ScaleType>,
+}
+impl ApiManagementSkuCapacity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod api_management_sku_capacity {
     use super::*;
@@ -611,6 +851,11 @@ pub struct ApiManagementSkuCosts {
     #[serde(rename = "extendedUnit", default, skip_serializing_if = "Option::is_none")]
     pub extended_unit: Option<String>,
 }
+impl ApiManagementSkuCosts {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSkuLocationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -620,12 +865,22 @@ pub struct ApiManagementSkuLocationInfo {
     #[serde(rename = "zoneDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub zone_details: Vec<ApiManagementSkuZoneDetails>,
 }
+impl ApiManagementSkuLocationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSkuRestrictionInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub zones: Vec<String>,
+}
+impl ApiManagementSkuRestrictionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiManagementSkuRestrictions {
@@ -637,6 +892,11 @@ pub struct ApiManagementSkuRestrictions {
     pub restriction_info: Option<ApiManagementSkuRestrictionInfo>,
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<api_management_sku_restrictions::ReasonCode>,
+}
+impl ApiManagementSkuRestrictions {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod api_management_sku_restrictions {
     use super::*;
@@ -658,11 +918,21 @@ pub struct ApiManagementSkuZoneDetails {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<ApiManagementSkuCapabilities>,
 }
+impl ApiManagementSkuZoneDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiManagementSkusResult {
     pub value: Vec<ApiManagementSku>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ApiManagementSkusResult {
+    pub fn new(value: Vec<ApiManagementSku>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiReleaseCollection {
@@ -673,12 +943,22 @@ pub struct ApiReleaseCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ApiReleaseCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiReleaseContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiReleaseContractProperties>,
+}
+impl ApiReleaseContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiReleaseContractProperties {
@@ -691,6 +971,11 @@ pub struct ApiReleaseContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
 }
+impl ApiReleaseContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiRevisionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -699,6 +984,11 @@ pub struct ApiRevisionCollection {
     pub count: Option<i64>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ApiRevisionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiRevisionContract {
@@ -719,6 +1009,11 @@ pub struct ApiRevisionContract {
     #[serde(rename = "isCurrent", default, skip_serializing_if = "Option::is_none")]
     pub is_current: Option<bool>,
 }
+impl ApiRevisionContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiRevisionInfoContract {
     #[serde(rename = "sourceApiId", default, skip_serializing_if = "Option::is_none")]
@@ -729,6 +1024,11 @@ pub struct ApiRevisionInfoContract {
     pub api_revision_description: Option<String>,
     #[serde(rename = "apiVersionSet", default, skip_serializing_if = "Option::is_none")]
     pub api_version_set: Option<ApiVersionSetContractDetails>,
+}
+impl ApiRevisionInfoContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiTagResourceContractProperties {
@@ -745,15 +1045,30 @@ pub struct ApiTagResourceContractProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub protocols: Vec<String>,
 }
+impl ApiTagResourceContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiUpdateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiContractUpdateProperties>,
 }
+impl ApiUpdateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiVersionConstraint {
     #[serde(rename = "minApiVersion", default, skip_serializing_if = "Option::is_none")]
     pub min_api_version: Option<String>,
+}
+impl ApiVersionConstraint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiVersionSetCollection {
@@ -764,12 +1079,22 @@ pub struct ApiVersionSetCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ApiVersionSetCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiVersionSetContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiVersionSetContractProperties>,
+}
+impl ApiVersionSetContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiVersionSetContractDetails {
@@ -785,6 +1110,11 @@ pub struct ApiVersionSetContractDetails {
     pub version_query_name: Option<String>,
     #[serde(rename = "versionHeaderName", default, skip_serializing_if = "Option::is_none")]
     pub version_header_name: Option<String>,
+}
+impl ApiVersionSetContractDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod api_version_set_contract_details {
     use super::*;
@@ -804,6 +1134,15 @@ pub struct ApiVersionSetContractProperties {
     #[serde(rename = "versioningScheme")]
     pub versioning_scheme: api_version_set_contract_properties::VersioningScheme,
 }
+impl ApiVersionSetContractProperties {
+    pub fn new(display_name: String, versioning_scheme: api_version_set_contract_properties::VersioningScheme) -> Self {
+        Self {
+            api_version_set_entity_base: ApiVersionSetEntityBase::default(),
+            display_name,
+            versioning_scheme,
+        }
+    }
+}
 pub mod api_version_set_contract_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -822,10 +1161,20 @@ pub struct ApiVersionSetEntityBase {
     #[serde(rename = "versionHeaderName", default, skip_serializing_if = "Option::is_none")]
     pub version_header_name: Option<String>,
 }
+impl ApiVersionSetEntityBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiVersionSetUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiVersionSetUpdateParametersProperties>,
+}
+impl ApiVersionSetUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiVersionSetUpdateParametersProperties {
@@ -835,6 +1184,11 @@ pub struct ApiVersionSetUpdateParametersProperties {
     pub display_name: Option<String>,
     #[serde(rename = "versioningScheme", default, skip_serializing_if = "Option::is_none")]
     pub versioning_scheme: Option<api_version_set_update_parameters_properties::VersioningScheme>,
+}
+impl ApiVersionSetUpdateParametersProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod api_version_set_update_parameters_properties {
     use super::*;
@@ -856,10 +1210,20 @@ pub struct ApimResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl ApimResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArmIdWrapper {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl ArmIdWrapper {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssociationContract {
@@ -868,12 +1232,22 @@ pub struct AssociationContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<association_contract::Properties>,
 }
+impl AssociationContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod association_contract {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     pub mod properties {
         use super::*;
@@ -891,6 +1265,11 @@ pub struct AuthenticationSettingsContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub openid: Option<OpenIdAuthenticationSettingsContract>,
 }
+impl AuthenticationSettingsContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationServerCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -900,12 +1279,22 @@ pub struct AuthorizationServerCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl AuthorizationServerCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationServerContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationServerContractProperties>,
+}
+impl AuthorizationServerContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationServerContractBaseProperties {
@@ -930,6 +1319,11 @@ pub struct AuthorizationServerContractBaseProperties {
     #[serde(rename = "resourceOwnerPassword", default, skip_serializing_if = "Option::is_none")]
     pub resource_owner_password: Option<String>,
 }
+impl AuthorizationServerContractBaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthorizationServerContractProperties {
     #[serde(flatten)]
@@ -947,6 +1341,25 @@ pub struct AuthorizationServerContractProperties {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
 }
+impl AuthorizationServerContractProperties {
+    pub fn new(
+        display_name: String,
+        client_registration_endpoint: String,
+        authorization_endpoint: String,
+        grant_types: Vec<String>,
+        client_id: String,
+    ) -> Self {
+        Self {
+            authorization_server_contract_base_properties: AuthorizationServerContractBaseProperties::default(),
+            display_name,
+            client_registration_endpoint,
+            authorization_endpoint,
+            grant_types,
+            client_id,
+            client_secret: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationServerSecretsContract {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
@@ -956,12 +1369,22 @@ pub struct AuthorizationServerSecretsContract {
     #[serde(rename = "resourceOwnerPassword", default, skip_serializing_if = "Option::is_none")]
     pub resource_owner_password: Option<String>,
 }
+impl AuthorizationServerSecretsContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationServerUpdateContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationServerUpdateContractProperties>,
+}
+impl AuthorizationServerUpdateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationServerUpdateContractProperties {
@@ -980,10 +1403,20 @@ pub struct AuthorizationServerUpdateContractProperties {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
 }
+impl AuthorizationServerUpdateContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackendAuthorizationHeaderCredentials {
     pub scheme: String,
     pub parameter: String,
+}
+impl BackendAuthorizationHeaderCredentials {
+    pub fn new(scheme: String, parameter: String) -> Self {
+        Self { scheme, parameter }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendBaseParameters {
@@ -1002,6 +1435,11 @@ pub struct BackendBaseParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tls: Option<BackendTlsProperties>,
 }
+impl BackendBaseParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1011,6 +1449,11 @@ pub struct BackendCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl BackendCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendContract {
     #[serde(flatten)]
@@ -1018,12 +1461,26 @@ pub struct BackendContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackendContractProperties>,
 }
+impl BackendContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackendContractProperties {
     #[serde(flatten)]
     pub backend_base_parameters: BackendBaseParameters,
     pub url: String,
     pub protocol: backend_contract_properties::Protocol,
+}
+impl BackendContractProperties {
+    pub fn new(url: String, protocol: backend_contract_properties::Protocol) -> Self {
+        Self {
+            backend_base_parameters: BackendBaseParameters::default(),
+            url,
+            protocol,
+        }
+    }
 }
 pub mod backend_contract_properties {
     use super::*;
@@ -1048,10 +1505,20 @@ pub struct BackendCredentialsContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub authorization: Option<BackendAuthorizationHeaderCredentials>,
 }
+impl BackendCredentialsContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendProperties {
     #[serde(rename = "serviceFabricCluster", default, skip_serializing_if = "Option::is_none")]
     pub service_fabric_cluster: Option<BackendServiceFabricClusterProperties>,
+}
+impl BackendProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackendProxyContract {
@@ -1061,6 +1528,15 @@ pub struct BackendProxyContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
+impl BackendProxyContract {
+    pub fn new(url: String) -> Self {
+        Self {
+            url,
+            username: None,
+            password: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendReconnectContract {
     #[serde(flatten)]
@@ -1068,10 +1544,20 @@ pub struct BackendReconnectContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackendReconnectProperties>,
 }
+impl BackendReconnectContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendReconnectProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub after: Option<String>,
+}
+impl BackendReconnectProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackendServiceFabricClusterProperties {
@@ -1088,12 +1574,29 @@ pub struct BackendServiceFabricClusterProperties {
     #[serde(rename = "serverX509Names", default, skip_serializing_if = "Vec::is_empty")]
     pub server_x509_names: Vec<X509CertificateName>,
 }
+impl BackendServiceFabricClusterProperties {
+    pub fn new(management_endpoints: Vec<String>) -> Self {
+        Self {
+            client_certificate_id: None,
+            client_certificatethumbprint: None,
+            max_partition_resolution_retries: None,
+            management_endpoints,
+            server_certificate_thumbprints: Vec::new(),
+            server_x509_names: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendTlsProperties {
     #[serde(rename = "validateCertificateChain", default, skip_serializing_if = "Option::is_none")]
     pub validate_certificate_chain: Option<bool>,
     #[serde(rename = "validateCertificateName", default, skip_serializing_if = "Option::is_none")]
     pub validate_certificate_name: Option<bool>,
+}
+impl BackendTlsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendUpdateParameterProperties {
@@ -1103,6 +1606,11 @@ pub struct BackendUpdateParameterProperties {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<backend_update_parameter_properties::Protocol>,
+}
+impl BackendUpdateParameterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod backend_update_parameter_properties {
     use super::*;
@@ -1119,6 +1627,11 @@ pub struct BackendUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackendUpdateParameterProperties>,
 }
+impl BackendUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum BearerTokenSendingMethodsContract {
     #[serde(rename = "authorizationHeader")]
@@ -1131,6 +1644,11 @@ pub struct BodyDiagnosticSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bytes: Option<i32>,
 }
+impl BodyDiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1140,12 +1658,22 @@ pub struct CacheCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl CacheCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CacheContractProperties>,
+}
+impl CacheContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheContractProperties {
@@ -1158,10 +1686,25 @@ pub struct CacheContractProperties {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
+impl CacheContractProperties {
+    pub fn new(connection_string: String, use_from_location: String) -> Self {
+        Self {
+            description: None,
+            connection_string,
+            use_from_location,
+            resource_id: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CacheUpdateProperties>,
+}
+impl CacheUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheUpdateProperties {
@@ -1174,6 +1717,11 @@ pub struct CacheUpdateProperties {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
+impl CacheUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1182,6 +1730,11 @@ pub struct CertificateCollection {
     pub count: Option<i64>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl CertificateCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateConfiguration {
@@ -1193,6 +1746,16 @@ pub struct CertificateConfiguration {
     pub store_name: certificate_configuration::StoreName,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<CertificateInformation>,
+}
+impl CertificateConfiguration {
+    pub fn new(store_name: certificate_configuration::StoreName) -> Self {
+        Self {
+            encoded_certificate: None,
+            certificate_password: None,
+            store_name,
+            certificate: None,
+        }
+    }
 }
 pub mod certificate_configuration {
     use super::*;
@@ -1209,6 +1772,11 @@ pub struct CertificateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateContractProperties>,
 }
+impl CertificateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateContractProperties {
     pub subject: String,
@@ -1218,10 +1786,25 @@ pub struct CertificateContractProperties {
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
     pub key_vault: Option<KeyVaultContractProperties>,
 }
+impl CertificateContractProperties {
+    pub fn new(subject: String, thumbprint: String, expiration_date: String) -> Self {
+        Self {
+            subject,
+            thumbprint,
+            expiration_date,
+            key_vault: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateCreateOrUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateCreateOrUpdateProperties>,
+}
+impl CertificateCreateOrUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateCreateOrUpdateProperties {
@@ -1232,16 +1815,35 @@ pub struct CertificateCreateOrUpdateProperties {
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
     pub key_vault: Option<KeyVaultContractCreateProperties>,
 }
+impl CertificateCreateOrUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateInformation {
     pub expiry: String,
     pub thumbprint: String,
     pub subject: String,
 }
+impl CertificateInformation {
+    pub fn new(expiry: String, thumbprint: String, subject: String) -> Self {
+        Self {
+            expiry,
+            thumbprint,
+            subject,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientSecretContract {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
+}
+impl ClientSecretContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectivityCheckRequest {
@@ -1254,6 +1856,17 @@ pub struct ConnectivityCheckRequest {
     #[serde(rename = "protocolConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub protocol_configuration: Option<connectivity_check_request::ProtocolConfiguration>,
 }
+impl ConnectivityCheckRequest {
+    pub fn new(source: connectivity_check_request::Source, destination: connectivity_check_request::Destination) -> Self {
+        Self {
+            source,
+            destination,
+            preferred_ip_version: None,
+            protocol: None,
+            protocol_configuration: None,
+        }
+    }
+}
 pub mod connectivity_check_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1262,10 +1875,20 @@ pub mod connectivity_check_request {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub instance: Option<i64>,
     }
+    impl Source {
+        pub fn new(region: String) -> Self {
+            Self { region, instance: None }
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Destination {
         pub address: String,
         pub port: i64,
+    }
+    impl Destination {
+        pub fn new(address: String, port: i64) -> Self {
+            Self { address, port }
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PreferredIpVersion {
@@ -1285,6 +1908,11 @@ pub mod connectivity_check_request {
         #[serde(rename = "HTTPConfiguration", default, skip_serializing_if = "Option::is_none")]
         pub http_configuration: Option<protocol_configuration::HttpConfiguration>,
     }
+    impl ProtocolConfiguration {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod protocol_configuration {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1295,6 +1923,11 @@ pub mod connectivity_check_request {
             pub valid_status_codes: Vec<i64>,
             #[serde(default, skip_serializing_if = "Vec::is_empty")]
             pub headers: Vec<HttpHeader>,
+        }
+        impl HttpConfiguration {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
         pub mod http_configuration {
             use super::*;
@@ -1325,6 +1958,11 @@ pub struct ConnectivityCheckResponse {
     #[serde(rename = "probesFailed", default, skip_serializing_if = "Option::is_none")]
     pub probes_failed: Option<i64>,
 }
+impl ConnectivityCheckResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod connectivity_check_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1350,6 +1988,11 @@ pub struct ConnectivityHop {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub issues: Vec<ConnectivityIssue>,
 }
+impl ConnectivityHop {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityIssue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1360,6 +2003,11 @@ pub struct ConnectivityIssue {
     pub type_: Option<connectivity_issue::Type>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub context: Vec<IssueContext>,
+}
+impl ConnectivityIssue {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod connectivity_issue {
     use super::*;
@@ -1402,6 +2050,26 @@ pub struct ConnectivityStatusContract {
     #[serde(rename = "isOptional")]
     pub is_optional: bool,
 }
+impl ConnectivityStatusContract {
+    pub fn new(
+        name: String,
+        status: connectivity_status_contract::Status,
+        last_updated: String,
+        last_status_change: String,
+        resource_type: String,
+        is_optional: bool,
+    ) -> Self {
+        Self {
+            name,
+            status,
+            error: None,
+            last_updated,
+            last_status_change,
+            resource_type,
+            is_optional,
+        }
+    }
+}
 pub mod connectivity_status_contract {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1421,6 +2089,11 @@ pub struct ContentItemCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ContentItemCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentItemContract {
     #[serde(flatten)]
@@ -1428,8 +2101,18 @@ pub struct ContentItemContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContentItemContractProperties>,
 }
+impl ContentItemContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentItemContractProperties {}
+impl ContentItemContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentTypeCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1437,12 +2120,22 @@ pub struct ContentTypeCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ContentTypeCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentTypeContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContentTypeContractProperties>,
+}
+impl ContentTypeContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentTypeContractProperties {
@@ -1457,6 +2150,11 @@ pub struct ContentTypeContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
+impl ContentTypeContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMasking {
     #[serde(rename = "queryParams", default, skip_serializing_if = "Vec::is_empty")]
@@ -1464,12 +2162,22 @@ pub struct DataMasking {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub headers: Vec<DataMaskingEntity>,
 }
+impl DataMasking {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMaskingEntity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<data_masking_entity::Mode>,
+}
+impl DataMaskingEntity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod data_masking_entity {
     use super::*;
@@ -1488,6 +2196,11 @@ pub struct DeletedServiceContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
+impl DeletedServiceContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedServiceContractProperties {
     #[serde(rename = "serviceId", default, skip_serializing_if = "Option::is_none")]
@@ -1497,6 +2210,11 @@ pub struct DeletedServiceContractProperties {
     #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
     pub deletion_date: Option<String>,
 }
+impl DeletedServiceContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedServicesCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1504,16 +2222,31 @@ pub struct DeletedServicesCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl DeletedServicesCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployConfigurationParameterProperties {
     pub branch: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub force: Option<bool>,
 }
+impl DeployConfigurationParameterProperties {
+    pub fn new(branch: String) -> Self {
+        Self { branch, force: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployConfigurationParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeployConfigurationParameterProperties>,
+}
+impl DeployConfigurationParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticCollection {
@@ -1524,12 +2257,22 @@ pub struct DiagnosticCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl DiagnosticCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticContractProperties>,
+}
+impl DiagnosticContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticContractProperties {
@@ -1551,6 +2294,21 @@ pub struct DiagnosticContractProperties {
     pub verbosity: Option<diagnostic_contract_properties::Verbosity>,
     #[serde(rename = "operationNameFormat", default, skip_serializing_if = "Option::is_none")]
     pub operation_name_format: Option<diagnostic_contract_properties::OperationNameFormat>,
+}
+impl DiagnosticContractProperties {
+    pub fn new(logger_id: String) -> Self {
+        Self {
+            always_log: None,
+            logger_id,
+            sampling: None,
+            frontend: None,
+            backend: None,
+            log_client_ip: None,
+            http_correlation_protocol: None,
+            verbosity: None,
+            operation_name_format: None,
+        }
+    }
 }
 pub mod diagnostic_contract_properties {
     use super::*;
@@ -1590,12 +2348,22 @@ pub struct EmailTemplateCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl EmailTemplateCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailTemplateContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EmailTemplateContractProperties>,
+}
+impl EmailTemplateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailTemplateContractProperties {
@@ -1610,6 +2378,18 @@ pub struct EmailTemplateContractProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<EmailTemplateParametersContractProperties>,
 }
+impl EmailTemplateContractProperties {
+    pub fn new(subject: String, body: String) -> Self {
+        Self {
+            subject,
+            body,
+            title: None,
+            description: None,
+            is_default: None,
+            parameters: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailTemplateParametersContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1618,6 +2398,11 @@ pub struct EmailTemplateParametersContractProperties {
     pub title: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl EmailTemplateParametersContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailTemplateUpdateParameterProperties {
@@ -1632,10 +2417,20 @@ pub struct EmailTemplateUpdateParameterProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<EmailTemplateParametersContractProperties>,
 }
+impl EmailTemplateUpdateParameterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailTemplateUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EmailTemplateUpdateParameterProperties>,
+}
+impl EmailTemplateUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointDependency {
@@ -1644,12 +2439,22 @@ pub struct EndpointDependency {
     #[serde(rename = "endpointDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub endpoint_details: Vec<EndpointDetail>,
 }
+impl EndpointDependency {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
+}
+impl EndpointDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorFieldContract {
@@ -1660,10 +2465,20 @@ pub struct ErrorFieldContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
+impl ErrorFieldContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseBody {
@@ -1674,12 +2489,22 @@ pub struct ErrorResponseBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
+impl ErrorResponseBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayCertificateAuthorityCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GatewayCertificateAuthorityContract>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl GatewayCertificateAuthorityCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayCertificateAuthorityContract {
@@ -1688,10 +2513,20 @@ pub struct GatewayCertificateAuthorityContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayCertificateAuthorityContractProperties>,
 }
+impl GatewayCertificateAuthorityContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayCertificateAuthorityContractProperties {
     #[serde(rename = "isTrusted", default, skip_serializing_if = "Option::is_none")]
     pub is_trusted: Option<bool>,
+}
+impl GatewayCertificateAuthorityContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayCollection {
@@ -1702,12 +2537,22 @@ pub struct GatewayCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl GatewayCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayContractProperties>,
+}
+impl GatewayContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayContractProperties {
@@ -1716,6 +2561,11 @@ pub struct GatewayContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl GatewayContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayHostnameConfigurationCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1723,12 +2573,22 @@ pub struct GatewayHostnameConfigurationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl GatewayHostnameConfigurationCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayHostnameConfigurationContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayHostnameConfigurationContractProperties>,
+}
+impl GatewayHostnameConfigurationContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayHostnameConfigurationContractProperties {
@@ -1745,10 +2605,20 @@ pub struct GatewayHostnameConfigurationContractProperties {
     #[serde(rename = "http2Enabled", default, skip_serializing_if = "Option::is_none")]
     pub http2_enabled: Option<bool>,
 }
+impl GatewayHostnameConfigurationContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewayKeyRegenerationRequestContract {
     #[serde(rename = "keyType")]
     pub key_type: gateway_key_regeneration_request_contract::KeyType,
+}
+impl GatewayKeyRegenerationRequestContract {
+    pub fn new(key_type: gateway_key_regeneration_request_contract::KeyType) -> Self {
+        Self { key_type }
+    }
 }
 pub mod gateway_key_regeneration_request_contract {
     use super::*;
@@ -1767,16 +2637,31 @@ pub struct GatewayKeysContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<String>,
 }
+impl GatewayKeysContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayTokenContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl GatewayTokenContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewayTokenRequestContract {
     #[serde(rename = "keyType")]
     pub key_type: gateway_token_request_contract::KeyType,
     pub expiry: String,
+}
+impl GatewayTokenRequestContract {
+    pub fn new(key_type: gateway_token_request_contract::KeyType, expiry: String) -> Self {
+        Self { key_type, expiry }
+    }
 }
 pub mod gateway_token_request_contract {
     use super::*;
@@ -1798,6 +2683,11 @@ pub struct GenerateSsoUrlResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl GenerateSsoUrlResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalSchemaCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1807,12 +2697,22 @@ pub struct GlobalSchemaCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl GlobalSchemaCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalSchemaContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GlobalSchemaContractProperties>,
+}
+impl GlobalSchemaContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GlobalSchemaContractProperties {
@@ -1824,6 +2724,16 @@ pub struct GlobalSchemaContractProperties {
     pub value: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub document: Option<GlobalSchemaDocumentProperties>,
+}
+impl GlobalSchemaContractProperties {
+    pub fn new(schema_type: global_schema_contract_properties::SchemaType) -> Self {
+        Self {
+            schema_type,
+            description: None,
+            value: None,
+            document: None,
+        }
+    }
 }
 pub mod global_schema_contract_properties {
     use super::*;
@@ -1837,6 +2747,11 @@ pub mod global_schema_contract_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalSchemaDocumentProperties {}
+impl GlobalSchemaDocumentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1846,12 +2761,22 @@ pub struct GroupCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl GroupCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GroupContractProperties>,
+}
+impl GroupContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupContractProperties {
@@ -1865,6 +2790,17 @@ pub struct GroupContractProperties {
     pub type_: Option<group_contract_properties::Type>,
     #[serde(rename = "externalId", default, skip_serializing_if = "Option::is_none")]
     pub external_id: Option<String>,
+}
+impl GroupContractProperties {
+    pub fn new(display_name: String) -> Self {
+        Self {
+            display_name,
+            description: None,
+            built_in: None,
+            type_: None,
+            external_id: None,
+        }
+    }
 }
 pub mod group_contract_properties {
     use super::*;
@@ -1883,6 +2819,11 @@ pub struct GroupCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GroupCreateParametersProperties>,
 }
+impl GroupCreateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupCreateParametersProperties {
     #[serde(rename = "displayName")]
@@ -1893,6 +2834,16 @@ pub struct GroupCreateParametersProperties {
     pub type_: Option<group_create_parameters_properties::Type>,
     #[serde(rename = "externalId", default, skip_serializing_if = "Option::is_none")]
     pub external_id: Option<String>,
+}
+impl GroupCreateParametersProperties {
+    pub fn new(display_name: String) -> Self {
+        Self {
+            display_name,
+            description: None,
+            type_: None,
+            external_id: None,
+        }
+    }
 }
 pub mod group_create_parameters_properties {
     use super::*;
@@ -1911,6 +2862,11 @@ pub struct GroupUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GroupUpdateParametersProperties>,
 }
+impl GroupUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupUpdateParametersProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -1921,6 +2877,11 @@ pub struct GroupUpdateParametersProperties {
     pub type_: Option<group_update_parameters_properties::Type>,
     #[serde(rename = "externalId", default, skip_serializing_if = "Option::is_none")]
     pub external_id: Option<String>,
+}
+impl GroupUpdateParametersProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod group_update_parameters_properties {
     use super::*;
@@ -1938,6 +2899,11 @@ pub mod group_update_parameters_properties {
 pub struct HttpHeader {
     pub name: String,
     pub value: String,
+}
+impl HttpHeader {
+    pub fn new(name: String, value: String) -> Self {
+        Self { name, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HostnameConfiguration {
@@ -1963,6 +2929,23 @@ pub struct HostnameConfiguration {
     pub certificate_source: Option<hostname_configuration::CertificateSource>,
     #[serde(rename = "certificateStatus", default, skip_serializing_if = "Option::is_none")]
     pub certificate_status: Option<hostname_configuration::CertificateStatus>,
+}
+impl HostnameConfiguration {
+    pub fn new(type_: hostname_configuration::Type, host_name: String) -> Self {
+        Self {
+            type_,
+            host_name,
+            key_vault_id: None,
+            identity_client_id: None,
+            encoded_certificate: None,
+            certificate_password: None,
+            default_ssl_binding: None,
+            negotiate_client_certificate: None,
+            certificate: None,
+            certificate_source: None,
+            certificate_status: None,
+        }
+    }
 }
 pub mod hostname_configuration {
     use super::*;
@@ -1997,6 +2980,11 @@ pub struct HttpMessageDiagnostic {
     #[serde(rename = "dataMasking", default, skip_serializing_if = "Option::is_none")]
     pub data_masking: Option<DataMasking>,
 }
+impl HttpMessageDiagnostic {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProviderBaseParameters {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -2015,6 +3003,11 @@ pub struct IdentityProviderBaseParameters {
     pub profile_editing_policy_name: Option<String>,
     #[serde(rename = "passwordResetPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub password_reset_policy_name: Option<String>,
+}
+impl IdentityProviderBaseParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod identity_provider_base_parameters {
     use super::*;
@@ -2041,6 +3034,11 @@ pub struct IdentityProviderContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IdentityProviderContractProperties>,
 }
+impl IdentityProviderContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityProviderContractProperties {
     #[serde(flatten)]
@@ -2050,12 +3048,26 @@ pub struct IdentityProviderContractProperties {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
 }
+impl IdentityProviderContractProperties {
+    pub fn new(client_id: String) -> Self {
+        Self {
+            identity_provider_base_parameters: IdentityProviderBaseParameters::default(),
+            client_id,
+            client_secret: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProviderCreateContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IdentityProviderCreateContractProperties>,
+}
+impl IdentityProviderCreateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IdentityProviderCreateContractProperties {
@@ -2066,6 +3078,15 @@ pub struct IdentityProviderCreateContractProperties {
     #[serde(rename = "clientSecret")]
     pub client_secret: String,
 }
+impl IdentityProviderCreateContractProperties {
+    pub fn new(client_id: String, client_secret: String) -> Self {
+        Self {
+            identity_provider_base_parameters: IdentityProviderBaseParameters::default(),
+            client_id,
+            client_secret,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProviderList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2075,10 +3096,20 @@ pub struct IdentityProviderList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl IdentityProviderList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProviderUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IdentityProviderUpdateProperties>,
+}
+impl IdentityProviderUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProviderUpdateProperties {
@@ -2089,6 +3120,11 @@ pub struct IdentityProviderUpdateProperties {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
 }
+impl IdentityProviderUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueAttachmentCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2098,6 +3134,11 @@ pub struct IssueAttachmentCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl IssueAttachmentCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueAttachmentContract {
     #[serde(flatten)]
@@ -2105,12 +3146,26 @@ pub struct IssueAttachmentContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IssueAttachmentContractProperties>,
 }
+impl IssueAttachmentContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IssueAttachmentContractProperties {
     pub title: String,
     #[serde(rename = "contentFormat")]
     pub content_format: String,
     pub content: String,
+}
+impl IssueAttachmentContractProperties {
+    pub fn new(title: String, content_format: String, content: String) -> Self {
+        Self {
+            title,
+            content_format,
+            content,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueCollection {
@@ -2121,6 +3176,11 @@ pub struct IssueCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl IssueCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueCommentCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2130,12 +3190,22 @@ pub struct IssueCommentCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl IssueCommentCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueCommentContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IssueCommentContractProperties>,
+}
+impl IssueCommentContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IssueCommentContractProperties {
@@ -2145,14 +3215,33 @@ pub struct IssueCommentContractProperties {
     #[serde(rename = "userId")]
     pub user_id: String,
 }
+impl IssueCommentContractProperties {
+    pub fn new(text: String, user_id: String) -> Self {
+        Self {
+            text,
+            created_date: None,
+            user_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueContext {}
+impl IssueContext {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IssueContractProperties>,
+}
+impl IssueContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueContractBaseProperties {
@@ -2162,6 +3251,11 @@ pub struct IssueContractBaseProperties {
     pub state: Option<issue_contract_base_properties::State>,
     #[serde(rename = "apiId", default, skip_serializing_if = "Option::is_none")]
     pub api_id: Option<String>,
+}
+impl IssueContractBaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod issue_contract_base_properties {
     use super::*;
@@ -2188,10 +3282,25 @@ pub struct IssueContractProperties {
     #[serde(rename = "userId")]
     pub user_id: String,
 }
+impl IssueContractProperties {
+    pub fn new(title: String, description: String, user_id: String) -> Self {
+        Self {
+            issue_contract_base_properties: IssueContractBaseProperties::default(),
+            title,
+            description,
+            user_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueUpdateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IssueUpdateContractProperties>,
+}
+impl IssueUpdateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueUpdateContractProperties {
@@ -2204,6 +3313,11 @@ pub struct IssueUpdateContractProperties {
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
 }
+impl IssueUpdateContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultContractCreateProperties {
     #[serde(rename = "secretIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -2211,12 +3325,22 @@ pub struct KeyVaultContractCreateProperties {
     #[serde(rename = "identityClientId", default, skip_serializing_if = "Option::is_none")]
     pub identity_client_id: Option<String>,
 }
+impl KeyVaultContractCreateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultContractProperties {
     #[serde(flatten)]
     pub key_vault_contract_create_properties: KeyVaultContractCreateProperties,
     #[serde(rename = "lastStatus", default, skip_serializing_if = "Option::is_none")]
     pub last_status: Option<KeyVaultLastAccessStatusContractProperties>,
+}
+impl KeyVaultContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultLastAccessStatusContractProperties {
@@ -2227,6 +3351,11 @@ pub struct KeyVaultLastAccessStatusContractProperties {
     #[serde(rename = "timeStampUtc", default, skip_serializing_if = "Option::is_none")]
     pub time_stamp_utc: Option<String>,
 }
+impl KeyVaultLastAccessStatusContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoggerCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2236,12 +3365,22 @@ pub struct LoggerCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl LoggerCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoggerContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LoggerContractProperties>,
+}
+impl LoggerContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoggerContractProperties {
@@ -2255,6 +3394,17 @@ pub struct LoggerContractProperties {
     pub is_buffered: Option<bool>,
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+}
+impl LoggerContractProperties {
+    pub fn new(logger_type: logger_contract_properties::LoggerType) -> Self {
+        Self {
+            logger_type,
+            description: None,
+            credentials: None,
+            is_buffered: None,
+            resource_id: None,
+        }
+    }
 }
 pub mod logger_contract_properties {
     use super::*;
@@ -2273,6 +3423,11 @@ pub struct LoggerUpdateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LoggerUpdateParameters>,
 }
+impl LoggerUpdateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoggerUpdateParameters {
     #[serde(rename = "loggerType", default, skip_serializing_if = "Option::is_none")]
@@ -2283,6 +3438,11 @@ pub struct LoggerUpdateParameters {
     pub credentials: Option<serde_json::Value>,
     #[serde(rename = "isBuffered", default, skip_serializing_if = "Option::is_none")]
     pub is_buffered: Option<bool>,
+}
+impl LoggerUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod logger_update_parameters {
     use super::*;
@@ -2305,12 +3465,22 @@ pub struct NamedValueCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl NamedValueCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamedValueContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamedValueContractProperties>,
+}
+impl NamedValueContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedValueContractProperties {
@@ -2323,12 +3493,27 @@ pub struct NamedValueContractProperties {
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
     pub key_vault: Option<KeyVaultContractProperties>,
 }
+impl NamedValueContractProperties {
+    pub fn new(display_name: String) -> Self {
+        Self {
+            named_value_entity_base_parameters: NamedValueEntityBaseParameters::default(),
+            display_name,
+            value: None,
+            key_vault: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamedValueCreateContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamedValueCreateContractProperties>,
+}
+impl NamedValueCreateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedValueCreateContractProperties {
@@ -2341,6 +3526,16 @@ pub struct NamedValueCreateContractProperties {
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
     pub key_vault: Option<KeyVaultContractCreateProperties>,
 }
+impl NamedValueCreateContractProperties {
+    pub fn new(display_name: String) -> Self {
+        Self {
+            named_value_entity_base_parameters: NamedValueEntityBaseParameters::default(),
+            display_name,
+            value: None,
+            key_vault: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamedValueEntityBaseParameters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2348,10 +3543,20 @@ pub struct NamedValueEntityBaseParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<bool>,
 }
+impl NamedValueEntityBaseParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamedValueSecretContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl NamedValueSecretContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamedValueUpdateParameterProperties {
@@ -2364,10 +3569,20 @@ pub struct NamedValueUpdateParameterProperties {
     #[serde(rename = "keyVault", default, skip_serializing_if = "Option::is_none")]
     pub key_vault: Option<KeyVaultContractCreateProperties>,
 }
+impl NamedValueUpdateParameterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamedValueUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamedValueUpdateParameterProperties>,
+}
+impl NamedValueUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkStatusContract {
@@ -2376,12 +3591,25 @@ pub struct NetworkStatusContract {
     #[serde(rename = "connectivityStatus")]
     pub connectivity_status: Vec<ConnectivityStatusContract>,
 }
+impl NetworkStatusContract {
+    pub fn new(dns_servers: Vec<String>, connectivity_status: Vec<ConnectivityStatusContract>) -> Self {
+        Self {
+            dns_servers,
+            connectivity_status,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkStatusContractByLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(rename = "networkStatus", default, skip_serializing_if = "Option::is_none")]
     pub network_status: Option<NetworkStatusContract>,
+}
+impl NetworkStatusContractByLocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationCollection {
@@ -2392,12 +3620,22 @@ pub struct NotificationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl NotificationCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NotificationContractProperties>,
+}
+impl NotificationContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotificationContractProperties {
@@ -2407,6 +3645,15 @@ pub struct NotificationContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recipients: Option<RecipientsContractProperties>,
 }
+impl NotificationContractProperties {
+    pub fn new(title: String) -> Self {
+        Self {
+            title,
+            description: None,
+            recipients: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OAuth2AuthenticationSettingsContract {
     #[serde(rename = "authorizationServerId", default, skip_serializing_if = "Option::is_none")]
@@ -2414,12 +3661,22 @@ pub struct OAuth2AuthenticationSettingsContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
 }
+impl OAuth2AuthenticationSettingsContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenIdAuthenticationSettingsContract {
     #[serde(rename = "openidProviderId", default, skip_serializing_if = "Option::is_none")]
     pub openid_provider_id: Option<String>,
     #[serde(rename = "bearerTokenSendingMethods", default, skip_serializing_if = "Vec::is_empty")]
     pub bearer_token_sending_methods: Vec<BearerTokenSendingMethodsContract>,
+}
+impl OpenIdAuthenticationSettingsContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenIdConnectProviderCollection {
@@ -2430,12 +3687,22 @@ pub struct OpenIdConnectProviderCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OpenIdConnectProviderCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenidConnectProviderContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OpenidConnectProviderContractProperties>,
+}
+impl OpenidConnectProviderContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenidConnectProviderContractProperties {
@@ -2450,10 +3717,26 @@ pub struct OpenidConnectProviderContractProperties {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
 }
+impl OpenidConnectProviderContractProperties {
+    pub fn new(display_name: String, metadata_endpoint: String, client_id: String) -> Self {
+        Self {
+            display_name,
+            description: None,
+            metadata_endpoint,
+            client_id,
+            client_secret: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenidConnectProviderUpdateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OpenidConnectProviderUpdateContractProperties>,
+}
+impl OpenidConnectProviderUpdateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenidConnectProviderUpdateContractProperties {
@@ -2468,6 +3751,11 @@ pub struct OpenidConnectProviderUpdateContractProperties {
     #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
     pub client_secret: Option<String>,
 }
+impl OpenidConnectProviderUpdateContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2478,6 +3766,11 @@ pub struct Operation {
     pub origin: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -2492,6 +3785,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationCollection {
@@ -2502,12 +3800,22 @@ pub struct OperationCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationContractProperties>,
+}
+impl OperationContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationContractProperties {
@@ -2518,6 +3826,16 @@ pub struct OperationContractProperties {
     pub method: String,
     #[serde(rename = "urlTemplate")]
     pub url_template: String,
+}
+impl OperationContractProperties {
+    pub fn new(display_name: String, method: String, url_template: String) -> Self {
+        Self {
+            operation_entity_base_contract: OperationEntityBaseContract::default(),
+            display_name,
+            method,
+            url_template,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityBaseContract {
@@ -2532,6 +3850,11 @@ pub struct OperationEntityBaseContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policies: Option<String>,
 }
+impl OperationEntityBaseContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2539,12 +3862,22 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationResultContractProperties>,
+}
+impl OperationResultContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultContractProperties {
@@ -2562,6 +3895,11 @@ pub struct OperationResultContractProperties {
     pub error: Option<ErrorResponseBody>,
     #[serde(rename = "actionLog", default, skip_serializing_if = "Vec::is_empty")]
     pub action_log: Vec<OperationResultLogItemContract>,
+}
+impl OperationResultContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation_result_contract_properties {
     use super::*;
@@ -2582,6 +3920,11 @@ pub struct OperationResultLogItemContract {
     #[serde(rename = "objectKey", default, skip_serializing_if = "Option::is_none")]
     pub object_key: Option<String>,
 }
+impl OperationResultLogItemContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationTagResourceContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2601,10 +3944,20 @@ pub struct OperationTagResourceContractProperties {
     #[serde(rename = "urlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub url_template: Option<String>,
 }
+impl OperationTagResourceContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationUpdateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationUpdateContractProperties>,
+}
+impl OperationUpdateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationUpdateContractProperties {
@@ -2617,6 +3970,11 @@ pub struct OperationUpdateContractProperties {
     #[serde(rename = "urlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub url_template: Option<String>,
 }
+impl OperationUpdateContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutboundEnvironmentEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2624,11 +3982,21 @@ pub struct OutboundEnvironmentEndpoint {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<EndpointDependency>,
 }
+impl OutboundEnvironmentEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutboundEnvironmentEndpointList {
     pub value: Vec<OutboundEnvironmentEndpoint>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OutboundEnvironmentEndpointList {
+    pub fn new(value: Vec<OutboundEnvironmentEndpoint>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterContract {
@@ -2650,6 +4018,21 @@ pub struct ParameterContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub examples: Option<ParameterExamplesContract>,
 }
+impl ParameterContract {
+    pub fn new(name: String, type_: String) -> Self {
+        Self {
+            name,
+            description: None,
+            type_,
+            default_value: None,
+            required: None,
+            values: Vec::new(),
+            schema_id: None,
+            type_name: None,
+            examples: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterExampleContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2661,14 +4044,29 @@ pub struct ParameterExampleContract {
     #[serde(rename = "externalValue", default, skip_serializing_if = "Option::is_none")]
     pub external_value: Option<String>,
 }
+impl ParameterExampleContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterExamplesContract {}
+impl ParameterExamplesContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineDiagnosticSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<HttpMessageDiagnostic>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response: Option<HttpMessageDiagnostic>,
+}
+impl PipelineDiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyCollection {
@@ -2679,6 +4077,11 @@ pub struct PolicyCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PolicyCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyContract {
     #[serde(flatten)]
@@ -2686,11 +4089,21 @@ pub struct PolicyContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PolicyContractProperties>,
 }
+impl PolicyContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyContractProperties {
     pub value: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<policy_contract_properties::Format>,
+}
+impl PolicyContractProperties {
+    pub fn new(value: String) -> Self {
+        Self { value, format: None }
+    }
 }
 pub mod policy_contract_properties {
     use super::*;
@@ -2718,12 +4131,22 @@ pub struct PolicyDescriptionCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl PolicyDescriptionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDescriptionContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PolicyDescriptionContractProperties>,
+}
+impl PolicyDescriptionContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDescriptionContractProperties {
@@ -2732,12 +4155,22 @@ pub struct PolicyDescriptionContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<i64>,
 }
+impl PolicyDescriptionContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalDelegationSettings {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalDelegationSettingsProperties>,
+}
+impl PortalDelegationSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalDelegationSettingsProperties {
@@ -2750,6 +4183,11 @@ pub struct PortalDelegationSettingsProperties {
     #[serde(rename = "userRegistration", default, skip_serializing_if = "Option::is_none")]
     pub user_registration: Option<RegistrationDelegationSettingsProperties>,
 }
+impl PortalDelegationSettingsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalRevisionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2757,12 +4195,22 @@ pub struct PortalRevisionCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PortalRevisionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalRevisionContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalRevisionContractProperties>,
+}
+impl PortalRevisionContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalRevisionContractProperties {
@@ -2778,6 +4226,11 @@ pub struct PortalRevisionContractProperties {
     pub created_date_time: Option<String>,
     #[serde(rename = "updatedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub updated_date_time: Option<String>,
+}
+impl PortalRevisionContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod portal_revision_contract_properties {
     use super::*;
@@ -2798,6 +4251,11 @@ pub struct PortalSettingValidationKeyContract {
     #[serde(rename = "validationKey", default, skip_serializing_if = "Option::is_none")]
     pub validation_key: Option<String>,
 }
+impl PortalSettingValidationKeyContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSettingsCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -2805,12 +4263,22 @@ pub struct PortalSettingsCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
+impl PortalSettingsCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSettingsContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalSettingsContractProperties>,
+}
+impl PortalSettingsContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSettingsContractProperties {
@@ -2827,10 +4295,20 @@ pub struct PortalSettingsContractProperties {
     #[serde(rename = "termsOfService", default, skip_serializing_if = "Option::is_none")]
     pub terms_of_service: Option<TermsOfServiceProperties>,
 }
+impl PortalSettingsContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSigninSettingProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl PortalSigninSettingProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSigninSettings {
@@ -2839,12 +4317,22 @@ pub struct PortalSigninSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalSigninSettingProperties>,
 }
+impl PortalSigninSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSignupSettings {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalSignupSettingsProperties>,
+}
+impl PortalSignupSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSignupSettingsProperties {
@@ -2853,10 +4341,20 @@ pub struct PortalSignupSettingsProperties {
     #[serde(rename = "termsOfService", default, skip_serializing_if = "Option::is_none")]
     pub terms_of_service: Option<TermsOfServiceProperties>,
 }
+impl PortalSignupSettingsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
@@ -2865,10 +4363,20 @@ pub struct PrivateEndpointConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
+impl PrivateEndpointConnection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+}
+impl PrivateEndpointConnectionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
@@ -2878,6 +4386,15 @@ pub struct PrivateEndpointConnectionProperties {
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
+}
+impl PrivateEndpointConnectionProperties {
+    pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
+        Self {
+            private_endpoint: None,
+            private_link_service_connection_state,
+            provisioning_state: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointConnectionProvisioningState {
@@ -2893,12 +4410,22 @@ pub struct PrivateEndpointConnectionRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<private_endpoint_connection_request::Properties>,
 }
+impl PrivateEndpointConnectionRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod private_endpoint_connection_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
         pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2911,6 +4438,16 @@ pub struct PrivateEndpointConnectionWrapperProperties {
     pub provisioning_state: Option<String>,
     #[serde(rename = "groupIds", default, skip_serializing_if = "Vec::is_empty")]
     pub group_ids: Vec<String>,
+}
+impl PrivateEndpointConnectionWrapperProperties {
+    pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
+        Self {
+            private_endpoint: None,
+            private_link_service_connection_state,
+            provisioning_state: None,
+            group_ids: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointServiceConnectionStatus {
@@ -2925,10 +4462,20 @@ pub struct PrivateLinkResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
+impl PrivateLinkResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+impl PrivateLinkResourceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
@@ -2939,6 +4486,11 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
+impl PrivateLinkResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2947,6 +4499,11 @@ pub struct PrivateLinkServiceConnectionState {
     pub description: Option<String>,
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
+}
+impl PrivateLinkServiceConnectionState {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductCollection {
@@ -2957,6 +4514,11 @@ pub struct ProductCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ProductCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductContract {
     #[serde(flatten)]
@@ -2964,12 +4526,25 @@ pub struct ProductContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProductContractProperties>,
 }
+impl ProductContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProductContractProperties {
     #[serde(flatten)]
     pub product_entity_base_parameters: ProductEntityBaseParameters,
     #[serde(rename = "displayName")]
     pub display_name: String,
+}
+impl ProductContractProperties {
+    pub fn new(display_name: String) -> Self {
+        Self {
+            product_entity_base_parameters: ProductEntityBaseParameters::default(),
+            display_name,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductEntityBaseParameters {
@@ -2985,6 +4560,11 @@ pub struct ProductEntityBaseParameters {
     pub subscriptions_limit: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<product_entity_base_parameters::State>,
+}
+impl ProductEntityBaseParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod product_entity_base_parameters {
     use super::*;
@@ -3004,10 +4584,24 @@ pub struct ProductTagResourceContractProperties {
     pub id: Option<String>,
     pub name: String,
 }
+impl ProductTagResourceContractProperties {
+    pub fn new(name: String) -> Self {
+        Self {
+            product_entity_base_parameters: ProductEntityBaseParameters::default(),
+            id: None,
+            name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProductUpdateProperties>,
+}
+impl ProductUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductUpdateProperties {
@@ -3015,6 +4609,11 @@ pub struct ProductUpdateProperties {
     pub product_entity_base_parameters: ProductEntityBaseParameters,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+}
+impl ProductUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaCounterCollection {
@@ -3024,6 +4623,11 @@ pub struct QuotaCounterCollection {
     pub count: Option<i64>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl QuotaCounterCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuotaCounterContract {
@@ -3038,10 +4642,26 @@ pub struct QuotaCounterContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<QuotaCounterValueContractProperties>,
 }
+impl QuotaCounterContract {
+    pub fn new(counter_key: String, period_key: String, period_start_time: String, period_end_time: String) -> Self {
+        Self {
+            counter_key,
+            period_key,
+            period_start_time,
+            period_end_time,
+            value: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaCounterValueContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<QuotaCounterValueContractProperties>,
+}
+impl QuotaCounterValueContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaCounterValueContractProperties {
@@ -3050,10 +4670,20 @@ pub struct QuotaCounterValueContractProperties {
     #[serde(rename = "kbTransferred", default, skip_serializing_if = "Option::is_none")]
     pub kb_transferred: Option<f64>,
 }
+impl QuotaCounterValueContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaCounterValueUpdateContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaCounterValueContractProperties>,
+}
+impl QuotaCounterValueUpdateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientEmailCollection {
@@ -3064,6 +4694,11 @@ pub struct RecipientEmailCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl RecipientEmailCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientEmailContract {
     #[serde(flatten)]
@@ -3071,10 +4706,20 @@ pub struct RecipientEmailContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecipientEmailContractProperties>,
 }
+impl RecipientEmailContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientEmailContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+}
+impl RecipientEmailContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientUserCollection {
@@ -3085,6 +4730,11 @@ pub struct RecipientUserCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl RecipientUserCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientUserContract {
     #[serde(flatten)]
@@ -3092,10 +4742,20 @@ pub struct RecipientUserContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecipientUsersContractProperties>,
 }
+impl RecipientUserContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientUsersContractProperties {
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
+}
+impl RecipientUsersContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientsContractProperties {
@@ -3103,6 +4763,11 @@ pub struct RecipientsContractProperties {
     pub emails: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub users: Vec<String>,
+}
+impl RecipientsContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegionContract {
@@ -3113,6 +4778,11 @@ pub struct RegionContract {
     #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
     pub is_deleted: Option<bool>,
 }
+impl RegionContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -3122,10 +4792,20 @@ pub struct RegionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl RegionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationDelegationSettingsProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl RegistrationDelegationSettingsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemotePrivateEndpointConnectionWrapper {
@@ -3138,6 +4818,11 @@ pub struct RemotePrivateEndpointConnectionWrapper {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionWrapperProperties>,
 }
+impl RemotePrivateEndpointConnectionWrapper {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -3146,6 +4831,11 @@ pub struct ReportCollection {
     pub count: Option<i64>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ReportCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportRecordContract {
@@ -3202,6 +4892,11 @@ pub struct ReportRecordContract {
     #[serde(rename = "serviceTimeMax", default, skip_serializing_if = "Option::is_none")]
     pub service_time_max: Option<f64>,
 }
+impl ReportRecordContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RepresentationContract {
     #[serde(rename = "contentType")]
@@ -3215,6 +4910,17 @@ pub struct RepresentationContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub examples: Option<ParameterExamplesContract>,
 }
+impl RepresentationContract {
+    pub fn new(content_type: String) -> Self {
+        Self {
+            content_type,
+            schema_id: None,
+            type_name: None,
+            form_parameters: Vec::new(),
+            examples: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3226,12 +4932,22 @@ pub struct RequestContract {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub representations: Vec<RepresentationContract>,
 }
+impl RequestContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestReportCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RequestReportRecordContract>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+}
+impl RequestReportCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RequestReportRecordContract {
@@ -3272,6 +4988,11 @@ pub struct RequestReportRecordContract {
     #[serde(rename = "requestSize", default, skip_serializing_if = "Option::is_none")]
     pub request_size: Option<i32>,
 }
+impl RequestReportRecordContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3280,6 +5001,11 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceLocationDataContract {
@@ -3291,10 +5017,25 @@ pub struct ResourceLocationDataContract {
     #[serde(rename = "countryOrRegion", default, skip_serializing_if = "Option::is_none")]
     pub country_or_region: Option<String>,
 }
+impl ResourceLocationDataContract {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            city: None,
+            district: None,
+            country_or_region: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<resource_sku::Name>,
+}
+impl ResourceSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_sku {
     use super::*;
@@ -3319,6 +5060,11 @@ pub struct ResourceSkuCapacity {
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<resource_sku_capacity::ScaleType>,
 }
+impl ResourceSkuCapacity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod resource_sku_capacity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3340,11 +5086,21 @@ pub struct ResourceSkuResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<ResourceSkuCapacity>,
 }
+impl ResourceSkuResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSkuResults {
     pub value: Vec<ResourceSkuResult>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ResourceSkuResults {
+    pub fn new(value: Vec<ResourceSkuResult>) -> Self {
+        Self { value, next_link: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResponseContract {
@@ -3357,12 +5113,27 @@ pub struct ResponseContract {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub headers: Vec<ParameterContract>,
 }
+impl ResponseContract {
+    pub fn new(status_code: i32) -> Self {
+        Self {
+            status_code,
+            description: None,
+            representations: Vec::new(),
+            headers: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SamplingSettings {
     #[serde(rename = "samplingType", default, skip_serializing_if = "Option::is_none")]
     pub sampling_type: Option<sampling_settings::SamplingType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub percentage: Option<f64>,
+}
+impl SamplingSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod sampling_settings {
     use super::*;
@@ -3377,11 +5148,21 @@ pub struct SaveConfigurationParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SaveConfigurationParameterProperties>,
 }
+impl SaveConfigurationParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SaveConfigurationParameterProperties {
     pub branch: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub force: Option<bool>,
+}
+impl SaveConfigurationParameterProperties {
+    pub fn new(branch: String) -> Self {
+        Self { branch, force: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaCollection {
@@ -3392,6 +5173,11 @@ pub struct SchemaCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl SchemaCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaContract {
     #[serde(flatten)]
@@ -3399,12 +5185,25 @@ pub struct SchemaContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SchemaContractProperties>,
 }
+impl SchemaContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SchemaContractProperties {
     #[serde(rename = "contentType")]
     pub content_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub document: Option<SchemaDocumentProperties>,
+}
+impl SchemaContractProperties {
+    pub fn new(content_type: String) -> Self {
+        Self {
+            content_type,
+            document: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaDocumentProperties {
@@ -3415,6 +5214,11 @@ pub struct SchemaDocumentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub components: Option<serde_json::Value>,
 }
+impl SchemaDocumentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -3424,12 +5228,22 @@ pub struct SubscriptionCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl SubscriptionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionContractProperties>,
+}
+impl SubscriptionContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionContractProperties {
@@ -3457,6 +5271,25 @@ pub struct SubscriptionContractProperties {
     pub state_comment: Option<String>,
     #[serde(rename = "allowTracing", default, skip_serializing_if = "Option::is_none")]
     pub allow_tracing: Option<bool>,
+}
+impl SubscriptionContractProperties {
+    pub fn new(scope: String, state: subscription_contract_properties::State) -> Self {
+        Self {
+            owner_id: None,
+            scope,
+            display_name: None,
+            state,
+            created_date: None,
+            start_date: None,
+            expiration_date: None,
+            end_date: None,
+            notification_date: None,
+            primary_key: None,
+            secondary_key: None,
+            state_comment: None,
+            allow_tracing: None,
+        }
+    }
 }
 pub mod subscription_contract_properties {
     use super::*;
@@ -3492,6 +5325,19 @@ pub struct SubscriptionCreateParameterProperties {
     #[serde(rename = "allowTracing", default, skip_serializing_if = "Option::is_none")]
     pub allow_tracing: Option<bool>,
 }
+impl SubscriptionCreateParameterProperties {
+    pub fn new(scope: String, display_name: String) -> Self {
+        Self {
+            owner_id: None,
+            scope,
+            display_name,
+            primary_key: None,
+            secondary_key: None,
+            state: None,
+            allow_tracing: None,
+        }
+    }
+}
 pub mod subscription_create_parameter_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3515,6 +5361,11 @@ pub struct SubscriptionCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionCreateParameterProperties>,
 }
+impl SubscriptionCreateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionKeyParameterNamesContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3522,12 +5373,22 @@ pub struct SubscriptionKeyParameterNamesContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
 }
+impl SubscriptionKeyParameterNamesContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionKeysContract {
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
+}
+impl SubscriptionKeysContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionUpdateParameterProperties {
@@ -3549,6 +5410,11 @@ pub struct SubscriptionUpdateParameterProperties {
     pub state_comment: Option<String>,
     #[serde(rename = "allowTracing", default, skip_serializing_if = "Option::is_none")]
     pub allow_tracing: Option<bool>,
+}
+impl SubscriptionUpdateParameterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod subscription_update_parameter_properties {
     use super::*;
@@ -3573,10 +5439,20 @@ pub struct SubscriptionUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionUpdateParameterProperties>,
 }
+impl SubscriptionUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionsDelegationSettingsProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl SubscriptionsDelegationSettingsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagCollection {
@@ -3587,6 +5463,11 @@ pub struct TagCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl TagCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagContract {
     #[serde(flatten)]
@@ -3594,15 +5475,30 @@ pub struct TagContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagContractProperties>,
 }
+impl TagContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagContractProperties {
     #[serde(rename = "displayName")]
     pub display_name: String,
 }
+impl TagContractProperties {
+    pub fn new(display_name: String) -> Self {
+        Self { display_name }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagCreateUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagContractProperties>,
+}
+impl TagCreateUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagDescriptionBaseProperties {
@@ -3613,6 +5509,11 @@ pub struct TagDescriptionBaseProperties {
     #[serde(rename = "externalDocsDescription", default, skip_serializing_if = "Option::is_none")]
     pub external_docs_description: Option<String>,
 }
+impl TagDescriptionBaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagDescriptionCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -3622,12 +5523,22 @@ pub struct TagDescriptionCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl TagDescriptionCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagDescriptionContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagDescriptionContractProperties>,
+}
+impl TagDescriptionContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagDescriptionContractProperties {
@@ -3638,10 +5549,20 @@ pub struct TagDescriptionContractProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
+impl TagDescriptionContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagDescriptionCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagDescriptionBaseProperties>,
+}
+impl TagDescriptionCreateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagResourceCollection {
@@ -3651,6 +5572,11 @@ pub struct TagResourceCollection {
     pub count: Option<i64>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl TagResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagResourceContract {
@@ -3662,6 +5588,16 @@ pub struct TagResourceContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<ProductTagResourceContractProperties>,
 }
+impl TagResourceContract {
+    pub fn new(tag: TagTagResourceContractProperties) -> Self {
+        Self {
+            tag,
+            api: None,
+            operation: None,
+            product: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagTagResourceContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3669,12 +5605,22 @@ pub struct TagTagResourceContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl TagTagResourceContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TenantConfigurationSyncStateContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TenantConfigurationSyncStateContractProperties>,
+}
+impl TenantConfigurationSyncStateContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TenantConfigurationSyncStateContractProperties {
@@ -3695,12 +5641,22 @@ pub struct TenantConfigurationSyncStateContractProperties {
     #[serde(rename = "lastOperationId", default, skip_serializing_if = "Option::is_none")]
     pub last_operation_id: Option<String>,
 }
+impl TenantConfigurationSyncStateContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TenantSettingsCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TenantSettingsContract>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl TenantSettingsCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TenantSettingsContract {
@@ -3709,10 +5665,20 @@ pub struct TenantSettingsContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TenantSettingsContractProperties>,
 }
+impl TenantSettingsContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TenantSettingsContractProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<serde_json::Value>,
+}
+impl TenantSettingsContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TermsOfServiceProperties {
@@ -3723,10 +5689,20 @@ pub struct TermsOfServiceProperties {
     #[serde(rename = "consentRequired", default, skip_serializing_if = "Option::is_none")]
     pub consent_required: Option<bool>,
 }
+impl TermsOfServiceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenBodyParameterContract {
     pub name: String,
     pub value: String,
+}
+impl TokenBodyParameterContract {
+    pub fn new(name: String, value: String) -> Self {
+        Self { name, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserCollection {
@@ -3737,12 +5713,22 @@ pub struct UserCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl UserCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserContract {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserContractProperties>,
+}
+impl UserContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserContractProperties {
@@ -3759,6 +5745,11 @@ pub struct UserContractProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub groups: Vec<GroupContractProperties>,
 }
+impl UserContractProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCreateParameterProperties {
     #[serde(flatten)]
@@ -3774,6 +5765,19 @@ pub struct UserCreateParameterProperties {
     pub app_type: Option<user_create_parameter_properties::AppType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub confirmation: Option<user_create_parameter_properties::Confirmation>,
+}
+impl UserCreateParameterProperties {
+    pub fn new(email: String, first_name: String, last_name: String) -> Self {
+        Self {
+            user_entity_base_parameters: UserEntityBaseParameters::default(),
+            email,
+            first_name,
+            last_name,
+            password: None,
+            app_type: None,
+            confirmation: None,
+        }
+    }
 }
 pub mod user_create_parameter_properties {
     use super::*;
@@ -3797,6 +5801,11 @@ pub struct UserCreateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserCreateParameterProperties>,
 }
+impl UserCreateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserEntityBaseParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3805,6 +5814,11 @@ pub struct UserEntityBaseParameters {
     pub note: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub identities: Vec<UserIdentityContract>,
+}
+impl UserEntityBaseParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod user_entity_base_parameters {
     use super::*;
@@ -3834,12 +5848,22 @@ pub struct UserIdentityCollection {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl UserIdentityCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentityContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl UserIdentityContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentityProperties {
@@ -3848,11 +5872,21 @@ pub struct UserIdentityProperties {
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
+impl UserIdentityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserTokenParameterProperties {
     #[serde(rename = "keyType")]
     pub key_type: user_token_parameter_properties::KeyType,
     pub expiry: String,
+}
+impl UserTokenParameterProperties {
+    pub fn new(key_type: user_token_parameter_properties::KeyType, expiry: String) -> Self {
+        Self { key_type, expiry }
+    }
 }
 pub mod user_token_parameter_properties {
     use super::*;
@@ -3874,15 +5908,30 @@ pub struct UserTokenParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserTokenParameterProperties>,
 }
+impl UserTokenParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserTokenResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl UserTokenResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserUpdateParametersProperties>,
+}
+impl UserUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserUpdateParametersProperties {
@@ -3897,6 +5946,11 @@ pub struct UserUpdateParametersProperties {
     #[serde(rename = "lastName", default, skip_serializing_if = "Option::is_none")]
     pub last_name: Option<String>,
 }
+impl UserUpdateParametersProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3906,12 +5960,22 @@ pub struct VirtualNetworkConfiguration {
     #[serde(rename = "subnetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_resource_id: Option<String>,
 }
+impl VirtualNetworkConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509CertificateName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "issuerCertificateThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub issuer_certificate_thumbprint: Option<String>,
+}
+impl X509CertificateName {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -3927,6 +5991,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

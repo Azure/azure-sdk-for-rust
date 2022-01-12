@@ -11,6 +11,11 @@ pub struct CheckResourceNameResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<check_resource_name_result::Status>,
 }
+impl CheckResourceNameResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod check_resource_name_result {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -24,12 +29,22 @@ pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -43,6 +58,11 @@ pub struct ErrorResponse {
     pub details: Vec<ErrorResponse>,
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Location {
@@ -61,6 +81,11 @@ pub struct Location {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<LocationMetadata>,
 }
+impl Location {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod location {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -73,6 +98,11 @@ pub mod location {
 pub struct LocationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Location>,
+}
+impl LocationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationMetadata {
@@ -93,6 +123,11 @@ pub struct LocationMetadata {
     #[serde(rename = "homeLocation", default, skip_serializing_if = "Option::is_none")]
     pub home_location: Option<String>,
 }
+impl LocationMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod location_metadata {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -112,12 +147,22 @@ pub struct ManagedByTenant {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
+impl ManagedByTenant {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -132,6 +177,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -139,6 +189,11 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PairedRegion {
@@ -149,11 +204,21 @@ pub struct PairedRegion {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
 }
+impl PairedRegion {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceName {
     pub name: String,
     #[serde(rename = "type")]
     pub type_: String,
+}
+impl ResourceName {
+    pub fn new(name: String, type_: String) -> Self {
+        Self { name, type_ }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Subscription {
@@ -176,6 +241,11 @@ pub struct Subscription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Subscription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod subscription {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -194,6 +264,14 @@ pub struct SubscriptionListResult {
     #[serde(rename = "nextLink")]
     pub next_link: String,
 }
+impl SubscriptionListResult {
+    pub fn new(next_link: String) -> Self {
+        Self {
+            value: Vec::new(),
+            next_link,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionPolicies {
     #[serde(rename = "locationPlacementId", default, skip_serializing_if = "Option::is_none")]
@@ -202,6 +280,11 @@ pub struct SubscriptionPolicies {
     pub quota_id: Option<String>,
     #[serde(rename = "spendingLimit", default, skip_serializing_if = "Option::is_none")]
     pub spending_limit: Option<subscription_policies::SpendingLimit>,
+}
+impl SubscriptionPolicies {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod subscription_policies {
     use super::*;
@@ -235,6 +318,11 @@ pub struct TenantIdDescription {
     #[serde(rename = "tenantBrandingLogoUrl", default, skip_serializing_if = "Option::is_none")]
     pub tenant_branding_logo_url: Option<String>,
 }
+impl TenantIdDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod tenant_id_description {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -250,4 +338,12 @@ pub struct TenantListResult {
     pub value: Vec<TenantIdDescription>,
     #[serde(rename = "nextLink")]
     pub next_link: String,
+}
+impl TenantListResult {
+    pub fn new(next_link: String) -> Self {
+        Self {
+            value: Vec::new(),
+            next_link,
+        }
+    }
 }

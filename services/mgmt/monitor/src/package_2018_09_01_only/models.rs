@@ -28,6 +28,24 @@ pub struct ActionGroup {
     #[serde(rename = "armRoleReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub arm_role_receivers: Vec<ArmRoleReceiver>,
 }
+impl ActionGroup {
+    pub fn new(group_short_name: String, enabled: bool) -> Self {
+        Self {
+            group_short_name,
+            enabled,
+            email_receivers: Vec::new(),
+            sms_receivers: Vec::new(),
+            webhook_receivers: Vec::new(),
+            itsm_receivers: Vec::new(),
+            azure_app_push_receivers: Vec::new(),
+            automation_runbook_receivers: Vec::new(),
+            voice_receivers: Vec::new(),
+            logic_app_receivers: Vec::new(),
+            azure_function_receivers: Vec::new(),
+            arm_role_receivers: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -35,10 +53,20 @@ pub struct ActionGroupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ActionGroupList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl ActionGroupPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatchBody {
@@ -47,6 +75,11 @@ pub struct ActionGroupPatchBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroupPatch>,
 }
+impl ActionGroupPatchBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
@@ -54,11 +87,24 @@ pub struct ActionGroupResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroup>,
 }
+impl ActionGroupResource {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArmRoleReceiver {
     pub name: String,
     #[serde(rename = "roleId")]
     pub role_id: String,
+}
+impl ArmRoleReceiver {
+    pub fn new(name: String, role_id: String) -> Self {
+        Self { name, role_id }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRunbookReceiver {
@@ -75,11 +121,28 @@ pub struct AutomationRunbookReceiver {
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
 }
+impl AutomationRunbookReceiver {
+    pub fn new(automation_account_id: String, runbook_name: String, webhook_resource_id: String, is_global_runbook: bool) -> Self {
+        Self {
+            automation_account_id,
+            runbook_name,
+            webhook_resource_id,
+            is_global_runbook,
+            name: None,
+            service_uri: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureAppPushReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
     pub email_address: String,
+}
+impl AzureAppPushReceiver {
+    pub fn new(name: String, email_address: String) -> Self {
+        Self { name, email_address }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
@@ -90,6 +153,16 @@ pub struct AzureFunctionReceiver {
     pub function_name: String,
     #[serde(rename = "httpTriggerUrl")]
     pub http_trigger_url: String,
+}
+impl AzureFunctionReceiver {
+    pub fn new(name: String, function_app_resource_id: String, function_name: String, http_trigger_url: String) -> Self {
+        Self {
+            name,
+            function_app_resource_id,
+            function_name,
+            http_trigger_url,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Baseline {
@@ -104,6 +177,18 @@ pub struct Baseline {
     pub prediction_result_type: Option<baseline::PredictionResultType>,
     #[serde(rename = "ErrorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<baseline::ErrorType>,
+}
+impl Baseline {
+    pub fn new(sensitivity: baseline::Sensitivity, low_thresholds: Vec<f64>, high_thresholds: Vec<f64>) -> Self {
+        Self {
+            sensitivity,
+            low_thresholds,
+            high_thresholds,
+            timestamps: Vec::new(),
+            prediction_result_type: None,
+            error_type: None,
+        }
+    }
 }
 pub mod baseline {
     use super::*;
@@ -125,6 +210,11 @@ pub struct BaselineMetadataValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl BaselineMetadataValue {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -135,6 +225,11 @@ pub struct BaselineProperties {
     pub aggregation: Option<String>,
     #[serde(rename = "internalOperationId", default, skip_serializing_if = "Option::is_none")]
     pub internal_operation_id: Option<String>,
+}
+impl BaselineProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineResponse {
@@ -157,6 +252,11 @@ pub struct BaselineResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaselineProperties>,
 }
+impl BaselineResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod baseline_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -178,6 +278,18 @@ pub struct CalculateBaselineResponse {
     #[serde(rename = "errorType", default, skip_serializing_if = "Option::is_none")]
     pub error_type: Option<calculate_baseline_response::ErrorType>,
 }
+impl CalculateBaselineResponse {
+    pub fn new(type_: String, baseline: Vec<Baseline>) -> Self {
+        Self {
+            type_,
+            timestamps: Vec::new(),
+            baseline,
+            statistics: None,
+            internal_operation_id: None,
+            error_type: None,
+        }
+    }
+}
 pub mod calculate_baseline_response {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -188,6 +300,11 @@ pub mod calculate_baseline_response {
         pub status: Vec<String>,
         #[serde(rename = "seasonalityPeriod", default, skip_serializing_if = "Option::is_none")]
         pub seasonality_period: Option<i32>,
+    }
+    impl Statistics {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ErrorType {}
@@ -200,10 +317,24 @@ pub struct EmailReceiver {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
+impl EmailReceiver {
+    pub fn new(name: String, email_address: String) -> Self {
+        Self {
+            name,
+            email_address,
+            status: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {
     #[serde(rename = "receiverName")]
     pub receiver_name: String,
+}
+impl EnableRequest {
+    pub fn new(receiver_name: String) -> Self {
+        Self { receiver_name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -211,6 +342,11 @@ pub struct ErrorResponse {
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItsmReceiver {
@@ -223,11 +359,30 @@ pub struct ItsmReceiver {
     pub ticket_configuration: String,
     pub region: String,
 }
+impl ItsmReceiver {
+    pub fn new(name: String, workspace_id: String, connection_id: String, ticket_configuration: String, region: String) -> Self {
+        Self {
+            name,
+            workspace_id,
+            connection_id,
+            ticket_configuration,
+            region,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
     pub value: String,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
+}
+impl LocalizableString {
+    pub fn new(value: String) -> Self {
+        Self {
+            value,
+            localized_value: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogicAppReceiver {
@@ -236,6 +391,15 @@ pub struct LogicAppReceiver {
     pub resource_id: String,
     #[serde(rename = "callbackUrl")]
     pub callback_url: String,
+}
+impl LogicAppReceiver {
+    pub fn new(name: String, resource_id: String, callback_url: String) -> Self {
+        Self {
+            name,
+            resource_id,
+            callback_url,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReceiverStatus {
@@ -255,6 +419,17 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsReceiver {
     pub name: String,
@@ -265,12 +440,31 @@ pub struct SmsReceiver {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
+impl SmsReceiver {
+    pub fn new(name: String, country_code: String, phone_number: String) -> Self {
+        Self {
+            name,
+            country_code,
+            phone_number,
+            status: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeSeriesInformation {
     pub sensitivities: Vec<String>,
     pub values: Vec<f64>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
+}
+impl TimeSeriesInformation {
+    pub fn new(sensitivities: Vec<String>, values: Vec<f64>) -> Self {
+        Self {
+            sensitivities,
+            values,
+            timestamps: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VoiceReceiver {
@@ -280,9 +474,23 @@ pub struct VoiceReceiver {
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
 }
+impl VoiceReceiver {
+    pub fn new(name: String, country_code: String, phone_number: String) -> Self {
+        Self {
+            name,
+            country_code,
+            phone_number,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookReceiver {
     pub name: String,
     #[serde(rename = "serviceUri")]
     pub service_uri: String,
+}
+impl WebhookReceiver {
+    pub fn new(name: String, service_uri: String) -> Self {
+        Self { name, service_uri }
+    }
 }

@@ -13,6 +13,16 @@ pub struct Authorization {
     #[serde(rename = "delegatedRoleDefinitionIds", default, skip_serializing_if = "Vec::is_empty")]
     pub delegated_role_definition_ids: Vec<String>,
 }
+impl Authorization {
+    pub fn new(principal_id: String, role_definition_id: String) -> Self {
+        Self {
+            principal_id,
+            principal_id_display_name: None,
+            role_definition_id,
+            delegated_role_definition_ids: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
     pub code: String,
@@ -20,10 +30,24 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
+impl ErrorDefinition {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -31,6 +55,11 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -45,11 +74,21 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
@@ -57,6 +96,16 @@ pub struct Plan {
     pub publisher: String,
     pub product: String,
     pub version: String,
+}
+impl Plan {
+    pub fn new(name: String, publisher: String, product: String, version: String) -> Self {
+        Self {
+            name,
+            publisher,
+            product,
+            version,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationAssignment {
@@ -69,12 +118,22 @@ pub struct RegistrationAssignment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl RegistrationAssignment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationAssignmentList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegistrationAssignment>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RegistrationAssignmentList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationAssignmentProperties {
@@ -84,6 +143,15 @@ pub struct RegistrationAssignmentProperties {
     pub provisioning_state: Option<registration_assignment_properties::ProvisioningState>,
     #[serde(rename = "registrationDefinition", default, skip_serializing_if = "Option::is_none")]
     pub registration_definition: Option<registration_assignment_properties::RegistrationDefinition>,
+}
+impl RegistrationAssignmentProperties {
+    pub fn new(registration_definition_id: String) -> Self {
+        Self {
+            registration_definition_id,
+            provisioning_state: None,
+            registration_definition: None,
+        }
+    }
 }
 pub mod registration_assignment_properties {
     use super::*;
@@ -115,6 +183,11 @@ pub mod registration_assignment_properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
     }
+    impl RegistrationDefinition {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     pub mod registration_definition {
         use super::*;
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -135,6 +208,11 @@ pub mod registration_assignment_properties {
             pub managed_by_tenant_id: Option<String>,
             #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
             pub managed_by_tenant_name: Option<String>,
+        }
+        impl Properties {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
         pub mod properties {
             use super::*;
@@ -169,12 +247,22 @@ pub struct RegistrationDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl RegistrationDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationDefinitionList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegistrationDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RegistrationDefinitionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationDefinitionProperties {
@@ -189,6 +277,18 @@ pub struct RegistrationDefinitionProperties {
     pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
     #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_tenant_name: Option<String>,
+}
+impl RegistrationDefinitionProperties {
+    pub fn new(authorizations: Vec<Authorization>, managed_by_tenant_id: String) -> Self {
+        Self {
+            description: None,
+            authorizations,
+            registration_definition_name: None,
+            managed_by_tenant_id,
+            provisioning_state: None,
+            managed_by_tenant_name: None,
+        }
+    }
 }
 pub mod registration_definition_properties {
     use super::*;

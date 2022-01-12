@@ -9,6 +9,11 @@ pub struct ManagementLockListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ManagementLockListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementLockObject {
     pub properties: ManagementLockProperties,
@@ -19,10 +24,25 @@ pub struct ManagementLockObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl ManagementLockObject {
+    pub fn new(properties: ManagementLockProperties) -> Self {
+        Self {
+            properties,
+            id: None,
+            type_: None,
+            name: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementLockOwner {
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
+}
+impl ManagementLockOwner {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementLockProperties {
@@ -31,6 +51,15 @@ pub struct ManagementLockProperties {
     pub notes: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub owners: Vec<ManagementLockOwner>,
+}
+impl ManagementLockProperties {
+    pub fn new(level: management_lock_properties::Level) -> Self {
+        Self {
+            level,
+            notes: None,
+            owners: Vec::new(),
+        }
+    }
 }
 pub mod management_lock_properties {
     use super::*;
@@ -48,6 +77,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -59,6 +93,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -66,4 +105,9 @@ pub struct OperationListResult {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

@@ -21,6 +21,11 @@ pub struct AsyncOperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<async_operation_status::Error>,
 }
+impl AsyncOperationStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod async_operation_status {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -36,6 +41,11 @@ pub mod async_operation_status {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
     }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct B2cResourceSku {
@@ -43,6 +53,11 @@ pub struct B2cResourceSku {
     pub name: Option<b2c_resource_sku::Name>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<b2c_resource_sku::Tier>,
+}
+impl B2cResourceSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod b2c_resource_sku {
     use super::*;
@@ -72,6 +87,19 @@ pub struct B2cTenantResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl B2cTenantResource {
+    pub fn new(sku: B2cResourceSku, location: String) -> Self {
+        Self {
+            type_: None,
+            sku,
+            properties: None,
+            id: None,
+            name: None,
+            location,
+            tags: None,
+        }
+    }
+}
 pub mod b2c_tenant_resource {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -85,12 +113,22 @@ pub struct B2cTenantResourceList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<B2cTenantResource>,
 }
+impl B2cTenantResourceList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct B2cTenantResourceProperties {
     #[serde(rename = "billingConfig", default, skip_serializing_if = "Option::is_none")]
     pub billing_config: Option<b2c_tenant_resource_properties::BillingConfig>,
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+impl B2cTenantResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod b2c_tenant_resource_properties {
     use super::*;
@@ -100,6 +138,11 @@ pub mod b2c_tenant_resource_properties {
         pub billing_type: Option<billing_config::BillingType>,
         #[serde(rename = "effectiveStartDateUtc", default, skip_serializing_if = "Option::is_none")]
         pub effective_start_date_utc: Option<String>,
+    }
+    impl BillingConfig {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     pub mod billing_config {
         use super::*;
@@ -120,16 +163,31 @@ pub struct B2cTenantUpdateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl B2cTenantUpdateRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityRequestBody {
     pub name: String,
     #[serde(rename = "countryCode")]
     pub country_code: CountryCode,
 }
+impl CheckNameAvailabilityRequestBody {
+    pub fn new(name: String, country_code: CountryCode) -> Self {
+        Self { name, country_code }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type CountryCode = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -139,6 +197,11 @@ pub struct CreateTenantProperties {
     #[serde(rename = "countryCode", default, skip_serializing_if = "Option::is_none")]
     pub country_code: Option<CountryCode>,
 }
+impl CreateTenantProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateTenantRequestBody {
     pub location: String,
@@ -147,12 +210,27 @@ pub struct CreateTenantRequestBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl CreateTenantRequestBody {
+    pub fn new(location: String, properties: create_tenant_request_body::Properties, sku: B2cResourceSku) -> Self {
+        Self {
+            location,
+            properties,
+            sku,
+            tags: None,
+        }
+    }
+}
 pub mod create_tenant_request_body {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[serde(rename = "createTenantProperties", default, skip_serializing_if = "Option::is_none")]
         pub create_tenant_properties: Option<CreateTenantProperties>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -161,6 +239,11 @@ pub struct ErrorAdditionalInfo {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -174,6 +257,11 @@ pub struct ErrorResponse {
     pub details: Vec<ErrorResponse>,
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NameAvailabilityReason {
@@ -189,12 +277,22 @@ pub struct NameAvailabilityResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<NameAvailabilityReason>,
 }
+impl NameAvailabilityResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -209,9 +307,19 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

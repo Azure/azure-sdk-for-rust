@@ -13,12 +13,22 @@ pub struct AzureResourceBase {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl AzureResourceBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -33,10 +43,20 @@ pub struct ErrorResponse {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedTemplateArtifact {
     pub path: String,
     pub template: serde_json::Value,
+}
+impl LinkedTemplateArtifact {
+    pub fn new(path: String, template: serde_json::Value) -> Self {
+        Self { path, template }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateSpec {
@@ -47,6 +67,16 @@ pub struct TemplateSpec {
     pub properties: Option<TemplateSpecProperties>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl TemplateSpec {
+    pub fn new(location: String) -> Self {
+        Self {
+            azure_resource_base: AzureResourceBase::default(),
+            location,
+            properties: None,
+            tags: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecProperties {
@@ -59,12 +89,22 @@ pub struct TemplateSpecProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub versions: Option<serde_json::Value>,
 }
+impl TemplateSpecProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecUpdateModel {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl TemplateSpecUpdateModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateSpecVersion {
@@ -75,6 +115,16 @@ pub struct TemplateSpecVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl TemplateSpecVersion {
+    pub fn new(location: String, properties: TemplateSpecVersionProperties) -> Self {
+        Self {
+            azure_resource_base: AzureResourceBase::default(),
+            location,
+            properties,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecVersionInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -83,6 +133,11 @@ pub struct TemplateSpecVersionInfo {
     pub time_created: Option<String>,
     #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
+}
+impl TemplateSpecVersionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecVersionProperties {
@@ -97,12 +152,22 @@ pub struct TemplateSpecVersionProperties {
     #[serde(rename = "uiFormDefinition", default, skip_serializing_if = "Option::is_none")]
     pub ui_form_definition: Option<serde_json::Value>,
 }
+impl TemplateSpecVersionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecVersionUpdateModel {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl TemplateSpecVersionUpdateModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecVersionsListResult {
@@ -111,10 +176,20 @@ pub struct TemplateSpecVersionsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl TemplateSpecVersionsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecsError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl TemplateSpecsError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TemplateSpecsListResult {
@@ -122,6 +197,11 @@ pub struct TemplateSpecsListResult {
     pub value: Vec<TemplateSpec>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl TemplateSpecsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -137,6 +217,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

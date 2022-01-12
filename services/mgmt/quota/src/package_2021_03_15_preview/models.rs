@@ -11,10 +11,20 @@ pub struct CommonResourceProperties {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl CommonResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateGenericQuotaRequestParameters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CurrentQuotaLimitBase>,
+}
+impl CreateGenericQuotaRequestParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CurrentQuotaLimitBase {
@@ -27,6 +37,11 @@ pub struct CurrentQuotaLimitBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaProperties>,
 }
+impl CurrentQuotaLimitBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CurrentUsagesBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -38,15 +53,30 @@ pub struct CurrentUsagesBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UsagesProperties>,
 }
+impl CurrentUsagesBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExceptionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ServiceError>,
 }
+impl ExceptionResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LimitJsonObject {
     #[serde(rename = "limitObjectType")]
     pub limit_object_type: LimitObjectTypes,
+}
+impl LimitJsonObject {
+    pub fn new(limit_object_type: LimitObjectTypes) -> Self {
+        Self { limit_object_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LimitObject {
@@ -55,6 +85,15 @@ pub struct LimitObject {
     pub value: i32,
     #[serde(rename = "limitType", default, skip_serializing_if = "Option::is_none")]
     pub limit_type: Option<LimitTypes>,
+}
+impl LimitObject {
+    pub fn new(limit_json_object: LimitJsonObject, value: i32) -> Self {
+        Self {
+            limit_json_object,
+            value,
+            limit_type: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LimitObjectTypes {
@@ -76,12 +115,22 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationResponse>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResponse {
@@ -92,6 +141,11 @@ pub struct OperationResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
+impl OperationResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaLimits {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -99,12 +153,22 @@ pub struct QuotaLimits {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl QuotaLimits {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaLimitsResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CurrentQuotaLimitBase>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl QuotaLimitsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaProperties {
@@ -123,6 +187,11 @@ pub struct QuotaProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl QuotaProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -134,12 +203,22 @@ pub struct QuotaRequestDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaRequestProperties>,
 }
+impl QuotaRequestDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestDetailsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<QuotaRequestDetails>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl QuotaRequestDetailsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestOneResourceSubmitResponse {
@@ -151,6 +230,11 @@ pub struct QuotaRequestOneResourceSubmitResponse {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaRequestOneResourceProperties>,
+}
+impl QuotaRequestOneResourceSubmitResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestProperties {
@@ -164,6 +248,11 @@ pub struct QuotaRequestProperties {
     pub request_submit_time: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubRequest>,
+}
+impl QuotaRequestProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QuotaRequestState {
@@ -192,6 +281,11 @@ pub struct QuotaRequestStatusDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl QuotaRequestStatusDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestSubmitResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -202,6 +296,11 @@ pub struct QuotaRequestSubmitResponse {
     pub properties: Option<QuotaRequestProperties>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl QuotaRequestSubmitResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaRequestSubmitResponse202 {
@@ -214,12 +313,22 @@ pub struct QuotaRequestSubmitResponse202 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaRequestStatusDetails>,
 }
+impl QuotaRequestSubmitResponse202 {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
+}
+impl ResourceName {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type ResourceTypesName = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -231,12 +340,22 @@ pub struct ServiceError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ServiceErrorDetail>,
 }
+impl ServiceError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ServiceErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubRequest {
@@ -255,6 +374,11 @@ pub struct SubRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<LimitJsonObject>,
 }
+impl SubRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsagesLimits {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -262,11 +386,21 @@ pub struct UsagesLimits {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl UsagesLimits {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsagesObject {
     pub value: i32,
     #[serde(rename = "usagesType", default, skip_serializing_if = "Option::is_none")]
     pub usages_type: Option<UsagesTypes>,
+}
+impl UsagesObject {
+    pub fn new(value: i32) -> Self {
+        Self { value, usages_type: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsagesProperties {
@@ -284,6 +418,11 @@ pub struct UsagesProperties {
     pub is_quota_applicable: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+}
+impl UsagesProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UsagesTypes {
@@ -316,4 +455,9 @@ pub struct QuotaRequestOneResourceProperties {
     pub error: Option<ServiceErrorDetail>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+}
+impl QuotaRequestOneResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

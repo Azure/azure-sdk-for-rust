@@ -12,6 +12,16 @@ pub struct Baseline {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
 }
+impl Baseline {
+    pub fn new(sensitivity: baseline::Sensitivity, low_thresholds: Vec<f64>, high_thresholds: Vec<f64>) -> Self {
+        Self {
+            sensitivity,
+            low_thresholds,
+            high_thresholds,
+            timestamps: Vec::new(),
+        }
+    }
+}
 pub mod baseline {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -28,6 +38,11 @@ pub struct BaselineMetadataValue {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
+impl BaselineMetadataValue {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -43,6 +58,11 @@ pub struct BaselineProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<BaselineMetadataValue>,
 }
+impl BaselineProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaselineResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -54,6 +74,11 @@ pub struct BaselineResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaselineProperties>,
 }
+impl BaselineResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CalculateBaselineResponse {
     #[serde(rename = "type")]
@@ -62,6 +87,15 @@ pub struct CalculateBaselineResponse {
     pub timestamps: Vec<String>,
     pub baseline: Vec<Baseline>,
 }
+impl CalculateBaselineResponse {
+    pub fn new(type_: String, baseline: Vec<Baseline>) -> Self {
+        Self {
+            type_,
+            timestamps: Vec::new(),
+            baseline,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -69,11 +103,24 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
     pub value: String,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
+}
+impl LocalizableString {
+    pub fn new(value: String) -> Self {
+        Self {
+            value,
+            localized_value: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeSeriesInformation {
@@ -81,4 +128,13 @@ pub struct TimeSeriesInformation {
     pub values: Vec<f64>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub timestamps: Vec<String>,
+}
+impl TimeSeriesInformation {
+    pub fn new(sensitivities: Vec<String>, values: Vec<f64>) -> Self {
+        Self {
+            sensitivities,
+            values,
+            timestamps: Vec::new(),
+        }
+    }
 }

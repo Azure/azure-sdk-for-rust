@@ -9,6 +9,11 @@ pub struct CheckNameAvailabilityRequest {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl CheckNameAvailabilityRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
@@ -17,6 +22,11 @@ pub struct CheckNameAvailabilityResponse {
     pub reason: Option<check_name_availability_response::Reason>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl CheckNameAvailabilityResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod check_name_availability_response {
     use super::*;
@@ -39,12 +49,22 @@ pub struct DetailedInformation {
     #[serde(rename = "apiInputParameters", default, skip_serializing_if = "Vec::is_empty")]
     pub api_input_parameters: Vec<String>,
 }
+impl DetailedInformation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
@@ -59,10 +79,20 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Extension {
@@ -75,12 +105,22 @@ pub struct Extension {
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
 }
+impl Extension {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Extension>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ExtensionListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionProperties {
@@ -95,6 +135,11 @@ pub struct ExtensionProperties {
     #[serde(rename = "extensionApiDocsLink", default, skip_serializing_if = "Option::is_none")]
     pub extension_api_docs_link: Option<String>,
 }
+impl ExtensionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FarmBeats {
     #[serde(flatten)]
@@ -103,6 +148,15 @@ pub struct FarmBeats {
     pub system_data: Option<SystemData>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FarmBeatsProperties>,
+}
+impl FarmBeats {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            system_data: None,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsExtension {
@@ -113,12 +167,22 @@ pub struct FarmBeatsExtension {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FarmBeatsExtensionProperties>,
 }
+impl FarmBeatsExtension {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsExtensionListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FarmBeatsExtension>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl FarmBeatsExtensionListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsExtensionProperties {
@@ -143,6 +207,11 @@ pub struct FarmBeatsExtensionProperties {
     #[serde(rename = "detailedInformation", default, skip_serializing_if = "Vec::is_empty")]
     pub detailed_information: Vec<DetailedInformation>,
 }
+impl FarmBeatsExtensionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -150,12 +219,22 @@ pub struct FarmBeatsListResponse {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl FarmBeatsListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FarmBeatsProperties {
     #[serde(rename = "instanceUri", default, skip_serializing_if = "Option::is_none")]
     pub instance_uri: Option<String>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<farm_beats_properties::ProvisioningState>,
+}
+impl FarmBeatsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod farm_beats_properties {
     use super::*;
@@ -172,6 +251,11 @@ pub struct FarmBeatsUpdateRequestModel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl FarmBeatsUpdateRequestModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -185,6 +269,11 @@ pub struct Operation {
     #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operation::ActionType>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod operation {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -197,6 +286,11 @@ pub mod operation {
         pub operation: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
+    }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Origin {
@@ -219,10 +313,20 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
+}
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -233,6 +337,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
@@ -241,10 +350,24 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UnitSystemsInfo {
     pub key: String,
     pub values: Vec<String>,
+}
+impl UnitSystemsInfo {
+    pub fn new(key: String, values: Vec<String>) -> Self {
+        Self { key, values }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -260,6 +383,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

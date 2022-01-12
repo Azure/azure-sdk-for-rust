@@ -9,6 +9,14 @@ pub struct ContainerService {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContainerServiceProperties>,
 }
+impl ContainerService {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceAgentPoolProfile {
     pub name: String,
@@ -20,6 +28,17 @@ pub struct ContainerServiceAgentPoolProfile {
     pub dns_prefix: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+}
+impl ContainerServiceAgentPoolProfile {
+    pub fn new(name: String, dns_prefix: String) -> Self {
+        Self {
+            name,
+            count: None,
+            vm_size: None,
+            dns_prefix,
+            fqdn: None,
+        }
+    }
 }
 pub mod container_service_agent_pool_profile {
     use super::*;
@@ -126,16 +145,31 @@ pub struct ContainerServiceDiagnosticsProfile {
     #[serde(rename = "vmDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub vm_diagnostics: Option<ContainerServiceVmDiagnostics>,
 }
+impl ContainerServiceDiagnosticsProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceLinuxProfile {
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
     pub ssh: ContainerServiceSshConfiguration,
 }
+impl ContainerServiceLinuxProfile {
+    pub fn new(admin_username: String, ssh: ContainerServiceSshConfiguration) -> Self {
+        Self { admin_username, ssh }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,
+}
+impl ContainerServiceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceMasterProfile {
@@ -146,6 +180,15 @@ pub struct ContainerServiceMasterProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
+impl ContainerServiceMasterProfile {
+    pub fn new(dns_prefix: String) -> Self {
+        Self {
+            count: None,
+            dns_prefix,
+            fqdn: None,
+        }
+    }
+}
 pub mod container_service_master_profile {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -155,6 +198,11 @@ pub mod container_service_master_profile {
 pub struct ContainerServiceOrchestratorProfile {
     #[serde(rename = "orchestratorType", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_type: Option<container_service_orchestrator_profile::OrchestratorType>,
+}
+impl ContainerServiceOrchestratorProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod container_service_orchestrator_profile {
     use super::*;
@@ -183,15 +231,42 @@ pub struct ContainerServiceProperties {
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
 }
+impl ContainerServiceProperties {
+    pub fn new(
+        master_profile: ContainerServiceMasterProfile,
+        agent_pool_profiles: Vec<ContainerServiceAgentPoolProfile>,
+        linux_profile: ContainerServiceLinuxProfile,
+    ) -> Self {
+        Self {
+            provisioning_state: None,
+            orchestrator_profile: None,
+            master_profile,
+            agent_pool_profiles,
+            windows_profile: None,
+            linux_profile,
+            diagnostics_profile: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceSshConfiguration {
     #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub public_keys: Vec<ContainerServiceSshPublicKey>,
 }
+impl ContainerServiceSshConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshPublicKey {
     #[serde(rename = "keyData")]
     pub key_data: String,
+}
+impl ContainerServiceSshPublicKey {
+    pub fn new(key_data: String) -> Self {
+        Self { key_data }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceVmDiagnostics {
@@ -200,12 +275,25 @@ pub struct ContainerServiceVmDiagnostics {
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
 }
+impl ContainerServiceVmDiagnostics {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceWindowsProfile {
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
     #[serde(rename = "adminPassword")]
     pub admin_password: String,
+}
+impl ContainerServiceWindowsProfile {
+    pub fn new(admin_username: String, admin_password: String) -> Self {
+        Self {
+            admin_username,
+            admin_password,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -218,4 +306,15 @@ pub struct Resource {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
 }

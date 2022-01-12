@@ -15,12 +15,22 @@ pub struct AzureAsyncOperationResults {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupInfoProperties>,
 }
+impl AzureAsyncOperationResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<check_name_availability_request::Type>,
+}
+impl CheckNameAvailabilityRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod check_name_availability_request {
     use super::*;
@@ -38,6 +48,11 @@ pub struct CheckNameAvailabilityResult {
     pub reason: Option<check_name_availability_result::Reason>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl CheckNameAvailabilityResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod check_name_availability_result {
     use super::*;
@@ -62,6 +77,11 @@ pub struct CreateManagementGroupChildInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<CreateManagementGroupChildInfo>,
 }
+impl CreateManagementGroupChildInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateManagementGroupDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -72,6 +92,11 @@ pub struct CreateManagementGroupDetails {
     pub updated_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<CreateParentGroupInfo>,
+}
+impl CreateManagementGroupDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateManagementGroupProperties {
@@ -86,6 +111,11 @@ pub struct CreateManagementGroupProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<CreateManagementGroupChildInfo>,
 }
+impl CreateManagementGroupProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateManagementGroupRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -97,6 +127,11 @@ pub struct CreateManagementGroupRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CreateManagementGroupProperties>,
 }
+impl CreateManagementGroupRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateOrUpdateSettingsProperties {
     #[serde(rename = "requireAuthorizationForGroupCreation", default, skip_serializing_if = "Option::is_none")]
@@ -104,10 +139,20 @@ pub struct CreateOrUpdateSettingsProperties {
     #[serde(rename = "defaultManagementGroup", default, skip_serializing_if = "Option::is_none")]
     pub default_management_group: Option<String>,
 }
+impl CreateOrUpdateSettingsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateOrUpdateSettingsRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CreateOrUpdateSettingsProperties>,
+}
+impl CreateOrUpdateSettingsRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateParentGroupInfo {
@@ -117,6 +162,11 @@ pub struct CreateParentGroupInfo {
     pub name: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+}
+impl CreateParentGroupInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DescendantInfo {
@@ -129,12 +179,22 @@ pub struct DescendantInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DescendantInfoProperties>,
 }
+impl DescendantInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DescendantInfoProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<DescendantParentGroupInfo>,
+}
+impl DescendantInfoProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DescendantListResult {
@@ -143,10 +203,20 @@ pub struct DescendantListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl DescendantListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DescendantParentGroupInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl DescendantParentGroupInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHierarchyItem {
@@ -159,6 +229,11 @@ pub struct EntityHierarchyItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EntityHierarchyItemProperties>,
 }
+impl EntityHierarchyItem {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityHierarchyItemProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -167,6 +242,11 @@ pub struct EntityHierarchyItemProperties {
     pub permissions: Option<Permissions>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<EntityHierarchyItem>,
+}
+impl EntityHierarchyItemProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityInfo {
@@ -178,6 +258,11 @@ pub struct EntityInfo {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EntityInfoProperties>,
+}
+impl EntityInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityInfoProperties {
@@ -202,6 +287,11 @@ pub struct EntityInfoProperties {
     #[serde(rename = "parentNameChain", default, skip_serializing_if = "Vec::is_empty")]
     pub parent_name_chain: Vec<String>,
 }
+impl EntityInfoProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -211,10 +301,20 @@ pub struct EntityListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl EntityListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityParentGroupInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl EntityParentGroupInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
@@ -225,10 +325,20 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
+impl ErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchySettings {
@@ -241,6 +351,11 @@ pub struct HierarchySettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HierarchySettingsProperties>,
 }
+impl HierarchySettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchySettingsInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -252,12 +367,22 @@ pub struct HierarchySettingsInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HierarchySettingsProperties>,
 }
+impl HierarchySettingsInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchySettingsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HierarchySettingsInfo>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl HierarchySettingsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HierarchySettingsProperties {
@@ -267,6 +392,11 @@ pub struct HierarchySettingsProperties {
     pub require_authorization_for_group_creation: Option<bool>,
     #[serde(rename = "defaultManagementGroup", default, skip_serializing_if = "Option::is_none")]
     pub default_management_group: Option<String>,
+}
+impl HierarchySettingsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroup {
@@ -278,6 +408,11 @@ pub struct ManagementGroup {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupProperties>,
+}
+impl ManagementGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupChildInfo {
@@ -293,6 +428,11 @@ pub struct ManagementGroupChildInfo {
     pub roles: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<ManagementGroupChildInfo>,
+}
+impl ManagementGroupChildInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ManagementGroupChildType {
@@ -312,6 +452,11 @@ pub struct ManagementGroupDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<ParentGroupInfo>,
 }
+impl ManagementGroupDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -323,12 +468,22 @@ pub struct ManagementGroupInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupInfoProperties>,
 }
+impl ManagementGroupInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupInfoProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+}
+impl ManagementGroupInfoProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupListResult {
@@ -337,12 +492,22 @@ pub struct ManagementGroupListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ManagementGroupListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupPathElement {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+}
+impl ManagementGroupPathElement {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupProperties {
@@ -359,12 +524,22 @@ pub struct ManagementGroupProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub path: Vec<ManagementGroupPathElement>,
 }
+impl ManagementGroupProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayProperties>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayProperties {
@@ -377,12 +552,22 @@ pub struct OperationDisplayProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplayProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResults {
@@ -395,6 +580,11 @@ pub struct OperationResults {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupInfoProperties>,
 }
+impl OperationResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParentGroupInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -404,12 +594,22 @@ pub struct ParentGroupInfo {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
+impl ParentGroupInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchManagementGroupRequest {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(rename = "parentId", default, skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
+}
+impl PatchManagementGroupRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Permissions {
@@ -428,6 +628,11 @@ pub struct TenantBackfillStatusResult {
     pub tenant_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<tenant_backfill_status_result::Status>,
+}
+impl TenantBackfillStatusResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod tenant_backfill_status_result {
     use super::*;

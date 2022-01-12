@@ -9,6 +9,14 @@ pub struct CheckRestrictionsRequest {
     #[serde(rename = "pendingFields", default, skip_serializing_if = "Vec::is_empty")]
     pub pending_fields: Vec<PendingField>,
 }
+impl CheckRestrictionsRequest {
+    pub fn new(resource_details: CheckRestrictionsResourceDetails) -> Self {
+        Self {
+            resource_details,
+            pending_fields: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckRestrictionsResourceDetails {
     #[serde(rename = "resourceContent")]
@@ -18,12 +26,26 @@ pub struct CheckRestrictionsResourceDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
 }
+impl CheckRestrictionsResourceDetails {
+    pub fn new(resource_content: serde_json::Value) -> Self {
+        Self {
+            resource_content,
+            api_version: None,
+            scope: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckRestrictionsResult {
     #[serde(rename = "fieldRestrictions", default, skip_serializing_if = "Vec::is_empty")]
     pub field_restrictions: Vec<FieldRestrictions>,
     #[serde(rename = "contentEvaluationResult", default, skip_serializing_if = "Option::is_none")]
     pub content_evaluation_result: Option<check_restrictions_result::ContentEvaluationResult>,
+}
+impl CheckRestrictionsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod check_restrictions_result {
     use super::*;
@@ -32,6 +54,11 @@ pub mod check_restrictions_result {
         #[serde(rename = "policyEvaluations", default, skip_serializing_if = "Vec::is_empty")]
         pub policy_evaluations: Vec<PolicyEvaluationResult>,
     }
+    impl ContentEvaluationResult {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceDetail {
@@ -39,6 +66,11 @@ pub struct ComplianceDetail {
     pub compliance_state: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
+}
+impl ComplianceDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComponentEventDetails {
@@ -57,6 +89,11 @@ pub struct ComponentEventDetails {
     #[serde(rename = "policyDefinitionAction", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_action: Option<String>,
 }
+impl ComponentEventDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComponentStateDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -69,6 +106,11 @@ pub struct ComponentStateDetails {
     pub timestamp: Option<String>,
     #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
     pub compliance_state: Option<String>,
+}
+impl ComponentStateDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
@@ -83,10 +125,20 @@ pub struct ErrorDefinition {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<TypedErrorInfo>,
 }
+impl ErrorDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressionEvaluationDetails {
@@ -105,6 +157,11 @@ pub struct ExpressionEvaluationDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operator: Option<String>,
 }
+impl ExpressionEvaluationDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FieldRestriction {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -115,6 +172,11 @@ pub struct FieldRestriction {
     pub values: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<PolicyReference>,
+}
+impl FieldRestriction {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod field_restriction {
     use super::*;
@@ -132,12 +194,22 @@ pub struct FieldRestrictions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<FieldRestriction>,
 }
+impl FieldRestrictions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IfNotExistsEvaluationDetails {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[serde(rename = "totalResources", default, skip_serializing_if = "Option::is_none")]
     pub total_resources: Option<i64>,
+}
+impl IfNotExistsEvaluationDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type MetadataDocument = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -146,6 +218,11 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -160,6 +237,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResults {
@@ -168,11 +250,21 @@ pub struct OperationsListResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl OperationsListResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PendingField {
     pub field: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
+}
+impl PendingField {
+    pub fn new(field: String) -> Self {
+        Self { field, values: Vec::new() }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyAssignmentSummary {
@@ -187,6 +279,11 @@ pub struct PolicyAssignmentSummary {
     #[serde(rename = "policyGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub policy_groups: Vec<PolicyGroupSummary>,
 }
+impl PolicyAssignmentSummary {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDefinitionSummary {
     #[serde(rename = "policyDefinitionId", default, skip_serializing_if = "Option::is_none")]
@@ -199,6 +296,11 @@ pub struct PolicyDefinitionSummary {
     pub effect: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<SummaryResults>,
+}
+impl PolicyDefinitionSummary {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDetails {
@@ -215,12 +317,22 @@ pub struct PolicyDetails {
     #[serde(rename = "policyDefinitionReferenceId", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_reference_id: Option<String>,
 }
+impl PolicyDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyEvaluationDetails {
     #[serde(rename = "evaluatedExpressions", default, skip_serializing_if = "Vec::is_empty")]
     pub evaluated_expressions: Vec<ExpressionEvaluationDetails>,
     #[serde(rename = "ifNotExistsDetails", default, skip_serializing_if = "Option::is_none")]
     pub if_not_exists_details: Option<IfNotExistsEvaluationDetails>,
+}
+impl PolicyEvaluationDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyEvaluationResult {
@@ -230,6 +342,11 @@ pub struct PolicyEvaluationResult {
     pub evaluation_result: Option<String>,
     #[serde(rename = "evaluationDetails", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_details: Option<PolicyEvaluationDetails>,
+}
+impl PolicyEvaluationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyEvent {
@@ -296,6 +413,11 @@ pub struct PolicyEvent {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub components: Vec<ComponentEventDetails>,
 }
+impl PolicyEvent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyEventsQueryResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
@@ -307,12 +429,22 @@ pub struct PolicyEventsQueryResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyEvent>,
 }
+impl PolicyEventsQueryResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyGroupSummary {
     #[serde(rename = "policyGroupName", default, skip_serializing_if = "Option::is_none")]
     pub policy_group_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<SummaryResults>,
+}
+impl PolicyGroupSummary {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyMetadata {
@@ -325,12 +457,22 @@ pub struct PolicyMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl PolicyMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyMetadataCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SlimPolicyMetadata>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl PolicyMetadataCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyMetadataProperties {
@@ -340,6 +482,11 @@ pub struct PolicyMetadataProperties {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub requirements: Option<String>,
+}
+impl PolicyMetadataProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyMetadataSlimProperties {
@@ -356,6 +503,11 @@ pub struct PolicyMetadataSlimProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
+impl PolicyMetadataSlimProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyReference {
     #[serde(rename = "policyDefinitionId", default, skip_serializing_if = "Option::is_none")]
@@ -366,6 +518,11 @@ pub struct PolicyReference {
     pub policy_definition_reference_id: Option<String>,
     #[serde(rename = "policyAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_id: Option<String>,
+}
+impl PolicyReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyState {
@@ -438,6 +595,11 @@ pub struct PolicyState {
     #[serde(rename = "policyAssignmentVersion", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_version: Option<String>,
 }
+impl PolicyState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyStatesQueryResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
@@ -448,6 +610,11 @@ pub struct PolicyStatesQueryResults {
     pub odata_next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyState>,
+}
+impl PolicyStatesQueryResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyTrackedResource {
@@ -462,6 +629,11 @@ pub struct PolicyTrackedResource {
     #[serde(rename = "lastUpdateUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_update_utc: Option<String>,
 }
+impl PolicyTrackedResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyTrackedResourcesQueryResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -469,10 +641,20 @@ pub struct PolicyTrackedResourcesQueryResults {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl PolicyTrackedResourcesQueryResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryFailure {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<query_failure::Error>,
+}
+impl QueryFailure {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod query_failure {
     use super::*;
@@ -482,6 +664,11 @@ pub mod query_failure {
         pub code: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
+    }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -494,6 +681,11 @@ pub struct Remediation {
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl Remediation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationDeployment {
@@ -512,6 +704,11 @@ pub struct RemediationDeployment {
     #[serde(rename = "lastUpdatedOn", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_on: Option<String>,
 }
+impl RemediationDeployment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationDeploymentSummary {
     #[serde(rename = "totalDeployments", default, skip_serializing_if = "Option::is_none")]
@@ -521,6 +718,11 @@ pub struct RemediationDeploymentSummary {
     #[serde(rename = "failedDeployments", default, skip_serializing_if = "Option::is_none")]
     pub failed_deployments: Option<i64>,
 }
+impl RemediationDeploymentSummary {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationDeploymentsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -528,10 +730,20 @@ pub struct RemediationDeploymentsListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl RemediationDeploymentsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationFilters {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
+}
+impl RemediationFilters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationListResult {
@@ -539,6 +751,11 @@ pub struct RemediationListResult {
     pub value: Vec<Remediation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RemediationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemediationProperties {
@@ -559,6 +776,11 @@ pub struct RemediationProperties {
     #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
     pub deployment_status: Option<RemediationDeploymentSummary>,
 }
+impl RemediationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod remediation_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -578,6 +800,11 @@ pub struct SlimPolicyMetadata {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl SlimPolicyMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SummarizeResults {
     #[serde(rename = "@odata.context", default, skip_serializing_if = "Option::is_none")]
@@ -586,6 +813,11 @@ pub struct SummarizeResults {
     pub odata_count: Option<i32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Summary>,
+}
+impl SummarizeResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Summary {
@@ -597,6 +829,11 @@ pub struct Summary {
     pub results: Option<SummaryResults>,
     #[serde(rename = "policyAssignments", default, skip_serializing_if = "Vec::is_empty")]
     pub policy_assignments: Vec<PolicyAssignmentSummary>,
+}
+impl Summary {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SummaryResults {
@@ -613,6 +850,11 @@ pub struct SummaryResults {
     #[serde(rename = "policyGroupDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub policy_group_details: Vec<ComplianceDetail>,
 }
+impl SummaryResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResourceModificationDetails {
     #[serde(rename = "policyDetails", default, skip_serializing_if = "Option::is_none")]
@@ -622,10 +864,20 @@ pub struct TrackedResourceModificationDetails {
     #[serde(rename = "deploymentTime", default, skip_serializing_if = "Option::is_none")]
     pub deployment_time: Option<String>,
 }
+impl TrackedResourceModificationDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TypedErrorInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl TypedErrorInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

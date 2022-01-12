@@ -11,6 +11,11 @@ pub struct BasicAuthentication {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
+impl BasicAuthentication {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientCertAuthentication {
     #[serde(flatten)]
@@ -26,10 +31,20 @@ pub struct ClientCertAuthentication {
     #[serde(rename = "certificateSubjectName", default, skip_serializing_if = "Option::is_none")]
     pub certificate_subject_name: Option<String>,
 }
+impl ClientCertAuthentication {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpAuthentication {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<http_authentication::Type>,
+}
+impl HttpAuthentication {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod http_authentication {
     use super::*;
@@ -54,6 +69,11 @@ pub struct HttpRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
 }
+impl HttpRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobAction {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -70,6 +90,11 @@ pub struct JobAction {
     pub retry_policy: Option<RetryPolicy>,
     #[serde(rename = "errorAction", default, skip_serializing_if = "Option::is_none")]
     pub error_action: Option<JobErrorAction>,
+}
+impl JobAction {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_action {
     use super::*;
@@ -97,12 +122,22 @@ pub struct JobCollectionDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobCollectionProperties>,
 }
+impl JobCollectionDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobCollectionDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl JobCollectionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollectionProperties {
@@ -112,6 +147,11 @@ pub struct JobCollectionProperties {
     pub state: Option<job_collection_properties::State>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quota: Option<JobCollectionQuota>,
+}
+impl JobCollectionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_collection_properties {
     use super::*;
@@ -132,6 +172,11 @@ pub struct JobCollectionQuota {
     #[serde(rename = "maxRecurrence", default, skip_serializing_if = "Option::is_none")]
     pub max_recurrence: Option<JobMaxRecurrence>,
 }
+impl JobCollectionQuota {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -142,6 +187,11 @@ pub struct JobDefinition {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
+}
+impl JobDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobErrorAction {
@@ -157,6 +207,11 @@ pub struct JobErrorAction {
     pub service_bus_topic_message: Option<ServiceBusTopicMessage>,
     #[serde(rename = "retryPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retry_policy: Option<RetryPolicy>,
+}
+impl JobErrorAction {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_error_action {
     use super::*;
@@ -186,6 +241,11 @@ pub struct JobHistoryDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobHistoryDefinitionProperties>,
 }
+impl JobHistoryDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobHistoryDefinitionProperties {
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -205,6 +265,11 @@ pub struct JobHistoryDefinitionProperties {
     #[serde(rename = "repeatCount", default, skip_serializing_if = "Option::is_none")]
     pub repeat_count: Option<i64>,
 }
+impl JobHistoryDefinitionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod job_history_definition_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -218,12 +283,22 @@ pub struct JobHistoryFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobExecutionStatus>,
 }
+impl JobHistoryFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobHistoryListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<JobHistoryDefinition>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl JobHistoryListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobListResult {
@@ -232,12 +307,22 @@ pub struct JobListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl JobListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobMaxRecurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<job_max_recurrence::Frequency>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<i64>,
+}
+impl JobMaxRecurrence {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_max_recurrence {
     use super::*;
@@ -263,6 +348,11 @@ pub struct JobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<JobStatus>,
 }
+impl JobProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRecurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -275,6 +365,11 @@ pub struct JobRecurrence {
     pub end_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<JobRecurrenceSchedule>,
+}
+impl JobRecurrence {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_recurrence {
     use super::*;
@@ -300,12 +395,22 @@ pub struct JobRecurrenceSchedule {
     #[serde(rename = "monthlyOccurrences", default, skip_serializing_if = "Vec::is_empty")]
     pub monthly_occurrences: Vec<JobRecurrenceScheduleMonthlyOccurrence>,
 }
+impl JobRecurrenceSchedule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRecurrenceScheduleMonthlyOccurrence {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub day: Option<job_recurrence_schedule_monthly_occurrence::Day>,
     #[serde(rename = "Occurrence", default, skip_serializing_if = "Option::is_none")]
     pub occurrence: Option<i64>,
+}
+impl JobRecurrenceScheduleMonthlyOccurrence {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_recurrence_schedule_monthly_occurrence {
     use super::*;
@@ -332,6 +437,11 @@ pub struct JobStateFilter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<JobState>,
 }
+impl JobStateFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStatus {
     #[serde(rename = "executionCount", default, skip_serializing_if = "Option::is_none")]
@@ -345,6 +455,11 @@ pub struct JobStatus {
     #[serde(rename = "nextExecutionTime", default, skip_serializing_if = "Option::is_none")]
     pub next_execution_time: Option<String>,
 }
+impl JobStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OAuthAuthentication {
     #[serde(flatten)]
@@ -357,6 +472,11 @@ pub struct OAuthAuthentication {
     pub audience: Option<String>,
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+}
+impl OAuthAuthentication {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RecurrenceFrequency {
@@ -375,6 +495,11 @@ pub struct RetryPolicy {
     #[serde(rename = "retryCount", default, skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<i64>,
 }
+impl RetryPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod retry_policy {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -391,6 +516,11 @@ pub struct ServiceBusAuthentication {
     pub sas_key_name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<service_bus_authentication::Type>,
+}
+impl ServiceBusAuthentication {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod service_bus_authentication {
     use super::*;
@@ -429,6 +559,11 @@ pub struct ServiceBusBrokeredMessageProperties {
     #[serde(rename = "viaPartitionKey", default, skip_serializing_if = "Option::is_none")]
     pub via_partition_key: Option<String>,
 }
+impl ServiceBusBrokeredMessageProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusMessage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -443,6 +578,11 @@ pub struct ServiceBusMessage {
     pub namespace: Option<String>,
     #[serde(rename = "transportType", default, skip_serializing_if = "Option::is_none")]
     pub transport_type: Option<service_bus_message::TransportType>,
+}
+impl ServiceBusMessage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod service_bus_message {
     use super::*;
@@ -461,6 +601,11 @@ pub struct ServiceBusQueueMessage {
     #[serde(rename = "queueName", default, skip_serializing_if = "Option::is_none")]
     pub queue_name: Option<String>,
 }
+impl ServiceBusQueueMessage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceBusTopicMessage {
     #[serde(flatten)]
@@ -468,10 +613,20 @@ pub struct ServiceBusTopicMessage {
     #[serde(rename = "topicPath", default, skip_serializing_if = "Option::is_none")]
     pub topic_path: Option<String>,
 }
+impl ServiceBusTopicMessage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
+}
+impl Sku {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod sku {
     use super::*;
@@ -492,4 +647,9 @@ pub struct StorageQueueMessage {
     pub sas_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl StorageQueueMessage {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

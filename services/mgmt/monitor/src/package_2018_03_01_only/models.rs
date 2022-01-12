@@ -26,6 +26,23 @@ pub struct ActionGroup {
     #[serde(rename = "azureFunctionReceivers", default, skip_serializing_if = "Vec::is_empty")]
     pub azure_function_receivers: Vec<AzureFunctionReceiver>,
 }
+impl ActionGroup {
+    pub fn new(group_short_name: String, enabled: bool) -> Self {
+        Self {
+            group_short_name,
+            enabled,
+            email_receivers: Vec::new(),
+            sms_receivers: Vec::new(),
+            webhook_receivers: Vec::new(),
+            itsm_receivers: Vec::new(),
+            azure_app_push_receivers: Vec::new(),
+            automation_runbook_receivers: Vec::new(),
+            voice_receivers: Vec::new(),
+            logic_app_receivers: Vec::new(),
+            azure_function_receivers: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -33,10 +50,20 @@ pub struct ActionGroupList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ActionGroupList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+}
+impl ActionGroupPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionGroupPatchBody {
@@ -45,12 +72,25 @@ pub struct ActionGroupPatchBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroupPatch>,
 }
+impl ActionGroupPatchBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActionGroupResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActionGroup>,
+}
+impl ActionGroupResource {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRunbookReceiver {
@@ -67,11 +107,28 @@ pub struct AutomationRunbookReceiver {
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
 }
+impl AutomationRunbookReceiver {
+    pub fn new(automation_account_id: String, runbook_name: String, webhook_resource_id: String, is_global_runbook: bool) -> Self {
+        Self {
+            automation_account_id,
+            runbook_name,
+            webhook_resource_id,
+            is_global_runbook,
+            name: None,
+            service_uri: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureAppPushReceiver {
     pub name: String,
     #[serde(rename = "emailAddress")]
     pub email_address: String,
+}
+impl AzureAppPushReceiver {
+    pub fn new(name: String, email_address: String) -> Self {
+        Self { name, email_address }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionReceiver {
@@ -82,6 +139,16 @@ pub struct AzureFunctionReceiver {
     pub function_name: String,
     #[serde(rename = "httpTriggerUrl")]
     pub http_trigger_url: String,
+}
+impl AzureFunctionReceiver {
+    pub fn new(name: String, function_app_resource_id: String, function_name: String, http_trigger_url: String) -> Self {
+        Self {
+            name,
+            function_app_resource_id,
+            function_name,
+            http_trigger_url,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynamicMetricCriteria {
@@ -94,6 +161,22 @@ pub struct DynamicMetricCriteria {
     pub failing_periods: DynamicThresholdFailingPeriods,
     #[serde(rename = "ignoreDataBefore", default, skip_serializing_if = "Option::is_none")]
     pub ignore_data_before: Option<String>,
+}
+impl DynamicMetricCriteria {
+    pub fn new(
+        multi_metric_criteria: MultiMetricCriteria,
+        operator: dynamic_metric_criteria::Operator,
+        alert_sensitivity: dynamic_metric_criteria::AlertSensitivity,
+        failing_periods: DynamicThresholdFailingPeriods,
+    ) -> Self {
+        Self {
+            multi_metric_criteria,
+            operator,
+            alert_sensitivity,
+            failing_periods,
+            ignore_data_before: None,
+        }
+    }
 }
 pub mod dynamic_metric_criteria {
     use super::*;
@@ -117,6 +200,14 @@ pub struct DynamicThresholdFailingPeriods {
     #[serde(rename = "minFailingPeriodsToAlert")]
     pub min_failing_periods_to_alert: f64,
 }
+impl DynamicThresholdFailingPeriods {
+    pub fn new(number_of_evaluation_periods: f64, min_failing_periods_to_alert: f64) -> Self {
+        Self {
+            number_of_evaluation_periods,
+            min_failing_periods_to_alert,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailReceiver {
     pub name: String,
@@ -125,10 +216,24 @@ pub struct EmailReceiver {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
+impl EmailReceiver {
+    pub fn new(name: String, email_address: String) -> Self {
+        Self {
+            name,
+            email_address,
+            status: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnableRequest {
     #[serde(rename = "receiverName")]
     pub receiver_name: String,
+}
+impl EnableRequest {
+    pub fn new(receiver_name: String) -> Self {
+        Self { receiver_name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -136,6 +241,11 @@ pub struct ErrorResponse {
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItsmReceiver {
@@ -148,6 +258,17 @@ pub struct ItsmReceiver {
     pub ticket_configuration: String,
     pub region: String,
 }
+impl ItsmReceiver {
+    pub fn new(name: String, workspace_id: String, connection_id: String, ticket_configuration: String, region: String) -> Self {
+        Self {
+            name,
+            workspace_id,
+            connection_id,
+            ticket_configuration,
+            region,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogicAppReceiver {
     pub name: String,
@@ -156,6 +277,15 @@ pub struct LogicAppReceiver {
     #[serde(rename = "callbackUrl")]
     pub callback_url: String,
 }
+impl LogicAppReceiver {
+    pub fn new(name: String, resource_id: String, callback_url: String) -> Self {
+        Self {
+            name,
+            resource_id,
+            callback_url,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertAction {
     #[serde(rename = "actionGroupId", default, skip_serializing_if = "Option::is_none")]
@@ -163,10 +293,20 @@ pub struct MetricAlertAction {
     #[serde(rename = "webHookProperties", default, skip_serializing_if = "Option::is_none")]
     pub web_hook_properties: Option<serde_json::Value>,
 }
+impl MetricAlertAction {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertCriteria {
     #[serde(rename = "odata.type")]
     pub odata_type: metric_alert_criteria::OdataType,
+}
+impl MetricAlertCriteria {
+    pub fn new(odata_type: metric_alert_criteria::OdataType) -> Self {
+        Self { odata_type }
+    }
 }
 pub mod metric_alert_criteria {
     use super::*;
@@ -186,6 +326,14 @@ pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
     pub metric_alert_criteria: MetricAlertCriteria,
     #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
     pub all_of: Vec<MultiMetricCriteria>,
+}
+impl MetricAlertMultipleResourceMultipleMetricCriteria {
+    pub fn new(metric_alert_criteria: MetricAlertCriteria) -> Self {
+        Self {
+            metric_alert_criteria,
+            all_of: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertProperties {
@@ -211,6 +359,32 @@ pub struct MetricAlertProperties {
     pub last_updated_time: Option<String>,
     #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
+}
+impl MetricAlertProperties {
+    pub fn new(
+        severity: i32,
+        enabled: bool,
+        scopes: Vec<String>,
+        evaluation_frequency: String,
+        window_size: String,
+        criteria: MetricAlertCriteria,
+    ) -> Self {
+        Self {
+            description: None,
+            severity,
+            enabled,
+            scopes,
+            evaluation_frequency,
+            window_size,
+            target_resource_type: None,
+            target_resource_region: None,
+            criteria,
+            auto_mitigate: None,
+            actions: Vec::new(),
+            last_updated_time: None,
+            is_migrated: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertPropertiesPatch {
@@ -241,16 +415,31 @@ pub struct MetricAlertPropertiesPatch {
     #[serde(rename = "isMigrated", default, skip_serializing_if = "Option::is_none")]
     pub is_migrated: Option<bool>,
 }
+impl MetricAlertPropertiesPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertResource {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: MetricAlertProperties,
 }
+impl MetricAlertResource {
+    pub fn new(resource: Resource, properties: MetricAlertProperties) -> Self {
+        Self { resource, properties }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MetricAlertResource>,
+}
+impl MetricAlertResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertResourcePatch {
@@ -259,12 +448,25 @@ pub struct MetricAlertResourcePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetricAlertPropertiesPatch>,
 }
+impl MetricAlertResourcePatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertSingleResourceMultipleMetricCriteria {
     #[serde(flatten)]
     pub metric_alert_criteria: MetricAlertCriteria,
     #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
     pub all_of: Vec<MetricCriteria>,
+}
+impl MetricAlertSingleResourceMultipleMetricCriteria {
+    pub fn new(metric_alert_criteria: MetricAlertCriteria) -> Self {
+        Self {
+            metric_alert_criteria,
+            all_of: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertStatus {
@@ -277,10 +479,20 @@ pub struct MetricAlertStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetricAlertStatusProperties>,
 }
+impl MetricAlertStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertStatusCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MetricAlertStatus>,
+}
+impl MetricAlertStatusCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAlertStatusProperties {
@@ -291,12 +503,26 @@ pub struct MetricAlertStatusProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
 }
+impl MetricAlertStatusProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricCriteria {
     #[serde(flatten)]
     pub multi_metric_criteria: MultiMetricCriteria,
     pub operator: metric_criteria::Operator,
     pub threshold: f64,
+}
+impl MetricCriteria {
+    pub fn new(multi_metric_criteria: MultiMetricCriteria, operator: metric_criteria::Operator, threshold: f64) -> Self {
+        Self {
+            multi_metric_criteria,
+            operator,
+            threshold,
+        }
+    }
 }
 pub mod metric_criteria {
     use super::*;
@@ -315,6 +541,11 @@ pub struct MetricDimension {
     pub operator: String,
     pub values: Vec<String>,
 }
+impl MetricDimension {
+    pub fn new(name: String, operator: String, values: Vec<String>) -> Self {
+        Self { name, operator, values }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiMetricCriteria {
     #[serde(rename = "criterionType")]
@@ -330,6 +561,24 @@ pub struct MultiMetricCriteria {
     pub dimensions: Vec<MetricDimension>,
     #[serde(rename = "skipMetricValidation", default, skip_serializing_if = "Option::is_none")]
     pub skip_metric_validation: Option<bool>,
+}
+impl MultiMetricCriteria {
+    pub fn new(
+        criterion_type: multi_metric_criteria::CriterionType,
+        name: String,
+        metric_name: String,
+        time_aggregation: multi_metric_criteria::TimeAggregation,
+    ) -> Self {
+        Self {
+            criterion_type,
+            name,
+            metric_name,
+            metric_namespace: None,
+            time_aggregation,
+            dimensions: Vec::new(),
+            skip_metric_validation: None,
+        }
+    }
 }
 pub mod multi_metric_criteria {
     use super::*;
@@ -365,6 +614,17 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsReceiver {
     pub name: String,
@@ -375,6 +635,16 @@ pub struct SmsReceiver {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ReceiverStatus>,
 }
+impl SmsReceiver {
+    pub fn new(name: String, country_code: String, phone_number: String) -> Self {
+        Self {
+            name,
+            country_code,
+            phone_number,
+            status: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VoiceReceiver {
     pub name: String,
@@ -383,11 +653,25 @@ pub struct VoiceReceiver {
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
 }
+impl VoiceReceiver {
+    pub fn new(name: String, country_code: String, phone_number: String) -> Self {
+        Self {
+            name,
+            country_code,
+            phone_number,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookReceiver {
     pub name: String,
     #[serde(rename = "serviceUri")]
     pub service_uri: String,
+}
+impl WebhookReceiver {
+    pub fn new(name: String, service_uri: String) -> Self {
+        Self { name, service_uri }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebtestLocationAvailabilityCriteria {
@@ -399,4 +683,14 @@ pub struct WebtestLocationAvailabilityCriteria {
     pub component_id: String,
     #[serde(rename = "failedLocationCount")]
     pub failed_location_count: f64,
+}
+impl WebtestLocationAvailabilityCriteria {
+    pub fn new(metric_alert_criteria: MetricAlertCriteria, web_test_id: String, component_id: String, failed_location_count: f64) -> Self {
+        Self {
+            metric_alert_criteria,
+            web_test_id,
+            component_id,
+            failed_location_count,
+        }
+    }
 }

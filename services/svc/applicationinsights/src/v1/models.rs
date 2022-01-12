@@ -10,6 +10,11 @@ pub struct Column {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Column {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
     pub code: String,
@@ -23,6 +28,18 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
+impl ErrorDetail {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            target: None,
+            value: None,
+            resources: Vec::new(),
+            additional_properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorInfo {
     pub code: String,
@@ -34,9 +51,25 @@ pub struct ErrorInfo {
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
+impl ErrorInfo {
+    pub fn new(code: String, message: String) -> Self {
+        Self {
+            code,
+            message,
+            details: Vec::new(),
+            innererror: Box::new(None),
+            additional_properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: ErrorInfo,
+}
+impl ErrorResponse {
+    pub fn new(error: ErrorInfo) -> Self {
+        Self { error }
+    }
 }
 pub type EventId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -75,10 +108,20 @@ pub struct EventsAiInfo {
     #[serde(rename = "sdkVersion", default, skip_serializing_if = "Option::is_none")]
     pub sdk_version: Option<String>,
 }
+impl EventsAiInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsApplicationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+}
+impl EventsApplicationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type EventsApply = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -100,12 +143,25 @@ pub struct EventsAvailabilityResultInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
 }
+impl EventsAvailabilityResultInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsAvailabilityResultResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
     #[serde(rename = "availabilityResult", default, skip_serializing_if = "Option::is_none")]
     pub availability_result: Option<EventsAvailabilityResultInfo>,
+}
+impl EventsAvailabilityResultResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            availability_result: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsBrowserTimingInfo {
@@ -130,6 +186,11 @@ pub struct EventsBrowserTimingInfo {
     #[serde(rename = "processingDuration", default, skip_serializing_if = "Option::is_none")]
     pub processing_duration: Option<i64>,
 }
+impl EventsBrowserTimingInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsBrowserTimingResult {
     #[serde(flatten)]
@@ -138,6 +199,15 @@ pub struct EventsBrowserTimingResult {
     pub browser_timing: Option<EventsBrowserTimingInfo>,
     #[serde(rename = "clientPerformance", default, skip_serializing_if = "Option::is_none")]
     pub client_performance: Option<EventsClientPerformanceInfo>,
+}
+impl EventsBrowserTimingResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            browser_timing: None,
+            client_performance: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsClientInfo {
@@ -158,10 +228,20 @@ pub struct EventsClientInfo {
     #[serde(rename = "countryOrRegion", default, skip_serializing_if = "Option::is_none")]
     pub country_or_region: Option<String>,
 }
+impl EventsClientInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsClientPerformanceInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl EventsClientPerformanceInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsCloudInfo {
@@ -170,11 +250,21 @@ pub struct EventsCloudInfo {
     #[serde(rename = "roleInstance", default, skip_serializing_if = "Option::is_none")]
     pub role_instance: Option<String>,
 }
+impl EventsCloudInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type EventsCount = bool;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsCustomEventInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+impl EventsCustomEventInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsCustomEventResult {
@@ -182,6 +272,14 @@ pub struct EventsCustomEventResult {
     pub events_result_data: EventsResultData,
     #[serde(rename = "customEvent", default, skip_serializing_if = "Option::is_none")]
     pub custom_event: Option<EventsCustomEventInfo>,
+}
+impl EventsCustomEventResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            custom_event: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsCustomMetricInfo {
@@ -200,12 +298,25 @@ pub struct EventsCustomMetricInfo {
     #[serde(rename = "valueStdDev", default, skip_serializing_if = "Option::is_none")]
     pub value_std_dev: Option<f64>,
 }
+impl EventsCustomMetricInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsCustomMetricResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
     #[serde(rename = "customMetric", default, skip_serializing_if = "Option::is_none")]
     pub custom_metric: Option<EventsCustomMetricInfo>,
+}
+impl EventsCustomMetricResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            custom_metric: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsDependencyInfo {
@@ -228,12 +339,25 @@ pub struct EventsDependencyInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
+impl EventsDependencyInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsDependencyResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dependency: Option<EventsDependencyInfo>,
+}
+impl EventsDependencyResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            dependency: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsExceptionDetail {
@@ -250,6 +374,11 @@ pub struct EventsExceptionDetail {
     #[serde(rename = "parsedStack", default, skip_serializing_if = "Vec::is_empty")]
     pub parsed_stack: Vec<EventsExceptionDetailsParsedStack>,
 }
+impl EventsExceptionDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsExceptionDetailsParsedStack {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -260,6 +389,11 @@ pub struct EventsExceptionDetailsParsedStack {
     pub level: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub line: Option<i64>,
+}
+impl EventsExceptionDetailsParsedStack {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsExceptionInfo {
@@ -296,12 +430,25 @@ pub struct EventsExceptionInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<EventsExceptionDetail>,
 }
+impl EventsExceptionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsExceptionResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exception: Option<EventsExceptionInfo>,
+}
+impl EventsExceptionResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            exception: None,
+        }
+    }
 }
 pub type EventsFilter = String;
 pub type EventsFormat = String;
@@ -316,6 +463,11 @@ pub struct EventsOperationInfo {
     #[serde(rename = "syntheticSource", default, skip_serializing_if = "Option::is_none")]
     pub synthetic_source: Option<String>,
 }
+impl EventsOperationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type EventsOrderBy = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsPageViewInfo {
@@ -328,12 +480,25 @@ pub struct EventsPageViewInfo {
     #[serde(rename = "performanceBucket", default, skip_serializing_if = "Option::is_none")]
     pub performance_bucket: Option<String>,
 }
+impl EventsPageViewInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsPageViewResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
     #[serde(rename = "pageView", default, skip_serializing_if = "Option::is_none")]
     pub page_view: Option<EventsPageViewInfo>,
+}
+impl EventsPageViewResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            page_view: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsPerformanceCounterInfo {
@@ -350,12 +515,25 @@ pub struct EventsPerformanceCounterInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instance: Option<String>,
 }
+impl EventsPerformanceCounterInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsPerformanceCounterResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
     #[serde(rename = "performanceCounter", default, skip_serializing_if = "Option::is_none")]
     pub performance_counter: Option<EventsPerformanceCounterInfo>,
+}
+impl EventsPerformanceCounterResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            performance_counter: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsRequestInfo {
@@ -376,6 +554,11 @@ pub struct EventsRequestInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
+impl EventsRequestInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsRequestResult {
     #[serde(flatten)]
@@ -383,12 +566,25 @@ pub struct EventsRequestResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<EventsRequestInfo>,
 }
+impl EventsRequestResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            request: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsResult {
     #[serde(rename = "@ai.messages", default, skip_serializing_if = "Vec::is_empty")]
     pub ai_messages: Vec<ErrorInfo>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<EventsResultData>,
+}
+impl EventsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsResultData {
@@ -419,6 +615,25 @@ pub struct EventsResultData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub client: Option<EventsClientInfo>,
 }
+impl EventsResultData {
+    pub fn new(type_: EventType) -> Self {
+        Self {
+            id: None,
+            type_,
+            count: None,
+            timestamp: None,
+            custom_dimensions: None,
+            custom_measurements: None,
+            operation: None,
+            session: None,
+            user: None,
+            cloud: None,
+            ai: None,
+            application: None,
+            client: None,
+        }
+    }
+}
 pub mod events_result_data {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -426,10 +641,20 @@ pub mod events_result_data {
         #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
         pub additional_properties: Option<serde_json::Value>,
     }
+    impl CustomDimensions {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct CustomMeasurements {
         #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
         pub additional_properties: Option<serde_json::Value>,
+    }
+    impl CustomMeasurements {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -441,12 +666,22 @@ pub struct EventsResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventsResultData>,
 }
+impl EventsResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type EventsSearch = String;
 pub type EventsSelect = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsSessionInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl EventsSessionInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type EventsSkip = i32;
 pub type EventsTimespan = String;
@@ -458,12 +693,25 @@ pub struct EventsTraceInfo {
     #[serde(rename = "severityLevel", default, skip_serializing_if = "Option::is_none")]
     pub severity_level: Option<i64>,
 }
+impl EventsTraceInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventsTraceResult {
     #[serde(flatten)]
     pub events_result_data: EventsResultData,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trace: Option<EventsTraceInfo>,
+}
+impl EventsTraceResult {
+    pub fn new(events_result_data: EventsResultData) -> Self {
+        Self {
+            events_result_data,
+            trace: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsUserInfo {
@@ -473,6 +721,11 @@ pub struct EventsUserInfo {
     pub account_id: Option<String>,
     #[serde(rename = "authenticatedId", default, skip_serializing_if = "Option::is_none")]
     pub authenticated_id: Option<String>,
+}
+impl EventsUserInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataApplication {
@@ -488,6 +741,19 @@ pub struct MetadataApplication {
     #[serde(rename = "tableGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub table_groups: Vec<String>,
 }
+impl MetadataApplication {
+    pub fn new(id: String, resource_id: String, name: String, region: String) -> Self {
+        Self {
+            id,
+            resource_id,
+            name,
+            region,
+            tables: Vec::new(),
+            functions: Vec::new(),
+            table_groups: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataFunction {
     pub id: String,
@@ -500,6 +766,18 @@ pub struct MetadataFunction {
     pub description: Option<String>,
     pub body: String,
 }
+impl MetadataFunction {
+    pub fn new(id: String, name: String, body: String) -> Self {
+        Self {
+            id,
+            name,
+            parameters: None,
+            display_name: None,
+            description: None,
+            body,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataResults {
     #[serde(rename = "tableGroups", default, skip_serializing_if = "Vec::is_empty")]
@@ -511,6 +789,11 @@ pub struct MetadataResults {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub applications: Vec<MetadataApplication>,
 }
+impl MetadataResults {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataTable {
     pub id: String,
@@ -521,6 +804,17 @@ pub struct MetadataTable {
     pub timespan_column: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<serde_json::Value>,
+}
+impl MetadataTable {
+    pub fn new(id: String, name: String) -> Self {
+        Self {
+            id,
+            name,
+            description: None,
+            timespan_column: None,
+            columns: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataTableGroup {
@@ -534,6 +828,18 @@ pub struct MetadataTableGroup {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tables: Vec<String>,
+}
+impl MetadataTableGroup {
+    pub fn new(id: String, name: String) -> Self {
+        Self {
+            id,
+            name,
+            source: None,
+            display_name: None,
+            description: None,
+            tables: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MetricId {
@@ -612,6 +918,11 @@ pub struct MetricsPostBodySchema {
     pub id: String,
     pub parameters: metrics_post_body_schema::Parameters,
 }
+impl MetricsPostBodySchema {
+    pub fn new(id: String, parameters: metrics_post_body_schema::Parameters) -> Self {
+        Self { id, parameters }
+    }
+}
 pub mod metrics_post_body_schema {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -633,11 +944,30 @@ pub mod metrics_post_body_schema {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub filter: Option<MetricsFilter>,
     }
+    impl Parameters {
+        pub fn new(metric_id: MetricId) -> Self {
+            Self {
+                metric_id,
+                timespan: None,
+                aggregation: None,
+                interval: None,
+                segment: None,
+                top: None,
+                orderby: None,
+                filter: None,
+            }
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricsResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<MetricsResultInfo>,
+}
+impl MetricsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricsResultInfo {
@@ -650,6 +980,11 @@ pub struct MetricsResultInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub segments: Vec<MetricsSegmentInfo>,
 }
+impl MetricsResultInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type MetricsResults = Vec<serde_json::Value>;
 pub type MetricsSegment = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -661,6 +996,11 @@ pub struct MetricsSegmentInfo {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub segments: Vec<MetricsSegmentInfo>,
 }
+impl MetricsSegmentInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub type MetricsTimespan = String;
 pub type MetricsTop = i32;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -671,10 +1011,24 @@ pub struct QueryBody {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub applications: Option<ApplicationsParam>,
 }
+impl QueryBody {
+    pub fn new(query: QueryParam) -> Self {
+        Self {
+            query,
+            timespan: None,
+            applications: None,
+        }
+    }
+}
 pub type QueryParam = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryResults {
     pub tables: Vec<Table>,
+}
+impl QueryResults {
+    pub fn new(tables: Vec<Table>) -> Self {
+        Self { tables }
+    }
 }
 pub type QueryTimespan = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -682,4 +1036,9 @@ pub struct Table {
     pub name: String,
     pub columns: Vec<Column>,
     pub rows: serde_json::Value,
+}
+impl Table {
+    pub fn new(name: String, columns: Vec<Column>, rows: serde_json::Value) -> Self {
+        Self { name, columns, rows }
+    }
 }

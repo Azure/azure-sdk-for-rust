@@ -9,6 +9,11 @@ pub struct Dimension {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
+impl Dimension {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -30,6 +35,11 @@ pub struct MetricSpecification {
     #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
     pub resource_id_dimension_name_override: Option<String>,
 }
+impl MetricSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -40,6 +50,11 @@ pub struct Operation {
     pub origin: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -54,21 +69,41 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
+impl OperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
+}
+impl ServiceSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountProperties {
@@ -76,6 +111,11 @@ pub struct AccountProperties {
     pub provisioning_state: Option<String>,
     #[serde(rename = "activeDirectories", default, skip_serializing_if = "Vec::is_empty")]
     pub active_directories: Vec<ActiveDirectory>,
+}
+impl AccountProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveDirectory {
@@ -96,6 +136,11 @@ pub struct ActiveDirectory {
     #[serde(rename = "organizationalUnit", default, skip_serializing_if = "Option::is_none")]
     pub organizational_unit: Option<String>,
 }
+impl ActiveDirectory {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CapacityPool {
     pub location: String,
@@ -109,10 +154,27 @@ pub struct CapacityPool {
     pub tags: Option<ResourceTags>,
     pub properties: PoolProperties,
 }
+impl CapacityPool {
+    pub fn new(location: String, properties: PoolProperties) -> Self {
+        Self {
+            location,
+            id: None,
+            name: None,
+            type_: None,
+            tags: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapacityPoolList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CapacityPool>,
+}
+impl CapacityPoolList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapacityPoolPatch {
@@ -129,10 +191,20 @@ pub struct CapacityPoolPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PoolPatchProperties>,
 }
+impl CapacityPoolPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
     pub code: String,
     pub message: String,
+}
+impl Error {
+    pub fn new(code: String, message: String) -> Self {
+        Self { code, message }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportPolicyRule {
@@ -151,6 +223,11 @@ pub struct ExportPolicyRule {
     #[serde(rename = "allowedClients", default, skip_serializing_if = "Option::is_none")]
     pub allowed_clients: Option<String>,
 }
+impl ExportPolicyRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MountTarget {
     pub location: String,
@@ -162,10 +239,26 @@ pub struct MountTarget {
     pub tags: Option<ResourceTags>,
     pub properties: MountTargetProperties,
 }
+impl MountTarget {
+    pub fn new(location: String, properties: MountTargetProperties) -> Self {
+        Self {
+            location,
+            id: None,
+            name: None,
+            tags: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MountTargetList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MountTarget>,
+}
+impl MountTargetList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MountTargetProperties {
@@ -190,6 +283,22 @@ pub struct MountTargetProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
+impl MountTargetProperties {
+    pub fn new(file_system_id: String) -> Self {
+        Self {
+            mount_target_id: None,
+            file_system_id,
+            ip_address: None,
+            subnet: None,
+            start_ip: None,
+            end_ip: None,
+            gateway: None,
+            netmask: None,
+            smb_server_fqdn: None,
+            provisioning_state: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetAppAccount {
     pub location: String,
@@ -203,10 +312,27 @@ pub struct NetAppAccount {
     pub tags: Option<ResourceTags>,
     pub properties: AccountProperties,
 }
+impl NetAppAccount {
+    pub fn new(location: String, properties: AccountProperties) -> Self {
+        Self {
+            location,
+            id: None,
+            name: None,
+            type_: None,
+            tags: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetAppAccountList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetAppAccount>,
+}
+impl NetAppAccountList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetAppAccountPatch {
@@ -223,12 +349,22 @@ pub struct NetAppAccountPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
 }
+impl NetAppAccountPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolPatchProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<i64>,
     #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
     pub service_level: Option<pool_patch_properties::ServiceLevel>,
+}
+impl PoolPatchProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod pool_patch_properties {
     use super::*;
@@ -255,6 +391,11 @@ pub struct PoolProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
+impl PoolProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod pool_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -271,6 +412,11 @@ pub mod pool_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTags {}
+impl ResourceTags {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
     pub location: String,
@@ -284,10 +430,27 @@ pub struct Snapshot {
     pub tags: Option<ResourceTags>,
     pub properties: SnapshotProperties,
 }
+impl Snapshot {
+    pub fn new(location: String, properties: SnapshotProperties) -> Self {
+        Self {
+            location,
+            id: None,
+            name: None,
+            type_: None,
+            tags: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<ResourceTags>,
+}
+impl SnapshotPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
@@ -300,10 +463,25 @@ pub struct SnapshotProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
+impl SnapshotProperties {
+    pub fn new(file_system_id: String) -> Self {
+        Self {
+            snapshot_id: None,
+            file_system_id,
+            creation_date: None,
+            provisioning_state: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Snapshot>,
+}
+impl SnapshotsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Volume {
@@ -318,10 +496,27 @@ pub struct Volume {
     pub tags: Option<ResourceTags>,
     pub properties: VolumeProperties,
 }
+impl Volume {
+    pub fn new(location: String, properties: VolumeProperties) -> Self {
+        Self {
+            location,
+            id: None,
+            name: None,
+            type_: None,
+            tags: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Volume>,
+}
+impl VolumeList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumePatch {
@@ -338,6 +533,11 @@ pub struct VolumePatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VolumePatchProperties>,
 }
+impl VolumePatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumePatchProperties {
     #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
@@ -346,6 +546,11 @@ pub struct VolumePatchProperties {
     pub usage_threshold: Option<i64>,
     #[serde(rename = "exportPolicy", default, skip_serializing_if = "Option::is_none")]
     pub export_policy: Option<volume_patch_properties::ExportPolicy>,
+}
+impl VolumePatchProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod volume_patch_properties {
     use super::*;
@@ -365,6 +570,11 @@ pub mod volume_patch_properties {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub rules: Vec<ExportPolicyRule>,
     }
+    impl ExportPolicy {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeProperties {
@@ -383,6 +593,19 @@ pub struct VolumeProperties {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
 }
+impl VolumeProperties {
+    pub fn new(creation_token: String, service_level: volume_properties::ServiceLevel) -> Self {
+        Self {
+            file_system_id: None,
+            creation_token,
+            service_level,
+            usage_threshold: None,
+            export_policy: None,
+            provisioning_state: None,
+            subnet_id: None,
+        }
+    }
+}
 pub mod volume_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -400,5 +623,10 @@ pub mod volume_properties {
     pub struct ExportPolicy {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub rules: Vec<ExportPolicyRule>,
+    }
+    impl ExportPolicy {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }

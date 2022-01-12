@@ -8,12 +8,25 @@ pub struct Creator {
     pub tracked_resource: TrackedResource,
     pub properties: CreatorProperties,
 }
+impl Creator {
+    pub fn new(tracked_resource: TrackedResource, properties: CreatorProperties) -> Self {
+        Self {
+            tracked_resource,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreatorList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Creator>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl CreatorList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreatorProperties {
@@ -22,12 +35,25 @@ pub struct CreatorProperties {
     #[serde(rename = "storageUnits")]
     pub storage_units: i32,
 }
+impl CreatorProperties {
+    pub fn new(storage_units: i32) -> Self {
+        Self {
+            provisioning_state: None,
+            storage_units,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreatorUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CreatorProperties>,
+}
+impl CreatorUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
@@ -44,12 +70,22 @@ pub struct Dimension {
     #[serde(rename = "toBeExportedToShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_to_shoebox: Option<bool>,
 }
+impl Dimension {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
@@ -64,10 +100,20 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Kind {
@@ -85,6 +131,11 @@ pub struct LinkedResource {
     pub unique_name: String,
     pub id: String,
 }
+impl LinkedResource {
+    pub fn new(unique_name: String, id: String) -> Self {
+        Self { unique_name, id }
+    }
+}
 pub type LinkedResources = Vec<LinkedResource>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServiceIdentity {
@@ -96,6 +147,11 @@ pub struct ManagedServiceIdentity {
     pub type_: Option<managed_service_identity::Type>,
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl ManagedServiceIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod managed_service_identity {
     use super::*;
@@ -122,6 +178,18 @@ pub struct MapsAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MapsAccountProperties>,
 }
+impl MapsAccount {
+    pub fn new(tracked_resource: TrackedResource, sku: Sku) -> Self {
+        Self {
+            tracked_resource,
+            sku,
+            kind: None,
+            system_data: None,
+            identity: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccountKeys {
     #[serde(rename = "primaryKeyLastUpdated", default, skip_serializing_if = "Option::is_none")]
@@ -133,6 +201,11 @@ pub struct MapsAccountKeys {
     #[serde(rename = "secondaryKeyLastUpdated", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key_last_updated: Option<String>,
 }
+impl MapsAccountKeys {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccountProperties {
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
@@ -143,6 +216,11 @@ pub struct MapsAccountProperties {
     pub provisioning_state: Option<String>,
     #[serde(rename = "linkedResources", default, skip_serializing_if = "Option::is_none")]
     pub linked_resources: Option<LinkedResources>,
+}
+impl MapsAccountProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccountUpdateParameters {
@@ -157,6 +235,11 @@ pub struct MapsAccountUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MapsAccountProperties>,
 }
+impl MapsAccountUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MapsAccounts {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -164,10 +247,20 @@ pub struct MapsAccounts {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl MapsAccounts {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsKeySpecification {
     #[serde(rename = "keyType")]
     pub key_type: maps_key_specification::KeyType,
+}
+impl MapsKeySpecification {
+    pub fn new(key_type: maps_key_specification::KeyType) -> Self {
+        Self { key_type }
+    }
 }
 pub mod maps_key_specification {
     use super::*;
@@ -185,6 +278,11 @@ pub struct MapsOperations {
     pub value: Vec<OperationDetail>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl MapsOperations {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
@@ -207,6 +305,11 @@ pub struct MetricSpecification {
     #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
     pub resource_id_dimension_name_override: Option<String>,
 }
+impl MetricSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -220,6 +323,11 @@ pub struct OperationDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
 }
+impl OperationDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -231,10 +339,20 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
+}
+impl OperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -245,16 +363,31 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
+}
+impl ServiceSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     pub name: sku::Name,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+}
+impl Sku {
+    pub fn new(name: sku::Name) -> Self {
+        Self { name, tier: None }
+    }
 }
 pub mod sku {
     use super::*;
@@ -273,6 +406,15 @@ pub struct TrackedResource {
     pub tags: Option<serde_json::Value>,
     pub location: String,
 }
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
@@ -287,6 +429,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

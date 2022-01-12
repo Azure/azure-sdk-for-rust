@@ -11,6 +11,16 @@ pub struct ConnectedCluster {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl ConnectedCluster {
+    pub fn new(tracked_resource: TrackedResource, identity: ConnectedClusterIdentity, properties: ConnectedClusterProperties) -> Self {
+        Self {
+            tracked_resource,
+            identity,
+            properties,
+            system_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -19,6 +29,15 @@ pub struct ConnectedClusterIdentity {
     pub tenant_id: Option<String>,
     #[serde(rename = "type")]
     pub type_: connected_cluster_identity::Type,
+}
+impl ConnectedClusterIdentity {
+    pub fn new(type_: connected_cluster_identity::Type) -> Self {
+        Self {
+            principal_id: None,
+            tenant_id: None,
+            type_,
+        }
+    }
 }
 pub mod connected_cluster_identity {
     use super::*;
@@ -40,6 +59,11 @@ pub struct ConnectedClusterList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ConnectedClusterList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedClusterPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -47,8 +71,18 @@ pub struct ConnectedClusterPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectedClusterPatchProperties>,
 }
+impl ConnectedClusterPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedClusterPatchProperties {}
+impl ConnectedClusterPatchProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterProperties {
     #[serde(rename = "agentPublicKeyCertificate")]
@@ -80,6 +114,24 @@ pub struct ConnectedClusterProperties {
     #[serde(rename = "connectivityStatus", default, skip_serializing_if = "Option::is_none")]
     pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
 }
+impl ConnectedClusterProperties {
+    pub fn new(agent_public_key_certificate: String) -> Self {
+        Self {
+            agent_public_key_certificate,
+            kubernetes_version: None,
+            total_node_count: None,
+            total_core_count: None,
+            agent_version: None,
+            provisioning_state: None,
+            distribution: None,
+            infrastructure: None,
+            offering: None,
+            managed_identity_certificate_expiration_time: None,
+            last_connectivity_time: None,
+            connectivity_status: None,
+        }
+    }
+}
 pub mod connected_cluster_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -107,6 +159,11 @@ pub struct ErrorAdditionalInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -120,10 +177,20 @@ pub struct ErrorDetail {
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -131,6 +198,11 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -145,6 +217,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
@@ -152,6 +229,11 @@ pub struct OperationList {
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -161,6 +243,11 @@ pub struct Resource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -176,6 +263,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;
@@ -201,4 +293,13 @@ pub struct TrackedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
+}
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
 }

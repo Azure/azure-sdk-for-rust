@@ -10,12 +10,26 @@ pub struct App {
     pub properties: Option<AppProperties>,
     pub sku: AppSkuInfo,
 }
+impl App {
+    pub fn new(resource: Resource, sku: AppSkuInfo) -> Self {
+        Self {
+            resource,
+            properties: None,
+            sku,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<App>,
+}
+impl AppListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppNameAvailabilityInfo {
@@ -25,6 +39,11 @@ pub struct AppNameAvailabilityInfo {
     pub reason: Option<app_name_availability_info::Reason>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl AppNameAvailabilityInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod app_name_availability_info {
     use super::*;
@@ -41,6 +60,11 @@ pub struct AppPatch {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppProperties>,
 }
+impl AppPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppProperties {
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
@@ -52,9 +76,19 @@ pub struct AppProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
 }
+impl AppProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppSkuInfo {
     pub name: app_sku_info::Name,
+}
+impl AppSkuInfo {
+    pub fn new(name: app_sku_info::Name) -> Self {
+        Self { name }
+    }
 }
 pub mod app_sku_info {
     use super::*;
@@ -73,12 +107,22 @@ pub struct ErrorDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
+impl ErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
@@ -91,9 +135,19 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationInputs {
     pub name: String,
+}
+impl OperationInputs {
+    pub fn new(name: String) -> Self {
+        Self { name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -101,6 +155,11 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -113,4 +172,15 @@ pub struct Resource {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
 }

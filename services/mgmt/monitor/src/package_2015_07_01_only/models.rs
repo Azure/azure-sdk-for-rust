@@ -28,16 +28,40 @@ pub struct AlertRule {
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
 }
+impl AlertRule {
+    pub fn new(name: String, is_enabled: bool, condition: RuleCondition) -> Self {
+        Self {
+            name,
+            description: None,
+            provisioning_state: None,
+            is_enabled,
+            condition,
+            action: None,
+            actions: Vec::new(),
+            last_updated_time: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleResource {
     #[serde(flatten)]
     pub resource: Resource,
     pub properties: AlertRule,
 }
+impl AlertRuleResource {
+    pub fn new(resource: Resource, properties: AlertRule) -> Self {
+        Self { resource, properties }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertRuleResourceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertRuleResource>,
+}
+impl AlertRuleResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertRuleResourcePatch {
@@ -45,6 +69,11 @@ pub struct AlertRuleResourcePatch {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertRule>,
+}
+impl AlertRuleResourcePatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConditionOperator {
@@ -66,10 +95,20 @@ pub struct DimensionProperties {
     #[serde(rename = "defaultDimensionValues", default, skip_serializing_if = "Option::is_none")]
     pub default_dimension_values: Option<serde_json::Value>,
 }
+impl DimensionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+}
+impl ErrorContract {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -78,11 +117,24 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
     pub value: String,
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
+}
+impl LocalizableString {
+    pub fn new(value: String) -> Self {
+        Self {
+            value,
+            localized_value: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocationThresholdRuleCondition {
@@ -93,6 +145,15 @@ pub struct LocationThresholdRuleCondition {
     #[serde(rename = "failedLocationCount")]
     pub failed_location_count: i32,
 }
+impl LocationThresholdRuleCondition {
+    pub fn new(rule_condition: RuleCondition, failed_location_count: i32) -> Self {
+        Self {
+            rule_condition,
+            window_size: None,
+            failed_location_count,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -100,6 +161,15 @@ pub struct LogSettings {
     pub enabled: bool,
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+}
+impl LogSettings {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            category: None,
+            enabled,
+            retention_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
@@ -110,6 +180,11 @@ pub struct LogSpecification {
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
+impl LogSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementEventAggregationCondition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -119,12 +194,25 @@ pub struct ManagementEventAggregationCondition {
     #[serde(rename = "windowSize", default, skip_serializing_if = "Option::is_none")]
     pub window_size: Option<String>,
 }
+impl ManagementEventAggregationCondition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementEventRuleCondition {
     #[serde(flatten)]
     pub rule_condition: RuleCondition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<ManagementEventAggregationCondition>,
+}
+impl ManagementEventRuleCondition {
+    pub fn new(rule_condition: RuleCondition) -> Self {
+        Self {
+            rule_condition,
+            aggregation: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailability {
@@ -135,6 +223,11 @@ pub struct MetricAvailability {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<MetricAvailabilityLocation>,
 }
+impl MetricAvailability {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailabilityLocation {
     #[serde(rename = "tableEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -143,6 +236,11 @@ pub struct MetricAvailabilityLocation {
     pub table_info: Vec<TableInfoEntry>,
     #[serde(rename = "partitionKey", default, skip_serializing_if = "Option::is_none")]
     pub partition_key: Option<String>,
+}
+impl MetricAvailabilityLocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricDefinition {
@@ -169,11 +267,21 @@ pub struct MetricDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
+impl MetricDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricDefinitionCollection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     pub value: Vec<MetricDefinition>,
+}
+impl MetricDefinitionCollection {
+    pub fn new(value: Vec<MetricDefinition>) -> Self {
+        Self { id: None, value }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricSettings {
@@ -182,6 +290,15 @@ pub struct MetricSettings {
     pub enabled: bool,
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
+}
+impl MetricSettings {
+    pub fn new(time_grain: String, enabled: bool) -> Self {
+        Self {
+            time_grain,
+            enabled,
+            retention_policy: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
@@ -212,6 +329,11 @@ pub struct MetricSpecification {
     #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
 }
+impl MetricSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -222,6 +344,11 @@ pub struct Operation {
     pub display: Option<operation::Display>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -238,6 +365,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -246,10 +378,20 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
+}
+impl OperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -263,15 +405,36 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
     pub enabled: bool,
     pub days: i32,
 }
+impl RetentionPolicy {
+    pub fn new(enabled: bool, days: i32) -> Self {
+        Self { enabled, days }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleAction {
     #[serde(rename = "odata.type")]
     pub odata_type: String,
+}
+impl RuleAction {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleCondition {
@@ -279,6 +442,14 @@ pub struct RuleCondition {
     pub odata_type: String,
     #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
     pub data_source: Option<RuleDataSource>,
+}
+impl RuleCondition {
+    pub fn new(odata_type: String) -> Self {
+        Self {
+            odata_type,
+            data_source: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleDataSource {
@@ -293,6 +464,17 @@ pub struct RuleDataSource {
     #[serde(rename = "metricNamespace", default, skip_serializing_if = "Option::is_none")]
     pub metric_namespace: Option<String>,
 }
+impl RuleDataSource {
+    pub fn new(odata_type: String) -> Self {
+        Self {
+            odata_type,
+            resource_uri: None,
+            legacy_resource_id: None,
+            resource_location: None,
+            metric_namespace: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleEmailAction {
     #[serde(flatten)]
@@ -302,10 +484,24 @@ pub struct RuleEmailAction {
     #[serde(rename = "customEmails", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_emails: Vec<String>,
 }
+impl RuleEmailAction {
+    pub fn new(rule_action: RuleAction) -> Self {
+        Self {
+            rule_action,
+            send_to_service_owners: None,
+            custom_emails: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuleManagementEventClaimsDataSource {
     #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
     pub email_address: Option<String>,
+}
+impl RuleManagementEventClaimsDataSource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleManagementEventDataSource {
@@ -330,12 +526,36 @@ pub struct RuleManagementEventDataSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub claims: Option<RuleManagementEventClaimsDataSource>,
 }
+impl RuleManagementEventDataSource {
+    pub fn new(rule_data_source: RuleDataSource) -> Self {
+        Self {
+            rule_data_source,
+            event_name: None,
+            event_source: None,
+            level: None,
+            operation_name: None,
+            resource_group_name: None,
+            resource_provider_name: None,
+            status: None,
+            sub_status: None,
+            claims: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleMetricDataSource {
     #[serde(flatten)]
     pub rule_data_source: RuleDataSource,
     #[serde(rename = "metricName", default, skip_serializing_if = "Option::is_none")]
     pub metric_name: Option<String>,
+}
+impl RuleMetricDataSource {
+    pub fn new(rule_data_source: RuleDataSource) -> Self {
+        Self {
+            rule_data_source,
+            metric_name: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleWebhookAction {
@@ -345,6 +565,15 @@ pub struct RuleWebhookAction {
     pub service_uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+}
+impl RuleWebhookAction {
+    pub fn new(rule_action: RuleAction) -> Self {
+        Self {
+            rule_action,
+            service_uri: None,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceDiagnosticSettings {
@@ -359,12 +588,25 @@ pub struct ServiceDiagnosticSettings {
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
 }
+impl ServiceDiagnosticSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceDiagnosticSettingsResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceDiagnosticSettings>,
+}
+impl ServiceDiagnosticSettingsResource {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
@@ -374,6 +616,11 @@ pub struct ServiceSpecification {
     pub metric_specifications: Vec<MetricSpecification>,
     #[serde(rename = "legacyMetricSpecifications", default, skip_serializing_if = "Option::is_none")]
     pub legacy_metric_specifications: Option<serde_json::Value>,
+}
+impl ServiceSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableInfoEntry {
@@ -388,6 +635,11 @@ pub struct TableInfoEntry {
     #[serde(rename = "sasTokenExpirationTime", default, skip_serializing_if = "Option::is_none")]
     pub sas_token_expiration_time: Option<String>,
 }
+impl TableInfoEntry {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThresholdRuleCondition {
     #[serde(flatten)]
@@ -398,6 +650,17 @@ pub struct ThresholdRuleCondition {
     pub window_size: Option<String>,
     #[serde(rename = "timeAggregation", default, skip_serializing_if = "Option::is_none")]
     pub time_aggregation: Option<TimeAggregationOperator>,
+}
+impl ThresholdRuleCondition {
+    pub fn new(rule_condition: RuleCondition, operator: ConditionOperator, threshold: f64) -> Self {
+        Self {
+            rule_condition,
+            operator,
+            threshold,
+            window_size: None,
+            time_aggregation: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TimeAggregationOperator {

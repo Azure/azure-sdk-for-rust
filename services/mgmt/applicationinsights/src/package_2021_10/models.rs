@@ -7,6 +7,11 @@ pub struct ErrorResponseLinkedStorage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response_linked_storage::Error>,
 }
+impl ErrorResponseLinkedStorage {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod error_response_linked_storage {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -16,11 +21,21 @@ pub mod error_response_linked_storage {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
     }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveTokenResponse {
     #[serde(rename = "liveToken", default, skip_serializing_if = "Option::is_none")]
     pub live_token: Option<String>,
+}
+impl LiveTokenResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationInfo {
@@ -32,6 +47,11 @@ pub struct OperationInfo {
     pub operation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+impl OperationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationLive {
@@ -46,10 +66,20 @@ pub struct OperationLive {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
+impl OperationLive {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationLive>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

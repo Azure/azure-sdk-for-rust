@@ -6,10 +6,20 @@ use serde::{Deserialize, Serialize};
 pub struct AccessPolicyCreateOrUpdateParameters {
     pub properties: AccessPolicyResourceProperties,
 }
+impl AccessPolicyCreateOrUpdateParameters {
+    pub fn new(properties: AccessPolicyResourceProperties) -> Self {
+        Self { properties }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AccessPolicyResource>,
+}
+impl AccessPolicyListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyMutableProperties {
@@ -18,12 +28,22 @@ pub struct AccessPolicyMutableProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub roles: Vec<String>,
 }
+impl AccessPolicyMutableProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessPolicyResourceProperties>,
+}
+impl AccessPolicyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyResourceProperties {
@@ -34,9 +54,19 @@ pub struct AccessPolicyResourceProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub roles: Vec<String>,
 }
+impl AccessPolicyResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicyUpdateParameters {
     pub properties: AccessPolicyMutableProperties,
+}
+impl AccessPolicyUpdateParameters {
+    pub fn new(properties: AccessPolicyMutableProperties) -> Self {
+        Self { properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureEventSourceProperties {
@@ -45,10 +75,23 @@ pub struct AzureEventSourceProperties {
     #[serde(rename = "eventSourceResourceId")]
     pub event_source_resource_id: String,
 }
+impl AzureEventSourceProperties {
+    pub fn new(event_source_resource_id: String) -> Self {
+        Self {
+            event_source_common_properties: EventSourceCommonProperties::default(),
+            event_source_resource_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
+}
+impl CloudError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
@@ -61,11 +104,21 @@ pub struct CloudErrorBody {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
+impl CloudErrorBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateOrUpdateTrackedResourceProperties {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl CreateOrUpdateTrackedResourceProperties {
+    pub fn new(location: String) -> Self {
+        Self { location, tags: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentCreateOrUpdateParameters {
@@ -74,12 +127,33 @@ pub struct EnvironmentCreateOrUpdateParameters {
     pub sku: Sku,
     pub properties: EnvironmentCreationProperties,
 }
+impl EnvironmentCreateOrUpdateParameters {
+    pub fn new(
+        create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
+        sku: Sku,
+        properties: EnvironmentCreationProperties,
+    ) -> Self {
+        Self {
+            create_or_update_tracked_resource_properties,
+            sku,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentCreationProperties {
     #[serde(rename = "dataRetentionTime")]
     pub data_retention_time: String,
     #[serde(rename = "storageLimitExceededBehavior", default, skip_serializing_if = "Option::is_none")]
     pub storage_limit_exceeded_behavior: Option<environment_creation_properties::StorageLimitExceededBehavior>,
+}
+impl EnvironmentCreationProperties {
+    pub fn new(data_retention_time: String) -> Self {
+        Self {
+            data_retention_time,
+            storage_limit_exceeded_behavior: None,
+        }
+    }
 }
 pub mod environment_creation_properties {
     use super::*;
@@ -94,10 +168,20 @@ pub struct EnvironmentListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EnvironmentResource>,
 }
+impl EnvironmentListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentMutableProperties {
     #[serde(rename = "dataRetentionTime", default, skip_serializing_if = "Option::is_none")]
     pub data_retention_time: Option<String>,
+}
+impl EnvironmentMutableProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentResource {
@@ -107,6 +191,15 @@ pub struct EnvironmentResource {
     pub sku: Option<Sku>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EnvironmentResourceProperties>,
+}
+impl EnvironmentResource {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            sku: None,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentResourceProperties {
@@ -119,6 +212,16 @@ pub struct EnvironmentResourceProperties {
     #[serde(rename = "dataAccessFqdn", default, skip_serializing_if = "Option::is_none")]
     pub data_access_fqdn: Option<String>,
 }
+impl EnvironmentResourceProperties {
+    pub fn new(environment_creation_properties: EnvironmentCreationProperties) -> Self {
+        Self {
+            environment_creation_properties,
+            resource_properties: ResourceProperties::default(),
+            data_access_id: None,
+            data_access_fqdn: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -127,6 +230,11 @@ pub struct EnvironmentUpdateParameters {
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EnvironmentMutableProperties>,
+}
+impl EnvironmentUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceCommonProperties {
@@ -141,11 +249,39 @@ pub struct EventHubEventSourceCommonProperties {
     #[serde(rename = "keyName")]
     pub key_name: String,
 }
+impl EventHubEventSourceCommonProperties {
+    pub fn new(
+        azure_event_source_properties: AzureEventSourceProperties,
+        service_bus_namespace: String,
+        event_hub_name: String,
+        consumer_group_name: String,
+        key_name: String,
+    ) -> Self {
+        Self {
+            azure_event_source_properties,
+            service_bus_namespace,
+            event_hub_name,
+            consumer_group_name,
+            key_name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceCreateOrUpdateParameters {
     #[serde(flatten)]
     pub event_source_create_or_update_parameters: EventSourceCreateOrUpdateParameters,
     pub properties: EventHubEventSourceCreationProperties,
+}
+impl EventHubEventSourceCreateOrUpdateParameters {
+    pub fn new(
+        event_source_create_or_update_parameters: EventSourceCreateOrUpdateParameters,
+        properties: EventHubEventSourceCreationProperties,
+    ) -> Self {
+        Self {
+            event_source_create_or_update_parameters,
+            properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceCreationProperties {
@@ -154,6 +290,14 @@ pub struct EventHubEventSourceCreationProperties {
     #[serde(rename = "sharedAccessKey")]
     pub shared_access_key: String,
 }
+impl EventHubEventSourceCreationProperties {
+    pub fn new(event_hub_event_source_common_properties: EventHubEventSourceCommonProperties, shared_access_key: String) -> Self {
+        Self {
+            event_hub_event_source_common_properties,
+            shared_access_key,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubEventSourceMutableProperties {
     #[serde(flatten)]
@@ -161,16 +305,36 @@ pub struct EventHubEventSourceMutableProperties {
     #[serde(rename = "sharedAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_access_key: Option<String>,
 }
+impl EventHubEventSourceMutableProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceResource {
     #[serde(flatten)]
     pub event_source_resource: EventSourceResource,
     pub properties: EventHubEventSourceResourceProperties,
 }
+impl EventHubEventSourceResource {
+    pub fn new(event_source_resource: EventSourceResource, properties: EventHubEventSourceResourceProperties) -> Self {
+        Self {
+            event_source_resource,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceResourceProperties {
     #[serde(flatten)]
     pub event_hub_event_source_common_properties: EventHubEventSourceCommonProperties,
+}
+impl EventHubEventSourceResourceProperties {
+    pub fn new(event_hub_event_source_common_properties: EventHubEventSourceCommonProperties) -> Self {
+        Self {
+            event_hub_event_source_common_properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubEventSourceUpdateParameters {
@@ -179,6 +343,11 @@ pub struct EventHubEventSourceUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubEventSourceMutableProperties>,
 }
+impl EventHubEventSourceUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSourceCommonProperties {
     #[serde(flatten)]
@@ -186,11 +355,27 @@ pub struct EventSourceCommonProperties {
     #[serde(rename = "timestampPropertyName", default, skip_serializing_if = "Option::is_none")]
     pub timestamp_property_name: Option<String>,
 }
+impl EventSourceCommonProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSourceCreateOrUpdateParameters {
     #[serde(flatten)]
     pub create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
     pub kind: event_source_create_or_update_parameters::Kind,
+}
+impl EventSourceCreateOrUpdateParameters {
+    pub fn new(
+        create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
+        kind: event_source_create_or_update_parameters::Kind,
+    ) -> Self {
+        Self {
+            create_or_update_tracked_resource_properties,
+            kind,
+        }
+    }
 }
 pub mod event_source_create_or_update_parameters {
     use super::*;
@@ -207,6 +392,11 @@ pub struct EventSourceListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventSourceResource>,
 }
+impl EventSourceListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSourceMutableProperties {
     #[serde(rename = "timestampPropertyName", default, skip_serializing_if = "Option::is_none")]
@@ -214,11 +404,21 @@ pub struct EventSourceMutableProperties {
     #[serde(rename = "localTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub local_timestamp: Option<LocalTimestamp>,
 }
+impl EventSourceMutableProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventSourceResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     pub kind: event_source_resource::Kind,
+}
+impl EventSourceResource {
+    pub fn new(tracked_resource: TrackedResource, kind: event_source_resource::Kind) -> Self {
+        Self { tracked_resource, kind }
+    }
 }
 pub mod event_source_resource {
     use super::*;
@@ -235,6 +435,11 @@ pub struct EventSourceUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl EventSourceUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceCommonProperties {
     #[serde(flatten)]
@@ -246,11 +451,37 @@ pub struct IoTHubEventSourceCommonProperties {
     #[serde(rename = "keyName")]
     pub key_name: String,
 }
+impl IoTHubEventSourceCommonProperties {
+    pub fn new(
+        azure_event_source_properties: AzureEventSourceProperties,
+        iot_hub_name: String,
+        consumer_group_name: String,
+        key_name: String,
+    ) -> Self {
+        Self {
+            azure_event_source_properties,
+            iot_hub_name,
+            consumer_group_name,
+            key_name,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceCreateOrUpdateParameters {
     #[serde(flatten)]
     pub event_source_create_or_update_parameters: EventSourceCreateOrUpdateParameters,
     pub properties: IoTHubEventSourceCreationProperties,
+}
+impl IoTHubEventSourceCreateOrUpdateParameters {
+    pub fn new(
+        event_source_create_or_update_parameters: EventSourceCreateOrUpdateParameters,
+        properties: IoTHubEventSourceCreationProperties,
+    ) -> Self {
+        Self {
+            event_source_create_or_update_parameters,
+            properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceCreationProperties {
@@ -259,6 +490,14 @@ pub struct IoTHubEventSourceCreationProperties {
     #[serde(rename = "sharedAccessKey")]
     pub shared_access_key: String,
 }
+impl IoTHubEventSourceCreationProperties {
+    pub fn new(io_t_hub_event_source_common_properties: IoTHubEventSourceCommonProperties, shared_access_key: String) -> Self {
+        Self {
+            io_t_hub_event_source_common_properties,
+            shared_access_key,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTHubEventSourceMutableProperties {
     #[serde(flatten)]
@@ -266,16 +505,36 @@ pub struct IoTHubEventSourceMutableProperties {
     #[serde(rename = "sharedAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_access_key: Option<String>,
 }
+impl IoTHubEventSourceMutableProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceResource {
     #[serde(flatten)]
     pub event_source_resource: EventSourceResource,
     pub properties: IoTHubEventSourceResourceProperties,
 }
+impl IoTHubEventSourceResource {
+    pub fn new(event_source_resource: EventSourceResource, properties: IoTHubEventSourceResourceProperties) -> Self {
+        Self {
+            event_source_resource,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceResourceProperties {
     #[serde(flatten)]
     pub io_t_hub_event_source_common_properties: IoTHubEventSourceCommonProperties,
+}
+impl IoTHubEventSourceResourceProperties {
+    pub fn new(io_t_hub_event_source_common_properties: IoTHubEventSourceCommonProperties) -> Self {
+        Self {
+            io_t_hub_event_source_common_properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IoTHubEventSourceUpdateParameters {
@@ -284,12 +543,22 @@ pub struct IoTHubEventSourceUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTHubEventSourceMutableProperties>,
 }
+impl IoTHubEventSourceUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalTimestamp {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<local_timestamp::Format>,
     #[serde(rename = "timeZoneOffset", default, skip_serializing_if = "Option::is_none")]
     pub time_zone_offset: Option<local_timestamp::TimeZoneOffset>,
+}
+impl LocalTimestamp {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod local_timestamp {
     use super::*;
@@ -304,6 +573,11 @@ pub mod local_timestamp {
         #[serde(rename = "propertyName", default, skip_serializing_if = "Option::is_none")]
         pub property_name: Option<String>,
     }
+    impl TimeZoneOffset {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -311,6 +585,11 @@ pub struct Operation {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+}
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod operation {
     use super::*;
@@ -325,6 +604,11 @@ pub mod operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
@@ -333,16 +617,37 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceDataSetCreateOrUpdateParameters {
     #[serde(flatten)]
     pub create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
     pub properties: ReferenceDataSetCreationProperties,
 }
+impl ReferenceDataSetCreateOrUpdateParameters {
+    pub fn new(
+        create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
+        properties: ReferenceDataSetCreationProperties,
+    ) -> Self {
+        Self {
+            create_or_update_tracked_resource_properties,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceDataSetCreationProperties {
     #[serde(rename = "keyProperties")]
     pub key_properties: Vec<ReferenceDataSetKeyProperty>,
+}
+impl ReferenceDataSetCreationProperties {
+    pub fn new(key_properties: Vec<ReferenceDataSetKeyProperty>) -> Self {
+        Self { key_properties }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReferenceDataSetKeyProperty {
@@ -350,6 +655,11 @@ pub struct ReferenceDataSetKeyProperty {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<reference_data_set_key_property::Type>,
+}
+impl ReferenceDataSetKeyProperty {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod reference_data_set_key_property {
     use super::*;
@@ -366,12 +676,25 @@ pub struct ReferenceDataSetListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReferenceDataSetResource>,
 }
+impl ReferenceDataSetListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceDataSetResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReferenceDataSetResourceProperties>,
+}
+impl ReferenceDataSetResource {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceDataSetResourceProperties {
@@ -380,10 +703,23 @@ pub struct ReferenceDataSetResourceProperties {
     #[serde(flatten)]
     pub resource_properties: ResourceProperties,
 }
+impl ReferenceDataSetResourceProperties {
+    pub fn new(reference_data_set_creation_properties: ReferenceDataSetCreationProperties) -> Self {
+        Self {
+            reference_data_set_creation_properties,
+            resource_properties: ResourceProperties::default(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReferenceDataSetUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl ReferenceDataSetUpdateParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -394,12 +730,22 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<resource_properties::ProvisioningState>,
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+}
+impl ResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_properties {
     use super::*;
@@ -418,6 +764,11 @@ pub struct Sku {
     pub name: sku::Name,
     pub capacity: i32,
 }
+impl Sku {
+    pub fn new(name: sku::Name, capacity: i32) -> Self {
+        Self { name, capacity }
+    }
+}
 pub mod sku {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -433,4 +784,13 @@ pub struct TrackedResource {
     pub location: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            location,
+            tags: None,
+        }
+    }
 }

@@ -11,6 +11,11 @@ pub struct AccessPolicy {
     #[serde(rename = "Permission", default, skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 }
+impl AccessPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AccessTier {
     P4,
@@ -40,6 +45,11 @@ pub struct ArrowConfiguration {
     #[serde(rename = "Schema")]
     pub schema: Vec<ArrowField>,
 }
+impl ArrowConfiguration {
+    pub fn new(schema: Vec<ArrowField>) -> Self {
+        Self { schema }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArrowField {
     #[serde(rename = "Type")]
@@ -51,10 +61,25 @@ pub struct ArrowField {
     #[serde(rename = "Scale", default, skip_serializing_if = "Option::is_none")]
     pub scale: Option<i64>,
 }
+impl ArrowField {
+    pub fn new(type_: String) -> Self {
+        Self {
+            type_,
+            name: None,
+            precision: None,
+            scale: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobFlatListSegment {
     #[serde(rename = "BlobItems")]
     pub blob_items: Vec<BlobItemInternal>,
+}
+impl BlobFlatListSegment {
+    pub fn new(blob_items: Vec<BlobItemInternal>) -> Self {
+        Self { blob_items }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobHierarchyListSegment {
@@ -62,6 +87,14 @@ pub struct BlobHierarchyListSegment {
     pub blob_prefixes: Vec<BlobPrefix>,
     #[serde(rename = "BlobItems")]
     pub blob_items: Vec<BlobItemInternal>,
+}
+impl BlobHierarchyListSegment {
+    pub fn new(blob_items: Vec<BlobItemInternal>) -> Self {
+        Self {
+            blob_prefixes: Vec::new(),
+            blob_items,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobItemInternal {
@@ -86,10 +119,31 @@ pub struct BlobItemInternal {
     #[serde(rename = "HasVersionsOnly", default, skip_serializing_if = "Option::is_none")]
     pub has_versions_only: Option<bool>,
 }
+impl BlobItemInternal {
+    pub fn new(name: BlobName, deleted: bool, snapshot: String, properties: BlobPropertiesInternal) -> Self {
+        Self {
+            name,
+            deleted,
+            snapshot,
+            version_id: None,
+            is_current_version: None,
+            properties,
+            metadata: None,
+            blob_tags: None,
+            object_replication_metadata: None,
+            has_versions_only: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobMetadata {
     #[serde(rename = "Encrypted", default, skip_serializing_if = "Option::is_none")]
     pub encrypted: Option<String>,
+}
+impl BlobMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobName {
@@ -98,10 +152,20 @@ pub struct BlobName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
 }
+impl BlobName {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPrefix {
     #[serde(rename = "Name")]
     pub name: BlobName,
+}
+impl BlobPrefix {
+    pub fn new(name: BlobName) -> Self {
+        Self { name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
@@ -186,6 +250,52 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "LegalHold", default, skip_serializing_if = "Option::is_none")]
     pub legal_hold: Option<bool>,
 }
+impl BlobPropertiesInternal {
+    pub fn new(last_modified: String, etag: String) -> Self {
+        Self {
+            creation_time: None,
+            last_modified,
+            etag,
+            content_length: None,
+            content_type: None,
+            content_encoding: None,
+            content_language: None,
+            content_md5: None,
+            content_disposition: None,
+            cache_control: None,
+            x_ms_blob_sequence_number: None,
+            blob_type: None,
+            lease_status: None,
+            lease_state: None,
+            lease_duration: None,
+            copy_id: None,
+            copy_status: None,
+            copy_source: None,
+            copy_progress: None,
+            copy_completion_time: None,
+            copy_status_description: None,
+            server_encrypted: None,
+            incremental_copy: None,
+            destination_snapshot: None,
+            deleted_time: None,
+            remaining_retention_days: None,
+            access_tier: None,
+            access_tier_inferred: None,
+            archive_status: None,
+            customer_provided_key_sha256: None,
+            encryption_scope: None,
+            access_tier_change_time: None,
+            tag_count: None,
+            expiry_time: None,
+            sealed: None,
+            rehydrate_priority: None,
+            last_access_time: None,
+            immutability_policy_until_date: None,
+            immutability_policy_mode: None,
+            legal_hold: None,
+        }
+    }
+}
 pub mod blob_properties_internal {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -208,10 +318,20 @@ pub struct BlobTag {
     #[serde(rename = "Value")]
     pub value: String,
 }
+impl BlobTag {
+    pub fn new(key: String, value: String) -> Self {
+        Self { key, value }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobTags {
     #[serde(rename = "BlobTagSet")]
     pub blob_tag_set: Vec<BlobTag>,
+}
+impl BlobTags {
+    pub fn new(blob_tag_set: Vec<BlobTag>) -> Self {
+        Self { blob_tag_set }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Block {
@@ -220,12 +340,22 @@ pub struct Block {
     #[serde(rename = "Size")]
     pub size: i64,
 }
+impl Block {
+    pub fn new(name: String, size: i64) -> Self {
+        Self { name, size }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlockList {
     #[serde(rename = "CommittedBlocks", default, skip_serializing_if = "Vec::is_empty")]
     pub committed_blocks: Vec<Block>,
     #[serde(rename = "UncommittedBlocks", default, skip_serializing_if = "Vec::is_empty")]
     pub uncommitted_blocks: Vec<Block>,
+}
+impl BlockList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlockLookupList {
@@ -236,12 +366,22 @@ pub struct BlockLookupList {
     #[serde(rename = "Latest", default, skip_serializing_if = "Vec::is_empty")]
     pub latest: Vec<String>,
 }
+impl BlockLookupList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClearRange {
     #[serde(rename = "Start")]
     pub start: i64,
     #[serde(rename = "End")]
     pub end: i64,
+}
+impl ClearRange {
+    pub fn new(start: i64, end: i64) -> Self {
+        Self { start, end }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerItem {
@@ -256,8 +396,24 @@ pub struct ContainerItem {
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ContainerMetadata>,
 }
+impl ContainerItem {
+    pub fn new(name: String, properties: ContainerProperties) -> Self {
+        Self {
+            name,
+            deleted: None,
+            version: None,
+            properties,
+            metadata: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerMetadata {}
+impl ContainerMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
     #[serde(rename = "Last-Modified")]
@@ -287,6 +443,25 @@ pub struct ContainerProperties {
     #[serde(rename = "ImmutableStorageWithVersioningEnabled", default, skip_serializing_if = "Option::is_none")]
     pub immutable_storage_with_versioning_enabled: Option<bool>,
 }
+impl ContainerProperties {
+    pub fn new(last_modified: String, etag: String) -> Self {
+        Self {
+            last_modified,
+            etag,
+            lease_status: None,
+            lease_state: None,
+            lease_duration: None,
+            public_access: None,
+            has_immutability_policy: None,
+            has_legal_hold: None,
+            default_encryption_scope: None,
+            deny_encryption_scope_override: None,
+            deleted_time: None,
+            remaining_retention_days: None,
+            immutable_storage_with_versioning_enabled: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CopyStatus {
     #[serde(rename = "pending")]
@@ -311,6 +486,23 @@ pub struct CorsRule {
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
 }
+impl CorsRule {
+    pub fn new(
+        allowed_origins: String,
+        allowed_methods: String,
+        allowed_headers: String,
+        exposed_headers: String,
+        max_age_in_seconds: i64,
+    ) -> Self {
+        Self {
+            allowed_origins,
+            allowed_methods,
+            allowed_headers,
+            exposed_headers,
+            max_age_in_seconds,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DelimitedTextConfiguration {
     #[serde(rename = "ColumnSeparator", default, skip_serializing_if = "Option::is_none")]
@@ -323,6 +515,11 @@ pub struct DelimitedTextConfiguration {
     pub escape_char: Option<String>,
     #[serde(rename = "HeadersPresent", default, skip_serializing_if = "Option::is_none")]
     pub headers_present: Option<bool>,
+}
+impl DelimitedTextConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorCode {
@@ -450,6 +647,15 @@ pub struct FilterBlobItem {
     #[serde(rename = "Tags", default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<BlobTags>,
 }
+impl FilterBlobItem {
+    pub fn new(name: String, container_name: String) -> Self {
+        Self {
+            name,
+            container_name,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterBlobSegment {
     #[serde(rename = "ServiceEndpoint")]
@@ -461,12 +667,27 @@ pub struct FilterBlobSegment {
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
+impl FilterBlobSegment {
+    pub fn new(service_endpoint: String, where_: String, blobs: Vec<FilterBlobItem>) -> Self {
+        Self {
+            service_endpoint,
+            where_,
+            blobs,
+            next_marker: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoReplication {
     #[serde(rename = "Status")]
     pub status: geo_replication::Status,
     #[serde(rename = "LastSyncTime")]
     pub last_sync_time: String,
+}
+impl GeoReplication {
+    pub fn new(status: geo_replication::Status, last_sync_time: String) -> Self {
+        Self { status, last_sync_time }
+    }
 }
 pub mod geo_replication {
     use super::*;
@@ -485,12 +706,22 @@ pub struct JsonTextConfiguration {
     #[serde(rename = "RecordSeparator", default, skip_serializing_if = "Option::is_none")]
     pub record_separator: Option<String>,
 }
+impl JsonTextConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyInfo {
     #[serde(rename = "Start")]
     pub start: String,
     #[serde(rename = "Expiry")]
     pub expiry: String,
+}
+impl KeyInfo {
+    pub fn new(start: String, expiry: String) -> Self {
+        Self { start, expiry }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LeaseDuration {
@@ -536,6 +767,19 @@ pub struct ListBlobsFlatSegmentResponse {
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
+impl ListBlobsFlatSegmentResponse {
+    pub fn new(service_endpoint: String, container_name: String, segment: BlobFlatListSegment) -> Self {
+        Self {
+            service_endpoint,
+            container_name,
+            prefix: None,
+            marker: None,
+            max_results: None,
+            segment,
+            next_marker: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsHierarchySegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -555,6 +799,20 @@ pub struct ListBlobsHierarchySegmentResponse {
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
+impl ListBlobsHierarchySegmentResponse {
+    pub fn new(service_endpoint: String, container_name: String, segment: BlobHierarchyListSegment) -> Self {
+        Self {
+            service_endpoint,
+            container_name,
+            prefix: None,
+            marker: None,
+            max_results: None,
+            delimiter: None,
+            segment,
+            next_marker: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListContainersSegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -570,6 +828,18 @@ pub struct ListContainersSegmentResponse {
     #[serde(rename = "NextMarker", default, skip_serializing_if = "Option::is_none")]
     pub next_marker: Option<String>,
 }
+impl ListContainersSegmentResponse {
+    pub fn new(service_endpoint: String, container_items: Vec<ContainerItem>) -> Self {
+        Self {
+            service_endpoint,
+            prefix: None,
+            marker: None,
+            max_results: None,
+            container_items,
+            next_marker: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Logging {
     #[serde(rename = "Version")]
@@ -583,6 +853,17 @@ pub struct Logging {
     #[serde(rename = "RetentionPolicy")]
     pub retention_policy: RetentionPolicy,
 }
+impl Logging {
+    pub fn new(version: String, delete: bool, read: bool, write: bool, retention_policy: RetentionPolicy) -> Self {
+        Self {
+            version,
+            delete,
+            read,
+            write,
+            retention_policy,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
@@ -594,14 +875,34 @@ pub struct Metrics {
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
+impl Metrics {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            version: None,
+            enabled,
+            include_ap_is: None,
+            retention_policy: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ObjectReplicationMetadata {}
+impl ObjectReplicationMetadata {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageList {
     #[serde(rename = "PageRange", default, skip_serializing_if = "Vec::is_empty")]
     pub page_range: Vec<PageRange>,
     #[serde(rename = "ClearRange", default, skip_serializing_if = "Vec::is_empty")]
     pub clear_range: Vec<ClearRange>,
+}
+impl PageList {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PageRange {
@@ -610,8 +911,18 @@ pub struct PageRange {
     #[serde(rename = "End")]
     pub end: i64,
 }
+impl PageRange {
+    pub fn new(start: i64, end: i64) -> Self {
+        Self { start, end }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParquetConfiguration {}
+impl ParquetConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PublicAccessType {
     #[serde(rename = "container")]
@@ -632,6 +943,17 @@ pub struct QueryFormat {
     #[serde(rename = "ParquetTextConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub parquet_text_configuration: Option<ParquetConfiguration>,
 }
+impl QueryFormat {
+    pub fn new(type_: QueryType) -> Self {
+        Self {
+            type_,
+            delimited_text_configuration: None,
+            json_text_configuration: None,
+            arrow_configuration: None,
+            parquet_text_configuration: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
     #[serde(rename = "QueryType")]
@@ -642,6 +964,16 @@ pub struct QueryRequest {
     pub input_serialization: Option<QuerySerialization>,
     #[serde(rename = "OutputSerialization", default, skip_serializing_if = "Option::is_none")]
     pub output_serialization: Option<QuerySerialization>,
+}
+impl QueryRequest {
+    pub fn new(query_type: query_request::QueryType, expression: String) -> Self {
+        Self {
+            query_type,
+            expression,
+            input_serialization: None,
+            output_serialization: None,
+        }
+    }
 }
 pub mod query_request {
     use super::*;
@@ -655,6 +987,11 @@ pub mod query_request {
 pub struct QuerySerialization {
     #[serde(rename = "Format")]
     pub format: QueryFormat,
+}
+impl QuerySerialization {
+    pub fn new(format: QueryFormat) -> Self {
+        Self { format }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryType {
@@ -681,12 +1018,26 @@ pub struct RetentionPolicy {
     #[serde(rename = "AllowPermanentDelete", default, skip_serializing_if = "Option::is_none")]
     pub allow_permanent_delete: Option<bool>,
 }
+impl RetentionPolicy {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            enabled,
+            days: None,
+            allow_permanent_delete: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {
     #[serde(rename = "Id")]
     pub id: String,
     #[serde(rename = "AccessPolicy")]
     pub access_policy: AccessPolicy,
+}
+impl SignedIdentifier {
+    pub fn new(id: String, access_policy: AccessPolicy) -> Self {
+        Self { id, access_policy }
+    }
 }
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -700,10 +1051,25 @@ pub struct StaticWebsite {
     #[serde(rename = "DefaultIndexDocumentPath", default, skip_serializing_if = "Option::is_none")]
     pub default_index_document_path: Option<String>,
 }
+impl StaticWebsite {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            enabled,
+            index_document: None,
+            error_document404_path: None,
+            default_index_document_path: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageError {
     #[serde(rename = "Message", default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl StorageError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceProperties {
@@ -722,10 +1088,20 @@ pub struct StorageServiceProperties {
     #[serde(rename = "StaticWebsite", default, skip_serializing_if = "Option::is_none")]
     pub static_website: Option<StaticWebsite>,
 }
+impl StorageServiceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceStats {
     #[serde(rename = "GeoReplication", default, skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,
+}
+impl StorageServiceStats {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserDelegationKey {
@@ -743,4 +1119,25 @@ pub struct UserDelegationKey {
     pub signed_version: String,
     #[serde(rename = "Value")]
     pub value: String,
+}
+impl UserDelegationKey {
+    pub fn new(
+        signed_oid: String,
+        signed_tid: String,
+        signed_start: String,
+        signed_expiry: String,
+        signed_service: String,
+        signed_version: String,
+        value: String,
+    ) -> Self {
+        Self {
+            signed_oid,
+            signed_tid,
+            signed_start,
+            signed_expiry,
+            signed_service,
+            signed_version,
+            value,
+        }
+    }
 }

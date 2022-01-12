@@ -7,12 +7,22 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinitionProperties>,
 }
+impl ErrorDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinitionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+}
+impl ErrorDefinitionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -25,6 +35,11 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -36,12 +51,22 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApproval {
@@ -54,6 +79,11 @@ pub struct RoleAssignmentApproval {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentApprovalProperties>,
 }
+impl RoleAssignmentApproval {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalActorIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -64,6 +94,11 @@ pub struct RoleAssignmentApprovalActorIdentity {
     pub principal_name: Option<String>,
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
+}
+impl RoleAssignmentApprovalActorIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod role_assignment_approval_actor_identity {
     use super::*;
@@ -82,10 +117,20 @@ pub struct RoleAssignmentApprovalListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl RoleAssignmentApprovalListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stages: Vec<RoleAssignmentApprovalStep>,
+}
+impl RoleAssignmentApprovalProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalStep {
@@ -98,12 +143,22 @@ pub struct RoleAssignmentApprovalStep {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentApprovalStepProperties>,
 }
+impl RoleAssignmentApprovalStep {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalStepListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignmentApprovalStep>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl RoleAssignmentApprovalStepListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalStepProperties {
@@ -121,6 +176,11 @@ pub struct RoleAssignmentApprovalStepProperties {
     pub review_result: Option<role_assignment_approval_step_properties::ReviewResult>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub justification: Option<String>,
+}
+impl RoleAssignmentApprovalStepProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod role_assignment_approval_step_properties {
     use super::*;

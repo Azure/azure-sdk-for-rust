@@ -13,6 +13,11 @@ pub struct Association {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<association::Properties>,
 }
+impl Association {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod association {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -21,6 +26,11 @@ pub mod association {
         pub target_resource_id: Option<String>,
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     pub mod properties {
         use super::*;
@@ -41,12 +51,25 @@ pub struct AssociationsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl AssociationsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRpActionRouteDefinition {
     #[serde(flatten)]
     pub custom_rp_route_definition: CustomRpRouteDefinition,
     #[serde(rename = "routingType", default, skip_serializing_if = "Option::is_none")]
     pub routing_type: Option<custom_rp_action_route_definition::RoutingType>,
+}
+impl CustomRpActionRouteDefinition {
+    pub fn new(custom_rp_route_definition: CustomRpRouteDefinition) -> Self {
+        Self {
+            custom_rp_route_definition,
+            routing_type: None,
+        }
+    }
 }
 pub mod custom_rp_action_route_definition {
     use super::*;
@@ -62,6 +85,14 @@ pub struct CustomRpManifest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<custom_rp_manifest::Properties>,
 }
+impl CustomRpManifest {
+    pub fn new(resource: Resource) -> Self {
+        Self {
+            resource,
+            properties: None,
+        }
+    }
+}
 pub mod custom_rp_manifest {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -74,6 +105,11 @@ pub mod custom_rp_manifest {
         pub validations: Vec<CustomRpValidations>,
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<properties::ProvisioningState>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
     pub mod properties {
         use super::*;
@@ -94,6 +130,14 @@ pub struct CustomRpResourceTypeRouteDefinition {
     #[serde(rename = "routingType", default, skip_serializing_if = "Option::is_none")]
     pub routing_type: Option<custom_rp_resource_type_route_definition::RoutingType>,
 }
+impl CustomRpResourceTypeRouteDefinition {
+    pub fn new(custom_rp_route_definition: CustomRpRouteDefinition) -> Self {
+        Self {
+            custom_rp_route_definition,
+            routing_type: None,
+        }
+    }
+}
 pub mod custom_rp_resource_type_route_definition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -108,11 +152,24 @@ pub struct CustomRpRouteDefinition {
     pub name: String,
     pub endpoint: String,
 }
+impl CustomRpRouteDefinition {
+    pub fn new(name: String, endpoint: String) -> Self {
+        Self { name, endpoint }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRpValidations {
     #[serde(rename = "validationType", default, skip_serializing_if = "Option::is_none")]
     pub validation_type: Option<custom_rp_validations::ValidationType>,
     pub specification: String,
+}
+impl CustomRpValidations {
+    pub fn new(specification: String) -> Self {
+        Self {
+            validation_type: None,
+            specification,
+        }
+    }
 }
 pub mod custom_rp_validations {
     use super::*;
@@ -130,10 +187,20 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
+impl ErrorDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListByCustomRpManifest {
@@ -141,6 +208,11 @@ pub struct ListByCustomRpManifest {
     pub value: Vec<CustomRpManifest>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ListByCustomRpManifest {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
@@ -154,12 +226,28 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
+impl Resource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
+}
+impl ResourceProviderOperation {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod resource_provider_operation {
     use super::*;
@@ -174,6 +262,11 @@ pub mod resource_provider_operation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
+    impl Display {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
@@ -182,8 +275,18 @@ pub struct ResourceProviderOperationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ResourceProviderOperationList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProvidersUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+}
+impl ResourceProvidersUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

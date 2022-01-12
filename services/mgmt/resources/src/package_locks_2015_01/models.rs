@@ -9,6 +9,11 @@ pub struct ManagementLockListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ManagementLockListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementLockObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -20,12 +25,22 @@ pub struct ManagementLockObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
+impl ManagementLockObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementLockProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<management_lock_properties::Level>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+}
+impl ManagementLockProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod management_lock_properties {
     use super::*;

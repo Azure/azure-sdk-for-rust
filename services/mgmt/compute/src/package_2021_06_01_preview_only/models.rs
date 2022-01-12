@@ -13,6 +13,11 @@ pub struct ComputeDiagnosticBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticProperties>,
 }
+impl ComputeDiagnosticBase {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeDiagnosticsList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -20,10 +25,20 @@ pub struct ComputeDiagnosticsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl ComputeDiagnosticsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticProperties {
     #[serde(rename = "supportedResourceTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_resource_types: Vec<String>,
+}
+impl DiagnosticProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
@@ -38,10 +53,20 @@ pub struct ErrorDetail {
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<InnerError>,
 }
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
@@ -49,6 +74,11 @@ pub struct InnerError {
     pub exceptiontype: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errordetail: Option<String>,
+}
+impl InnerError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunDiskInspectionAsyncOperationResult {
@@ -60,6 +90,11 @@ pub struct RunDiskInspectionAsyncOperationResult {
     pub error_detail: Option<ErrorDetail>,
     #[serde(rename = "createdUTC", default, skip_serializing_if = "Option::is_none")]
     pub created_utc: Option<String>,
+}
+impl RunDiskInspectionAsyncOperationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod run_disk_inspection_async_operation_result {
     use super::*;
@@ -76,4 +111,13 @@ pub struct RunDiskInspectionInput {
     pub manifest: String,
     #[serde(rename = "uploadSasUri")]
     pub upload_sas_uri: String,
+}
+impl RunDiskInspectionInput {
+    pub fn new(resource_id: String, manifest: String, upload_sas_uri: String) -> Self {
+        Self {
+            resource_id,
+            manifest,
+            upload_sas_uri,
+        }
+    }
 }

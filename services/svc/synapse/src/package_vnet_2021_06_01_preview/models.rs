@@ -13,6 +13,11 @@ pub struct ManagedPrivateEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedPrivateEndpointProperties>,
 }
+impl ManagedPrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedPrivateEndpointConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22,12 +27,22 @@ pub struct ManagedPrivateEndpointConnectionState {
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
+impl ManagedPrivateEndpointConnectionState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedPrivateEndpointListResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedPrivateEndpoint>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl ManagedPrivateEndpointListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedPrivateEndpointProperties {
@@ -47,4 +62,9 @@ pub struct ManagedPrivateEndpointProperties {
     pub fqdns: Vec<String>,
     #[serde(rename = "isCompliant", default, skip_serializing_if = "Option::is_none")]
     pub is_compliant: Option<bool>,
+}
+impl ManagedPrivateEndpointProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }

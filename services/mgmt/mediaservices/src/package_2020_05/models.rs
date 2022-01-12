@@ -9,6 +9,11 @@ pub struct AacAudio {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<aac_audio::Profile>,
 }
+impl AacAudio {
+    pub fn new(audio: Audio) -> Self {
+        Self { audio, profile: None }
+    }
+}
 pub mod aac_audio {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -24,12 +29,25 @@ pub struct AbsoluteClipTime {
     pub clip_time: ClipTime,
     pub time: String,
 }
+impl AbsoluteClipTime {
+    pub fn new(clip_time: ClipTime, time: String) -> Self {
+        Self { clip_time, time }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountEncryption {
     #[serde(rename = "type")]
     pub type_: account_encryption::Type,
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
+}
+impl AccountEncryption {
+    pub fn new(type_: account_encryption::Type) -> Self {
+        Self {
+            type_,
+            key_vault_properties: None,
+        }
+    }
 }
 pub mod account_encryption {
     use super::*;
@@ -48,12 +66,22 @@ pub struct AccountFilter {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl AccountFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountFilterCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AccountFilter>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl AccountFilterCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AkamaiAccessControl {
@@ -64,6 +92,11 @@ pub struct AkamaiAccessControl {
     )]
     pub akamai_signature_header_authentication_key_list: Vec<AkamaiSignatureHeaderAuthenticationKey>,
 }
+impl AkamaiAccessControl {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AkamaiSignatureHeaderAuthenticationKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -73,10 +106,20 @@ pub struct AkamaiSignatureHeaderAuthenticationKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expiration: Option<String>,
 }
+impl AkamaiSignatureHeaderAuthenticationKey {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ODataError>,
+}
+impl ApiError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Asset {
@@ -87,6 +130,11 @@ pub struct Asset {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl Asset {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -94,10 +142,20 @@ pub struct AssetCollection {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl AssetCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetContainerSas {
     #[serde(rename = "assetContainerSasUrls", default, skip_serializing_if = "Vec::is_empty")]
     pub asset_container_sas_urls: Vec<String>,
+}
+impl AssetContainerSas {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetFileEncryptionMetadata {
@@ -108,6 +166,15 @@ pub struct AssetFileEncryptionMetadata {
     #[serde(rename = "assetFileId")]
     pub asset_file_id: String,
 }
+impl AssetFileEncryptionMetadata {
+    pub fn new(asset_file_id: String) -> Self {
+        Self {
+            initialization_vector: None,
+            asset_file_name: None,
+            asset_file_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilter {
     #[serde(flatten)]
@@ -117,12 +184,22 @@ pub struct AssetFilter {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl AssetFilter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilterCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssetFilter>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl AssetFilterCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetProperties {
@@ -142,6 +219,11 @@ pub struct AssetProperties {
     pub storage_account_name: Option<String>,
     #[serde(rename = "storageEncryptionFormat", default, skip_serializing_if = "Option::is_none")]
     pub storage_encryption_format: Option<asset_properties::StorageEncryptionFormat>,
+}
+impl AssetProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod asset_properties {
     use super::*;
@@ -170,6 +252,11 @@ pub struct AssetStreamingLocator {
     #[serde(rename = "defaultContentKeyPolicyName", default, skip_serializing_if = "Option::is_none")]
     pub default_content_key_policy_name: Option<String>,
 }
+impl AssetStreamingLocator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Audio {
     #[serde(flatten)]
@@ -181,6 +268,16 @@ pub struct Audio {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bitrate: Option<i32>,
 }
+impl Audio {
+    pub fn new(codec: Codec) -> Self {
+        Self {
+            codec,
+            channels: None,
+            sampling_rate: None,
+            bitrate: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioAnalyzerPreset {
     #[serde(flatten)]
@@ -191,6 +288,16 @@ pub struct AudioAnalyzerPreset {
     pub mode: Option<audio_analyzer_preset::Mode>,
     #[serde(rename = "experimentalOptions", default, skip_serializing_if = "Option::is_none")]
     pub experimental_options: Option<serde_json::Value>,
+}
+impl AudioAnalyzerPreset {
+    pub fn new(preset: Preset) -> Self {
+        Self {
+            preset,
+            audio_language: None,
+            mode: None,
+            experimental_options: None,
+        }
+    }
 }
 pub mod audio_analyzer_preset {
     use super::*;
@@ -205,12 +312,25 @@ pub struct AudioOverlay {
     #[serde(flatten)]
     pub overlay: Overlay,
 }
+impl AudioOverlay {
+    pub fn new(overlay: Overlay) -> Self {
+        Self { overlay }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioTrackDescriptor {
     #[serde(flatten)]
     pub track_descriptor: TrackDescriptor,
     #[serde(rename = "channelMapping", default, skip_serializing_if = "Option::is_none")]
     pub channel_mapping: Option<audio_track_descriptor::ChannelMapping>,
+}
+impl AudioTrackDescriptor {
+    pub fn new(track_descriptor: TrackDescriptor) -> Self {
+        Self {
+            track_descriptor,
+            channel_mapping: None,
+        }
+    }
 }
 pub mod audio_track_descriptor {
     use super::*;
@@ -232,6 +352,11 @@ pub struct BuiltInStandardEncoderPreset {
     pub preset: Preset,
     #[serde(rename = "presetName")]
     pub preset_name: built_in_standard_encoder_preset::PresetName,
+}
+impl BuiltInStandardEncoderPreset {
+    pub fn new(preset: Preset, preset_name: built_in_standard_encoder_preset::PresetName) -> Self {
+        Self { preset, preset_name }
+    }
 }
 pub mod built_in_standard_encoder_preset {
     use super::*;
@@ -267,12 +392,22 @@ pub struct CbcsDrmConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub widevine: Option<StreamingPolicyWidevineConfiguration>,
 }
+impl CbcsDrmConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CencDrmConfiguration {
     #[serde(rename = "playReady", default, skip_serializing_if = "Option::is_none")]
     pub play_ready: Option<StreamingPolicyPlayReadyConfiguration>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub widevine: Option<StreamingPolicyWidevineConfiguration>,
+}
+impl CencDrmConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityInput {
@@ -281,10 +416,20 @@ pub struct CheckNameAvailabilityInput {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl CheckNameAvailabilityInput {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClipTime {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+}
+impl ClipTime {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Codec {
@@ -292,6 +437,11 @@ pub struct Codec {
     pub odata_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+}
+impl Codec {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type, label: None }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommonEncryptionCbcs {
@@ -304,6 +454,11 @@ pub struct CommonEncryptionCbcs {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drm: Option<CbcsDrmConfiguration>,
 }
+impl CommonEncryptionCbcs {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommonEncryptionCenc {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
@@ -315,6 +470,11 @@ pub struct CommonEncryptionCenc {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drm: Option<CencDrmConfiguration>,
 }
+impl CommonEncryptionCenc {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicy {
     #[serde(flatten)]
@@ -324,10 +484,22 @@ pub struct ContentKeyPolicy {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl ContentKeyPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyClearKeyConfiguration {
     #[serde(flatten)]
     pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
+}
+impl ContentKeyPolicyClearKeyConfiguration {
+    pub fn new(content_key_policy_configuration: ContentKeyPolicyConfiguration) -> Self {
+        Self {
+            content_key_policy_configuration,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicyCollection {
@@ -336,10 +508,20 @@ pub struct ContentKeyPolicyCollection {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl ContentKeyPolicyCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyConfiguration {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+}
+impl ContentKeyPolicyConfiguration {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyFairPlayConfiguration {
@@ -356,6 +538,26 @@ pub struct ContentKeyPolicyFairPlayConfiguration {
     pub rental_duration: i64,
     #[serde(rename = "offlineRentalConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub offline_rental_configuration: Option<ContentKeyPolicyFairPlayOfflineRentalConfiguration>,
+}
+impl ContentKeyPolicyFairPlayConfiguration {
+    pub fn new(
+        content_key_policy_configuration: ContentKeyPolicyConfiguration,
+        ask: String,
+        fair_play_pfx_password: String,
+        fair_play_pfx: String,
+        rental_and_lease_key_type: content_key_policy_fair_play_configuration::RentalAndLeaseKeyType,
+        rental_duration: i64,
+    ) -> Self {
+        Self {
+            content_key_policy_configuration,
+            ask,
+            fair_play_pfx_password,
+            fair_play_pfx,
+            rental_and_lease_key_type,
+            rental_duration,
+            offline_rental_configuration: None,
+        }
+    }
 }
 pub mod content_key_policy_fair_play_configuration {
     use super::*;
@@ -375,10 +577,25 @@ pub struct ContentKeyPolicyFairPlayOfflineRentalConfiguration {
     #[serde(rename = "storageDurationSeconds")]
     pub storage_duration_seconds: i64,
 }
+impl ContentKeyPolicyFairPlayOfflineRentalConfiguration {
+    pub fn new(playback_duration_seconds: i64, storage_duration_seconds: i64) -> Self {
+        Self {
+            playback_duration_seconds,
+            storage_duration_seconds,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyOpenRestriction {
     #[serde(flatten)]
     pub content_key_policy_restriction: ContentKeyPolicyRestriction,
+}
+impl ContentKeyPolicyOpenRestriction {
+    pub fn new(content_key_policy_restriction: ContentKeyPolicyRestriction) -> Self {
+        Self {
+            content_key_policy_restriction,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyOption {
@@ -389,6 +606,16 @@ pub struct ContentKeyPolicyOption {
     pub configuration: ContentKeyPolicyConfiguration,
     pub restriction: ContentKeyPolicyRestriction,
 }
+impl ContentKeyPolicyOption {
+    pub fn new(configuration: ContentKeyPolicyConfiguration, restriction: ContentKeyPolicyRestriction) -> Self {
+        Self {
+            policy_option_id: None,
+            name: None,
+            configuration,
+            restriction,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyConfiguration {
     #[serde(flatten)]
@@ -397,10 +624,26 @@ pub struct ContentKeyPolicyPlayReadyConfiguration {
     #[serde(rename = "responseCustomData", default, skip_serializing_if = "Option::is_none")]
     pub response_custom_data: Option<String>,
 }
+impl ContentKeyPolicyPlayReadyConfiguration {
+    pub fn new(content_key_policy_configuration: ContentKeyPolicyConfiguration, licenses: Vec<ContentKeyPolicyPlayReadyLicense>) -> Self {
+        Self {
+            content_key_policy_configuration,
+            licenses,
+            response_custom_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromHeader {
     #[serde(flatten)]
     pub content_key_policy_play_ready_content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation,
+}
+impl ContentKeyPolicyPlayReadyContentEncryptionKeyFromHeader {
+    pub fn new(content_key_policy_play_ready_content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation) -> Self {
+        Self {
+            content_key_policy_play_ready_content_key_location,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromKeyIdentifier {
@@ -409,10 +652,23 @@ pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromKeyIdentifier {
     #[serde(rename = "keyId")]
     pub key_id: String,
 }
+impl ContentKeyPolicyPlayReadyContentEncryptionKeyFromKeyIdentifier {
+    pub fn new(content_key_policy_play_ready_content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation, key_id: String) -> Self {
+        Self {
+            content_key_policy_play_ready_content_key_location,
+            key_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentKeyLocation {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+}
+impl ContentKeyPolicyPlayReadyContentKeyLocation {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyExplicitAnalogTelevisionRestriction {
@@ -420,6 +676,14 @@ pub struct ContentKeyPolicyPlayReadyExplicitAnalogTelevisionRestriction {
     pub best_effort: bool,
     #[serde(rename = "configurationData")]
     pub configuration_data: i32,
+}
+impl ContentKeyPolicyPlayReadyExplicitAnalogTelevisionRestriction {
+    pub fn new(best_effort: bool, configuration_data: i32) -> Self {
+        Self {
+            best_effort,
+            configuration_data,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyLicense {
@@ -443,6 +707,27 @@ pub struct ContentKeyPolicyPlayReadyLicense {
     pub content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation,
     #[serde(rename = "contentType")]
     pub content_type: content_key_policy_play_ready_license::ContentType,
+}
+impl ContentKeyPolicyPlayReadyLicense {
+    pub fn new(
+        allow_test_devices: bool,
+        license_type: content_key_policy_play_ready_license::LicenseType,
+        content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation,
+        content_type: content_key_policy_play_ready_license::ContentType,
+    ) -> Self {
+        Self {
+            allow_test_devices,
+            begin_date: None,
+            expiration_date: None,
+            relative_begin_date: None,
+            relative_expiration_date: None,
+            grace_period: None,
+            play_right: None,
+            license_type,
+            content_key_location,
+            content_type,
+        }
+    }
 }
 pub mod content_key_policy_play_ready_license {
     use super::*;
@@ -493,6 +778,30 @@ pub struct ContentKeyPolicyPlayReadyPlayRight {
     #[serde(rename = "uncompressedDigitalAudioOpl", default, skip_serializing_if = "Option::is_none")]
     pub uncompressed_digital_audio_opl: Option<i32>,
 }
+impl ContentKeyPolicyPlayReadyPlayRight {
+    pub fn new(
+        digital_video_only_content_restriction: bool,
+        image_constraint_for_analog_component_video_restriction: bool,
+        image_constraint_for_analog_computer_monitor_restriction: bool,
+        allow_passing_video_content_to_unknown_output: content_key_policy_play_ready_play_right::AllowPassingVideoContentToUnknownOutput,
+    ) -> Self {
+        Self {
+            first_play_expiration: None,
+            scms_restriction: None,
+            agc_and_color_stripe_restriction: None,
+            explicit_analog_television_output_restriction: None,
+            digital_video_only_content_restriction,
+            image_constraint_for_analog_component_video_restriction,
+            image_constraint_for_analog_computer_monitor_restriction,
+            allow_passing_video_content_to_unknown_output,
+            uncompressed_digital_video_opl: None,
+            compressed_digital_video_opl: None,
+            analog_video_opl: None,
+            compressed_digital_audio_opl: None,
+            uncompressed_digital_audio_opl: None,
+        }
+    }
+}
 pub mod content_key_policy_play_ready_play_right {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -515,15 +824,36 @@ pub struct ContentKeyPolicyProperties {
     pub description: Option<String>,
     pub options: Vec<ContentKeyPolicyOption>,
 }
+impl ContentKeyPolicyProperties {
+    pub fn new(options: Vec<ContentKeyPolicyOption>) -> Self {
+        Self {
+            policy_id: None,
+            created: None,
+            last_modified: None,
+            description: None,
+            options,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRestriction {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
+impl ContentKeyPolicyRestriction {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRestrictionTokenKey {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+}
+impl ContentKeyPolicyRestrictionTokenKey {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRsaTokenKey {
@@ -532,6 +862,15 @@ pub struct ContentKeyPolicyRsaTokenKey {
     pub exponent: String,
     pub modulus: String,
 }
+impl ContentKeyPolicyRsaTokenKey {
+    pub fn new(content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey, exponent: String, modulus: String) -> Self {
+        Self {
+            content_key_policy_restriction_token_key,
+            exponent,
+            modulus,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicySymmetricTokenKey {
     #[serde(flatten)]
@@ -539,12 +878,25 @@ pub struct ContentKeyPolicySymmetricTokenKey {
     #[serde(rename = "keyValue")]
     pub key_value: String,
 }
+impl ContentKeyPolicySymmetricTokenKey {
+    pub fn new(content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey, key_value: String) -> Self {
+        Self {
+            content_key_policy_restriction_token_key,
+            key_value,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicyTokenClaim {
     #[serde(rename = "claimType", default, skip_serializing_if = "Option::is_none")]
     pub claim_type: Option<String>,
     #[serde(rename = "claimValue", default, skip_serializing_if = "Option::is_none")]
     pub claim_value: Option<String>,
+}
+impl ContentKeyPolicyTokenClaim {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyTokenRestriction {
@@ -563,6 +915,26 @@ pub struct ContentKeyPolicyTokenRestriction {
     #[serde(rename = "openIdConnectDiscoveryDocument", default, skip_serializing_if = "Option::is_none")]
     pub open_id_connect_discovery_document: Option<String>,
 }
+impl ContentKeyPolicyTokenRestriction {
+    pub fn new(
+        content_key_policy_restriction: ContentKeyPolicyRestriction,
+        issuer: String,
+        audience: String,
+        primary_verification_key: ContentKeyPolicyRestrictionTokenKey,
+        restriction_token_type: content_key_policy_token_restriction::RestrictionTokenType,
+    ) -> Self {
+        Self {
+            content_key_policy_restriction,
+            issuer,
+            audience,
+            primary_verification_key,
+            alternate_verification_keys: Vec::new(),
+            required_claims: Vec::new(),
+            restriction_token_type,
+            open_id_connect_discovery_document: None,
+        }
+    }
+}
 pub mod content_key_policy_token_restriction {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -577,10 +949,24 @@ pub struct ContentKeyPolicyUnknownConfiguration {
     #[serde(flatten)]
     pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
 }
+impl ContentKeyPolicyUnknownConfiguration {
+    pub fn new(content_key_policy_configuration: ContentKeyPolicyConfiguration) -> Self {
+        Self {
+            content_key_policy_configuration,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyUnknownRestriction {
     #[serde(flatten)]
     pub content_key_policy_restriction: ContentKeyPolicyRestriction,
+}
+impl ContentKeyPolicyUnknownRestriction {
+    pub fn new(content_key_policy_restriction: ContentKeyPolicyRestriction) -> Self {
+        Self {
+            content_key_policy_restriction,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyWidevineConfiguration {
@@ -589,6 +975,14 @@ pub struct ContentKeyPolicyWidevineConfiguration {
     #[serde(rename = "widevineTemplate")]
     pub widevine_template: String,
 }
+impl ContentKeyPolicyWidevineConfiguration {
+    pub fn new(content_key_policy_configuration: ContentKeyPolicyConfiguration, widevine_template: String) -> Self {
+        Self {
+            content_key_policy_configuration,
+            widevine_template,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyX509CertificateTokenKey {
     #[serde(flatten)]
@@ -596,15 +990,33 @@ pub struct ContentKeyPolicyX509CertificateTokenKey {
     #[serde(rename = "rawBody")]
     pub raw_body: String,
 }
+impl ContentKeyPolicyX509CertificateTokenKey {
+    pub fn new(content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey, raw_body: String) -> Self {
+        Self {
+            content_key_policy_restriction_token_key,
+            raw_body,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopyAudio {
     #[serde(flatten)]
     pub codec: Codec,
 }
+impl CopyAudio {
+    pub fn new(codec: Codec) -> Self {
+        Self { codec }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopyVideo {
     #[serde(flatten)]
     pub codec: Codec,
+}
+impl CopyVideo {
+    pub fn new(codec: Codec) -> Self {
+        Self { codec }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CrossSiteAccessPolicies {
@@ -613,6 +1025,11 @@ pub struct CrossSiteAccessPolicies {
     #[serde(rename = "crossDomainPolicy", default, skip_serializing_if = "Option::is_none")]
     pub cross_domain_policy: Option<String>,
 }
+impl CrossSiteAccessPolicies {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -620,12 +1037,22 @@ pub struct DefaultKey {
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
 }
+impl DefaultKey {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Deinterlace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parity: Option<deinterlace::Parity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<deinterlace::Mode>,
+}
+impl Deinterlace {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod deinterlace {
     use super::*;
@@ -646,6 +1073,11 @@ pub struct EdgePolicies {
     #[serde(rename = "usageDataCollectionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub usage_data_collection_policy: Option<EdgeUsageDataCollectionPolicy>,
 }
+impl EdgePolicies {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeUsageDataCollectionPolicy {
     #[serde(rename = "dataCollectionFrequency", default, skip_serializing_if = "Option::is_none")]
@@ -657,6 +1089,11 @@ pub struct EdgeUsageDataCollectionPolicy {
     #[serde(rename = "eventHubDetails", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_details: Option<EdgeUsageDataEventHub>,
 }
+impl EdgeUsageDataCollectionPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeUsageDataEventHub {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -666,6 +1103,11 @@ pub struct EdgeUsageDataEventHub {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
+impl EdgeUsageDataEventHub {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnabledProtocols {
     pub download: bool,
@@ -673,6 +1115,16 @@ pub struct EnabledProtocols {
     pub hls: bool,
     #[serde(rename = "smoothStreaming")]
     pub smooth_streaming: bool,
+}
+impl EnabledProtocols {
+    pub fn new(download: bool, dash: bool, hls: bool, smooth_streaming: bool) -> Self {
+        Self {
+            download,
+            dash,
+            hls,
+            smooth_streaming,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityNameAvailabilityCheckOutput {
@@ -682,6 +1134,15 @@ pub struct EntityNameAvailabilityCheckOutput {
     pub reason: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+impl EntityNameAvailabilityCheckOutput {
+    pub fn new(name_available: bool) -> Self {
+        Self {
+            name_available,
+            reason: None,
+            message: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvelopeEncryption {
@@ -693,6 +1154,11 @@ pub struct EnvelopeEncryption {
     pub content_keys: Option<StreamingPolicyContentKeys>,
     #[serde(rename = "customKeyAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_key_acquisition_url_template: Option<String>,
+}
+impl EnvelopeEncryption {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FaceDetectorPreset {
@@ -706,6 +1172,17 @@ pub struct FaceDetectorPreset {
     pub blur_type: Option<face_detector_preset::BlurType>,
     #[serde(rename = "experimentalOptions", default, skip_serializing_if = "Option::is_none")]
     pub experimental_options: Option<serde_json::Value>,
+}
+impl FaceDetectorPreset {
+    pub fn new(preset: Preset) -> Self {
+        Self {
+            preset,
+            resolution: None,
+            mode: None,
+            blur_type: None,
+            experimental_options: None,
+        }
+    }
 }
 pub mod face_detector_preset {
     use super::*;
@@ -735,6 +1212,19 @@ pub struct FilterTrackPropertyCondition {
     pub value: String,
     pub operation: filter_track_property_condition::Operation,
 }
+impl FilterTrackPropertyCondition {
+    pub fn new(
+        property: filter_track_property_condition::Property,
+        value: String,
+        operation: filter_track_property_condition::Operation,
+    ) -> Self {
+        Self {
+            property,
+            value,
+            operation,
+        }
+    }
+}
 pub mod filter_track_property_condition {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -758,6 +1248,11 @@ pub struct FilterTrackSelection {
     #[serde(rename = "trackSelections")]
     pub track_selections: Vec<FilterTrackPropertyCondition>,
 }
+impl FilterTrackSelection {
+    pub fn new(track_selections: Vec<FilterTrackPropertyCondition>) -> Self {
+        Self { track_selections }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Filters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -768,6 +1263,11 @@ pub struct Filters {
     pub crop: Option<Rectangle>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub overlays: Vec<Overlay>,
+}
+impl Filters {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod filters {
     use super::*;
@@ -785,6 +1285,11 @@ pub mod filters {
 pub struct FirstQuality {
     pub bitrate: i32,
 }
+impl FirstQuality {
+    pub fn new(bitrate: i32) -> Self {
+        Self { bitrate }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Format {
     #[serde(rename = "@odata.type")]
@@ -792,15 +1297,33 @@ pub struct Format {
     #[serde(rename = "filenamePattern")]
     pub filename_pattern: String,
 }
+impl Format {
+    pub fn new(odata_type: String, filename_pattern: String) -> Self {
+        Self {
+            odata_type,
+            filename_pattern,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FromAllInputFile {
     #[serde(flatten)]
     pub input_definition: InputDefinition,
 }
+impl FromAllInputFile {
+    pub fn new(input_definition: InputDefinition) -> Self {
+        Self { input_definition }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FromEachInputFile {
     #[serde(flatten)]
     pub input_definition: InputDefinition,
+}
+impl FromEachInputFile {
+    pub fn new(input_definition: InputDefinition) -> Self {
+        Self { input_definition }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct H264Layer {
@@ -816,6 +1339,18 @@ pub struct H264Layer {
     pub reference_frames: Option<i32>,
     #[serde(rename = "entropyMode", default, skip_serializing_if = "Option::is_none")]
     pub entropy_mode: Option<h264_layer::EntropyMode>,
+}
+impl H264Layer {
+    pub fn new(video_layer: VideoLayer) -> Self {
+        Self {
+            video_layer,
+            profile: None,
+            level: None,
+            buffer_window: None,
+            reference_frames: None,
+            entropy_mode: None,
+        }
+    }
 }
 pub mod h264_layer {
     use super::*;
@@ -845,6 +1380,16 @@ pub struct H264Video {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<H264Layer>,
 }
+impl H264Video {
+    pub fn new(video: Video) -> Self {
+        Self {
+            video,
+            scene_change_detection: None,
+            complexity: None,
+            layers: Vec::new(),
+        }
+    }
+}
 pub mod h264_video {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -867,6 +1412,17 @@ pub struct H265Layer {
     #[serde(rename = "referenceFrames", default, skip_serializing_if = "Option::is_none")]
     pub reference_frames: Option<i32>,
 }
+impl H265Layer {
+    pub fn new(h265_video_layer: H265VideoLayer) -> Self {
+        Self {
+            h265_video_layer,
+            profile: None,
+            level: None,
+            buffer_window: None,
+            reference_frames: None,
+        }
+    }
+}
 pub mod h265_layer {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -885,6 +1441,16 @@ pub struct H265Video {
     pub complexity: Option<h265_video::Complexity>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<H265Layer>,
+}
+impl H265Video {
+    pub fn new(video: Video) -> Self {
+        Self {
+            video,
+            scene_change_detection: None,
+            complexity: None,
+            layers: Vec::new(),
+        }
+    }
 }
 pub mod h265_video {
     use super::*;
@@ -911,15 +1477,38 @@ pub struct H265VideoLayer {
     #[serde(rename = "adaptiveBFrame", default, skip_serializing_if = "Option::is_none")]
     pub adaptive_b_frame: Option<bool>,
 }
+impl H265VideoLayer {
+    pub fn new(layer: Layer, bitrate: i32) -> Self {
+        Self {
+            layer,
+            bitrate,
+            max_bitrate: None,
+            b_frames: None,
+            frame_rate: None,
+            slices: None,
+            adaptive_b_frame: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Hls {
     #[serde(rename = "fragmentsPerTsSegment", default, skip_serializing_if = "Option::is_none")]
     pub fragments_per_ts_segment: Option<i32>,
 }
+impl Hls {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAccessControl {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub allow: Vec<IpRange>,
+}
+impl IpAccessControl {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpRange {
@@ -929,6 +1518,11 @@ pub struct IpRange {
     pub address: Option<String>,
     #[serde(rename = "subnetPrefixLength", default, skip_serializing_if = "Option::is_none")]
     pub subnet_prefix_length: Option<i32>,
+}
+impl IpRange {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Image {
@@ -940,10 +1534,25 @@ pub struct Image {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub range: Option<String>,
 }
+impl Image {
+    pub fn new(video: Video, start: String) -> Self {
+        Self {
+            video,
+            start,
+            step: None,
+            range: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageFormat {
     #[serde(flatten)]
     pub format: Format,
+}
+impl ImageFormat {
+    pub fn new(format: Format) -> Self {
+        Self { format }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputDefinition {
@@ -952,12 +1561,28 @@ pub struct InputDefinition {
     #[serde(rename = "includedTracks", default, skip_serializing_if = "Vec::is_empty")]
     pub included_tracks: Vec<TrackDescriptor>,
 }
+impl InputDefinition {
+    pub fn new(odata_type: String) -> Self {
+        Self {
+            odata_type,
+            included_tracks: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputFile {
     #[serde(flatten)]
     pub input_definition: InputDefinition,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
+}
+impl InputFile {
+    pub fn new(input_definition: InputDefinition) -> Self {
+        Self {
+            input_definition,
+            filename: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
@@ -968,12 +1593,22 @@ pub struct Job {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl Job {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Job>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl JobCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobError {
@@ -987,6 +1622,11 @@ pub struct JobError {
     pub retry: Option<job_error::Retry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<JobErrorDetail>,
+}
+impl JobError {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod job_error {
     use super::*;
@@ -1023,10 +1663,20 @@ pub struct JobErrorDetail {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl JobErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInput {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+}
+impl JobInput {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputAsset {
@@ -1034,6 +1684,14 @@ pub struct JobInputAsset {
     pub job_input_clip: JobInputClip,
     #[serde(rename = "assetName")]
     pub asset_name: String,
+}
+impl JobInputAsset {
+    pub fn new(job_input_clip: JobInputClip, asset_name: String) -> Self {
+        Self {
+            job_input_clip,
+            asset_name,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputClip {
@@ -1050,12 +1708,32 @@ pub struct JobInputClip {
     #[serde(rename = "inputDefinitions", default, skip_serializing_if = "Vec::is_empty")]
     pub input_definitions: Vec<InputDefinition>,
 }
+impl JobInputClip {
+    pub fn new(job_input: JobInput) -> Self {
+        Self {
+            job_input,
+            files: Vec::new(),
+            start: None,
+            end: None,
+            label: None,
+            input_definitions: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputHttp {
     #[serde(flatten)]
     pub job_input_clip: JobInputClip,
     #[serde(rename = "baseUri", default, skip_serializing_if = "Option::is_none")]
     pub base_uri: Option<String>,
+}
+impl JobInputHttp {
+    pub fn new(job_input_clip: JobInputClip) -> Self {
+        Self {
+            job_input_clip,
+            base_uri: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputSequence {
@@ -1064,12 +1742,28 @@ pub struct JobInputSequence {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<JobInputClip>,
 }
+impl JobInputSequence {
+    pub fn new(job_input: JobInput) -> Self {
+        Self {
+            job_input,
+            inputs: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputs {
     #[serde(flatten)]
     pub job_input: JobInput,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub inputs: Vec<JobInput>,
+}
+impl JobInputs {
+    pub fn new(job_input: JobInput) -> Self {
+        Self {
+            job_input,
+            inputs: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobOutput {
@@ -1087,6 +1781,19 @@ pub struct JobOutput {
     pub start_time: Option<String>,
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+}
+impl JobOutput {
+    pub fn new(odata_type: String) -> Self {
+        Self {
+            odata_type,
+            error: None,
+            state: None,
+            progress: None,
+            label: None,
+            start_time: None,
+            end_time: None,
+        }
+    }
 }
 pub mod job_output {
     use super::*;
@@ -1108,6 +1815,11 @@ pub struct JobOutputAsset {
     #[serde(rename = "assetName")]
     pub asset_name: String,
 }
+impl JobOutputAsset {
+    pub fn new(job_output: JobOutput, asset_name: String) -> Self {
+        Self { job_output, asset_name }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1128,6 +1840,22 @@ pub struct JobProperties {
     pub start_time: Option<String>,
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+}
+impl JobProperties {
+    pub fn new(input: JobInput, outputs: Vec<JobOutput>) -> Self {
+        Self {
+            created: None,
+            state: None,
+            description: None,
+            input,
+            last_modified: None,
+            outputs,
+            priority: None,
+            correlation_data: None,
+            start_time: None,
+            end_time: None,
+        }
+    }
 }
 pub mod job_properties {
     use super::*;
@@ -1153,6 +1881,11 @@ pub struct JpgFormat {
     #[serde(flatten)]
     pub image_format: ImageFormat,
 }
+impl JpgFormat {
+    pub fn new(image_format: ImageFormat) -> Self {
+        Self { image_format }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JpgImage {
     #[serde(flatten)]
@@ -1162,6 +1895,15 @@ pub struct JpgImage {
     #[serde(rename = "spriteColumn", default, skip_serializing_if = "Option::is_none")]
     pub sprite_column: Option<i32>,
 }
+impl JpgImage {
+    pub fn new(image: Image) -> Self {
+        Self {
+            image,
+            layers: Vec::new(),
+            sprite_column: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JpgLayer {
     #[serde(flatten)]
@@ -1169,12 +1911,22 @@ pub struct JpgLayer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quality: Option<i32>,
 }
+impl JpgLayer {
+    pub fn new(layer: Layer) -> Self {
+        Self { layer, quality: None }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultProperties {
     #[serde(rename = "keyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub key_identifier: Option<String>,
     #[serde(rename = "currentKeyIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub current_key_identifier: Option<String>,
+}
+impl KeyVaultProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Layer {
@@ -1187,12 +1939,27 @@ pub struct Layer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
+impl Layer {
+    pub fn new(odata_type: String) -> Self {
+        Self {
+            odata_type,
+            width: None,
+            height: None,
+            label: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContainerSasInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<list_container_sas_input::Permissions>,
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+}
+impl ListContainerSasInput {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod list_container_sas_input {
     use super::*;
@@ -1208,10 +1975,20 @@ pub struct ListContentKeysResponse {
     #[serde(rename = "contentKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub content_keys: Vec<StreamingLocatorContentKey>,
 }
+impl ListContentKeysResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListEdgePoliciesInput {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
+}
+impl ListEdgePoliciesInput {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPathsResponse {
@@ -1220,10 +1997,20 @@ pub struct ListPathsResponse {
     #[serde(rename = "downloadPaths", default, skip_serializing_if = "Vec::is_empty")]
     pub download_paths: Vec<String>,
 }
+impl ListPathsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListStreamingLocatorsResponse {
     #[serde(rename = "streamingLocators", default, skip_serializing_if = "Vec::is_empty")]
     pub streaming_locators: Vec<AssetStreamingLocator>,
+}
+impl ListStreamingLocatorsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEvent {
@@ -1234,10 +2021,24 @@ pub struct LiveEvent {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl LiveEvent {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+            system_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventActionInput {
     #[serde(rename = "removeOutputsOnStop", default, skip_serializing_if = "Option::is_none")]
     pub remove_outputs_on_stop: Option<bool>,
+}
+impl LiveEventActionInput {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventEncoding {
@@ -1249,6 +2050,11 @@ pub struct LiveEventEncoding {
     pub stretch_mode: Option<live_event_encoding::StretchMode>,
     #[serde(rename = "keyFrameInterval", default, skip_serializing_if = "Option::is_none")]
     pub key_frame_interval: Option<String>,
+}
+impl LiveEventEncoding {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod live_event_encoding {
     use super::*;
@@ -1272,6 +2078,11 @@ pub struct LiveEventEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
+impl LiveEventEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventInput {
     #[serde(rename = "streamingProtocol")]
@@ -1284,6 +2095,17 @@ pub struct LiveEventInput {
     pub access_token: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<LiveEventEndpoint>,
+}
+impl LiveEventInput {
+    pub fn new(streaming_protocol: live_event_input::StreamingProtocol) -> Self {
+        Self {
+            streaming_protocol,
+            access_control: None,
+            key_frame_interval_duration: None,
+            access_token: None,
+            endpoints: Vec::new(),
+        }
+    }
 }
 pub mod live_event_input {
     use super::*;
@@ -1300,6 +2122,11 @@ pub struct LiveEventInputAccessControl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
 }
+impl LiveEventInputAccessControl {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventInputTrackSelection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1308,6 +2135,11 @@ pub struct LiveEventInputTrackSelection {
     pub operation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl LiveEventInputTrackSelection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventListResult {
@@ -1318,10 +2150,20 @@ pub struct LiveEventListResult {
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
 }
+impl LiveEventListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventOutputTranscriptionTrack {
     #[serde(rename = "trackName")]
     pub track_name: String,
+}
+impl LiveEventOutputTranscriptionTrack {
+    pub fn new(track_name: String) -> Self {
+        Self { track_name }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventPreview {
@@ -1336,10 +2178,20 @@ pub struct LiveEventPreview {
     #[serde(rename = "alternativeMediaId", default, skip_serializing_if = "Option::is_none")]
     pub alternative_media_id: Option<String>,
 }
+impl LiveEventPreview {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventPreviewAccessControl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
+}
+impl LiveEventPreviewAccessControl {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventProperties {
@@ -1369,6 +2221,25 @@ pub struct LiveEventProperties {
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
 }
+impl LiveEventProperties {
+    pub fn new(input: LiveEventInput) -> Self {
+        Self {
+            description: None,
+            input,
+            preview: None,
+            encoding: None,
+            transcriptions: Vec::new(),
+            provisioning_state: None,
+            resource_state: None,
+            cross_site_access_policies: None,
+            use_static_hostname: None,
+            hostname_prefix: None,
+            stream_options: Vec::new(),
+            created: None,
+            last_modified: None,
+        }
+    }
+}
 pub mod live_event_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1391,12 +2262,22 @@ pub struct LiveEventTranscription {
     #[serde(rename = "outputTranscriptionTrack", default, skip_serializing_if = "Option::is_none")]
     pub output_transcription_track: Option<LiveEventOutputTranscriptionTrack>,
 }
+impl LiveEventTranscription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutput {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LiveOutputProperties>,
+}
+impl LiveOutput {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutputListResult {
@@ -1406,6 +2287,11 @@ pub struct LiveOutputListResult {
     pub odata_count: Option<i32>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl LiveOutputListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveOutputProperties {
@@ -1430,6 +2316,22 @@ pub struct LiveOutputProperties {
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<live_output_properties::ResourceState>,
 }
+impl LiveOutputProperties {
+    pub fn new(asset_name: String, archive_window_length: String) -> Self {
+        Self {
+            description: None,
+            asset_name,
+            archive_window_length,
+            manifest_name: None,
+            hls: None,
+            output_snap_time: None,
+            created: None,
+            last_modified: None,
+            provisioning_state: None,
+            resource_state: None,
+        }
+    }
+}
 pub mod live_output_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1443,6 +2345,11 @@ pub mod live_output_properties {
 pub struct Location {
     pub name: String,
 }
+impl Location {
+    pub fn new(name: String) -> Self {
+        Self { name }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1452,6 +2359,11 @@ pub struct LogSpecification {
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
+impl LogSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaFilterProperties {
     #[serde(rename = "presentationTimeRange", default, skip_serializing_if = "Option::is_none")]
@@ -1460,6 +2372,11 @@ pub struct MediaFilterProperties {
     pub first_quality: Option<FirstQuality>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tracks: Vec<FilterTrackSelection>,
+}
+impl MediaFilterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaService {
@@ -1472,12 +2389,27 @@ pub struct MediaService {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl MediaService {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+            identity: None,
+            system_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaServiceCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MediaService>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl MediaServiceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaServiceIdentity {
@@ -1487,6 +2419,15 @@ pub struct MediaServiceIdentity {
     pub principal_id: Option<String>,
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+impl MediaServiceIdentity {
+    pub fn new(type_: media_service_identity::Type) -> Self {
+        Self {
+            type_,
+            principal_id: None,
+            tenant_id: None,
+        }
+    }
 }
 pub mod media_service_identity {
     use super::*;
@@ -1507,6 +2448,11 @@ pub struct MediaServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<AccountEncryption>,
 }
+impl MediaServiceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod media_service_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1523,6 +2469,11 @@ pub struct MetricDimension {
     pub display_name: Option<String>,
     #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
+}
+impl MetricDimension {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
@@ -1542,6 +2493,11 @@ pub struct MetricSpecification {
     pub supported_aggregation_types: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<MetricDimension>,
+}
+impl MetricSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod metric_specification {
     use super::*;
@@ -1569,6 +2525,11 @@ pub struct Mp4Format {
     #[serde(flatten)]
     pub multi_bitrate_format: MultiBitrateFormat,
 }
+impl Mp4Format {
+    pub fn new(multi_bitrate_format: MultiBitrateFormat) -> Self {
+        Self { multi_bitrate_format }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiBitrateFormat {
     #[serde(flatten)]
@@ -1576,10 +2537,23 @@ pub struct MultiBitrateFormat {
     #[serde(rename = "outputFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub output_files: Vec<OutputFile>,
 }
+impl MultiBitrateFormat {
+    pub fn new(format: Format) -> Self {
+        Self {
+            format,
+            output_files: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NoEncryption {
     #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<EnabledProtocols>,
+}
+impl NoEncryption {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ODataError {
@@ -1592,6 +2566,11 @@ pub struct ODataError {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ODataError>,
 }
+impl ODataError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
     pub name: String,
@@ -1602,12 +2581,27 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Properties>,
 }
+impl Operation {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            display: None,
+            origin: None,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl OperationCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
@@ -1620,9 +2614,19 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputFile {
     pub labels: Vec<String>,
+}
+impl OutputFile {
+    pub fn new(labels: Vec<String>) -> Self {
+        Self { labels }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Overlay {
@@ -1641,10 +2645,28 @@ pub struct Overlay {
     #[serde(rename = "audioGainLevel", default, skip_serializing_if = "Option::is_none")]
     pub audio_gain_level: Option<f64>,
 }
+impl Overlay {
+    pub fn new(odata_type: String, input_label: String) -> Self {
+        Self {
+            odata_type,
+            input_label,
+            start: None,
+            end: None,
+            fade_in_duration: None,
+            fade_out_duration: None,
+            audio_gain_level: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PngFormat {
     #[serde(flatten)]
     pub image_format: ImageFormat,
+}
+impl PngFormat {
+    pub fn new(image_format: ImageFormat) -> Self {
+        Self { image_format }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PngImage {
@@ -1653,10 +2675,20 @@ pub struct PngImage {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub layers: Vec<PngLayer>,
 }
+impl PngImage {
+    pub fn new(image: Image) -> Self {
+        Self { image, layers: Vec::new() }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PngLayer {
     #[serde(flatten)]
     pub layer: Layer,
+}
+impl PngLayer {
+    pub fn new(layer: Layer) -> Self {
+        Self { layer }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PresentationTimeRange {
@@ -1673,15 +2705,30 @@ pub struct PresentationTimeRange {
     #[serde(rename = "forceEndTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub force_end_timestamp: Option<bool>,
 }
+impl PresentationTimeRange {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Preset {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
 }
+impl Preset {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
@@ -1690,10 +2737,20 @@ pub struct PrivateEndpointConnection {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
+impl PrivateEndpointConnection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+}
+impl PrivateEndpointConnectionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
@@ -1703,6 +2760,15 @@ pub struct PrivateEndpointConnectionProperties {
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
+}
+impl PrivateEndpointConnectionProperties {
+    pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
+        Self {
+            private_endpoint: None,
+            private_link_service_connection_state,
+            provisioning_state: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateEndpointConnectionProvisioningState {
@@ -1724,10 +2790,20 @@ pub struct PrivateLinkResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
+impl PrivateLinkResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+}
+impl PrivateLinkResourceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
@@ -1738,6 +2814,11 @@ pub struct PrivateLinkResourceProperties {
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
+impl PrivateLinkResourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1747,20 +2828,40 @@ pub struct PrivateLinkServiceConnectionState {
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
+impl PrivateLinkServiceConnectionState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Properties {
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
+}
+impl Properties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Provider {
     #[serde(rename = "providerName")]
     pub provider_name: String,
 }
+impl Provider {
+    pub fn new(provider_name: String) -> Self {
+        Self { provider_name }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
     pub resource: Resource,
+}
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Rectangle {
@@ -1773,6 +2874,11 @@ pub struct Rectangle {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub height: Option<String>,
 }
+impl Rectangle {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1782,6 +2888,11 @@ pub struct Resource {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectAudioTrackByAttribute {
     #[serde(flatten)]
@@ -1790,6 +2901,20 @@ pub struct SelectAudioTrackByAttribute {
     pub filter: select_audio_track_by_attribute::Filter,
     #[serde(rename = "filterValue", default, skip_serializing_if = "Option::is_none")]
     pub filter_value: Option<String>,
+}
+impl SelectAudioTrackByAttribute {
+    pub fn new(
+        audio_track_descriptor: AudioTrackDescriptor,
+        attribute: select_audio_track_by_attribute::Attribute,
+        filter: select_audio_track_by_attribute::Filter,
+    ) -> Self {
+        Self {
+            audio_track_descriptor,
+            attribute,
+            filter,
+            filter_value: None,
+        }
+    }
 }
 pub mod select_audio_track_by_attribute {
     use super::*;
@@ -1813,6 +2938,14 @@ pub struct SelectAudioTrackById {
     #[serde(rename = "trackId")]
     pub track_id: i64,
 }
+impl SelectAudioTrackById {
+    pub fn new(audio_track_descriptor: AudioTrackDescriptor, track_id: i64) -> Self {
+        Self {
+            audio_track_descriptor,
+            track_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectVideoTrackByAttribute {
     #[serde(flatten)]
@@ -1821,6 +2954,20 @@ pub struct SelectVideoTrackByAttribute {
     pub filter: select_video_track_by_attribute::Filter,
     #[serde(rename = "filterValue", default, skip_serializing_if = "Option::is_none")]
     pub filter_value: Option<String>,
+}
+impl SelectVideoTrackByAttribute {
+    pub fn new(
+        video_track_descriptor: VideoTrackDescriptor,
+        attribute: select_video_track_by_attribute::Attribute,
+        filter: select_video_track_by_attribute::Filter,
+    ) -> Self {
+        Self {
+            video_track_descriptor,
+            attribute,
+            filter,
+            filter_value: None,
+        }
+    }
 }
 pub mod select_video_track_by_attribute {
     use super::*;
@@ -1844,12 +2991,25 @@ pub struct SelectVideoTrackById {
     #[serde(rename = "trackId")]
     pub track_id: i64,
 }
+impl SelectVideoTrackById {
+    pub fn new(video_track_descriptor: VideoTrackDescriptor, track_id: i64) -> Self {
+        Self {
+            video_track_descriptor,
+            track_id,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<LogSpecification>,
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
+}
+impl ServiceSpecification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StandardEncoderPreset {
@@ -1860,12 +3020,27 @@ pub struct StandardEncoderPreset {
     pub codecs: Vec<Codec>,
     pub formats: Vec<Format>,
 }
+impl StandardEncoderPreset {
+    pub fn new(preset: Preset, codecs: Vec<Codec>, formats: Vec<Format>) -> Self {
+        Self {
+            preset,
+            filters: None,
+            codecs,
+            formats,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "type")]
     pub type_: storage_account::Type,
+}
+impl StorageAccount {
+    pub fn new(type_: storage_account::Type) -> Self {
+        Self { id: None, type_ }
+    }
 }
 pub mod storage_account {
     use super::*;
@@ -1882,6 +3057,11 @@ pub struct StorageEncryptedAssetDecryptionData {
     #[serde(rename = "assetFileEncryptionMetadata", default, skip_serializing_if = "Vec::is_empty")]
     pub asset_file_encryption_metadata: Vec<AssetFileEncryptionMetadata>,
 }
+impl StorageEncryptedAssetDecryptionData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingEndpoint {
     #[serde(flatten)]
@@ -1891,12 +3071,26 @@ pub struct StreamingEndpoint {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl StreamingEndpoint {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+            system_data: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEndpointAccessControl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub akamai: Option<AkamaiAccessControl>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ip: Option<IpAccessControl>,
+}
+impl StreamingEndpointAccessControl {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingEndpointListResult {
@@ -1906,6 +3100,11 @@ pub struct StreamingEndpointListResult {
     pub odata_count: Option<i32>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl StreamingEndpointListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingEndpointProperties {
@@ -1942,6 +3141,28 @@ pub struct StreamingEndpointProperties {
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
 }
+impl StreamingEndpointProperties {
+    pub fn new(scale_units: i32) -> Self {
+        Self {
+            description: None,
+            scale_units,
+            availability_set_name: None,
+            access_control: None,
+            max_cache_age: None,
+            custom_host_names: Vec::new(),
+            host_name: None,
+            cdn_enabled: None,
+            cdn_provider: None,
+            cdn_profile: None,
+            provisioning_state: None,
+            resource_state: None,
+            cross_site_access_policies: None,
+            free_trial_end_time: None,
+            created: None,
+            last_modified: None,
+        }
+    }
+}
 pub mod streaming_endpoint_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1959,6 +3180,11 @@ pub struct StreamingEntityScaleUnit {
     #[serde(rename = "scaleUnit", default, skip_serializing_if = "Option::is_none")]
     pub scale_unit: Option<i32>,
 }
+impl StreamingEntityScaleUnit {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocator {
     #[serde(flatten)]
@@ -1968,12 +3194,22 @@ pub struct StreamingLocator {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl StreamingLocator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocatorCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingLocator>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl StreamingLocatorCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingLocatorContentKey {
@@ -1988,6 +3224,18 @@ pub struct StreamingLocatorContentKey {
     pub policy_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tracks: Vec<TrackSelection>,
+}
+impl StreamingLocatorContentKey {
+    pub fn new(id: String) -> Self {
+        Self {
+            id,
+            type_: None,
+            label_reference_in_streaming_policy: None,
+            value: None,
+            policy_name: None,
+            tracks: Vec::new(),
+        }
+    }
 }
 pub mod streaming_locator_content_key {
     use super::*;
@@ -2021,6 +3269,22 @@ pub struct StreamingLocatorProperties {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filters: Vec<String>,
 }
+impl StreamingLocatorProperties {
+    pub fn new(asset_name: String, streaming_policy_name: String) -> Self {
+        Self {
+            asset_name,
+            created: None,
+            start_time: None,
+            end_time: None,
+            streaming_locator_id: None,
+            streaming_policy_name,
+            default_content_key_policy_name: None,
+            content_keys: Vec::new(),
+            alternative_media_id: None,
+            filters: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingPath {
     #[serde(rename = "streamingProtocol")]
@@ -2029,6 +3293,15 @@ pub struct StreamingPath {
     pub encryption_scheme: streaming_path::EncryptionScheme,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub paths: Vec<String>,
+}
+impl StreamingPath {
+    pub fn new(streaming_protocol: streaming_path::StreamingProtocol, encryption_scheme: streaming_path::EncryptionScheme) -> Self {
+        Self {
+            streaming_protocol,
+            encryption_scheme,
+            paths: Vec::new(),
+        }
+    }
 }
 pub mod streaming_path {
     use super::*;
@@ -2056,12 +3329,22 @@ pub struct StreamingPolicy {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl StreamingPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StreamingPolicy>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl StreamingPolicyCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyContentKey {
@@ -2072,12 +3355,22 @@ pub struct StreamingPolicyContentKey {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tracks: Vec<TrackSelection>,
 }
+impl StreamingPolicyContentKey {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyContentKeys {
     #[serde(rename = "defaultKey", default, skip_serializing_if = "Option::is_none")]
     pub default_key: Option<DefaultKey>,
     #[serde(rename = "keyToTrackMappings", default, skip_serializing_if = "Vec::is_empty")]
     pub key_to_track_mappings: Vec<StreamingPolicyContentKey>,
+}
+impl StreamingPolicyContentKeys {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingPolicyFairPlayConfiguration {
@@ -2086,12 +3379,25 @@ pub struct StreamingPolicyFairPlayConfiguration {
     #[serde(rename = "allowPersistentLicense")]
     pub allow_persistent_license: bool,
 }
+impl StreamingPolicyFairPlayConfiguration {
+    pub fn new(allow_persistent_license: bool) -> Self {
+        Self {
+            custom_license_acquisition_url_template: None,
+            allow_persistent_license,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyPlayReadyConfiguration {
     #[serde(rename = "customLicenseAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_license_acquisition_url_template: Option<String>,
     #[serde(rename = "playReadyCustomAttributes", default, skip_serializing_if = "Option::is_none")]
     pub play_ready_custom_attributes: Option<String>,
+}
+impl StreamingPolicyPlayReadyConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyProperties {
@@ -2108,20 +3414,40 @@ pub struct StreamingPolicyProperties {
     #[serde(rename = "noEncryption", default, skip_serializing_if = "Option::is_none")]
     pub no_encryption: Option<NoEncryption>,
 }
+impl StreamingPolicyProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicyWidevineConfiguration {
     #[serde(rename = "customLicenseAcquisitionUrlTemplate", default, skip_serializing_if = "Option::is_none")]
     pub custom_license_acquisition_url_template: Option<String>,
+}
+impl StreamingPolicyWidevineConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncStorageKeysInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
+impl SyncStorageKeysInput {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackDescriptor {
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
+}
+impl TrackDescriptor {
+    pub fn new(odata_type: String) -> Self {
+        Self { odata_type }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackPropertyCondition {
@@ -2129,6 +3455,15 @@ pub struct TrackPropertyCondition {
     pub operation: track_property_condition::Operation,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+}
+impl TrackPropertyCondition {
+    pub fn new(property: track_property_condition::Property, operation: track_property_condition::Operation) -> Self {
+        Self {
+            property,
+            operation,
+            value: None,
+        }
+    }
 }
 pub mod track_property_condition {
     use super::*;
@@ -2149,6 +3484,11 @@ pub struct TrackSelection {
     #[serde(rename = "trackSelections", default, skip_serializing_if = "Vec::is_empty")]
     pub track_selections: Vec<TrackPropertyCondition>,
 }
+impl TrackSelection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
@@ -2156,6 +3496,15 @@ pub struct TrackedResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     pub location: String,
+}
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Transform {
@@ -2166,12 +3515,22 @@ pub struct Transform {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
+impl Transform {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransformCollection {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Transform>,
     #[serde(rename = "@odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,
+}
+impl TransformCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransformOutput {
@@ -2180,6 +3539,15 @@ pub struct TransformOutput {
     #[serde(rename = "relativePriority", default, skip_serializing_if = "Option::is_none")]
     pub relative_priority: Option<transform_output::RelativePriority>,
     pub preset: Preset,
+}
+impl TransformOutput {
+    pub fn new(preset: Preset) -> Self {
+        Self {
+            on_error: None,
+            relative_priority: None,
+            preset,
+        }
+    }
 }
 pub mod transform_output {
     use super::*;
@@ -2205,16 +3573,36 @@ pub struct TransformProperties {
     pub last_modified: Option<String>,
     pub outputs: Vec<TransformOutput>,
 }
+impl TransformProperties {
+    pub fn new(outputs: Vec<TransformOutput>) -> Self {
+        Self {
+            created: None,
+            description: None,
+            last_modified: None,
+            outputs,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransportStreamFormat {
     #[serde(flatten)]
     pub multi_bitrate_format: MultiBitrateFormat,
+}
+impl TransportStreamFormat {
+    pub fn new(multi_bitrate_format: MultiBitrateFormat) -> Self {
+        Self { multi_bitrate_format }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UtcClipTime {
     #[serde(flatten)]
     pub clip_time: ClipTime,
     pub time: String,
+}
+impl UtcClipTime {
+    pub fn new(clip_time: ClipTime, time: String) -> Self {
+        Self { clip_time, time }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Video {
@@ -2226,6 +3614,16 @@ pub struct Video {
     pub stretch_mode: Option<video::StretchMode>,
     #[serde(rename = "syncMode", default, skip_serializing_if = "Option::is_none")]
     pub sync_mode: Option<video::SyncMode>,
+}
+impl Video {
+    pub fn new(codec: Codec) -> Self {
+        Self {
+            codec,
+            key_frame_interval: None,
+            stretch_mode: None,
+            sync_mode: None,
+        }
+    }
 }
 pub mod video {
     use super::*;
@@ -2249,6 +3647,14 @@ pub struct VideoAnalyzerPreset {
     pub audio_analyzer_preset: AudioAnalyzerPreset,
     #[serde(rename = "insightsToExtract", default, skip_serializing_if = "Option::is_none")]
     pub insights_to_extract: Option<video_analyzer_preset::InsightsToExtract>,
+}
+impl VideoAnalyzerPreset {
+    pub fn new(audio_analyzer_preset: AudioAnalyzerPreset) -> Self {
+        Self {
+            audio_analyzer_preset,
+            insights_to_extract: None,
+        }
+    }
 }
 pub mod video_analyzer_preset {
     use super::*;
@@ -2275,6 +3681,19 @@ pub struct VideoLayer {
     #[serde(rename = "adaptiveBFrame", default, skip_serializing_if = "Option::is_none")]
     pub adaptive_b_frame: Option<bool>,
 }
+impl VideoLayer {
+    pub fn new(layer: Layer, bitrate: i32) -> Self {
+        Self {
+            layer,
+            bitrate,
+            max_bitrate: None,
+            b_frames: None,
+            frame_rate: None,
+            slices: None,
+            adaptive_b_frame: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoOverlay {
     #[serde(flatten)]
@@ -2286,10 +3705,25 @@ pub struct VideoOverlay {
     #[serde(rename = "cropRectangle", default, skip_serializing_if = "Option::is_none")]
     pub crop_rectangle: Option<Rectangle>,
 }
+impl VideoOverlay {
+    pub fn new(overlay: Overlay) -> Self {
+        Self {
+            overlay,
+            position: None,
+            opacity: None,
+            crop_rectangle: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoTrackDescriptor {
     #[serde(flatten)]
     pub track_descriptor: TrackDescriptor,
+}
+impl VideoTrackDescriptor {
+    pub fn new(track_descriptor: TrackDescriptor) -> Self {
+        Self { track_descriptor }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
@@ -2305,6 +3739,11 @@ pub struct SystemData {
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod system_data {
     use super::*;

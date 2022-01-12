@@ -8,6 +8,11 @@ pub struct CheckNameRequest {
     #[serde(rename = "type")]
     pub type_: check_name_request::Type,
 }
+impl CheckNameRequest {
+    pub fn new(name: String, type_: check_name_request::Type) -> Self {
+        Self { name, type_ }
+    }
+}
 pub mod check_name_request {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -24,6 +29,11 @@ pub struct CheckNameResult {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_result::Reason>,
+}
+impl CheckNameResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod check_name_result {
     use super::*;
@@ -44,6 +54,11 @@ pub struct ConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<serde_json::Value>,
 }
+impl ConnectionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod connection_properties {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -60,6 +75,15 @@ pub struct ConnectionState {
     pub description: String,
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
+}
+impl ConnectionState {
+    pub fn new(status: connection_state::Status, description: String) -> Self {
+        Self {
+            status,
+            description,
+            actions_required: None,
+        }
+    }
 }
 pub mod connection_state {
     use super::*;
@@ -78,6 +102,14 @@ pub struct DigitalTwinsDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DigitalTwinsProperties>,
 }
+impl DigitalTwinsDescription {
+    pub fn new(digital_twins_resource: DigitalTwinsResource) -> Self {
+        Self {
+            digital_twins_resource,
+            properties: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DigitalTwinsDescriptionListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -85,11 +117,24 @@ pub struct DigitalTwinsDescriptionListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DigitalTwinsDescription>,
 }
+impl DigitalTwinsDescriptionListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsEndpointResource {
     #[serde(flatten)]
     pub external_resource: ExternalResource,
     pub properties: DigitalTwinsEndpointResourceProperties,
+}
+impl DigitalTwinsEndpointResource {
+    pub fn new(properties: DigitalTwinsEndpointResourceProperties) -> Self {
+        Self {
+            external_resource: ExternalResource::default(),
+            properties,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DigitalTwinsEndpointResourceListResult {
@@ -97,6 +142,11 @@ pub struct DigitalTwinsEndpointResourceListResult {
     pub next_link: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DigitalTwinsEndpointResource>,
+}
+impl DigitalTwinsEndpointResourceListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsEndpointResourceProperties {
@@ -112,6 +162,18 @@ pub struct DigitalTwinsEndpointResourceProperties {
     pub dead_letter_secret: Option<String>,
     #[serde(rename = "deadLetterUri", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_uri: Option<String>,
+}
+impl DigitalTwinsEndpointResourceProperties {
+    pub fn new(endpoint_type: digital_twins_endpoint_resource_properties::EndpointType) -> Self {
+        Self {
+            endpoint_type,
+            provisioning_state: None,
+            created_time: None,
+            authentication_type: None,
+            dead_letter_secret: None,
+            dead_letter_uri: None,
+        }
+    }
 }
 pub mod digital_twins_endpoint_resource_properties {
     use super::*;
@@ -150,6 +212,11 @@ pub struct DigitalTwinsIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
+impl DigitalTwinsIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 pub mod digital_twins_identity {
     use super::*;
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -167,10 +234,20 @@ pub struct DigitalTwinsPatchDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DigitalTwinsPatchProperties>,
 }
+impl DigitalTwinsPatchDescription {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DigitalTwinsPatchProperties {
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<digital_twins_patch_properties::PublicNetworkAccess>,
+}
+impl DigitalTwinsPatchProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod digital_twins_patch_properties {
     use super::*;
@@ -194,6 +271,11 @@ pub struct DigitalTwinsProperties {
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<digital_twins_properties::PublicNetworkAccess>,
+}
+impl DigitalTwinsProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub mod digital_twins_properties {
     use super::*;
@@ -231,6 +313,18 @@ pub struct DigitalTwinsResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<DigitalTwinsIdentity>,
 }
+impl DigitalTwinsResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            tags: None,
+            identity: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -240,10 +334,20 @@ pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
+impl ErrorDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
+}
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventGrid {
@@ -255,6 +359,20 @@ pub struct EventGrid {
     pub access_key1: String,
     #[serde(rename = "accessKey2", default, skip_serializing_if = "Option::is_none")]
     pub access_key2: Option<String>,
+}
+impl EventGrid {
+    pub fn new(
+        digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties,
+        topic_endpoint: String,
+        access_key1: String,
+    ) -> Self {
+        Self {
+            digital_twins_endpoint_resource_properties,
+            topic_endpoint,
+            access_key1,
+            access_key2: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHub {
@@ -269,6 +387,17 @@ pub struct EventHub {
     #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
     pub entity_path: Option<String>,
 }
+impl EventHub {
+    pub fn new(digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties) -> Self {
+        Self {
+            digital_twins_endpoint_resource_properties,
+            connection_string_primary_key: None,
+            connection_string_secondary_key: None,
+            endpoint_uri: None,
+            entity_path: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExternalResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -277,6 +406,11 @@ pub struct ExternalResource {
     pub name: Option<String>,
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+}
+impl ExternalResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 pub type GroupId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -289,6 +423,16 @@ pub struct GroupIdInformation {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
+impl GroupIdInformation {
+    pub fn new(properties: serde_json::Value) -> Self {
+        Self {
+            properties,
+            id: None,
+            name: None,
+            type_: None,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupIdInformationProperties {
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
@@ -298,10 +442,20 @@ pub struct GroupIdInformationProperties {
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
+impl GroupIdInformationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupIdInformationResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GroupIdInformation>,
+}
+impl GroupIdInformationResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
@@ -314,6 +468,11 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
 }
+impl Operation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -325,6 +484,11 @@ pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
+impl OperationDisplay {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -332,10 +496,20 @@ pub struct OperationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
+impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnection {
@@ -347,10 +521,25 @@ pub struct PrivateEndpointConnection {
     pub type_: Option<String>,
     pub properties: serde_json::Value,
 }
+impl PrivateEndpointConnection {
+    pub fn new(properties: serde_json::Value) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            properties,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionsResponse {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+}
+impl PrivateEndpointConnectionsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBus {
@@ -364,4 +553,15 @@ pub struct ServiceBus {
     pub endpoint_uri: Option<String>,
     #[serde(rename = "entityPath", default, skip_serializing_if = "Option::is_none")]
     pub entity_path: Option<String>,
+}
+impl ServiceBus {
+    pub fn new(digital_twins_endpoint_resource_properties: DigitalTwinsEndpointResourceProperties) -> Self {
+        Self {
+            digital_twins_endpoint_resource_properties,
+            primary_connection_string: None,
+            secondary_connection_string: None,
+            endpoint_uri: None,
+            entity_path: None,
+        }
+    }
 }

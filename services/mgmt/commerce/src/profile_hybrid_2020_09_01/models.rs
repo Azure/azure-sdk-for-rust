@@ -9,10 +9,20 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
+impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InfoField {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub project: Option<String>,
+}
+impl InfoField {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MeterInfo {
@@ -37,6 +47,11 @@ pub struct MeterInfo {
     #[serde(rename = "IncludedQuantity", default, skip_serializing_if = "Option::is_none")]
     pub included_quantity: Option<f32>,
 }
+impl MeterInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonetaryCommitment {
     #[serde(flatten)]
@@ -45,6 +60,15 @@ pub struct MonetaryCommitment {
     pub tiered_discount: Option<serde_json::Value>,
     #[serde(rename = "ExcludedMeterIds", default, skip_serializing_if = "Vec::is_empty")]
     pub excluded_meter_ids: Vec<String>,
+}
+impl MonetaryCommitment {
+    pub fn new(offer_term_info: OfferTermInfo) -> Self {
+        Self {
+            offer_term_info,
+            tiered_discount: None,
+            excluded_meter_ids: Vec::new(),
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonetaryCredit {
@@ -55,12 +79,29 @@ pub struct MonetaryCredit {
     #[serde(rename = "ExcludedMeterIds", default, skip_serializing_if = "Vec::is_empty")]
     pub excluded_meter_ids: Vec<String>,
 }
+impl MonetaryCredit {
+    pub fn new(offer_term_info: OfferTermInfo) -> Self {
+        Self {
+            offer_term_info,
+            credit: None,
+            excluded_meter_ids: Vec::new(),
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfferTermInfo {
     #[serde(rename = "Name")]
     pub name: offer_term_info::Name,
     #[serde(rename = "EffectiveDate", default, skip_serializing_if = "Option::is_none")]
     pub effective_date: Option<String>,
+}
+impl OfferTermInfo {
+    pub fn new(name: offer_term_info::Name) -> Self {
+        Self {
+            name,
+            effective_date: None,
+        }
+    }
 }
 pub mod offer_term_info {
     use super::*;
@@ -85,12 +126,30 @@ pub struct RateCardQueryParameters {
     #[serde(rename = "RegionInfo")]
     pub region_info: String,
 }
+impl RateCardQueryParameters {
+    pub fn new(offer_durable_id: String, currency: String, locale: String, region_info: String) -> Self {
+        Self {
+            offer_durable_id,
+            currency,
+            locale,
+            region_info,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecurringCharge {
     #[serde(flatten)]
     pub offer_term_info: OfferTermInfo,
     #[serde(rename = "RecurringCharge", default, skip_serializing_if = "Option::is_none")]
     pub recurring_charge: Option<i64>,
+}
+impl RecurringCharge {
+    pub fn new(offer_term_info: OfferTermInfo) -> Self {
+        Self {
+            offer_term_info,
+            recurring_charge: None,
+        }
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceRateCardInfo {
@@ -105,6 +164,11 @@ pub struct ResourceRateCardInfo {
     #[serde(rename = "Meters", default, skip_serializing_if = "Vec::is_empty")]
     pub meters: Vec<MeterInfo>,
 }
+impl ResourceRateCardInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageAggregation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -116,12 +180,22 @@ pub struct UsageAggregation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UsageSample>,
 }
+impl UsageAggregation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageAggregationListResult {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<UsageAggregation>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+}
+impl UsageAggregationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageSample {
@@ -149,4 +223,9 @@ pub struct UsageSample {
     pub info_fields: Option<InfoField>,
     #[serde(rename = "instanceData", default, skip_serializing_if = "Option::is_none")]
     pub instance_data: Option<String>,
+}
+impl UsageSample {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
