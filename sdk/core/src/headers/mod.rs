@@ -22,7 +22,7 @@ pub trait AddAsHeader {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError>;
+    ) -> Result<(), crate::errors::HttpHeaderError>;
 }
 
 #[must_use]
@@ -44,7 +44,7 @@ pub fn add_optional_header<T: AddAsHeader>(item: &Option<T>, mut builder: Builde
 pub fn add_optional_header2<T: AddAsHeader>(
     item: &Option<T>,
     request: &mut crate::Request,
-) -> Result<(), crate::errors::HTTPHeaderError> {
+) -> Result<(), crate::errors::HttpHeaderError> {
     if let Some(item) = item {
         item.add_as_header2(request)?
     }
@@ -59,7 +59,7 @@ pub fn add_mandatory_header<T: AddAsHeader>(item: &T, builder: Builder) -> Build
 pub fn add_mandatory_header2<T: AddAsHeader>(
     item: &T,
     request: &mut crate::Request,
-) -> Result<(), crate::errors::HTTPHeaderError> {
+) -> Result<(), crate::errors::HttpHeaderError> {
     item.add_as_header2(request)
 }
 

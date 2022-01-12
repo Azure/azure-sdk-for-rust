@@ -24,7 +24,7 @@ impl AddAsHeader for ConditionAppendPosition {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             "x-ms-blob-condition-appendpos",
             http::header::HeaderValue::from_str(&self.0.to_string())?,

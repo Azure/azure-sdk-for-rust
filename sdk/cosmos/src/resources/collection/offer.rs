@@ -32,7 +32,7 @@ impl AddAsHeader for Offer {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         let (header_name, header_value) = match self {
             Offer::Throughput(throughput) => {
                 (headers::HEADER_OFFER_THROUGHPUT, throughput.to_string())
