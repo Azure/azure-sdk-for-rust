@@ -8,15 +8,16 @@ pub struct AzureCapacity {
     pub scale_type: azure_capacity::ScaleType,
     pub minimum: i64,
     pub maximum: i64,
-    pub default: i64,
+    #[serde(rename = "default")]
+    pub default_: i64,
 }
 impl AzureCapacity {
-    pub fn new(scale_type: azure_capacity::ScaleType, minimum: i64, maximum: i64, default: i64) -> Self {
+    pub fn new(scale_type: azure_capacity::ScaleType, minimum: i64, maximum: i64, default_: i64) -> Self {
         Self {
             scale_type,
             minimum,
             maximum,
-            default,
+            default_,
         }
     }
 }

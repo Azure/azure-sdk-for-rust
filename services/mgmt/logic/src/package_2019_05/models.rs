@@ -2353,8 +2353,8 @@ pub struct IntegrationServiceEnvironmentSkuCapacity {
     pub minimum: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i32>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<i32>,
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<IntegrationServiceEnvironmentSkuScaleType>,
 }

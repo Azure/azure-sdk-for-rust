@@ -280,8 +280,8 @@ impl SubscriptionQuotaItemList {
 pub struct SubscriptionQuotaItemProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i32>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<i32>,
 }
 impl SubscriptionQuotaItemProperties {
     pub fn new() -> Self {

@@ -119,8 +119,8 @@ pub struct AutoPauseDelayTimeRange {
     pub max_value: Option<i32>,
     #[serde(rename = "stepSize", default, skip_serializing_if = "Option::is_none")]
     pub step_size: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i32>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<auto_pause_delay_time_range::Unit>,
     #[serde(rename = "doNotPauseValue", default, skip_serializing_if = "Option::is_none")]

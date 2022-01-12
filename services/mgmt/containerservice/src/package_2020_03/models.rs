@@ -1655,8 +1655,8 @@ pub struct OrchestratorVersionProfile {
     pub orchestrator_type: String,
     #[serde(rename = "orchestratorVersion")]
     pub orchestrator_version: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<bool>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<bool>,
     #[serde(rename = "isPreview", default, skip_serializing_if = "Option::is_none")]
     pub is_preview: Option<bool>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1667,7 +1667,7 @@ impl OrchestratorVersionProfile {
         Self {
             orchestrator_type,
             orchestrator_version,
-            default: None,
+            default_: None,
             is_preview: None,
             upgrades: Vec::new(),
         }

@@ -2299,11 +2299,16 @@ pub mod scale_action {
 pub struct ScaleCapacity {
     pub minimum: String,
     pub maximum: String,
-    pub default: String,
+    #[serde(rename = "default")]
+    pub default_: String,
 }
 impl ScaleCapacity {
-    pub fn new(minimum: String, maximum: String, default: String) -> Self {
-        Self { minimum, maximum, default }
+    pub fn new(minimum: String, maximum: String, default_: String) -> Self {
+        Self {
+            minimum,
+            maximum,
+            default_,
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

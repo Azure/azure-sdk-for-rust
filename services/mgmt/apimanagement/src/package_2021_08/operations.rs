@@ -18739,7 +18739,7 @@ pub mod private_endpoint_connection {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Created201,
+            Accepted202,
             Ok200(models::PrivateEndpointConnection),
         }
         #[derive(Debug, thiserror :: Error)]
@@ -18801,7 +18801,7 @@ pub mod private_endpoint_connection {
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
                     let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
                     match rsp_status {
-                        http::StatusCode::CREATED => Ok(Response::Created201),
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateEndpointConnection =

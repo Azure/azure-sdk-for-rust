@@ -201,8 +201,8 @@ impl K8sResourceRequirements {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct K8sScheduling {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<K8sSchedulingOptions>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<K8sSchedulingOptions>,
 }
 impl K8sScheduling {
     pub fn new() -> Self {

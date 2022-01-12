@@ -288,6 +288,8 @@ impl ApplicationPackageContact {
 pub struct ApplicationPackageLockingPolicyDefinition {
     #[serde(rename = "allowedActions", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_actions: Vec<String>,
+    #[serde(rename = "allowedDataActions", default, skip_serializing_if = "Vec::is_empty")]
+    pub allowed_data_actions: Vec<String>,
 }
 impl ApplicationPackageLockingPolicyDefinition {
     pub fn new() -> Self {

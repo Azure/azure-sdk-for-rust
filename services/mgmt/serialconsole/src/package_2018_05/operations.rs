@@ -108,27 +108,27 @@ impl Client {
         list_operations::Builder { client: self.clone() }
     }
     #[doc = "Get the disabled status for a subscription"]
-    pub fn get_console_status(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> get_console_status::Builder {
+    pub fn get_console_status(&self, subscription_id: impl Into<String>, default_: impl Into<String>) -> get_console_status::Builder {
         get_console_status::Builder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
-            default: default.into(),
+            default_: default_.into(),
         }
     }
     #[doc = "Disable Serial Console for a subscription"]
-    pub fn disable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> disable_console::Builder {
+    pub fn disable_console(&self, subscription_id: impl Into<String>, default_: impl Into<String>) -> disable_console::Builder {
         disable_console::Builder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
-            default: default.into(),
+            default_: default_.into(),
         }
     }
     #[doc = "Enable Serial Console for a subscription"]
-    pub fn enable_console(&self, subscription_id: impl Into<String>, default: impl Into<String>) -> enable_console::Builder {
+    pub fn enable_console(&self, subscription_id: impl Into<String>, default_: impl Into<String>) -> enable_console::Builder {
         enable_console::Builder {
             client: self.clone(),
             subscription_id: subscription_id.into(),
-            default: default.into(),
+            default_: default_.into(),
         }
     }
 }
@@ -224,7 +224,7 @@ pub mod get_console_status {
     pub struct Builder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
-        pub(crate) default: String,
+        pub(crate) default_: String,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::SerialConsoleStatus, Error>> {
@@ -233,7 +233,7 @@ pub mod get_console_status {
                     "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}",
                     self.client.endpoint(),
                     &self.subscription_id,
-                    &self.default
+                    &self.default_
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -304,7 +304,7 @@ pub mod disable_console {
     pub struct Builder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
-        pub(crate) default: String,
+        pub(crate) default_: String,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::DisableSerialConsoleResult, Error>> {
@@ -313,7 +313,7 @@ pub mod disable_console {
                     "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/disableConsole",
                     self.client.endpoint(),
                     &self.subscription_id,
-                    &self.default
+                    &self.default_
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();
@@ -385,7 +385,7 @@ pub mod enable_console {
     pub struct Builder {
         pub(crate) client: super::Client,
         pub(crate) subscription_id: String,
-        pub(crate) default: String,
+        pub(crate) default_: String,
     }
     impl Builder {
         pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::EnableSerialConsoleResult, Error>> {
@@ -394,7 +394,7 @@ pub mod enable_console {
                     "{}/subscriptions/{}/providers/Microsoft.SerialConsole/consoleServices/{}/enableConsole",
                     self.client.endpoint(),
                     &self.subscription_id,
-                    &self.default
+                    &self.default_
                 );
                 let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                 let mut req_builder = http::request::Builder::new();

@@ -2785,8 +2785,8 @@ pub struct BreakOutCategoryPolicies {
     pub allow: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub optimize: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<bool>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<bool>,
 }
 impl BreakOutCategoryPolicies {
     pub fn new() -> Self {
@@ -8079,8 +8079,8 @@ pub struct O365BreakOutCategoryPolicies {
     pub allow: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub optimize: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<bool>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<bool>,
 }
 impl O365BreakOutCategoryPolicies {
     pub fn new() -> Self {

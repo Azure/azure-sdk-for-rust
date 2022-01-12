@@ -510,7 +510,8 @@ pub mod localized_operation_definition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizedOperationDisplayDefinition {
-    pub default: serde_json::Value,
+    #[serde(rename = "default")]
+    pub default_: serde_json::Value,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub en: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -547,9 +548,9 @@ pub struct LocalizedOperationDisplayDefinition {
     pub zh_hant: Option<serde_json::Value>,
 }
 impl LocalizedOperationDisplayDefinition {
-    pub fn new(default: serde_json::Value) -> Self {
+    pub fn new(default_: serde_json::Value) -> Self {
         Self {
-            default,
+            default_,
             en: None,
             cs: None,
             de: None,
@@ -1570,8 +1571,8 @@ pub struct SkuCapacity {
     pub minimum: i32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i32>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<i32>,
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<sku_capacity::ScaleType>,
 }
@@ -1580,7 +1581,7 @@ impl SkuCapacity {
         Self {
             minimum,
             maximum: None,
-            default: None,
+            default_: None,
             scale_type: None,
         }
     }

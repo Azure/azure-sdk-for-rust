@@ -222,5 +222,17 @@ pub mod sku {
     pub enum Name {
         #[serde(rename = "SafeNet Luna Network HSM A790")]
         SafeNetLunaNetworkHsmA790,
+        #[serde(rename = "payShield10K_LMK1_CPS60")]
+        PayShield10KLmk1Cps60,
+        #[serde(rename = "payShield10K_LMK1_CPS250")]
+        PayShield10KLmk1Cps250,
+        #[serde(rename = "payShield10K_LMK1_CPS2500")]
+        PayShield10KLmk1Cps2500,
+        #[serde(rename = "payShield10K_LMK2_CPS60")]
+        PayShield10KLmk2Cps60,
+        #[serde(rename = "payShield10K_LMK2_CPS250")]
+        PayShield10KLmk2Cps250,
+        #[serde(rename = "payShield10K_LMK2_CPS2500")]
+        PayShield10KLmk2Cps2500,
     }
 }

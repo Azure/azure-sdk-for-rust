@@ -1945,8 +1945,8 @@ pub struct ResourceSkuCapacity {
     pub minimum: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i64>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<i64>,
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<resource_sku_capacity::ScaleType>,
 }

@@ -395,8 +395,8 @@ impl LabServicesSkuCapabilities {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LabServicesSkuCapacity {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<i64>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -998,15 +998,16 @@ pub struct OrchestratorVersionProfile {
     pub orchestrator_type: String,
     #[serde(rename = "orchestratorVersion")]
     pub orchestrator_version: String,
-    pub default: bool,
+    #[serde(rename = "default")]
+    pub default_: bool,
     pub upgrades: Vec<OrchestratorProfile>,
 }
 impl OrchestratorVersionProfile {
-    pub fn new(orchestrator_type: String, orchestrator_version: String, default: bool, upgrades: Vec<OrchestratorProfile>) -> Self {
+    pub fn new(orchestrator_type: String, orchestrator_version: String, default_: bool, upgrades: Vec<OrchestratorProfile>) -> Self {
         Self {
             orchestrator_type,
             orchestrator_version,
-            default,
+            default_,
             upgrades,
         }
     }

@@ -11,3 +11,11 @@ pub use package_2021_03_12_preview::{models, operations, operations::Client, ope
 pub mod package_2021_06_15_preview;
 #[cfg(all(feature = "package-2021-06-15-preview", not(feature = "no-default-version")))]
 pub use package_2021_06_15_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "package-2021-08-30-preview")]
+pub mod package_2021_08_30_preview;
+#[cfg(all(feature = "package-2021-08-30-preview", not(feature = "no-default-version")))]
+pub use package_2021_08_30_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "package-2021-09-10-preview")]
+pub mod package_2021_09_10_preview;
+#[cfg(all(feature = "package-2021-09-10-preview", not(feature = "no-default-version")))]
+pub use package_2021_09_10_preview::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

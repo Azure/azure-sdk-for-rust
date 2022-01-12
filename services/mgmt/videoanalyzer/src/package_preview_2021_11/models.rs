@@ -753,8 +753,8 @@ pub struct ParameterDeclaration {
     pub type_: parameter_declaration::Type,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<String>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<String>,
 }
 impl ParameterDeclaration {
     pub fn new(name: String, type_: parameter_declaration::Type) -> Self {
@@ -762,7 +762,7 @@ impl ParameterDeclaration {
             name,
             type_,
             description: None,
-            default: None,
+            default_: None,
         }
     }
 }

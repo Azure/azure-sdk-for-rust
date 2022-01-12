@@ -7,10 +7,6 @@
 pub mod package_preview_2021_08;
 #[cfg(all(feature = "package-preview-2021-08", not(feature = "no-default-version")))]
 pub use package_preview_2021_08::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
-#[cfg(feature = "package-preview-2021-12")]
-pub mod package_preview_2021_12;
-#[cfg(all(feature = "package-preview-2021-12", not(feature = "no-default-version")))]
-pub use package_preview_2021_12::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
 #[cfg(feature = "package-composite-v1")]
 pub mod package_composite_v1;
 #[cfg(all(feature = "package-composite-v1", not(feature = "no-default-version")))]

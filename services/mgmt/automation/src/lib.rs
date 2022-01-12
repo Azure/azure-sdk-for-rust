@@ -31,3 +31,7 @@ pub use package_2020_01_13_preview::{models, operations, operations::Client, ope
 pub mod package_2021_06_22;
 #[cfg(all(feature = "package-2021-06-22", not(feature = "no-default-version")))]
 pub use package_2021_06_22::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};
+#[cfg(feature = "package-2022-01-31")]
+pub mod package_2022_01_31;
+#[cfg(all(feature = "package-2022-01-31", not(feature = "no-default-version")))]
+pub use package_2022_01_31::{models, operations, operations::Client, operations::ClientBuilder, operations::Error};

@@ -3,6 +3,18 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvailabilityZonePeers {
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
+    pub availability_zone: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub peers: Vec<Peers>,
+}
+impl AvailabilityZonePeers {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckResourceNameResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -25,6 +37,44 @@ pub mod check_resource_name_result {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckZonePeersRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "subscriptionIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub subscription_ids: Vec<String>,
+}
+impl CheckZonePeersRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckZonePeersResult {
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "availabilityZonePeers", default, skip_serializing_if = "Vec::is_empty")]
+    pub availability_zone_peers: Vec<AvailabilityZonePeers>,
+}
+impl CheckZonePeersResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorAdditionalInfo {
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -32,6 +82,24 @@ pub struct ErrorDefinition {
     pub code: Option<String>,
 }
 impl ErrorDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorDetail {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetail>,
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+impl ErrorDetail {
     pub fn new() -> Self {
         Self::default()
     }
@@ -174,6 +242,18 @@ pub struct PairedRegion {
     pub subscription_id: Option<String>,
 }
 impl PairedRegion {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Peers {
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
+    pub availability_zone: Option<String>,
+}
+impl Peers {
     pub fn new() -> Self {
         Self::default()
     }

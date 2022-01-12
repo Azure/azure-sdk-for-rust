@@ -640,8 +640,8 @@ pub struct ServiceProviderParameter {
     pub description: Option<String>,
     #[serde(rename = "helpUrl", default, skip_serializing_if = "Option::is_none")]
     pub help_url: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Option<String>,
+    #[serde(rename = "default", default, skip_serializing_if = "Option::is_none")]
+    pub default_: Option<String>,
 }
 impl ServiceProviderParameter {
     pub fn new() -> Self {

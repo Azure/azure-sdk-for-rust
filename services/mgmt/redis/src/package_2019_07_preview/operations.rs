@@ -1753,14 +1753,14 @@ pub mod patch_schedules {
             &self,
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
-            default: impl Into<String>,
+            default_: impl Into<String>,
             subscription_id: impl Into<String>,
         ) -> get::Builder {
             get::Builder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
-                default: default.into(),
+                default_: default_.into(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -1768,7 +1768,7 @@ pub mod patch_schedules {
             &self,
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
-            default: impl Into<String>,
+            default_: impl Into<String>,
             parameters: impl Into<models::RedisPatchSchedule>,
             subscription_id: impl Into<String>,
         ) -> create_or_update::Builder {
@@ -1776,7 +1776,7 @@ pub mod patch_schedules {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
-                default: default.into(),
+                default_: default_.into(),
                 parameters: parameters.into(),
                 subscription_id: subscription_id.into(),
             }
@@ -1785,14 +1785,14 @@ pub mod patch_schedules {
             &self,
             resource_group_name: impl Into<String>,
             name: impl Into<String>,
-            default: impl Into<String>,
+            default_: impl Into<String>,
             subscription_id: impl Into<String>,
         ) -> delete::Builder {
             delete::Builder {
                 client: self.0.clone(),
                 resource_group_name: resource_group_name.into(),
                 name: name.into(),
-                default: default.into(),
+                default_: default_.into(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -1897,7 +1897,7 @@ pub mod patch_schedules {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
-            pub(crate) default: String,
+            pub(crate) default_: String,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -1909,7 +1909,7 @@ pub mod patch_schedules {
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.name,
-                        &self.default
+                        &self.default_
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -1976,7 +1976,7 @@ pub mod patch_schedules {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
-            pub(crate) default: String,
+            pub(crate) default_: String,
             pub(crate) parameters: models::RedisPatchSchedule,
             pub(crate) subscription_id: String,
         }
@@ -1989,7 +1989,7 @@ pub mod patch_schedules {
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.name,
-                        &self.default
+                        &self.default_
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
@@ -2063,7 +2063,7 @@ pub mod patch_schedules {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
             pub(crate) name: String,
-            pub(crate) default: String,
+            pub(crate) default_: String,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -2075,7 +2075,7 @@ pub mod patch_schedules {
                         &self.subscription_id,
                         &self.resource_group_name,
                         &self.name,
-                        &self.default
+                        &self.default_
                     );
                     let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
                     let mut req_builder = http::request::Builder::new();
