@@ -24,25 +24,25 @@ pub enum Error {
 
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
-        Self::Core(azure_core::Error::JsonError(error))
+        Self::Core(azure_core::Error::Json(error))
     }
 }
 
 impl From<azure_core::StreamError> for Error {
     fn from(error: azure_core::StreamError) -> Self {
-        Self::Core(azure_core::Error::StreamError(error))
+        Self::Core(azure_core::Error::Stream(error))
     }
 }
 
 impl From<azure_core::HttpError> for Error {
     fn from(error: azure_core::HttpError) -> Self {
-        Self::Core(azure_core::Error::HttpError(error))
+        Self::Core(azure_core::Error::Http(error))
     }
 }
 
 impl From<http::Error> for Error {
     fn from(error: http::Error) -> Self {
-        Self::Core(azure_core::Error::HttpPrepareError(error))
+        Self::Core(azure_core::Error::HttpPrepare(error))
     }
 }
 

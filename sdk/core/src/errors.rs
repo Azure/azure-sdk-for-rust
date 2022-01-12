@@ -27,38 +27,29 @@ pub enum HttpHeaderError {
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("pipeline error: {0}")]
-    PipelineError(#[from] PipelineError),
+    Pipeline(#[from] PipelineError),
     #[error("policy error: {0}")]
-    PolicyError(Box<dyn std::error::Error + Send + Sync>),
+    Policy(Box<dyn std::error::Error + Send + Sync>),
     #[error("parsing error: {0}")]
-    ParsingError(#[from] ParsingError),
+    Parsing(#[from] ParsingError),
     #[error("error getting token: {0}")]
-    GetTokenError(Box<dyn std::error::Error + Send + Sync>),
+    GetToken(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]
-    HttpError(#[from] HttpError),
+    Http(#[from] HttpError),
     #[error("to str error: {0}")]
-    ToStrError(#[from] http::header::ToStrError),
+    ToStr(#[from] http::header::ToStrError),
     #[error("header error: {0}")]
-    HeaderError(#[from] HttpHeaderError),
+    Header(#[from] HttpHeaderError),
     #[error("header not found: {0}")]
     HeaderNotFound(String),
     #[error("at least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
-    #[error(
-        "the expected query parameter {} was not found in the provided Url: {:?}",
-        expected_parameter,
-        url
-    )]
-    UrlQueryParameterNotFound {
-        expected_parameter: String,
-        url: url::Url,
-    },
     #[error("error preparing HTTP request: {0}")]
-    HttpPrepareError(#[from] http::Error),
+    HttpPrepare(#[from] http::Error),
     #[error(transparent)]
-    StreamError(#[from] StreamError),
+    Stream(#[from] StreamError),
     #[error("JSON error: {0}")]
-    JsonError(#[from] serde_json::Error),
+    Json(#[from] serde_json::Error),
     #[error("Other error: {0}")]
     Other(Box<dyn std::error::Error + Send + Sync + 'static>),
 }
