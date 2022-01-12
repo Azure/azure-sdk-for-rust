@@ -486,7 +486,8 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
             quote! {}
         };
         // see if a field should be wrapped in a Box
-        if cg.should_box_property(prop_nm) {
+        let should_box = cg.should_box_property(prop_nm);
+        if should_box {
             type_name = quote! { Box<#type_name> };
         }
         props.extend(quote! {
@@ -498,9 +499,18 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
             new_fn_params.push(quote! { #field_name: #type_name });
             new_fn_body.extend(quote! { #field_name, });
         } else if is_vec {
-            new_fn_body.extend(quote! { #field_name: Vec::new(), });
+            if should_box {
+                new_fn_body.extend(quote! { #field_name: Box::new(Vec::new()), });
+            } else {
+                new_fn_body.extend(quote! { #field_name: Vec::new(), });
+            }
         } else {
-            new_fn_body.extend(quote! { #field_name: None, });
+            #[allow(clippy::collapsible_else_if)]
+            if should_box {
+                new_fn_body.extend(quote! { #field_name: Box::new(None), });
+            } else {
+                new_fn_body.extend(quote! { #field_name: None, });
+            }
         }
     }
 
@@ -518,7 +528,6 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         }
     };
     code.extend(struct_code);
-    // code.extend(create_struct_new_fn(schema, &struct_name_code));
 
     code.extend(if schema.implement_default() {
         quote! {
@@ -551,16 +560,6 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
 
     Ok(code)
 }
-
-// fn create_struct_new_fn(schema: &SchemaGen, struct_name_code: &TokenStream) -> TokenStream {
-//     quote!{
-//         impl #struct_name_code {
-//             pub fn new() -> Self {
-//                 Self::default()
-//             }
-//         }
-//     }
-// }
 
 struct TypeCode {
     type_name: TokenStream,
