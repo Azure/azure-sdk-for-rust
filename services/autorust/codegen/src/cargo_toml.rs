@@ -42,6 +42,9 @@ default = ["{}", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []
+
+[package.metadata.docs.rs]
+all-features = true
 "#,
             crate_name, default
         )
