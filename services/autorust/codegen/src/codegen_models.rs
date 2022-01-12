@@ -413,8 +413,10 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
     let mut code = TokenStream::new();
     let mut mod_code = TokenStream::new();
     let mut props = TokenStream::new();
+    let mut new_fn_params: Vec<TokenStream> = Vec::new();
+    let mut new_fn_body = TokenStream::new();
     let ns = struct_name.to_snake_case_ident().map_err(Error::StructName)?;
-    let nm = struct_name.to_camel_case_ident().map_err(Error::StructName)?;
+    let struct_name_code = struct_name.to_camel_case_ident().map_err(Error::StructName)?;
     let required = schema.required();
 
     for schema in schema.all_of() {
@@ -425,11 +427,17 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
             #[serde(flatten)]
             pub #field_name: #type_name,
         });
+        if schema.implement_default() {
+            new_fn_body.extend(quote! { #field_name: #type_name::default(), });
+        } else {
+            new_fn_params.push(quote! { #field_name: #type_name });
+            new_fn_body.extend(quote! { #field_name, });
+        }
     }
 
     for property in schema.properties() {
         let property_name = property.name.as_str();
-        let nm = property_name.to_snake_case_ident().map_err(Error::StructName)?;
+        let field_name = property_name.to_snake_case_ident().map_err(Error::StructName)?;
         let prop_nm = &PropertyName {
             file_path: schema.doc_file.clone(),
             schema_name: struct_name.to_owned(),
@@ -439,26 +447,27 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         let lowercase_workaround = cg.should_workaround_case();
 
         let TypeCode {
-            type_name: mut field_name,
+            mut type_name,
             code: field_code,
         } = create_struct_field_code(cg, &ns, &property.schema, property_name, lowercase_workaround)?;
+        mod_code.extend(field_code);
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path.display(), prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
 
         if cg.should_force_obj(prop_nm) {
-            field_name = quote! { serde_json::Value };
+            type_name = quote! { serde_json::Value };
         }
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
 
-        let is_vec = is_vec(&field_name);
+        let is_vec = is_vec(&type_name);
         if !is_vec {
-            field_name = add_option(!is_required, field_name);
+            type_name = add_option(!is_required, type_name);
         }
-        mod_code.extend(field_code);
+
         let mut serde_attrs: Vec<TokenStream> = Vec::new();
-        if nm.to_string() != property_name {
+        if field_name.to_string() != property_name {
             serde_attrs.push(quote! { rename = #property_name });
         }
         if !is_required {
@@ -478,12 +487,21 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         };
         // see if a field should be wrapped in a Box
         if cg.should_box_property(prop_nm) {
-            field_name = quote! { Box<#field_name> };
+            type_name = quote! { Box<#type_name> };
         }
         props.extend(quote! {
             #serde
-            pub #nm: #field_name,
+            pub #field_name: #type_name,
         });
+
+        if is_required {
+            new_fn_params.push(quote! { #field_name: #type_name });
+            new_fn_body.extend(quote! { #field_name, });
+        } else if is_vec {
+            new_fn_body.extend(quote! { #field_name: Vec::new(), });
+        } else {
+            new_fn_body.extend(quote! { #field_name: None, });
+        }
     }
 
     let default_code = if schema.implement_default() {
@@ -495,11 +513,32 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
     let struct_code = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #default_code
-        pub struct #nm {
+        pub struct #struct_name_code {
             #props
         }
     };
     code.extend(struct_code);
+    // code.extend(create_struct_new_fn(schema, &struct_name_code));
+
+    code.extend(if schema.implement_default() {
+        quote! {
+            impl #struct_name_code {
+                pub fn new() -> Self {
+                    Self::default()
+                }
+            }
+        }
+    } else {
+        quote! {
+            impl #struct_name_code {
+                pub fn new(#(#new_fn_params),*) -> Self {
+                    Self {
+                        #new_fn_body
+                    }
+                }
+            }
+        }
+    });
 
     if !mod_code.is_empty() {
         code.extend(quote! {
@@ -512,6 +551,16 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
 
     Ok(code)
 }
+
+// fn create_struct_new_fn(schema: &SchemaGen, struct_name_code: &TokenStream) -> TokenStream {
+//     quote!{
+//         impl #struct_name_code {
+//             pub fn new() -> Self {
+//                 Self::default()
+//             }
+//         }
+//     }
+// }
 
 struct TypeCode {
     type_name: TokenStream,
