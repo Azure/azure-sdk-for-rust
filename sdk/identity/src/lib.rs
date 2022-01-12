@@ -43,6 +43,7 @@
 //!
 //! This crate also includes utilities for handling refresh tokens and accessing token credentials from many different sources.
 
+#![deny(missing_docs)]
 mod errors;
 
 pub mod authorization_code_flow;

@@ -75,6 +75,7 @@ pub fn naive_redirect_server(
     unreachable!()
 }
 
+#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ServerReceiveError {
