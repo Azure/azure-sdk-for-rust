@@ -166,12 +166,8 @@ impl FileSystemClient {
         uri: &str,
         http_method: http::Method,
     ) -> azure_core::Request {
-        http::request::Builder::new()
-            .method(http_method)
-            .uri(uri)
-            .body(bytes::Bytes::new())
-            .unwrap()
-            .into()
+        self.data_lake_client
+            .prepare_request_pipeline(uri, http_method)
     }
 
     pub(crate) fn prepare_file_create_request(&self, file_path: &str) -> azure_core::Request {
