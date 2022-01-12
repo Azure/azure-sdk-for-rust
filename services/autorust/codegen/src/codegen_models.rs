@@ -411,7 +411,7 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
 
 fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<TokenStream, Error> {
     let mut code = TokenStream::new();
-    let mut local_types = TokenStream::new();
+    let mut mod_code = TokenStream::new();
     let mut props = TokenStream::new();
     let ns = struct_name.to_snake_case_ident().map_err(Error::StructName)?;
     let nm = struct_name.to_camel_case_ident().map_err(Error::StructName)?;
@@ -456,7 +456,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         if !is_vec {
             field_name = add_option(!is_required, field_name);
         }
-        local_types.extend(field_code);
+        mod_code.extend(field_code);
         let mut serde_attrs: Vec<TokenStream> = Vec::new();
         if nm.to_string() != property_name {
             serde_attrs.push(quote! { rename = #property_name });
@@ -492,20 +492,20 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         quote! {}
     };
 
-    let st = quote! {
+    let struct_code = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #default_code
         pub struct #nm {
             #props
         }
     };
-    code.extend(st);
+    code.extend(struct_code);
 
-    if !local_types.is_empty() {
+    if !mod_code.is_empty() {
         code.extend(quote! {
             pub mod #ns {
                 use super::*;
-                #local_types
+                #mod_code
             }
         });
     }
