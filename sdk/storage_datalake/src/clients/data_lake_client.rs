@@ -1,12 +1,15 @@
 use crate::clients::FileSystemClient;
 use crate::operations::ListFileSystems;
 use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
+use azure_core::headers::*;
 use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
 use azure_storage::core::clients::ServiceType;
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use http::request::Builder;
 use std::sync::Arc;
 
+pub(crate) const HEADER_VERSION: &str = "x-ms-version";
+pub(crate) const AZURE_VERSION: &str = "2019-12-12";
 const DEFAULT_DNS_SUFFIX: &str = "dfs.core.windows.net";
 
 #[derive(Debug, Clone)]
@@ -92,6 +95,8 @@ impl DataLakeClient {
         Builder::new()
             .method(http_method)
             .uri(uri)
+            .header(MS_DATE, time)
+            .header(HEADER_VERSION, AZURE_VERSION)
             .body(bytes::Bytes::new())
             .unwrap()
             .into()
