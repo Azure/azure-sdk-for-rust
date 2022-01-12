@@ -115,14 +115,6 @@ impl UnexpectedValue {
     }
 }
 
-/// An unexpected HTTP Result.
-#[derive(Debug, Clone, PartialEq)]
-pub struct UnexpectedHTTPResult {
-    expected: Vec<StatusCode>,
-    received: StatusCode,
-    body: String,
-}
-
 /// An error originating from a streaming response.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
