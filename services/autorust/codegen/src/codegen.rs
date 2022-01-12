@@ -3,7 +3,7 @@ use crate::{
     spec::{self, RefKey, TypeName},
     Config, PropertyName, Spec,
 };
-use heck::CamelCase;
+use heck::ToPascalCase;
 use once_cell::sync::Lazy;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -148,7 +148,7 @@ pub fn add_option(is_option: bool, tp: TokenStream) -> TokenStream {
 pub fn type_name_gen(type_name: &TypeName, as_ref: bool, qualify_models: bool) -> Result<TokenStream, Error> {
     Ok(match type_name {
         TypeName::Reference(name) => {
-            let idt = ident(&name.to_camel_case()).map_err(Error::TypeNameForSchemaRef)?;
+            let idt = ident(&name.to_pascal_case()).map_err(Error::TypeNameForSchemaRef)?;
             let idt = if qualify_models {
                 quote! { models::#idt }
             } else {
