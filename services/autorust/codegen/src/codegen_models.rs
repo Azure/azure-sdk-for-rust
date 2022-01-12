@@ -314,15 +314,13 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
             file.extend(create_vec_alias(schema)?);
         } else if schema.is_local_enum() {
             let no_namespace = TokenStream::new();
-            let TypeCode { inner_types, .. } = create_enum(&no_namespace, schema, schema_name, false)?;
-            file.extend(inner_types);
+            let TypeCode { code: enum_code, .. } = create_enum(&no_namespace, schema, schema_name, false)?;
+            file.extend(enum_code);
         } else if schema.is_basic_type() {
             let (id, value) = create_basic_type_alias(schema_name, schema)?;
             file.extend(quote! { pub type #id = #value;});
         } else {
-            for stream in create_struct(cg, schema, schema_name)? {
-                file.extend(stream);
-            }
+            file.extend(create_struct(cg, schema, schema_name)?);
         }
     }
     Ok(file)
@@ -393,15 +391,15 @@ fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &st
     } else {
         quote! {}
     };
-    let inner_types = vec![quote! {
+    let code = quote! {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum #nm {
             #values
         }
         #default_code
-    }];
+    };
     let type_name = quote! {#namespace::#id};
-    Ok(TypeCode { type_name, inner_types })
+    Ok(TypeCode { type_name, code })
 }
 
 fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
@@ -411,9 +409,9 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
-fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<Vec<TokenStream>, Error> {
-    let mut streams = Vec::new();
-    let mut local_types = Vec::new();
+fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<TokenStream, Error> {
+    let mut code = TokenStream::new();
+    let mut local_types = TokenStream::new();
     let mut props = TokenStream::new();
     let ns = struct_name.to_snake_case_ident().map_err(Error::StructName)?;
     let nm = struct_name.to_camel_case_ident().map_err(Error::StructName)?;
@@ -441,24 +439,24 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         let lowercase_workaround = cg.should_workaround_case();
 
         let TypeCode {
-            type_name: mut field_tp_name,
-            inner_types: field_tp,
+            type_name: mut field_name,
+            code: field_code,
         } = create_struct_field_code(cg, &ns, &property.schema, property_name, lowercase_workaround)?;
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path.display(), prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
 
         if cg.should_force_obj(prop_nm) {
-            field_tp_name = quote! { serde_json::Value };
+            field_name = quote! { serde_json::Value };
         }
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
 
-        let is_vec = is_vec(&field_tp_name);
+        let is_vec = is_vec(&field_name);
         if !is_vec {
-            field_tp_name = add_option(!is_required, field_tp_name);
+            field_name = add_option(!is_required, field_name);
         }
-        local_types.extend(field_tp);
+        local_types.extend(field_code);
         let mut serde_attrs: Vec<TokenStream> = Vec::new();
         if nm.to_string() != property_name {
             serde_attrs.push(quote! { rename = #property_name });
@@ -480,11 +478,11 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         };
         // see if a field should be wrapped in a Box
         if cg.should_box_property(prop_nm) {
-            field_tp_name = quote! { Box<#field_tp_name> };
+            field_name = quote! { Box<#field_name> };
         }
         props.extend(quote! {
             #serde
-            pub #nm: #field_tp_name,
+            pub #nm: #field_name,
         });
     }
 
@@ -501,25 +499,23 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
             #props
         }
     };
-    streams.push(st);
+    code.extend(st);
 
     if !local_types.is_empty() {
-        let mut types = TokenStream::new();
-        local_types.into_iter().for_each(|tp| types.extend(tp));
-        streams.push(quote! {
+        code.extend(quote! {
             pub mod #ns {
                 use super::*;
-                #types
+                #local_types
             }
         });
     }
 
-    Ok(streams)
+    Ok(code)
 }
 
 struct TypeCode {
     type_name: TokenStream,
-    inner_types: Vec<TokenStream>,
+    code: TokenStream,
 }
 
 /// Creates the type reference for a struct field from a struct property.
@@ -536,7 +532,7 @@ fn create_struct_field_code(
             let tp = ref_key.name.to_camel_case_ident().map_err(Error::PropertyName)?;
             Ok(TypeCode {
                 type_name: tp,
-                inner_types: Vec::new(),
+                code: TokenStream::new(),
             })
         }
         None => {
@@ -544,16 +540,13 @@ fn create_struct_field_code(
                 create_enum(namespace, property, property_name, lowercase_workaround)
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
-                let tp_name = quote! {#namespace::#id};
-                let tps = create_struct(cg, property, property_name)?;
-                Ok(TypeCode {
-                    type_name: tp_name,
-                    inner_types: tps,
-                })
+                let type_name = quote! {#namespace::#id};
+                let code = create_struct(cg, property, property_name)?;
+                Ok(TypeCode { type_name, code })
             } else {
                 Ok(TypeCode {
                     type_name: type_name_gen(&property.type_name()?, false, false)?,
-                    inner_types: Vec::new(),
+                    code: TokenStream::new(),
                 })
             }
         }
