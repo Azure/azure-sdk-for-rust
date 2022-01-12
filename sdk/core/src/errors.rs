@@ -15,7 +15,7 @@ pub enum PipelineError {
 
 /// An error caused by an HTTP header.
 #[derive(Debug, thiserror::Error)]
-pub enum HTTPHeaderError {
+pub enum HttpHeaderError {
     #[error("{0}")]
     InvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
     #[error("{0}")]
@@ -39,7 +39,7 @@ pub enum Error {
     #[error("to str error: {0}")]
     ToStrError(#[from] http::header::ToStrError),
     #[error("header error: {0}")]
-    HeaderError(#[from] HTTPHeaderError),
+    HeaderError(#[from] HttpHeaderError),
     #[error("header not found: {0}")]
     HeaderNotFound(String),
     #[error("at least one of these headers must be present: {0:?}")]
@@ -113,14 +113,6 @@ impl UnexpectedValue {
             received,
         }
     }
-}
-
-/// An unexpected HTTP Result.
-#[derive(Debug, Clone, PartialEq)]
-pub struct UnexpectedHTTPResult {
-    expected: Vec<StatusCode>,
-    received: StatusCode,
-    body: String,
 }
 
 /// An error originating from a streaming response.

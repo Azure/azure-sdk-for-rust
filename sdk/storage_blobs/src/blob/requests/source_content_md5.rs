@@ -18,7 +18,7 @@ impl AddAsHeader for SourceContentMD5 {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             "x-ms-source-content-md5",
             http::header::HeaderValue::from_str(&base64::encode(self.0))?,

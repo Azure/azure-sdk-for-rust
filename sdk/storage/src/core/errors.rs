@@ -72,7 +72,7 @@ pub enum Error {
     #[error("At least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
     #[error("error writing the header value: {0}")]
-    InvalidHeaderValue(#[from] azure_core::HTTPHeaderError),
+    InvalidHeaderValue(#[from] azure_core::HttpHeaderError),
 }
 
 impl From<azure_core::HttpError> for Error {

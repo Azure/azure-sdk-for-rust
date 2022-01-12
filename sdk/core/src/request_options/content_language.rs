@@ -21,7 +21,7 @@ impl<'a> AddAsHeader for ContentLanguage<'a> {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError> {
+    ) -> Result<(), crate::errors::HttpHeaderError> {
         request.headers_mut().append(
             http::header::CONTENT_LANGUAGE,
             http::HeaderValue::from_str(self.0)?,
