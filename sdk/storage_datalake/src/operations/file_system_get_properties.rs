@@ -45,6 +45,7 @@ impl GetFileSystemPropertiesBuilder {
         Box::pin(async move {
             let mut url = this.client.url().clone();
             self.timeout.append_to_url_query(&mut url);
+            url.query_pairs_mut().append_pair("resource", "filesystem");
 
             debug!("url = {}", url);
 

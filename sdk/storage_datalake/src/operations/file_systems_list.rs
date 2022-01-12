@@ -45,7 +45,7 @@ impl ListFileSystems {
             let ctx = self.context.clone().unwrap_or_default();
 
             async move {
-                let mut url = url::Url::parse(this.client.url().clone()).unwrap();
+                let mut url = url::Url::parse(this.client.url()).unwrap();
                 url.query_pairs_mut().append_pair("resource", "account");
                 this.prefix.append_to_url_query(&mut url);
                 this.max_results.append_to_url_query(&mut url);

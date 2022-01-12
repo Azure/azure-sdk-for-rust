@@ -77,7 +77,7 @@ impl TryFrom<&HeaderMap> for Properties {
         let mut properties = Self::new();
 
         // this is probably too complicated. Should we split
-        // it in more maneageable code blocks?
+        // it in more manageable code blocks?
         // The logic is this:
         // 1. Look for the header. If not found return error
         // 2. Split the header value by comma
