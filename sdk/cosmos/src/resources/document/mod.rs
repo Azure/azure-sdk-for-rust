@@ -93,7 +93,7 @@ impl AddAsHeader for QueryCrossPartition {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
             http::header::HeaderValue::from_str(self.as_bool_str())?,
@@ -131,7 +131,7 @@ impl AddAsHeader for ParallelizeCrossPartition {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
             http::header::HeaderValue::from_str(self.as_bool_str())?,
@@ -166,7 +166,7 @@ impl AddAsHeader for IsUpsert {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             headers::HEADER_DOCUMENTDB_IS_UPSERT,
             http::header::HeaderValue::from_str(self.as_bool_str())?,
@@ -195,7 +195,7 @@ impl AddAsHeader for ChangeFeed {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         match self {
             Self::Incremental => {
                 request.headers_mut().append(
@@ -234,7 +234,7 @@ impl AddAsHeader for TentativeWritesAllowance {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             headers::HEADER_ALLOW_MULTIPLE_WRITES,
             http::header::HeaderValue::from_str(self.as_bool_str())?,
@@ -263,7 +263,7 @@ impl AddAsHeader for PartitionRangeId<'_> {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             headers::HEADER_DOCUMENTDB_PARTITIONRANGEID,
             http::header::HeaderValue::from_str(self.0)?,

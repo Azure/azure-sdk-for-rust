@@ -19,7 +19,7 @@ impl AddAsHeader for ProposedLeaseId {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError> {
+    ) -> Result<(), crate::errors::HttpHeaderError> {
         request.headers_mut().append(
             crate::PROPOSED_LEASE_ID,
             http::HeaderValue::from_str(&format!("{}", self.0))?,

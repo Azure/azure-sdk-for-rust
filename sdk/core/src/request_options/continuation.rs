@@ -18,7 +18,7 @@ impl AddAsHeader for Continuation<'_> {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError> {
+    ) -> Result<(), crate::errors::HttpHeaderError> {
         request
             .headers_mut()
             .append(headers::CONTINUATION, http::HeaderValue::from_str(self.0)?);

@@ -22,7 +22,7 @@ impl AddAsHeader for ContentLength {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError> {
+    ) -> Result<(), crate::errors::HttpHeaderError> {
         if self.0 >= 0 {
             let (header_name, header_value) = (http::header::CONTENT_LENGTH, self.0);
             request

@@ -24,7 +24,7 @@ impl AddAsHeader for SequenceNumber {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError> {
+    ) -> Result<(), crate::errors::HttpHeaderError> {
         request.headers_mut().append(
             crate::BLOB_SEQUENCE_NUMBER,
             http::HeaderValue::from_str(&format!("{}", self.0))?,

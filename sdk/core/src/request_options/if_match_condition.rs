@@ -19,7 +19,7 @@ impl<'a> AddAsHeader for IfMatchCondition<'a> {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError> {
+    ) -> Result<(), crate::errors::HttpHeaderError> {
         let (header_name, header_value) = match self {
             IfMatchCondition::Match(etag) => (IF_MATCH, etag),
             IfMatchCondition::NotMatch(etag) => (IF_NONE_MATCH, etag),

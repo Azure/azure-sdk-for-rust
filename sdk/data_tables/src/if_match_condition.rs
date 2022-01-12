@@ -25,7 +25,7 @@ impl AddAsHeader for IfMatchCondition {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         let (header_name, header_value) = match self {
             IfMatchCondition::Etag(etag) => (IF_MATCH, etag.as_ref()),
             IfMatchCondition::Any => (IF_MATCH, "*"),

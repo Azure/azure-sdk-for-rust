@@ -4,7 +4,7 @@ use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
-use azure_core::{HTTPHeaderError, Request as HttpRequest, Response as HttpResponse};
+use azure_core::{HttpHeaderError, Request as HttpRequest, Response as HttpResponse};
 
 #[derive(Debug, Clone, Default)]
 pub struct FileRenameOptions<'a> {
@@ -32,7 +32,7 @@ impl<'a> FileRenameOptions<'a> {
         req.headers_mut().append(
             "x-ms-rename-source",
             http::HeaderValue::from_str(rename_source)
-                .map_err(HTTPHeaderError::InvalidHeaderValue)?,
+                .map_err(HttpHeaderError::InvalidHeaderValue)?,
         );
 
         Ok(())
