@@ -145,7 +145,7 @@ jobs:
 
       - name: e2e tests build
         run: |
-          PROJECTS=(core  cosmos  identity  messaging_servicebus  storage  storage_blobs  storage_queues  storage_datalake  data_tables)
+          PROJECTS=(core  data_cosmos  identity  messaging_servicebus  storage  storage_blobs  storage_queues  storage_datalake  data_tables)
           for PROJ in ${PROJECTS[@]}
           do
             echo "Checking e2e tests for $PROJ"

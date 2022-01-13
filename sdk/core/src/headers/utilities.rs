@@ -138,7 +138,7 @@ pub async fn perform_http_request(
     let res = client
         .request(req)
         .await
-        .map_err(HttpError::ExecuteRequestError)?;
+        .map_err(HttpError::ExecuteRequest)?;
     check_status_extract_body_2(res, expected_status).await
 }
 
@@ -156,7 +156,7 @@ where
 {
     get_str_from_headers(headers, key)?
         .parse()
-        .map_err(|e: T::Err| Error::ParsingError(e.into()))
+        .map_err(|e: T::Err| Error::Parsing(e.into()))
 }
 
 pub fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>>
@@ -169,7 +169,7 @@ where
             header
                 .to_str()?
                 .parse()
-                .map_err(|e: T::Err| Error::ParsingError(e.into()))?,
+                .map_err(|e: T::Err| Error::Parsing(e.into()))?,
         )),
         None => Ok(None),
     }

@@ -97,6 +97,6 @@ impl azure_core::auth::TokenCredential for EnvironmentCredential {
     ) -> Result<azure_core::auth::TokenResponse, azure_core::Error> {
         TokenCredential::get_token(self, resource)
             .await
-            .map_err(|error| azure_core::Error::GetTokenError(Box::new(error)))
+            .map_err(|error| azure_core::Error::GetToken(Box::new(error)))
     }
 }

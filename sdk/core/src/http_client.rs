@@ -63,7 +63,7 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
             Ok(response)
         } else {
             let body = std::str::from_utf8(response.body())?.to_owned();
-            Err(crate::HttpError::ErrorStatusCode { status, body })
+            Err(crate::HttpError::StatusCode { status, body })
         }
     }
 }
@@ -119,12 +119,12 @@ impl HttpClient for reqwest::Client {
         let reqwest_request = reqwest_request
             .body(request.into_body())
             .build()
-            .map_err(HttpError::BuildClientRequestError)?;
+            .map_err(HttpError::BuildClientRequest)?;
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(HttpError::ExecuteRequestError)?;
+            .map_err(HttpError::ExecuteRequest)?;
 
         let mut response = Response::builder().status(reqwest_response.status());
 
@@ -137,9 +137,9 @@ impl HttpClient for reqwest::Client {
                 reqwest_response
                     .bytes()
                     .await
-                    .map_err(HttpError::ReadBytesError)?,
+                    .map_err(HttpError::ReadBytes)?,
             )
-            .map_err(HttpError::BuildResponseError)?;
+            .map_err(HttpError::BuildResponse)?;
 
         Ok(response)
     }
@@ -164,24 +164,24 @@ impl HttpClient for reqwest::Client {
             Body::Bytes(bytes) => reqwest_request
                 .body(bytes)
                 .build()
-                .map_err(HttpError::BuildClientRequestError)?,
+                .map_err(HttpError::BuildClientRequest)?,
             Body::SeekableStream(mut seekable_stream) => {
                 seekable_stream
                     .reset()
                     .await
-                    .map_err(HttpError::StreamResetError)?;
+                    .map_err(HttpError::StreamReset)?;
 
                 reqwest_request
                     .body(reqwest::Body::wrap_stream(seekable_stream))
                     .build()
-                    .map_err(HttpError::BuildClientRequestError)?
+                    .map_err(HttpError::BuildClientRequest)?
             }
         };
 
         let reqwest_response = self
             .execute(reqwest_request)
             .await
-            .map_err(HttpError::ExecuteRequestError)?;
+            .map_err(HttpError::ExecuteRequest)?;
         let mut response = crate::ResponseBuilder::new(reqwest_response.status());
 
         for (key, value) in reqwest_response.headers() {
@@ -191,7 +191,7 @@ impl HttpClient for reqwest::Client {
         let response = response.with_pinned_stream(Box::pin(
             reqwest_response
                 .bytes_stream()
-                .map_err(crate::StreamError::ReadError),
+                .map_err(crate::StreamError::Read),
         ));
 
         Ok(response)
