@@ -98,10 +98,6 @@ impl ListFileSystemsResponse {
     pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
-
-        trace!("{}", std::str::from_utf8(&body)?);
-        trace!("{:?}", headers);
-
         let file_system_list: FileSystemList = serde_json::from_slice(&body)?;
 
         Ok(ListFileSystemsResponse {

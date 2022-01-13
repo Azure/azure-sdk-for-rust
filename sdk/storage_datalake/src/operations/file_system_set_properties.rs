@@ -53,8 +53,6 @@ impl SetFileSystemPropertiesBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
-            debug!("url = {}", url);
-
             let mut request = this
                 .client
                 .prepare_request_pipeline(url.as_str(), http::Method::PATCH);
@@ -85,8 +83,6 @@ pub struct SetFileSystemPropertiesResponse {
 impl SetFileSystemPropertiesResponse {
     pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
-
-        trace!("headers == {:?}", headers);
 
         Ok(SetFileSystemPropertiesResponse {
             common_storage_response_headers: (&headers).try_into()?,

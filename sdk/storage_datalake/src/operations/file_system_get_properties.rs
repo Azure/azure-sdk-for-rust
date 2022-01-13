@@ -47,8 +47,6 @@ impl GetFileSystemPropertiesBuilder {
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
-            debug!("url = {}", url);
-
             let mut request = this
                 .client
                 .prepare_request_pipeline(url.as_str(), http::Method::HEAD);

@@ -3,7 +3,6 @@ use crate::util::*;
 use crate::Properties;
 use azure_core::prelude::*;
 use azure_core::{
-    collect_pinned_stream,
     headers::{add_mandatory_header2, add_optional_header2},
     AppendToUrlQuery, Response as HttpResponse,
 };
@@ -81,11 +80,7 @@ pub struct CreateFileSystemResponse {
 
 impl CreateFileSystemResponse {
     pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
-        let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
-
-        trace!("body == {}", std::str::from_utf8(&body)?);
-        trace!("headers == {:?}", headers);
+        let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {
             common_storage_response_headers: (&headers).try_into()?,

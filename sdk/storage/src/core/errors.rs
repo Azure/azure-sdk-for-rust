@@ -83,7 +83,7 @@ impl From<azure_core::HttpError> for Error {
 
 impl From<azure_core::StreamError> for Error {
     fn from(error: azure_core::StreamError) -> Self {
-        Self::CoreError(azure_core::Error::StreamError(error))
+        Self::CoreError(azure_core::Error::Stream(error))
     }
 }
 
