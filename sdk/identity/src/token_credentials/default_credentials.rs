@@ -45,6 +45,7 @@ impl DefaultAzureCredentialBuilder {
         self
     }
 
+    /// Create a `DefaultAzureCredential` from this builder.
     pub fn build(&self) -> DefaultAzureCredential {
         let source_count = self.include_cli_credential as usize
             + self.include_cli_credential as usize
@@ -67,6 +68,7 @@ impl DefaultAzureCredentialBuilder {
     }
 }
 
+#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum DefaultAzureCredentialError {
@@ -85,8 +87,11 @@ pub enum DefaultAzureCredentialError {
 
 /// Types of TokenCredential supported by DefaultAzureCredential
 pub enum DefaultAzureCredentialEnum {
+    /// `TokenCredential` from environment variable.
     Environment(EnvironmentCredential),
+    /// `TokenCredential` from managed identity that has been assigned in this deployment environment.
     ManagedIdentity(ImdsManagedIdentityCredential),
+    /// `TokenCredential` from Azure CLI.
     AzureCli(AzureCliCredential),
 }
 
@@ -124,6 +129,9 @@ pub struct DefaultAzureCredential {
 }
 
 impl DefaultAzureCredential {
+    /// Creates a `DefaultAzureCredential` with specified sources.
+    ///
+    /// These sources will be tried in the order provided in the `TokenCredential` authentication flow.
     pub fn with_sources(sources: Vec<DefaultAzureCredentialEnum>) -> Self {
         DefaultAzureCredential { sources }
     }

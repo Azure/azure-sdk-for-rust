@@ -29,7 +29,7 @@ impl TokenCredentialOptions {
     pub fn new(authority_host: String) -> Self {
         Self { authority_host }
     }
-
+    /// Set the authority host for authentication requests.
     pub fn set_authority_host(&mut self, authority_host: String) {
         self.authority_host = authority_host
     }
@@ -53,6 +53,7 @@ pub mod authority_hosts {
     pub const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
 }
 
+/// A list of tenant IDs
 pub mod tenant_ids {
     /// The tenant ID for multi-tenant apps
     ///
@@ -74,6 +75,7 @@ pub struct ClientSecretCredential {
 }
 
 impl ClientSecretCredential {
+    /// Create a new ClientSecretCredential
     pub fn new(
         tenant_id: String,
         client_id: String,
@@ -93,6 +95,7 @@ impl ClientSecretCredential {
     }
 }
 
+#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum ClientSecretCredentialError {

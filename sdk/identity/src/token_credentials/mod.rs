@@ -21,6 +21,7 @@ pub use imds_managed_identity_credentials::*;
 /// Same as [azure_core::auth::TokenCredential](azure_core::auth::TokenCredential), except a more specific error is returned.
 #[async_trait::async_trait]
 pub trait TokenCredential: Send + Sync {
+    /// A more specific error.
     type Error;
     /// Gets a `TokenResponse` for the specified resource
     async fn get_token(

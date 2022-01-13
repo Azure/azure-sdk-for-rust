@@ -38,6 +38,7 @@ struct CliTokenResponse {
 /// Enables authentication to Azure Active Directory using Azure CLI to obtain an access token.
 pub struct AzureCliCredential;
 
+#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum AzureCliCredentialError {
