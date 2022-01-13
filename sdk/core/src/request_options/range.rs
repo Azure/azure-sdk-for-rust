@@ -136,7 +136,7 @@ mod test {
     #[test]
     fn test_range_parse_panic_1() {
         let err = "abba/2000".parse::<Range>().unwrap_err();
-        assert!(matches!(err, ParseError::ParseIntError(_)));
+        assert!(matches!(err, ParseError::Int(_)));
     }
 
     #[test]

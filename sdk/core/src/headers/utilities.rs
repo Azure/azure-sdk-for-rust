@@ -179,18 +179,18 @@ pub fn parse_date_from_str(
     date: &str,
     fmt: &str,
 ) -> std::result::Result<DateTime<FixedOffset>, ParseError> {
-    DateTime::parse_from_str(date, fmt).map_err(ParseError::ParseDateTimeError)
+    DateTime::parse_from_str(date, fmt).map_err(ParseError::DateTime)
 }
 
 pub fn parse_date_from_rfc2822(
     date: &str,
 ) -> std::result::Result<DateTime<FixedOffset>, ParseError> {
-    DateTime::parse_from_rfc2822(date).map_err(ParseError::ParseDateTimeError)
+    DateTime::parse_from_rfc2822(date).map_err(ParseError::DateTime)
 }
 
 pub fn parse_int<F>(s: &str) -> std::result::Result<F, ParseError>
 where
     F: FromStr<Err = std::num::ParseIntError>,
 {
-    FromStr::from_str(s).map_err(ParseError::ParseIntError)
+    FromStr::from_str(s).map_err(ParseError::Int)
 }

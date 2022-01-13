@@ -72,15 +72,15 @@ pub enum ParseError {
         full: String,
     },
     #[error("error parsing int: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
+    Int(#[from] std::num::ParseIntError),
     #[error("error parsing uuid: {0}")]
-    ParseUuidError(#[from] uuid::Error),
+    Uuid(#[from] uuid::Error),
     #[error("error parsing date time: {0}")]
-    ParseDateTimeError(#[from] chrono::ParseError),
+    DateTime(#[from] chrono::ParseError),
     #[error("error parsing a float: {0}")]
-    ParseFloatError(#[from] std::num::ParseFloatError),
+    Float(#[from] std::num::ParseFloatError),
     #[error("error parsing bool: {0}")]
-    ParseBoolError(#[from] std::str::ParseBoolError),
+    Bool(#[from] std::str::ParseBoolError),
 }
 
 /// An unexpected value.
