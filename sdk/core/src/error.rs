@@ -62,13 +62,40 @@ impl Error {
             Context::Full(Custom { kind, .. }, _) => kind,
         }
     }
+
+    /// Consumes the Error, returning its inner error (if any).
+    pub fn into_inner(self) -> Option<Box<dyn std::error::Error + Send + Sync>> {
+        match self.context {
+            Context::Custom(Custom { error, .. }) => Some(error),
+            Context::Full(Custom { error, .. }, _) => Some(error),
+            _ => None,
+        }
+    }
+
+    /// Returns a reference to the inner error wrapped by this error (if any).
+    pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
+        match &self.context {
+            Context::Custom(Custom { error, .. }) => Some(error.as_ref()),
+            Context::Full(Custom { error, .. }, _) => Some(error.as_ref()),
+            _ => None,
+        }
+    }
+
+    /// Returns a mutable reference to the inner error wrapped by this error (if any).
+    pub fn get_mut(&mut self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
+        match &mut self.context {
+            Context::Custom(Custom { error, .. }) => Some(error.as_mut()),
+            Context::Full(Custom { error, .. }, _) => Some(error.as_mut()),
+            _ => None,
+        }
+    }
 }
 
 impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.context {
-            Context::Custom(Custom { error, .. }) => Some(error.as_ref()),
-            Context::Full(Custom { error, .. }, _) => Some(error.as_ref()),
+            Context::Custom(Custom { error, .. }) => error.source(),
+            Context::Full(Custom { error, .. }, _) => error.source(),
             _ => None,
         }
     }
@@ -211,17 +238,65 @@ mod tests {
 
     #[derive(thiserror::Error, Debug)]
     enum IntermediateError {
-        #[error("an intermediate error occurred")]
+        #[error("second error")]
         Io(#[from] std::io::Error),
+    }
+
+    fn create_error() -> Error {
+        // Create a nested std::io::Error
+        let inner = io::Error::new(io::ErrorKind::BrokenPipe, "third error");
+        let inner: IntermediateError = inner.into();
+        let inner = io::Error::new(io::ErrorKind::ConnectionAborted, inner);
+
+        // Wrap that io::Error in this crate's Error type
+        Error::new(ErrorKind::Io, inner)
     }
 
     #[test]
     fn errors_display_properly() {
-        let inner = io::Error::new(io::ErrorKind::BrokenPipe, "There was an error");
-        let inner: IntermediateError = inner.into();
-        let inner = io::Error::new(io::ErrorKind::ConnectionAborted, inner);
-        let error = Error::new(ErrorKind::Io, inner);
+        let error = create_error();
+
+        // Generate the display and error chain
+        let mut error: &dyn std::error::Error = &error;
         let display = format!("{}", error);
-        assert_eq!(display, "Io: an intermediate error occurred");
+        let mut errors = vec![display.clone()];
+        while let Some(cause) = error.source() {
+            errors.push(format!("{}", cause));
+            error = cause;
+        }
+
+        assert_eq!(display, "Io: second error");
+        assert_eq!(errors.join(","), "Io: second error,third error");
+    }
+
+    #[test]
+    fn downcasting_works() {
+        use std::error::Error;
+        let error = &create_error() as &dyn Error;
+        assert!(error.is::<super::Error>());
+        let downcasted = error
+            .source()
+            .unwrap()
+            .downcast_ref::<std::io::Error>()
+            .unwrap();
+        assert_eq!(format!("{}", downcasted), "third error");
+    }
+
+    #[test]
+    fn turn_into_inner_error() {
+        let error = create_error();
+        let inner = error.into_inner().unwrap();
+        let inner = inner.downcast_ref::<std::io::Error>().unwrap();
+        assert_eq!(format!("{}", inner), "second error");
+
+        let error = create_error();
+        let inner = error.get_ref().unwrap();
+        let inner = inner.downcast_ref::<std::io::Error>().unwrap();
+        assert_eq!(format!("{}", inner), "second error");
+
+        let mut error = create_error();
+        let inner = error.get_mut().unwrap();
+        let inner = inner.downcast_ref::<std::io::Error>().unwrap();
+        assert_eq!(format!("{}", inner), "second error");
     }
 }
