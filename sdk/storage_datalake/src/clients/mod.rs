@@ -9,6 +9,7 @@ pub use data_lake_client::DataLakeClient;
 pub use directory_client::DirectoryClient;
 pub use file_client::FileClient;
 pub use file_system_client::FileSystemClient;
+use futures::Future;
 
 pub trait PathClient: Debug + Clone + Send + Sync {
     fn url(&self) -> crate::Result<url::Url>;

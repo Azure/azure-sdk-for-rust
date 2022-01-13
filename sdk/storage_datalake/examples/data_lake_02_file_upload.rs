@@ -18,11 +18,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path = "some/path/example-file.txt";
+    let file_client = file_system_client.get_file_client(file_path);
 
     println!("creating file '{}'...", file_path);
-    let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
+    let create_file_response = file_client.create().into_future().await?;
     println!("create file response == {:?}\n", create_file_response);
 
     let string1 = "some data";
