@@ -12,6 +12,7 @@ mod file_system_delete;
 mod file_system_get_properties;
 mod file_system_set_properties;
 mod file_systems_list;
+mod path_put;
 
 pub use file_append::*;
 pub use file_create::*;
@@ -23,3 +24,4 @@ pub use file_system_delete::*;
 pub use file_system_get_properties::*;
 pub use file_system_set_properties::*;
 pub use file_systems_list::*;
+pub use path_put::*;

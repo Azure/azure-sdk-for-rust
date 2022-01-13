@@ -1,0 +1,122 @@
+use crate::operations::*;
+use crate::request_properties::*;
+use crate::{clients::FileSystemClient, Properties, Result};
+use azure_core::prelude::IfMatchCondition;
+use azure_core::Pipeline;
+use bytes::Bytes;
+use url::Url;
+
+#[derive(Debug, Clone)]
+pub struct DirectoryClient {
+    file_system_client: FileSystemClient,
+    path: String,
+}
+
+impl DirectoryClient {
+    pub(crate) fn new(file_system_client: FileSystemClient, path: String) -> Self {
+        Self {
+            file_system_client,
+            path,
+        }
+    }
+
+    pub(crate) fn url(&self) -> Result<Url> {
+        let fs_url = self.file_system_client.url()?;
+        let dir_path = vec![fs_url.path(), &self.path].join("/");
+        Ok(self.file_system_client.url()?.join(&dir_path)?)
+    }
+
+    pub fn create(&self) -> PutPathBuilder {
+        PutPathBuilder::new(self.clone(), self.file_system_client.context.clone())
+            .resource(ResourceType::Directory)
+    }
+
+    pub fn create_if_not_exists(&self) -> PutPathBuilder {
+        self.create()
+            .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
+    }
+
+    pub fn rename<P>(&self, destination_path: P) -> PutPathBuilder
+    where
+        P: Into<String>,
+    {
+        let destination_client = self
+            .file_system_client
+            .get_directory_client(destination_path);
+
+        let fs_url = self.file_system_client.url().unwrap();
+        let dir_path = vec![fs_url.path(), &self.path].join("/");
+        println!("{}", dir_path);
+        destination_client
+            .create()
+            .mode(PathRenameMode::Legacy)
+            .rename_source(format!("{}/", dir_path))
+    }
+
+    pub fn rename_if_not_exists<P>(&self, destination_path: P) -> PutPathBuilder
+    where
+        P: Into<String>,
+    {
+        self.rename(destination_path)
+            .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
+    }
+
+    pub fn delete(&self) -> DeleteFileSystemBuilder {
+        todo!()
+    }
+
+    pub fn get_properties(&self) -> GetFileSystemPropertiesBuilder {
+        todo!()
+    }
+
+    pub fn set_properties(&self, properties: Option<Properties>) -> SetFileSystemPropertiesBuilder {
+        todo!()
+    }
+
+    // pub async fn rename(
+    //     &self,
+    //     ctx: Context,
+    //     source_file_path: &str,
+    //     destination_file_path: &str,
+    //     options: FileRenameOptions,
+    // ) -> Result<FileRenameResponse, crate::Error> {
+    //     let mut request = self.prepare_file_rename_request(destination_file_path);
+    //
+    //     let rename_source = format!("/{}/{}", &self.name, source_file_path);
+    //     options.decorate_request(&mut request, rename_source.as_str())?;
+    //     let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+    //
+    //     Ok(FileRenameResponse::try_from(response).await?)
+    // }
+    //
+    // pub async fn rename_if_not_exists(
+    //     &self,
+    //     ctx: Context,
+    //     source_file_path: &str,
+    //     destination_file_path: &str,
+    // ) -> Result<FileRenameResponse, crate::Error> {
+    //     let options = FileRenameOptions::new()
+    //         .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
+    //
+    //     let mut request = self.prepare_file_rename_request(destination_file_path);
+    //
+    //     let rename_source = format!("/{}/{}", &self.name, source_file_path);
+    //     options.decorate_request(&mut request, rename_source.as_str())?;
+    //     let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
+    //
+    //     Ok(FileRenameResponse::try_from(response).await?)
+    // }
+
+    pub(crate) fn prepare_request_pipeline(
+        &self,
+        uri: &str,
+        http_method: http::Method,
+    ) -> azure_core::Request {
+        self.file_system_client
+            .prepare_request_pipeline(uri, http_method)
+    }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline {
+        self.file_system_client.pipeline()
+    }
+}

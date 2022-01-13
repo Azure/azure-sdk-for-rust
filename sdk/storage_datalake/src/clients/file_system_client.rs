@@ -1,35 +1,47 @@
 use crate::operations::*;
-use crate::{clients::DataLakeClient, Properties};
+use crate::{clients::DataLakeClient, Properties, Result};
 use azure_core::prelude::IfMatchCondition;
 use azure_core::Context;
 use azure_core::Pipeline;
 use bytes::Bytes;
 use url::Url;
 
+use super::DirectoryClient;
+
 #[derive(Debug, Clone)]
 pub struct FileSystemClient {
     data_lake_client: DataLakeClient,
     name: String,
-    url: Url,
     pub(crate) context: Context,
 }
 
 impl FileSystemClient {
     pub(crate) fn new(data_lake_client: DataLakeClient, name: String) -> Self {
-        let mut url = url::Url::parse(data_lake_client.url()).unwrap();
-        url.path_segments_mut()
-            .map_err(|_| url::ParseError::SetHostOnCannotBeABaseUrl)
-            .unwrap()
-            .push(&name);
-
         let context = data_lake_client.context.clone();
 
         Self {
             data_lake_client,
             name,
-            url,
             context,
         }
+    }
+
+    pub(crate) fn url(&self) -> Result<Url> {
+        Ok(url::Url::parse(self.data_lake_client.url())?.join(&self.name)?)
+    }
+
+    pub fn get_directory_client<P>(&self, path: P) -> DirectoryClient
+    where
+        P: Into<String>,
+    {
+        DirectoryClient::new(self.clone(), path.into())
+    }
+
+    pub fn into_directory_client<P>(self, path: P) -> DirectoryClient
+    where
+        P: Into<String>,
+    {
+        DirectoryClient::new(self, path.into())
     }
 
     pub fn create(&self) -> CreateFileSystemBuilder {
@@ -53,7 +65,7 @@ impl FileSystemClient {
         ctx: Context,
         file_path: &str,
         options: FileCreateOptions,
-    ) -> Result<FileCreateResponse, crate::Error> {
+    ) -> Result<FileCreateResponse> {
         let mut request = self.prepare_file_create_request(file_path);
 
         options.decorate_request(&mut request)?;
@@ -66,7 +78,7 @@ impl FileSystemClient {
         &self,
         ctx: Context,
         file_path: &str,
-    ) -> Result<FileCreateResponse, crate::Error> {
+    ) -> Result<FileCreateResponse> {
         let options = FileCreateOptions::new()
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
 
@@ -83,7 +95,7 @@ impl FileSystemClient {
         ctx: Context,
         file_path: &str,
         options: FileDeleteOptions,
-    ) -> Result<FileDeleteResponse, crate::Error> {
+    ) -> Result<FileDeleteResponse> {
         let mut request = self.prepare_file_delete_request(file_path);
 
         options.decorate_request(&mut request)?;
@@ -98,7 +110,7 @@ impl FileSystemClient {
         source_file_path: &str,
         destination_file_path: &str,
         options: FileRenameOptions,
-    ) -> Result<FileRenameResponse, crate::Error> {
+    ) -> Result<FileRenameResponse> {
         let mut request = self.prepare_file_rename_request(destination_file_path);
 
         let rename_source = format!("/{}/{}", &self.name, source_file_path);
@@ -113,7 +125,7 @@ impl FileSystemClient {
         ctx: Context,
         source_file_path: &str,
         destination_file_path: &str,
-    ) -> Result<FileRenameResponse, crate::Error> {
+    ) -> Result<FileRenameResponse> {
         let options = FileRenameOptions::new()
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
 
@@ -133,7 +145,7 @@ impl FileSystemClient {
         bytes: Bytes,
         position: i64,
         options: FileAppendOptions,
-    ) -> Result<FileAppendResponse, crate::Error> {
+    ) -> Result<FileAppendResponse> {
         let mut request = self.prepare_file_append_request(file_path, position);
 
         options.decorate_request(&mut request, bytes)?;
@@ -149,16 +161,12 @@ impl FileSystemClient {
         position: i64,
         close: bool,
         options: FileFlushOptions,
-    ) -> Result<FileFlushResponse, crate::Error> {
+    ) -> Result<FileFlushResponse> {
         let mut request = self.prepare_file_flush_request(file_path, position, close);
         options.decorate_request(&mut request)?;
         let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
 
         Ok(FileFlushResponse::try_from(response).await?)
-    }
-
-    pub(crate) fn url(&self) -> &Url {
-        &self.url
     }
 
     pub(crate) fn prepare_request_pipeline(
@@ -171,7 +179,7 @@ impl FileSystemClient {
     }
 
     pub(crate) fn prepare_file_create_request(&self, file_path: &str) -> azure_core::Request {
-        let uri = format!("{}/{}?resource=file", self.url(), file_path);
+        let uri = format!("{}/{}?resource=file", self.url().unwrap(), file_path);
         http::request::Request::put(uri)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
@@ -179,7 +187,7 @@ impl FileSystemClient {
     }
 
     pub(crate) fn prepare_file_delete_request(&self, file_path: &str) -> azure_core::Request {
-        let uri = format!("{}/{}", self.url(), file_path);
+        let uri = format!("{}/{}", self.url().unwrap(), file_path);
         http::request::Request::delete(uri)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
@@ -190,7 +198,11 @@ impl FileSystemClient {
         &self,
         destination_file_path: &str,
     ) -> azure_core::Request {
-        let uri = format!("{}/{}?mode=legacy", self.url(), destination_file_path);
+        let uri = format!(
+            "{}/{}?mode=legacy",
+            self.url().unwrap(),
+            destination_file_path
+        );
         http::request::Request::put(uri)
             .body(bytes::Bytes::new()) // Request builder requires a body here
             .unwrap()
@@ -204,7 +216,7 @@ impl FileSystemClient {
     ) -> azure_core::Request {
         let uri = format!(
             "{}/{}?action=append&position={}",
-            self.url(),
+            self.url().unwrap(),
             file_path,
             position
         );
@@ -222,7 +234,7 @@ impl FileSystemClient {
     ) -> azure_core::Request {
         let uri = format!(
             "{}/{}?action=flush&position={}&close={}",
-            self.url(),
+            self.url().unwrap(),
             file_path,
             position,
             close,

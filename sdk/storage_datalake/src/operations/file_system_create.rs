@@ -47,7 +47,7 @@ impl CreateFileSystemBuilder {
         let ctx = self.client.context.clone();
 
         Box::pin(async move {
-            let mut url = this.client.url().clone();
+            let mut url = this.client.url()?;
             url.query_pairs_mut().append_pair("resource", "filesystem");
             self.timeout.append_to_url_query(&mut url);
 
