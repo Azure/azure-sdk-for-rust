@@ -20,6 +20,54 @@ macro_rules! format_err {
     }};
 }
 
+/// Return early with an error if a condition is not satisfied.
+#[macro_export]
+macro_rules! ensure {
+    ($cond:expr, $kind:expr, $msg:literal $(,)?) => {
+        if !$cond {
+            return ::std::result::Result::Err($crate::format_err!($kind, $msg));
+        }
+    };
+    ($cond:expr, $kind:expr, dicate $msg:expr $(,)?) => {
+        if !$cond {
+            return ::std::result::Result::Err($crate::format_err!($kind, $msg));
+        }
+    };
+    ($cond:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
+        if !$cond {
+            return ::std::result::Result::Err($crate::format_err!($kind, $msg, $($arg)*));
+        }
+    };
+}
+
+/// Return early with an error if two expressions are not equal to each other.
+#[macro_export]
+macro_rules! ensure_eq {
+    ($left:expr, $right:expr, $kind:expr, $msg:literal $(,)?) => {
+        $crate::ensure!($left == $right, $kind, $msg);
+    };
+    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr $(,)?) => {
+        $crate::ensure!($left == $right, $kind, $msg);
+    };
+    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
+        $crate::ensure!($left == $right, $kind, $msg, $($arg)*);
+    };
+}
+
+/// Return early with an error if two expressions are equal to each other.
+#[macro_export]
+macro_rules! ensure_ne {
+    ($left:expr, $right:expr, $kind:expr, $msg:literal $(,)?) => {
+        $crate::ensure!($left != $right, $kind, $msg);
+    };
+    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr $(,)?) => {
+        $crate::ensure!($left != $right, $kind, $msg);
+    };
+    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
+        $crate::ensure!($left != $right, $kind, $msg, $($arg)*);
+    };
+}
+
 /// An error encountered from interfacing with Azure
 #[derive(Debug)]
 pub struct Error {
@@ -135,10 +183,10 @@ impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
             Context::Simple(kind) => write!(f, "{}", kind),
-            Context::Message { kind, message } => write!(f, "{}: {}", kind, message),
-            Context::Custom(Custom { kind, error }) => write!(f, "{}: {}", kind, error),
-            Context::Full(Custom { kind, error }, message) => {
-                write!(f, "{}: {}\n{}", kind, message, error)
+            Context::Message { message, .. } => write!(f, "{}", message),
+            Context::Custom(Custom { error, .. }) => write!(f, "{}", error),
+            Context::Full(_, message) => {
+                write!(f, "{}", message)
             }
         }
     }
@@ -147,7 +195,7 @@ impl Display for Error {
 /// The kind of error
 ///
 /// The classification of error is intentionally fairly coarse.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ErrorKind {
     HttpStatus { status: u16 },
     Io,
@@ -265,15 +313,19 @@ mod tests {
             error = cause;
         }
 
-        assert_eq!(display, "Io: second error");
-        assert_eq!(errors.join(","), "Io: second error,third error");
+        assert_eq!(display, "second error");
+        assert_eq!(errors.join(","), "second error,third error");
+
+        let inner = io::Error::new(io::ErrorKind::BrokenPipe, "third error");
+        let error = std::result::Result::<(), std::io::Error>::Err(inner)
+            .context(ErrorKind::Io, "oh no broken pipe!");
+        assert_eq!(format!("{}", error.unwrap_err()), "oh no broken pipe!");
     }
 
     #[test]
     fn downcasting_works() {
-        use std::error::Error;
-        let error = &create_error() as &dyn Error;
-        assert!(error.is::<super::Error>());
+        let error = &create_error() as &dyn std::error::Error;
+        assert!(error.is::<Error>());
         let downcasted = error
             .source()
             .unwrap()
@@ -298,5 +350,41 @@ mod tests {
         let inner = error.get_mut().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
         assert_eq!(format!("{}", inner), "second error");
+    }
+
+    #[test]
+    fn ensure_works() {
+        fn test_ensure(predicate: bool) -> Result<()> {
+            ensure!(predicate, ErrorKind::Other, "predicate failed");
+            Ok(())
+        }
+
+        fn test_ensure_eq(item1: &str, item2: &str) -> Result<()> {
+            ensure_eq!(item1, item2, ErrorKind::Other, "predicate failed");
+            Ok(())
+        }
+
+        fn test_ensure_ne(item1: &str, item2: &str) -> Result<()> {
+            ensure_ne!(item1, item2, ErrorKind::Other, "predicate failed");
+            Ok(())
+        }
+
+        let err = test_ensure(false).unwrap_err();
+        assert_eq!(format!("{}", err), "predicate failed");
+        assert_eq!(err.kind(), ErrorKind::Other);
+
+        assert!(test_ensure(true).is_ok());
+
+        let err = test_ensure_eq("foo", "bar").unwrap_err();
+        assert_eq!(format!("{}", err), "predicate failed");
+        assert_eq!(err.kind(), ErrorKind::Other);
+
+        assert!(test_ensure_eq("foo", "foo").is_ok());
+
+        let err = test_ensure_ne("foo", "foo").unwrap_err();
+        assert_eq!(format!("{}", err), "predicate failed");
+        assert_eq!(err.kind(), ErrorKind::Other);
+
+        assert!(test_ensure_ne("foo", "bar").is_ok());
     }
 }
