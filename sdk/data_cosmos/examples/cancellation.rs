@@ -1,10 +1,10 @@
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use stop_token::prelude::*;
 use stop_token::StopSource;
 use tokio::time::{Duration, Instant};
 
 #[tokio::main]
-async fn main() -> azure_cosmos::Result<()> {
+async fn main() -> azure_data_cosmos::Result<()> {
     env_logger::init();
     // First we retrieve the account name and master key from environment variables, and
     // create an authorization token.

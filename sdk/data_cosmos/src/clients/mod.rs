@@ -6,7 +6,7 @@
 //! # Example
 //!
 //! ```no_run
-//! use azure_cosmos::prelude::*;
+//! use azure_data_cosmos::prelude::*;
 //!
 //! let account = todo!("Get Cosmos account name from the Azure Portal");
 //! let authorization_token = todo!("Get Cosmos authorization token from the Azure Portal");

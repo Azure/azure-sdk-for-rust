@@ -1,5 +1,5 @@
-use azure_cosmos::prelude::*;
-use azure_cosmos::resources::trigger::{TriggerOperation, TriggerType};
+use azure_data_cosmos::prelude::*;
+use azure_data_cosmos::resources::trigger::{TriggerOperation, TriggerType};
 use futures::stream::StreamExt;
 use std::error::Error;
 

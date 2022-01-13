@@ -1,6 +1,6 @@
 use azure_core::prelude::*;
 use azure_core::CustomHeaders;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use http::{HeaderMap, HeaderValue};
 use std::error::Error;
 

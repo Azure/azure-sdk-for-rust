@@ -1,12 +1,14 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::Context;
-use azure_cosmos::prelude::{CreateDocumentOptions, DeleteDatabaseOptions, GetDocumentOptions};
+use azure_data_cosmos::prelude::{
+    CreateDocumentOptions, DeleteDatabaseOptions, GetDocumentOptions,
+};
 use serde::{Deserialize, Serialize};
 
 mod setup;
 
 use azure_core::prelude::*;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use collection::*;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -15,7 +17,7 @@ struct MyDocument {
     hello: u32,
 }
 
-impl<'a> azure_cosmos::CosmosEntity<'a> for MyDocument {
+impl<'a> azure_data_cosmos::CosmosEntity<'a> for MyDocument {
     type Entity = &'a str;
 
     fn partition_key(&'a self) -> Self::Entity {

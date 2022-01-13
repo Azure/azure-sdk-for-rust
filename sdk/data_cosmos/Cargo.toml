@@ -1,5 +1,5 @@
 [package]
-name = "azure_cosmos"
+name = "azure_data_cosmos"
 version = "0.1.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
@@ -7,7 +7,7 @@ authors = ["Microsoft Corp."]
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_cosmos"
+documentation = "https://docs.rs/azure_data_cosmos"
 
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]

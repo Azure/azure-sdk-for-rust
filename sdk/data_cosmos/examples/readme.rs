@@ -1,7 +1,7 @@
 use azure_core::Context;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos.
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::borrow::Cow;
 use std::error::Error;
@@ -18,7 +18,7 @@ struct MySampleStruct<'a> {
 }
 
 // Here we mark "a_number" as partition key.
-impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
+impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
     type Entity = u64;
 
     fn partition_key(&'a self) -> Self::Entity {

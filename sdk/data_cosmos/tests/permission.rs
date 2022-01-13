@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::Context;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 
 mod setup;
 

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos
 // DB.
 use azure_core::prelude::*;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use std::borrow::Cow;
 use std::error::Error;
 
@@ -15,7 +15,7 @@ struct MySampleStruct<'a> {
     a_timestamp: i64,
 }
 
-impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
+impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
     type Entity = &'a str;
 
     fn partition_key(&'a self) -> Self::Entity {
@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // list_databases will give us the databases available in our account. If there is
     // an error (for example, the given key is not valid) you will receive a
-    // specific azure_cosmos::Error. In this example we will look for a specific database
+    // specific azure_data_cosmos::Error. In this example we will look for a specific database
     // so we chain a filter operation.
     let db = Box::pin(client.list_databases().into_stream())
         .next()

@@ -1,5 +1,5 @@
 use azure_core::Context;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
 
@@ -18,8 +18,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // This is how you construct an authorization token.
     // Remember to pick the correct token type.
     // Here we assume master.
-    // Most methods return a ```Result<_, azure_cosmos::Error>```.
-    // ```azure_cosmos::Error``` is an enum union of all the possible underlying
+    // Most methods return a ```Result<_, azure_data_cosmos::Error>```.
+    // ```azure_data_cosmos::Error``` is an enum union of all the possible underlying
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.

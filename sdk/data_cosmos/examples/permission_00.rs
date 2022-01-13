@@ -1,5 +1,5 @@
 use azure_core::prelude::*;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use std::error::Error;
 
 #[tokio::main]

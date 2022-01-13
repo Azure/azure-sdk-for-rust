@@ -1,8 +1,8 @@
 use crate::permission::AuthorizationTokenParsingError;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 
 #[cfg(not(feature = "mock_transport_framework"))]
-pub fn initialize() -> Result<CosmosClient, azure_cosmos::Error> {
+pub fn initialize() -> Result<CosmosClient, azure_data_cosmos::Error> {
     let account = get_account();
     let authorization_token = get_authorization_token()?;
 
@@ -25,7 +25,7 @@ fn get_authorization_token() -> Result<AuthorizationToken, AuthorizationTokenPar
 #[cfg(feature = "mock_transport_framework")]
 pub fn initialize(
     transaction_name: impl Into<String>,
-) -> Result<CosmosClient, azure_cosmos::Error> {
+) -> Result<CosmosClient, azure_data_cosmos::Error> {
     let account_name = (std::env::var(azure_core::mock::TESTING_MODE_KEY).as_deref()
         == Ok(azure_core::mock::TESTING_MODE_RECORD))
     .then(get_account)

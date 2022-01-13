@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::Context;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
@@ -20,7 +20,7 @@ struct MySampleStruct<'a> {
     a_timestamp: i64,
 }
 
-impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
+impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
     type Entity = &'a str;
 
     fn partition_key(&'a self) -> Self::Entity {
@@ -29,7 +29,7 @@ impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
 }
 
 #[tokio::test]
-async fn attachment() -> Result<(), azure_cosmos::Error> {
+async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     const DATABASE_NAME: &str = "test-cosmos-db-attachment";
     const COLLECTION_NAME: &str = "test-collection-attachment";
 

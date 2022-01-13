@@ -10,7 +10,7 @@ should also be possible with this crate.
 
 ```rust
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos DB.
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use azure_core::Context;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -26,7 +26,7 @@ struct MySampleStruct {
     a_timestamp: i64,
 }
 
-impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct {
+impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct {
     type Entity = u64;
 
     fn partition_key(&'a self) -> Self::Entity {
@@ -97,5 +97,5 @@ To set this crate as a dependency, add this to your Cargo.toml
 
 ```toml
 [dependencies]
-azure_cosmos = { version = "0.1.0", git = "https://github.com/Azure/azure-sdk-for-rust" }
+azure_data_cosmos = { version = "0.1.0", git = "https://github.com/Azure/azure-sdk-for-rust" }
 ```

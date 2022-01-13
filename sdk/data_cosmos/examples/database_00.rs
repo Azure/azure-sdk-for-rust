@@ -1,5 +1,5 @@
 use azure_core::Context;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
 use std::error::Error;

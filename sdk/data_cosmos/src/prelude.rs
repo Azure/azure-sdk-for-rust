@@ -8,7 +8,7 @@
 //!
 //! ```
 //! # #[allow(unused_imports)]
-//! use azure_cosmos::prelude::*;
+//! use azure_data_cosmos::prelude::*;
 //! ```
 
 #[doc(inline)]

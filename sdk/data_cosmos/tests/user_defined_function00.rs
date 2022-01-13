@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
-use azure_cosmos::prelude::*;
-use azure_cosmos::responses::QueryDocumentsResponseRaw;
+use azure_data_cosmos::prelude::*;
+use azure_data_cosmos::responses::QueryDocumentsResponseRaw;
 use futures::stream::StreamExt;
 
 mod setup;
@@ -19,7 +19,7 @@ function tax(income) {
 }"#;
 
 #[tokio::test]
-async fn user_defined_function00() -> Result<(), azure_cosmos::Error> {
+async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
     const DATABASE_NAME: &str = "test-cosmos-db-udf";
     const COLLECTION_NAME: &str = "test-udf";
     const USER_DEFINED_FUNCTION_NAME: &str = "test";

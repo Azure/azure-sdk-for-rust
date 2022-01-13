@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::Context;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use collection::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -14,7 +14,7 @@ struct MySampleStruct<'a> {
     phones: Vec<Cow<'a, str>>,
 }
 
-impl<'a> azure_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
+impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
     type Entity = &'a str;
 
     fn partition_key(&'a self) -> Self::Entity {

@@ -1,6 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::prelude::*;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
 mod setup;
@@ -36,7 +36,7 @@ function updateMetadata() {
 }"#;
 
 #[tokio::test]
-async fn trigger() -> Result<(), azure_cosmos::Error> {
+async fn trigger() -> Result<(), azure_data_cosmos::Error> {
     const DATABASE_NAME: &str = "test-cosmos-db-trigger";
     const COLLECTION_NAME: &str = "test-udf";
     const TRIGGER_NAME: &str = "test";
