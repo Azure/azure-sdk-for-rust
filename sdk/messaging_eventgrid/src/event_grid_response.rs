@@ -10,14 +10,12 @@ impl EventGridResponse {
             let (head, body) = self
                 .response
                 .await
-                .map_err(HttpError::ExecuteRequestError)?
+                .map_err(HttpError::ExecuteRequest)?
                 .into_parts();
             (
                 head.status,
                 head.headers,
-                body::to_bytes(body)
-                    .await
-                    .map_err(HttpError::ReadBytesError)?,
+                body::to_bytes(body).await.map_err(HttpError::ReadBytes)?,
             )
         })
     }
