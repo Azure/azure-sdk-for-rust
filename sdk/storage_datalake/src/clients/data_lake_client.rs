@@ -2,8 +2,8 @@ use crate::clients::FileSystemClient;
 use crate::operations::ListFileSystems;
 use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
 use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
+use azure_storage::core::clients::ServiceType;
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
-use azure_storage::core::{clients::ServiceType, Result};
 use http::request::Builder;
 use std::sync::Arc;
 
@@ -22,7 +22,7 @@ impl DataLakeClient {
         credential: StorageSharedKeyCredential,
         custom_dns_suffix: Option<String>,
         options: ClientOptions,
-    ) -> Result<Self> {
+    ) -> Self {
         // we precalculate the url once in the constructor
         // so we do not have to do it at every request.
         let url = format!(
@@ -56,18 +56,15 @@ impl DataLakeClient {
         let mut context = Context::new();
         context.insert(ServiceType::Blob);
 
-        Ok(Self {
+        Self {
             pipeline,
             custom_dns_suffix,
             url,
             context,
-        })
+        }
     }
 
-    pub fn new(
-        credential: StorageSharedKeyCredential,
-        custom_dns_suffix: Option<String>,
-    ) -> Result<Self> {
+    pub fn new(credential: StorageSharedKeyCredential, custom_dns_suffix: Option<String>) -> Self {
         Self::new_with_options(credential, custom_dns_suffix, ClientOptions::default())
     }
 
