@@ -4,7 +4,7 @@ use crate::{
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
-use autorust_openapi::{DataType, Reference, ReferenceOr, Schema};
+use autorust_openapi::{DataType, MsEnum, MsEnumValue, Reference, ReferenceOr, Schema};
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -32,6 +32,13 @@ struct SchemaGen {
     // resolved
     properties: Vec<PropertyGen>,
     all_of: Vec<SchemaGen>,
+}
+
+#[derive(Clone)]
+struct EnumValue {
+    name: String,
+    value: String,
+    description: Option<String>,
 }
 
 impl SchemaGen {
@@ -88,8 +95,34 @@ impl SchemaGen {
         get_schema_array_items(&self.schema.common).map_err(Error::ArrayItems)
     }
 
-    fn enum_values_as_strings(&self) -> Vec<&str> {
-        enum_values_as_strings(&self.schema.common.enum_)
+    fn enum_values(&self) -> Vec<EnumValue> {
+        let basic_values = &self.schema.common.enum_;
+        let enum_values: Vec<EnumValue> = basic_values
+            .iter()
+            .filter_map(|v| match v {
+                Value::String(s) => Some(EnumValue {
+                    name: s.to_owned(),
+                    value: s.to_owned(),
+                    description: None,
+                }),
+                _ => None,
+            })
+            .collect();
+
+        match &self.schema.common.x_ms_enum {
+            Some(x_ms_enum) => enum_values
+                .into_iter()
+                .map(|enum_value| match lookup_ms_enum_value(x_ms_enum, &enum_value.value) {
+                    Some(ms_enum_value) => EnumValue {
+                        name: ms_enum_value.name.as_ref().unwrap_or(&enum_value.name).to_owned(),
+                        value: enum_value.value,
+                        description: ms_enum_value.description.clone(),
+                    },
+                    None => enum_value,
+                })
+                .collect(),
+            None => enum_values,
+        }
     }
 
     fn properties(&self) -> Vec<&PropertyGen> {
@@ -208,16 +241,6 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
     schema.properties = properties;
     schema.all_of = all_of.into_iter().flatten().collect();
     Ok(schema)
-}
-
-fn enum_values_as_strings(values: &[Value]) -> Vec<&str> {
-    values
-        .iter()
-        .filter_map(|v| match v {
-            Value::String(s) => Some(s.as_str()),
-            _ => None,
-        })
-        .collect()
 }
 
 fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
@@ -347,35 +370,48 @@ fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_
 }
 
 fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<TypeCode, Error> {
-    let enum_values = property.enum_values_as_strings();
-    let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
+    let enum_values = property.enum_values();
+    let id = match &property.schema.common.x_ms_enum {
+        Some(x_ms_enum) => x_ms_enum.name.as_str(),
+        None => property_name,
+    }
+    .to_camel_case_ident()
+    .map_err(|source| Error::EnumName {
         source,
         property: property_name.to_owned(),
     })?;
-    let mut values = TokenStream::new();
-    for name in enum_values {
-        let nm = name.to_camel_case_ident().map_err(|source| Error::EnumName {
+
+    let mut value_tokens = TokenStream::new();
+    for enum_value in enum_values {
+        let value = &enum_value.value;
+        let n = &enum_value.name;
+        let nm = n.to_camel_case_ident().map_err(|source| Error::EnumName {
             source,
             property: property_name.to_owned(),
         })?;
-        let lower = name.to_lowercase();
-        let rename = if nm.to_string() == name {
-            quote! {}
-        } else if name != lower && lowercase_workaround {
-            quote! { #[serde(rename = #name, alias = #lower)] }
-        } else {
-            quote! { #[serde(rename = #name)] }
+        let description = match enum_value.description {
+            Some(description) => {
+                quote! { #[doc = #description] }
+            }
+            None => quote! {},
         };
-        let value = quote! {
+
+        let lower = value.to_lowercase();
+        let rename = if &nm.to_string() == value {
+            quote! {}
+        } else if value != &lower && lowercase_workaround {
+            quote! { #[serde(rename = #value, alias = #lower)] }
+        } else {
+            quote! { #[serde(rename = #value)] }
+        };
+        let value_token = quote! {
+            #description
             #rename
             #nm,
         };
-        values.extend(value);
+        value_tokens.extend(value_token);
     }
-    let nm = property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
-        source,
-        property: property_name.to_owned(),
-    })?;
+
     let default_code = if let Some(default_name) = property.default() {
         let default_name = default_name.to_camel_case_ident().map_err(|source| Error::EnumName {
             source,
@@ -391,15 +427,29 @@ fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &st
     } else {
         quote! {}
     };
+
+    let enum_description = match &property.schema.common.description {
+        Some(description) => {
+            quote! { #[doc = #description] }
+        }
+        None => quote! {},
+    };
+
+    let nm = id.clone();
     let code = quote! {
+        #enum_description
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum #nm {
-            #values
+            #value_tokens
         }
         #default_code
     };
     let type_name = quote! {#namespace::#id};
     Ok(TypeCode { type_name, code })
+}
+
+fn lookup_ms_enum_value<'a>(x_ms_enum: &'a MsEnum, value: &str) -> Option<&'a MsEnumValue> {
+    x_ms_enum.values.iter().find(|v| v.value == value)
 }
 
 fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
