@@ -1,6 +1,6 @@
-use super::DirectoryClient;
+use super::{DataLakeClient, DirectoryClient, FileClient};
 use crate::operations::*;
-use crate::{clients::DataLakeClient, Properties, Result};
+use crate::{Properties, Result};
 use azure_core::prelude::IfMatchCondition;
 use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
@@ -54,6 +54,20 @@ impl FileSystemClient {
         P: Into<String>,
     {
         DirectoryClient::new(self, path.into())
+    }
+
+    pub fn get_file_client<P>(&self, path: P) -> FileClient
+    where
+        P: Into<String>,
+    {
+        FileClient::new(self.clone(), path.into())
+    }
+
+    pub fn into_file_client<P>(self, path: P) -> FileClient
+    where
+        P: Into<String>,
+    {
+        FileClient::new(self, path.into())
     }
 
     pub fn create(&self) -> CreateFileSystemBuilder {

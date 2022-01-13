@@ -1,4 +1,4 @@
-use crate::clients::DirectoryClient;
+use crate::clients::{DirectoryClient, PathClient};
 use crate::request_options::*;
 use crate::Properties;
 use azure_core::headers::{
@@ -19,8 +19,11 @@ use std::convert::TryInto;
 type PutPath = futures::future::BoxFuture<'static, crate::Result<PutPathResponse>>;
 
 #[derive(Debug, Clone)]
-pub struct PutPathBuilder {
-    client: DirectoryClient,
+pub struct PutPathBuilder<C>
+where
+    C: PathClient,
+{
+    client: C,
     mode: Option<PathRenameMode>,
     resource: Option<ResourceType>,
     continuation: Option<NextMarker>,
@@ -33,8 +36,8 @@ pub struct PutPathBuilder {
     context: Context,
 }
 
-impl PutPathBuilder {
-    pub(crate) fn new(client: DirectoryClient, context: Context) -> Self {
+impl<C: PathClient + 'static> PutPathBuilder<C> {
+    pub(crate) fn new(client: C, context: Context) -> Self {
         Self {
             client,
             mode: None,
@@ -79,9 +82,7 @@ impl PutPathBuilder {
 
             println!("url = {}", url);
 
-            let mut request = this
-                .client
-                .prepare_request_pipeline(url.as_str(), http::Method::PUT);
+            let mut request = this.client.prepare_request(url.as_str(), http::Method::PUT);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
             add_optional_header2(&this.properties, &mut request)?;

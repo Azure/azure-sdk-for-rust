@@ -1,10 +1,5 @@
-use crate::operations::*;
-use crate::request_options::*;
-use crate::{
-    clients::{DataLakeClient, FileSystemClient},
-    prelude::PathClient,
-    Properties, Result,
-};
+use super::{DataLakeClient, FileSystemClient, PathClient};
+use crate::{operations::*, request_options::*, Properties, Result};
 use azure_core::prelude::IfMatchCondition;
 use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
@@ -12,12 +7,12 @@ use bytes::Bytes;
 use url::Url;
 
 #[derive(Debug, Clone)]
-pub struct DirectoryClient {
+pub struct FileClient {
     file_system_client: FileSystemClient,
     path: String,
 }
 
-impl PathClient for DirectoryClient {
+impl PathClient for FileClient {
     fn url(&self) -> Result<Url> {
         let fs_url = self.file_system_client.url()?;
         let dir_path = vec![fs_url.path(), &self.path].join("/");
@@ -38,7 +33,7 @@ impl PathClient for DirectoryClient {
     }
 }
 
-impl DirectoryClient {
+impl FileClient {
     pub(crate) fn new(file_system_client: FileSystemClient, path: String) -> Self {
         Self {
             file_system_client,
@@ -59,12 +54,12 @@ impl DirectoryClient {
     {
         DataLakeClient::new_with_options(credential, custom_dns_suffix, options)
             .into_file_system_client(file_system_name.into())
-            .into_directory_client(path)
+            .into_file_client(path)
     }
 
     pub fn create(&self) -> PutPathBuilder<Self> {
         PutPathBuilder::new(self.clone(), self.file_system_client.context.clone())
-            .resource(ResourceType::Directory)
+            .resource(ResourceType::File)
     }
 
     pub fn create_if_not_exists(&self) -> PutPathBuilder<Self> {
@@ -77,9 +72,7 @@ impl DirectoryClient {
     where
         P: Into<String>,
     {
-        let destination_client = self
-            .file_system_client
-            .get_directory_client(destination_path);
+        let destination_client = self.file_system_client.get_file_client(destination_path);
 
         let fs_url = self.file_system_client.url().unwrap();
         let dir_path = vec![fs_url.path(), &self.path].join("/");
@@ -109,38 +102,4 @@ impl DirectoryClient {
     pub fn set_properties(&self, properties: Option<Properties>) -> SetFileSystemPropertiesBuilder {
         todo!()
     }
-
-    // pub async fn rename(
-    //     &self,
-    //     ctx: Context,
-    //     source_file_path: &str,
-    //     destination_file_path: &str,
-    //     options: FileRenameOptions,
-    // ) -> Result<FileRenameResponse, crate::Error> {
-    //     let mut request = self.prepare_file_rename_request(destination_file_path);
-    //
-    //     let rename_source = format!("/{}/{}", &self.name, source_file_path);
-    //     options.decorate_request(&mut request, rename_source.as_str())?;
-    //     let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-    //
-    //     Ok(FileRenameResponse::try_from(response).await?)
-    // }
-    //
-    // pub async fn rename_if_not_exists(
-    //     &self,
-    //     ctx: Context,
-    //     source_file_path: &str,
-    //     destination_file_path: &str,
-    // ) -> Result<FileRenameResponse, crate::Error> {
-    //     let options = FileRenameOptions::new()
-    //         .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
-    //
-    //     let mut request = self.prepare_file_rename_request(destination_file_path);
-    //
-    //     let rename_source = format!("/{}/{}", &self.name, source_file_path);
-    //     options.decorate_request(&mut request, rename_source.as_str())?;
-    //     let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-    //
-    //     Ok(FileRenameResponse::try_from(response).await?)
-    // }
 }
