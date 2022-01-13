@@ -1,5 +1,5 @@
 use crate::permission::AuthorizationTokenParseError;
-use azure_cosmos::prelude::*;
+use azure_data_cosmos::prelude::*;
 
 #[cfg(not(feature = "mock_transport_framework"))]
 pub fn initialize() -> Result<CosmosClient, azure_data_cosmos::Error> {
