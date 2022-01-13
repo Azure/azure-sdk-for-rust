@@ -87,11 +87,8 @@ where
 }
 
 impl AddAsHeader for RenameSource {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            http::header::CONTENT_LANGUAGE,
-            http::HeaderValue::from_str(&self.0).unwrap(),
-        )
+    fn add_as_header(&self, _builder: Builder) -> Builder {
+        unimplemented!("Datalake crate only supports pipeline architecture")
     }
 
     fn add_as_header2(

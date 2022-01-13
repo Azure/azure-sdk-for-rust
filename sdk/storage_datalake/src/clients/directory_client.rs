@@ -1,8 +1,12 @@
 use crate::operations::*;
 use crate::request_options::*;
-use crate::{clients::FileSystemClient, Properties, Result};
+use crate::{
+    clients::{DataLakeClient, FileSystemClient},
+    Properties, Result,
+};
 use azure_core::prelude::IfMatchCondition;
-use azure_core::Pipeline;
+use azure_core::{ClientOptions, Context, Pipeline};
+use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use bytes::Bytes;
 use url::Url;
 
@@ -18,6 +22,22 @@ impl DirectoryClient {
             file_system_client,
             path,
         }
+    }
+
+    pub fn new_with_options<FS, D>(
+        credential: StorageSharedKeyCredential,
+        custom_dns_suffix: Option<String>,
+        options: ClientOptions,
+        file_system_name: FS,
+        path: D,
+    ) -> Self
+    where
+        FS: Into<String>,
+        D: Into<String>,
+    {
+        DataLakeClient::new_with_options(credential, custom_dns_suffix, options)
+            .into_file_system_client(file_system_name.into())
+            .into_directory_client(path)
     }
 
     pub(crate) fn url(&self) -> Result<Url> {
