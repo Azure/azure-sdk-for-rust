@@ -77,7 +77,7 @@ pub enum Error {
 
 impl From<azure_core::HttpError> for Error {
     fn from(error: azure_core::HttpError) -> Self {
-        Self::CoreError(azure_core::Error::HttpError(error))
+        Self::CoreError(azure_core::Error::Http(error))
     }
 }
 

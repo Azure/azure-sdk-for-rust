@@ -110,6 +110,6 @@ impl Pipeline {
         self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
             .await
-            .map_err(Error::PolicyError)
+            .map_err(Error::Policy)
     }
 }
