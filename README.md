@@ -10,11 +10,9 @@ This repository is for the development of the *unofficial* Azure SDK for Rust. I
 These crates are available from in (sdk):
 - azure_core
 - azure_identity
-- azure_cosmos
+- azure_data_cosmos
 - azure_data_tables
 - azure_iot_hub
-- azure_messaging_eventgrid
-- azure_messaging_servicebus
 - azure_security_keyvault
 - azure_storage_blobs
 - azure_storage_datalake
