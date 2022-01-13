@@ -39,7 +39,7 @@ impl std::fmt::Display for PermissionToken {
 }
 
 impl std::convert::TryFrom<String> for PermissionToken {
-    type Error = PermissionTokenParsingError;
+    type Error = PermissionTokenParseError;
     fn try_from(s: String) -> Result<Self, Self::Error> {
         Self::try_from(s.as_str())
     }
@@ -48,21 +48,21 @@ impl std::convert::TryFrom<String> for PermissionToken {
 const MIN_REQUIRED_PARTS_COUNT: usize = 3;
 
 impl std::convert::TryFrom<&str> for PermissionToken {
-    type Error = PermissionTokenParsingError;
+    type Error = PermissionTokenParseError;
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         trace!("converting {} into PermissionToken", s);
 
         let parts: Vec<&str> = s.split('&').collect();
 
         if parts.len() < MIN_REQUIRED_PARTS_COUNT {
-            return Err(PermissionTokenParsingError::InsufficientParts {
+            return Err(PermissionTokenParseError::InsufficientParts {
                 token_string: s.to_owned(),
                 found: parts.len() as u32,
             });
         }
         let version = try_get_item(s, &parts, VERSION_PREFIX)?;
         if version != "1.0" && version != "1" {
-            return Err(PermissionTokenParsingError::UnrecognizedVersionNumber {
+            return Err(PermissionTokenParseError::UnrecognizedVersionNumber {
                 provided_version: version.to_owned(),
             });
         }
@@ -73,7 +73,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
             "master" => AuthorizationToken::Primary(base64::decode(signature)?),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
-                return Err(PermissionTokenParsingError::UnrecognizedPermissionType {
+                return Err(PermissionTokenParseError::UnrecognizedPermissionType {
                     provided_type: permission_type.to_owned(),
                 })
             }
@@ -86,11 +86,11 @@ fn try_get_item<'a>(
     token_string: &'a str,
     parts: &[&'a str],
     name: &str,
-) -> Result<&'a str, PermissionTokenParsingError> {
+) -> Result<&'a str, PermissionTokenParseError> {
     let mut tokens = parts.iter().filter(|t| t.starts_with(name));
 
     match tokens.next() {
-        Some(_t) if tokens.next().is_some() => Err(PermissionTokenParsingError::DuplicatePart {
+        Some(_t) if tokens.next().is_some() => Err(PermissionTokenParseError::DuplicatePart {
             token_string: token_string.to_owned(),
             part: name.to_owned(),
             // Add 2 since we've already called `next` twice
@@ -100,7 +100,7 @@ fn try_get_item<'a>(
             // we checked for < 1 and > 1 so this is == 1
             Ok(&t[name.len()..])
         }
-        None => Err(PermissionTokenParsingError::MissingPart {
+        None => Err(PermissionTokenParseError::MissingPart {
             token_string: token_string.to_owned(),
             missing_part: name.to_owned(),
         }),
@@ -116,7 +116,7 @@ impl std::convert::From<AuthorizationToken> for PermissionToken {
 #[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
-pub enum PermissionTokenParsingError {
+pub enum PermissionTokenParseError {
     #[error(
         "Permission token string has an insufficient number of ';' separated parts. Required number is {}, but found {}. Full string: \"{}\"",
         MIN_REQUIRED_PARTS_COUNT,

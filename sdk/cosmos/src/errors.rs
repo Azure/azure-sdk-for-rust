@@ -11,13 +11,13 @@ pub enum Error {
     Core(#[from] azure_core::Error),
     /// An error related to parsing
     #[error(transparent)]
-    ParsingError(#[from] ParsingError),
+    ParseError(#[from] ParseError),
     #[error("conversion to `{0}` failed because at lease one element is raw")]
     ElementIsRaw(String),
     #[error("error parsing authorization token: {0}")]
-    AuthorizationTokenParsing(#[from] crate::resources::permission::AuthorizationTokenParsingError),
+    AuthorizationTokenParsing(#[from] crate::resources::permission::AuthorizationTokenParseError),
     #[error("error parsing permission token: {0}")]
-    PermissionTokenParsing(#[from] crate::resources::permission::PermissionTokenParsingError),
+    PermissionTokenParsing(#[from] crate::resources::permission::PermissionTokenParseError),
     #[error("error writing the header value: {0}")]
     InvalidHeaderValue(#[from] azure_core::HttpHeaderError),
 }
@@ -50,14 +50,14 @@ impl From<http::Error> for Error {
 ///
 /// Most issues are already defined in `azure_core`
 #[derive(Debug, thiserror::Error)]
-pub enum ParsingError {
+pub enum ParseError {
     #[error(transparent)]
-    Core(azure_core::ParsingError),
+    Core(azure_core::ParseError),
     #[error("Resource quota parsing error: {0}")]
-    ParseResourceQuotaError(#[from] crate::resource_quota::ResourceQuotaParsingError),
+    ParseResourceQuotaError(#[from] crate::resource_quota::ResourceQuotaParseError),
 }
 
-impl<T: Into<azure_core::ParsingError>> From<T> for ParsingError {
+impl<T: Into<azure_core::ParseError>> From<T> for ParseError {
     fn from(error: T) -> Self {
         Self::Core(error.into())
     }

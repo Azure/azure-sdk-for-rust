@@ -1,5 +1,5 @@
 use super::BA512Range;
-use crate::{AddAsHeader, ParsingError};
+use crate::{AddAsHeader, ParseError};
 use http::request::Builder;
 use std::convert::From;
 use std::fmt;
@@ -62,11 +62,11 @@ impl From<std::ops::Range<usize>> for Range {
 }
 
 impl FromStr for Range {
-    type Err = ParsingError;
+    type Err = ParseError;
     fn from_str(s: &str) -> Result<Range, Self::Err> {
         let v = s.split('/').collect::<Vec<&str>>();
         if v.len() != 2 {
-            return Err(ParsingError::TokenNotFound {
+            return Err(ParseError::TokenNotFound {
                 item: "Range",
                 token: "/".to_owned(),
                 full: s.to_owned(),
@@ -136,7 +136,7 @@ mod test {
     #[test]
     fn test_range_parse_panic_1() {
         let err = "abba/2000".parse::<Range>().unwrap_err();
-        assert!(matches!(err, ParsingError::ParseIntError(_)));
+        assert!(matches!(err, ParseError::ParseIntError(_)));
     }
 
     #[test]
@@ -144,7 +144,7 @@ mod test {
         let err = "1000-2000".parse::<Range>().unwrap_err();
         assert_eq!(
             err,
-            ParsingError::TokenNotFound {
+            ParseError::TokenNotFound {
                 item: "Range",
                 token: "/".to_string(),
                 full: "1000-2000".to_string()

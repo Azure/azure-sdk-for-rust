@@ -1,4 +1,4 @@
-use crate::permission::AuthorizationTokenParsingError;
+use crate::permission::AuthorizationTokenParseError;
 use azure_cosmos::prelude::*;
 
 #[cfg(not(feature = "mock_transport_framework"))]
@@ -15,7 +15,7 @@ fn get_account() -> String {
     std::env::var("COSMOS_ACCOUNT").expect("Set env variable COSMOS_ACCOUNT first!")
 }
 
-fn get_authorization_token() -> Result<AuthorizationToken, AuthorizationTokenParsingError> {
+fn get_authorization_token() -> Result<AuthorizationToken, AuthorizationTokenParseError> {
     let key =
         std::env::var("COSMOS_MASTER_KEY").expect("Set env variable COSMOS_MASTER_KEY first!");
 

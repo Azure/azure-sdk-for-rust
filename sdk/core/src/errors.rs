@@ -31,7 +31,7 @@ pub enum Error {
     #[error("policy error: {0}")]
     Policy(Box<dyn std::error::Error + Send + Sync>),
     #[error("parsing error: {0}")]
-    Parsing(#[from] ParsingError),
+    Parsing(#[from] ParseError),
     #[error("error getting token: {0}")]
     GetToken(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]
@@ -62,7 +62,7 @@ type HttpClientError = reqwest::Error;
 /// An error caused by a failure to parse data.
 #[non_exhaustive]
 #[derive(Debug, PartialEq, thiserror::Error)]
-pub enum ParsingError {
+pub enum ParseError {
     #[error("unknown variant of {item} found: \"{variant}\"")]
     UnknownVariant { item: &'static str, variant: String },
     #[error("expected token \"{token}\" not found when parsing {item} from \"{full}\"")]
@@ -201,7 +201,7 @@ pub enum TraversingError {
     #[error("generic parse error: {0}")]
     GenericParseError(String),
     #[error("parsing error: {0:?}")]
-    ParsingError(#[from] ParsingError),
+    ParseError(#[from] ParseError),
 }
 
 /// Extract the headers and body from a `hyper` HTTP response.

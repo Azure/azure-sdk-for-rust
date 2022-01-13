@@ -1,5 +1,5 @@
 use crate::headers;
-use azure_core::ParsingError;
+use azure_core::ParseError;
 use http::request::Builder;
 use std::fmt;
 
@@ -25,14 +25,14 @@ impl<'a> From<&'a IndexingDirective> for &'a str {
 }
 
 impl std::str::FromStr for IndexingDirective {
-    type Err = ParsingError;
+    type Err = ParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "Default" => Ok(IndexingDirective::Default),
             "Exclude" => Ok(IndexingDirective::Exclude),
             "Include" => Ok(IndexingDirective::Include),
-            _ => Err(ParsingError::UnknownVariant {
+            _ => Err(ParseError::UnknownVariant {
                 item: "IndexingDirective",
                 variant: s.to_owned(),
             }),

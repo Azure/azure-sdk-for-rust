@@ -39,19 +39,19 @@ const AUTH_POLICY_ELEMENTS: &str = "authPolicyElements=";
 /// Parse a collection of [`ResourceQuota`] from a string
 pub(crate) fn resource_quotas_from_str(
     s: &str,
-) -> Result<Vec<ResourceQuota>, ResourceQuotaParsingError> {
+) -> Result<Vec<ResourceQuota>, ResourceQuotaParseError> {
     debug!("resource_quotas_from_str(\"{}\") called", s);
     let tokens: Vec<&str> = s.split(';').collect();
     let mut v = Vec::with_capacity(tokens.len());
 
     let parseu64 = |s| {
-        str::parse(s).map_err(|e| ResourceQuotaParsingError::NumberParseError {
+        str::parse(s).map_err(|e| ResourceQuotaParseError::NumberParseError {
             string: s.to_owned(),
             error: e,
         })
     };
     let parsei64 = |s| {
-        str::parse(s).map_err(|e| ResourceQuotaParsingError::NumberParseError {
+        str::parse(s).map_err(|e| ResourceQuotaParseError::NumberParseError {
             string: s.to_owned(),
             error: e,
         })
@@ -89,7 +89,7 @@ pub(crate) fn resource_quotas_from_str(
         } else if let Some(stripped) = token.strip_prefix(AUTH_POLICY_ELEMENTS) {
             v.push(ResourceQuota::AuthPolicyElements(parseu64(stripped)?));
         } else {
-            return Err(ResourceQuotaParsingError::UnrecognizedPart {
+            return Err(ResourceQuotaParseError::UnrecognizedPart {
                 part: token.to_string(),
                 full_string: s.to_owned(),
             });
@@ -102,7 +102,7 @@ pub(crate) fn resource_quotas_from_str(
 }
 
 #[derive(Debug, thiserror::Error)]
-pub enum ResourceQuotaParsingError {
+pub enum ResourceQuotaParseError {
     #[error(
         "resource quota has an unrecognized part - part: \"{}\" full string: \"{}\"",
         part,

@@ -22,7 +22,7 @@ pub enum ConnectionStringError {
     #[error("Unexpected key '{}'", key)]
     UnexpectedKey { key: String },
     #[error("Parsing error: {}", msg)]
-    ParsingError { msg: String },
+    ParseError { msg: String },
     #[error("Unsupported protocol {}", protocol)]
     UnsupportedProtocol { protocol: String },
 }
@@ -107,12 +107,12 @@ impl<'a> ConnectionString<'a> {
             let mut kv = kv_pair_str.trim().split('=');
             let k = match kv.next() {
                 Some(k) if k.chars().all(char::is_whitespace) => {
-                    return Err(ConnectionStringError::ParsingError {
+                    return Err(ConnectionStringError::ParseError {
                         msg: "No key found".to_owned(),
                     })
                 }
                 None => {
-                    return Err(ConnectionStringError::ParsingError {
+                    return Err(ConnectionStringError::ParseError {
                         msg: "No key found".to_owned(),
                     })
                 }
@@ -147,7 +147,7 @@ impl<'a> ConnectionString<'a> {
                     "true" => use_development_storage = Some(true),
                     "false" => use_development_storage = Some(false),
                     _ => {
-                        return Err(ConnectionStringError::ParsingError {
+                        return Err(ConnectionStringError::ParseError {
                             msg: format!(
                         "Unexpected value for {}: {}. Please specify either 'true' or 'false'.",
                         USE_DEVELOPMENT_STORAGE_KEY_NAME, v),
@@ -200,7 +200,7 @@ mod tests {
         ));
         assert!(matches!(
             ConnectionString::new("="),
-            Err(ConnectionStringError::ParsingError { msg: _ })
+            Err(ConnectionStringError::ParseError { msg: _ })
         ));
         assert!(matches!(
             ConnectionString::new("x=123;"),

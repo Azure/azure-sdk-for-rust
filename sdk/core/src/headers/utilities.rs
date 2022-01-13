@@ -152,7 +152,7 @@ pub fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a
 pub fn get_from_headers<T: std::str::FromStr>(headers: &HeaderMap, key: &str) -> Result<T>
 where
     T: std::str::FromStr,
-    T::Err: Into<ParsingError>,
+    T::Err: Into<ParseError>,
 {
     get_str_from_headers(headers, key)?
         .parse()
@@ -162,7 +162,7 @@ where
 pub fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>>
 where
     T: std::str::FromStr,
-    T::Err: Into<ParsingError>,
+    T::Err: Into<ParseError>,
 {
     match headers.get(key) {
         Some(header) => Ok(Some(
@@ -178,19 +178,19 @@ where
 pub fn parse_date_from_str(
     date: &str,
     fmt: &str,
-) -> std::result::Result<DateTime<FixedOffset>, ParsingError> {
-    DateTime::parse_from_str(date, fmt).map_err(ParsingError::ParseDateTimeError)
+) -> std::result::Result<DateTime<FixedOffset>, ParseError> {
+    DateTime::parse_from_str(date, fmt).map_err(ParseError::ParseDateTimeError)
 }
 
 pub fn parse_date_from_rfc2822(
     date: &str,
-) -> std::result::Result<DateTime<FixedOffset>, ParsingError> {
-    DateTime::parse_from_rfc2822(date).map_err(ParsingError::ParseDateTimeError)
+) -> std::result::Result<DateTime<FixedOffset>, ParseError> {
+    DateTime::parse_from_rfc2822(date).map_err(ParseError::ParseDateTimeError)
 }
 
-pub fn parse_int<F>(s: &str) -> std::result::Result<F, ParsingError>
+pub fn parse_int<F>(s: &str) -> std::result::Result<F, ParseError>
 where
     F: FromStr<Err = std::num::ParseIntError>,
 {
-    FromStr::from_str(s).map_err(ParsingError::ParseIntError)
+    FromStr::from_str(s).map_err(ParseError::ParseIntError)
 }

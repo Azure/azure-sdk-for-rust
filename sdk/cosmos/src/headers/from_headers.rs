@@ -1,5 +1,5 @@
 use crate::errors::Error;
-use crate::errors::ParsingError;
+use crate::errors::ParseError;
 use crate::headers::*;
 use crate::resource_quota::resource_quotas_from_str;
 use crate::resources::document::IndexingDirective;
@@ -38,14 +38,14 @@ pub(crate) fn resource_quota_from_headers(
     headers: &HeaderMap,
 ) -> Result<Vec<ResourceQuota>, Error> {
     let s = get_str_from_headers(headers, HEADER_RESOURCE_QUOTA)?;
-    resource_quotas_from_str(s).map_err(|e| Error::ParsingError(e.into()))
+    resource_quotas_from_str(s).map_err(|e| Error::ParseError(e.into()))
 }
 
 pub(crate) fn resource_usage_from_headers(
     headers: &HeaderMap,
 ) -> Result<Vec<ResourceQuota>, Error> {
     let s = get_str_from_headers(headers, HEADER_RESOURCE_USAGE)?;
-    resource_quotas_from_str(s).map_err(|e| Error::ParsingError(e.into()))
+    resource_quotas_from_str(s).map_err(|e| Error::ParseError(e.into()))
 }
 
 pub(crate) fn quorum_acked_lsn_from_headers(headers: &HeaderMap) -> Result<u64, Error> {
@@ -109,7 +109,7 @@ pub(crate) fn global_committed_lsn_from_headers(headers: &HeaderMap) -> Result<u
     Ok(if s == "-1" {
         0
     } else {
-        parse_int(s).map_err(ParsingError::Core)?
+        parse_int(s).map_err(ParseError::Core)?
     })
 }
 
@@ -165,7 +165,7 @@ fn _date_from_headers(headers: &HeaderMap, header_name: &str) -> Result<DateTime
     // For example: Wed, 15 Jan 2020 23:39:44.369 GMT
     let date = date.replace("GMT", "+0000");
     let date =
-        parse_date_from_str(&date, "%a, %e %h %Y %H:%M:%S%.f %z").map_err(ParsingError::Core)?;
+        parse_date_from_str(&date, "%a, %e %h %Y %H:%M:%S%.f %z").map_err(ParseError::Core)?;
     let date = DateTime::from_utc(date.naive_utc(), Utc);
     Ok(date)
 }
@@ -186,7 +186,7 @@ fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a str
 fn get_from_headers<T: std::str::FromStr>(headers: &HeaderMap, key: &str) -> Result<T, Error>
 where
     T: std::str::FromStr,
-    T::Err: Into<azure_core::ParsingError>,
+    T::Err: Into<azure_core::ParseError>,
 {
     Ok(headers::get_from_headers(headers, key)?)
 }
@@ -194,7 +194,7 @@ where
 fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>, Error>
 where
     T: std::str::FromStr,
-    T::Err: Into<azure_core::ParsingError>,
+    T::Err: Into<azure_core::ParseError>,
 {
     Ok(headers::get_option_from_headers(headers, key)?)
 }
