@@ -25,15 +25,6 @@ impl Range {
     }
 }
 
-impl<'a> From<&'a BA512Range> for Range {
-    fn from(ba: &'a BA512Range) -> Range {
-        Range {
-            start: ba.start(),
-            end: ba.end(),
-        }
-    }
-}
-
 impl From<std::ops::Range<u64>> for Range {
     fn from(r: std::ops::Range<u64>) -> Self {
         Self {

@@ -111,48 +111,29 @@ impl UnexpectedValue {
 #[derive(Debug, thiserror::Error)]
 pub enum StreamError {
     #[error("error polling stream: {0}")]
-    PollError(std::io::Error),
+    Poll(std::io::Error),
     #[error("error reading stream: {0}")]
-    ReadError(HttpClientError),
+    Read(HttpClientError),
 }
 
 /// An error originating from an HTTP client.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum HttpError {
-    #[error("Failed to serialize request body as json: {0}")]
-    BodySerializationError(serde_json::Error),
     #[error("HTTP error status (status: {:?}, body: {:?})", status, body)]
-    ErrorStatusCode { status: StatusCode, body: String },
+    StatusCode { status: StatusCode, body: String },
     #[error("UTF8 conversion error: {0}")]
-    Utf8Error(#[from] std::str::Utf8Error),
-    #[error("from UTF8 conversion error: {0}")]
-    FromUtf8Error(#[from] std::string::FromUtf8Error),
+    Utf8(#[from] std::str::Utf8Error),
     #[error("failed to build request: {0}")]
-    BuildRequestError(http::Error),
-    #[error("failed to build request: {0}")]
-    BuildClientRequestError(HttpClientError),
+    BuildClientRequest(HttpClientError),
     #[error("failed to execute request: {0}")]
-    ExecuteRequestError(HttpClientError),
+    ExecuteRequest(HttpClientError),
     #[error("failed to read response as bytes: {0}")]
-    ReadBytesError(HttpClientError),
-    #[error("failed to read response as stream: {0}")]
-    ReadStreamError(HttpClientError),
+    ReadBytes(HttpClientError),
     #[error("failed to build response: {0}")]
-    BuildResponseError(http::Error),
-    #[error("to str error: {0}")]
-    ToStrError(#[from] http::header::ToStrError),
+    BuildResponse(http::Error),
     #[error("failed to reset stream: {0}")]
-    StreamResetError(StreamError),
-}
-
-/// An error caused by a range not being 512-byte aligned.
-#[derive(Debug, PartialEq, thiserror::Error)]
-pub enum Not512ByteAlignedError {
-    #[error("start range not 512-byte aligned: {0}")]
-    StartRange(u64),
-    #[error("end range not 512-byte aligned: {0}")]
-    EndRange(u64),
+    StreamReset(StreamError),
 }
 
 /// An error caused by invalid permissions.
@@ -165,17 +146,6 @@ pub enum PermissionError {
         received_token: char,
         supported_tokens: Vec<char>,
     },
-}
-
-/// An error caused by a range not being 512-byte aligned or by a parse failure.
-#[derive(Debug, PartialEq, thiserror::Error)]
-pub enum Parse512AlignedError {
-    #[error("split not found")]
-    SplitNotFound,
-    #[error("parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("not 512 byte aligned error: {0}")]
-    Not512ByteAlignedError(#[from] Not512ByteAlignedError),
 }
 
 /// An error caused by failure to traverse a data structure.
@@ -210,13 +180,11 @@ pub enum TraversingError {
 pub async fn extract_status_headers_and_body(
     resp: hyper::client::ResponseFuture,
 ) -> Result<(hyper::StatusCode, hyper::HeaderMap, body::Bytes), Error> {
-    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
+    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
     let (head, body) = res.into_parts();
     let status = head.status;
     let headers = head.headers;
-    let body = body::to_bytes(body)
-        .await
-        .map_err(HttpError::ReadBytesError)?;
+    let body = body::to_bytes(body).await.map_err(HttpError::ReadBytes)?;
     Ok((status, headers, body))
 }
 
@@ -226,11 +194,11 @@ pub async fn extract_status_headers_and_body(
 pub async fn extract_status_and_body(
     resp: hyper::client::ResponseFuture,
 ) -> Result<(StatusCode, String), HttpError> {
-    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
+    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
     let status = res.status();
     let body = body::to_bytes(res.into_body())
         .await
-        .map_err(HttpError::ReadBytesError)?;
+        .map_err(HttpError::ReadBytes)?;
     Ok((status, std::str::from_utf8(&body)?.to_owned()))
 }
 
@@ -240,7 +208,7 @@ pub async fn extract_status_and_body(
 pub async fn extract_location_status_and_body(
     resp: hyper::client::ResponseFuture,
 ) -> Result<(http::StatusCode, String, String), HttpError> {
-    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
+    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
     let status = res.status();
     let location: String = match res.headers().get("Location") {
         Some(header_value) => header_value.to_str()?.to_owned(),
@@ -248,7 +216,7 @@ pub async fn extract_location_status_and_body(
     };
     let body = body::to_bytes(res.into_body())
         .await
-        .map_err(HttpError::ReadBytesError)?;
+        .map_err(HttpError::ReadBytes)?;
     Ok((status, location, std::str::from_utf8(&body)?.to_owned()))
 }
 
@@ -278,7 +246,7 @@ pub async fn check_status_extract_body_2(
     let received_status = resp.status();
     let body = body::to_bytes(resp.into_body())
         .await
-        .map_err(HttpError::ReadBytesError)?;
+        .map_err(HttpError::ReadBytes)?;
     let s = String::from_utf8(body.to_vec())?;
     debug!("body: {}", s);
     if received_status != expected_status {

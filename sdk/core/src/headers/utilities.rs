@@ -138,7 +138,7 @@ pub async fn perform_http_request(
     let res = client
         .request(req)
         .await
-        .map_err(HttpError::ExecuteRequestError)?;
+        .map_err(HttpError::ExecuteRequest)?;
     check_status_extract_body_2(res, expected_status).await
 }
 

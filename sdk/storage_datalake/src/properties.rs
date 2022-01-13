@@ -6,35 +6,35 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Properties<'a, 'b>(HashMap<Cow<'a, str>, Cow<'b, str>>);
+pub struct Properties(HashMap<Cow<'static, str>, Cow<'static, str>>);
 
 const HEADER: &str = "x-ms-properties";
 
-impl<'a, 'b> Default for Properties<'a, 'b> {
+impl Default for Properties {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<'a, 'b> Properties<'a, 'b> {
+impl Properties {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn insert<K: Into<Cow<'a, str>>, V: Into<Cow<'b, str>>>(
+    pub fn insert<K: Into<Cow<'static, str>>, V: Into<Cow<'static, str>>>(
         &mut self,
         k: K,
         v: V,
-    ) -> Option<Cow<'b, str>> {
+    ) -> Option<Cow<'static, str>> {
         self.0.insert(k.into(), v.into())
     }
 
-    pub fn hash_map(&self) -> &HashMap<Cow<'a, str>, Cow<'b, str>> {
+    pub fn hash_map(&self) -> &HashMap<Cow<'static, str>, Cow<'static, str>> {
         &self.0
     }
 }
 
-impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
+impl AddAsHeader for Properties {
     fn add_as_header(&self, builder: Builder) -> Builder {
         // the header is a comma separated list of key=base64(value) see
         // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
@@ -70,14 +70,14 @@ impl<'a, 'b> AddAsHeader for Properties<'a, 'b> {
     }
 }
 
-impl TryFrom<&HeaderMap> for Properties<'static, 'static> {
+impl TryFrom<&HeaderMap> for Properties {
     type Error = crate::Error;
 
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
         let mut properties = Self::new();
 
         // this is probably too complicated. Should we split
-        // it in more maneageable code blocks?
+        // it in more manageable code blocks?
         // The logic is this:
         // 1. Look for the header. If not found return error
         // 2. Split the header value by comma

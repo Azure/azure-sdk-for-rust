@@ -1,5 +1,5 @@
 use azure_core::prelude::*;
-use azure_storage::{core::prelude::*, storage_shared_key_credential::StorageSharedKeyCredential};
+use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
 use std::error::Error;
@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_file_system_client(file_system_name.to_string());
 
     println!("creating file system '{}'...", &file_system_name);
-    let create_fs_response = file_system_client.create().execute().await?;
+    let create_fs_response = file_system_client.create().into_future().await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path1 = "some/path/example-file1.txt";
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("rename file response == {:?}\n", rename_file_response);
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().execute().await?;
+    let delete_fs_response = file_system_client.delete().into_future().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())
@@ -68,15 +68,7 @@ async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Sen
     let account_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
 
-    let http_client = azure_core::new_http_client();
-
-    let storage_account_client =
-        StorageAccountClient::new_access_key(http_client.clone(), &account_name, &account_key);
-
-    let storage_client = storage_account_client.as_storage_client();
-
     Ok(DataLakeClient::new(
-        storage_client,
         StorageSharedKeyCredential::new(account_name, account_key),
         None,
     ))
