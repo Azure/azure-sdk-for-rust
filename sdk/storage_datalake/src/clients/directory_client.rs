@@ -1,5 +1,5 @@
 use crate::operations::*;
-use crate::request_properties::*;
+use crate::request_options::*;
 use crate::{clients::FileSystemClient, Properties, Result};
 use azure_core::prelude::IfMatchCondition;
 use azure_core::Pipeline;

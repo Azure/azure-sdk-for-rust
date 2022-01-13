@@ -1,5 +1,5 @@
 use crate::clients::DirectoryClient;
-use crate::request_properties::*;
+use crate::request_options::*;
 use crate::Properties;
 use azure_core::headers::{
     date_from_headers, etag_from_headers, last_modified_from_headers, version_from_headers,

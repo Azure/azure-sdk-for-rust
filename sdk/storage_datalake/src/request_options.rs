@@ -2,7 +2,6 @@
 use azure_core::AddAsHeader;
 use azure_core::AppendToUrlQuery;
 use http::request::Builder;
-use std::borrow::Cow;
 
 #[derive(Debug, Clone)]
 pub enum ResourceType {

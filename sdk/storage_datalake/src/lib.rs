@@ -22,7 +22,7 @@ mod file_system;
 pub mod operations;
 pub mod prelude;
 mod properties;
-pub mod request_properties;
+pub mod request_options;
 mod shared_key_authorization_policy;
 mod util;
 
