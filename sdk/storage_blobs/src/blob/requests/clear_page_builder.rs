@@ -1,5 +1,6 @@
 use crate::blob::responses::ClearPageResponse;
 use crate::prelude::*;
+use crate::BA512Range;
 use azure_core::headers::{
     add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_TYPE, PAGE_WRITE,
 };

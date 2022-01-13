@@ -1,4 +1,3 @@
-use super::BA512Range;
 use crate::{AddAsHeader, ParsingError};
 use http::request::Builder;
 use std::convert::From;
@@ -22,15 +21,6 @@ impl Range {
 
     pub fn is_empty(&self) -> bool {
         self.end == self.start
-    }
-}
-
-impl<'a> From<&'a BA512Range> for Range {
-    fn from(ba: &'a BA512Range) -> Range {
-        Range {
-            start: ba.start(),
-            end: ba.end(),
-        }
     }
 }
 

@@ -1,6 +1,6 @@
-use super::range::Range;
-use crate::AddAsHeader;
-use crate::{Not512ByteAlignedError, Parse512AlignedError};
+use crate::{AddAsHeader, Not512ByteAlignedError, Parse512AlignedError};
+use azure_core::prelude::Range;
+use azure_core::{HttpHeaderError, Request};
 use http::request::Builder;
 use std::convert::TryFrom;
 use std::fmt;
@@ -67,10 +67,7 @@ impl AddAsHeader for BA512Range {
         builder.header(http::header::RANGE, &format!("{}", self))
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
+    fn add_as_header2(&self, request: &mut Request) -> Result<(), HttpHeaderError> {
         request.headers_mut().append(
             http::header::RANGE,
             http::HeaderValue::from_str(&self.to_string())?,
@@ -98,6 +95,15 @@ impl FromStr for BA512Range {
 impl fmt::Display for BA512Range {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "bytes={}-{}", self.start, self.end)
+    }
+}
+
+impl<'a> From<&'a BA512Range> for Range {
+    fn from(ba: &'a BA512Range) -> Range {
+        Range {
+            start: ba.start(),
+            end: ba.end(),
+        }
     }
 }
 
