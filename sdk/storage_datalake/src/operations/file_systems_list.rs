@@ -64,17 +64,11 @@ impl ListFileSystems {
 
                 azure_core::headers::add_optional_header2(&this.client_request_id, &mut request)?;
 
-                trace!("request == {:?}", request);
-
-                let response = match this
+                let response = this
                     .client
                     .pipeline()
                     .send(&mut ctx.clone(), &mut request)
-                    .await
-                {
-                    Ok(r) => r,
-                    Err(e) => return Err(e),
-                };
+                    .await?;
 
                 match ListFileSystemsResponse::try_from(response).await {
                     Ok(r) => Ok(r),
