@@ -1,5 +1,5 @@
 use azure_core::{Context, Policy, PolicyResult, Request, Response};
-use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
+use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use http::{HeaderMap, HeaderValue, Method};
 use ring::hmac;
 use std::sync::Arc;
@@ -45,14 +45,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
             HeaderValue::from_str("2019-12-12")?,
         ); // TODO: Remove duplication with storage_account_client.rs
 
-        let uri_path = &request.uri().path_and_query().unwrap().to_string()[1..];
-        let full_url = format!("{}/{}", self.base_url, uri_path);
-        // println!(
-        //     "full_url used by SharedKeyAuthorizationPolicy == {:#?}",
-        //     full_url
-        // );
-        let url = url::Url::parse(full_url.as_str())?;
-
+        let url = url::Url::parse(&request.uri().to_string()).unwrap();
         let auth = generate_authorization(
             request.headers(),
             &url,
