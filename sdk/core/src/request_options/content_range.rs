@@ -1,4 +1,4 @@
-use crate::ParsingError;
+use crate::ParseError;
 use std::fmt;
 use std::str::FromStr;
 
@@ -38,11 +38,11 @@ impl ContentRange {
 }
 
 impl FromStr for ContentRange {
-    type Err = ParsingError;
+    type Err = ParseError;
     fn from_str(s: &str) -> Result<ContentRange, Self::Err> {
         let remaining = s
             .strip_prefix(PREFIX)
-            .ok_or_else(|| ParsingError::TokenNotFound {
+            .ok_or_else(|| ParseError::TokenNotFound {
                 item: "ContentRange",
                 token: PREFIX.to_owned(),
                 full: s.into(),
@@ -53,7 +53,7 @@ impl FromStr for ContentRange {
 
         let mut split_at_slash = split_at_dash
             .next()
-            .ok_or_else(|| ParsingError::TokenNotFound {
+            .ok_or_else(|| ParseError::TokenNotFound {
                 item: "ContentRange",
                 token: "-".to_owned(),
                 full: s.into(),
@@ -63,7 +63,7 @@ impl FromStr for ContentRange {
         let end = split_at_slash.next().unwrap().parse()?;
         let total_length = split_at_slash
             .next()
-            .ok_or_else(|| ParsingError::TokenNotFound {
+            .ok_or_else(|| ParseError::TokenNotFound {
                 item: "ContentRange",
                 token: "/".to_owned(),
                 full: s.into(),
@@ -111,7 +111,7 @@ mod test {
         let err = "something else".parse::<ContentRange>().unwrap_err();
         assert_eq!(
             err,
-            ParsingError::TokenNotFound {
+            ParseError::TokenNotFound {
                 item: "ContentRange",
                 token: "bytes ".to_string(),
                 full: "something else".to_string()
@@ -124,7 +124,7 @@ mod test {
         let err = "bytes 100".parse::<ContentRange>().unwrap_err();
         assert_eq!(
             err,
-            ParsingError::TokenNotFound {
+            ParseError::TokenNotFound {
                 item: "ContentRange",
                 token: "-".to_string(),
                 full: "bytes 100".to_string()
@@ -137,7 +137,7 @@ mod test {
         let err = "bytes 100-500".parse::<ContentRange>().unwrap_err();
         assert_eq!(
             err,
-            ParsingError::TokenNotFound {
+            ParseError::TokenNotFound {
                 item: "ContentRange",
                 token: "/".to_string(),
                 full: "bytes 100-500".to_string()

@@ -8,8 +8,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error(transparent)]
     CoreError(#[from] azure_core::Error),
-    #[error("Parsing error: {0}")]
-    ParsingError(#[from] azure_core::ParsingError),
+    #[error("Parse error: {0}")]
+    ParseError(#[from] azure_core::ParseError),
     #[error("Permission error: {0}")]
     PermissionError(#[from] azure_core::PermissionError),
     #[error("Parse bool error: {0}")]

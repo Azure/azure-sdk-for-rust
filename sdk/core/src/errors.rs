@@ -31,7 +31,7 @@ pub enum Error {
     #[error("policy error: {0}")]
     Policy(Box<dyn std::error::Error + Send + Sync>),
     #[error("parsing error: {0}")]
-    Parsing(#[from] ParsingError),
+    Parse(#[from] ParseError),
     #[error("error getting token: {0}")]
     GetToken(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]
@@ -62,7 +62,7 @@ type HttpClientError = reqwest::Error;
 /// An error caused by a failure to parse data.
 #[non_exhaustive]
 #[derive(Debug, PartialEq, thiserror::Error)]
-pub enum ParsingError {
+pub enum ParseError {
     #[error("unknown variant of {item} found: \"{variant}\"")]
     UnknownVariant { item: &'static str, variant: String },
     #[error("expected token \"{token}\" not found when parsing {item} from \"{full}\"")]
@@ -72,15 +72,15 @@ pub enum ParsingError {
         full: String,
     },
     #[error("error parsing int: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
+    Int(#[from] std::num::ParseIntError),
     #[error("error parsing uuid: {0}")]
-    ParseUuidError(#[from] uuid::Error),
+    Uuid(#[from] uuid::Error),
     #[error("error parsing date time: {0}")]
-    ParseDateTimeError(#[from] chrono::ParseError),
+    DateTime(#[from] chrono::ParseError),
     #[error("error parsing a float: {0}")]
-    ParseFloatError(#[from] std::num::ParseFloatError),
+    Float(#[from] std::num::ParseFloatError),
     #[error("error parsing bool: {0}")]
-    ParseBoolError(#[from] std::str::ParseBoolError),
+    Bool(#[from] std::str::ParseBoolError),
 }
 
 /// An unexpected value.
@@ -171,7 +171,7 @@ pub enum TraversingError {
     #[error("generic parse error: {0}")]
     GenericParseError(String),
     #[error("parsing error: {0:?}")]
-    ParsingError(#[from] ParsingError),
+    ParseError(#[from] ParseError),
 }
 
 /// Extract the headers and body from a `hyper` HTTP response.
