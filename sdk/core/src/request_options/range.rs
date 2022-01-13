@@ -1,4 +1,3 @@
-use super::BA512Range;
 use crate::{AddAsHeader, ParseError};
 use http::request::Builder;
 use std::convert::From;

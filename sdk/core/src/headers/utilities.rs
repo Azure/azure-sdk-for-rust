@@ -156,7 +156,7 @@ where
 {
     get_str_from_headers(headers, key)?
         .parse()
-        .map_err(|e: T::Err| Error::Parsing(e.into()))
+        .map_err(|e: T::Err| Error::Parse(e.into()))
 }
 
 pub fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>>
@@ -169,7 +169,7 @@ where
             header
                 .to_str()?
                 .parse()
-                .map_err(|e: T::Err| Error::Parsing(e.into()))?,
+                .map_err(|e: T::Err| Error::Parse(e.into()))?,
         )),
         None => Ok(None),
     }

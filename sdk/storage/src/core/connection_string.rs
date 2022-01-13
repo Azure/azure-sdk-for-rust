@@ -21,7 +21,7 @@ pub enum ConnectionStringError {
     MissingValue { key: String },
     #[error("Unexpected key '{}'", key)]
     UnexpectedKey { key: String },
-    #[error("Parsing error: {}", msg)]
+    #[error("Parse error: {}", msg)]
     ParseError { msg: String },
     #[error("Unsupported protocol {}", protocol)]
     UnsupportedProtocol { protocol: String },

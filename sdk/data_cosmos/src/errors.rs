@@ -11,13 +11,13 @@ pub enum Error {
     Core(#[from] azure_core::Error),
     /// An error related to parsing
     #[error(transparent)]
-    ParseError(#[from] ParseError),
+    Parse(#[from] ParseError),
     #[error("conversion to `{0}` failed because at lease one element is raw")]
     ElementIsRaw(String),
     #[error("error parsing authorization token: {0}")]
-    AuthorizationTokenParsing(#[from] crate::resources::permission::AuthorizationTokenParseError),
+    AuthorizationTokenParse(#[from] crate::resources::permission::AuthorizationTokenParseError),
     #[error("error parsing permission token: {0}")]
-    PermissionTokenParsing(#[from] crate::resources::permission::PermissionTokenParseError),
+    PermissionTokenParse(#[from] crate::resources::permission::PermissionTokenParseError),
     #[error("error writing the header value: {0}")]
     InvalidHeaderValue(#[from] azure_core::HttpHeaderError),
 }

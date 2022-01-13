@@ -31,7 +31,7 @@ pub enum Error {
     #[error("policy error: {0}")]
     Policy(Box<dyn std::error::Error + Send + Sync>),
     #[error("parsing error: {0}")]
-    Parsing(#[from] ParseError),
+    Parse(#[from] ParseError),
     #[error("error getting token: {0}")]
     GetToken(Box<dyn std::error::Error + Send + Sync>),
     #[error("http error: {0}")]
