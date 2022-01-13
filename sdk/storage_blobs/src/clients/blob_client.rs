@@ -1,5 +1,6 @@
 use crate::blob::requests::*;
 use crate::prelude::*;
+use crate::BA512Range;
 use azure_core::prelude::*;
 use azure_core::HttpClient;
 use azure_storage::core::clients::StorageCredentials;
