@@ -124,6 +124,58 @@ impl From<i64> for Position {
     }
 }
 
+impl AppendToUrlQuery for Position {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        url.query_pairs_mut()
+            .append_pair("position", &self.0.to_string());
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Close(bool);
+
+impl Close {
+    pub fn new(close: bool) -> Self {
+        Self(close)
+    }
+}
+
+impl From<bool> for Close {
+    fn from(position: bool) -> Self {
+        Self::new(position)
+    }
+}
+
+impl AppendToUrlQuery for Close {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        let close = if self.0 { "true" } else { "false" };
+        url.query_pairs_mut().append_pair("close", close);
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RetainUncommittedData(bool);
+
+impl RetainUncommittedData {
+    pub fn new(close: bool) -> Self {
+        Self(close)
+    }
+}
+
+impl From<bool> for RetainUncommittedData {
+    fn from(position: bool) -> Self {
+        Self::new(position)
+    }
+}
+
+impl AppendToUrlQuery for RetainUncommittedData {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        let retain = if self.0 { "true" } else { "false" };
+        url.query_pairs_mut()
+            .append_pair("retainUncommittedData", retain);
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct RenameSource(String);
 

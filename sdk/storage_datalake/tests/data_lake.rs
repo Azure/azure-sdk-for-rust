@@ -198,7 +198,6 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
     let file_client2 = file_system_client.get_file_client(file_path2);
 
     file_client1.create().into_future().await?;
-
     file_client2.create().into_future().await?;
 
     let rename_file_if_not_exists_result = file_client1
