@@ -36,6 +36,7 @@ azure_identity = { path = "../identity", version = "0.1.0" }
 
 [features]
 default = ["enable_reqwest"]
+test_e2e = []
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 mock_transport_framework = ["azure_core/mock_transport_framework"]
