@@ -60,6 +60,14 @@ impl DirectoryClient {
             .into_directory_client(path)
     }
 
+    pub fn list_paths(&self) -> ListPathsBuilder {
+        let fs_url = self.file_system_client.url().unwrap();
+        // the path will contain a leading '/' as we extract if from the path component of the url
+        let dir_path = vec![fs_url.path(), &self.path].join("/");
+        ListPathsBuilder::new(self.file_system_client.clone(), self.context().clone())
+            .directory(dir_path)
+    }
+
     pub fn create(&self) -> PutPathBuilder<Self> {
         PutPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .resource(ResourceType::Directory)

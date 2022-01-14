@@ -68,6 +68,10 @@ impl FileSystemClient {
         FileClient::new(self, path.into())
     }
 
+    pub fn list_paths(&self) -> ListPathsBuilder {
+        ListPathsBuilder::new(self.clone(), self.context.clone())
+    }
+
     pub fn create(&self) -> CreateFileSystemBuilder {
         CreateFileSystemBuilder::new(self.clone())
     }

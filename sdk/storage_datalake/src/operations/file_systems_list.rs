@@ -94,7 +94,7 @@ impl ListFileSystemsResponse {
     pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
-        let file_system_list: FileSystemList = serde_json::from_slice(&body)?;
+        let file_system_list: FileSystemList = body.try_into()?;
 
         Ok(ListFileSystemsResponse {
             common_storage_response_headers: (&headers).try_into()?,

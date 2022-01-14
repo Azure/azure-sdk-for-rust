@@ -205,3 +205,21 @@ impl AddAsHeader for RenameSource {
         Ok(())
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct Directory(String);
+
+impl<S> From<S> for Directory
+where
+    S: Into<String>,
+{
+    fn from(s: S) -> Self {
+        Self(s.into())
+    }
+}
+
+impl AppendToUrlQuery for Directory {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        url.query_pairs_mut().append_pair("directory", &self.0);
+    }
+}
