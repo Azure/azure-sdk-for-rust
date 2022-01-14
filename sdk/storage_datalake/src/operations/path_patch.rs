@@ -46,9 +46,6 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             position: None,
             retain_uncommitted_data: None,
             timeout: None,
-
-            // mode: None,
-            // resource: None,
             if_match_condition: None,
             if_modified_since: None,
             client_request_id: None,
