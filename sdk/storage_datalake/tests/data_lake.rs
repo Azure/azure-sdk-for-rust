@@ -107,23 +107,16 @@ async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Err
     // TODO: CoreError(PolicyError(RelativeUrlWithoutBase))
 
     let file_path = "some/path/e2etest-file.txt";
+    let file_client = file_system_client.get_file_client(file_path);
 
-    file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
+    file_client.create().into_future().await?;
 
-    let create_file_if_not_exists_result = file_system_client
-        .create_file_if_not_exists(Context::default(), file_path)
-        .await;
+    let create_file_if_not_exists_result = file_client.create_if_not_exists().into_future().await;
     assert!(create_file_if_not_exists_result.is_err());
 
-    file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
+    file_client.create().into_future().await?;
 
-    file_system_client
-        .delete_file(Context::default(), file_path, FileDeleteOptions::default())
-        .await?;
+    file_client.delete().into_future().await?;
 
     file_system_client.delete().into_future().await?;
 
@@ -149,10 +142,9 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
     );
 
     let file_path = "some/path/e2etest-file.txt";
+    let file_client = file_system_client.get_file_client(file_path);
 
-    file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
+    file_client.create().into_future().await?;
 
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
@@ -200,18 +192,17 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
     );
 
     let file_path1 = "some/path/e2etest-file1.txt";
+    let file_client1 = file_system_client.get_file_client(file_path1);
     let file_path2 = "some/path/e2etest-file2.txt";
+    let file_client2 = file_system_client.get_file_client(file_path2);
 
-    file_system_client
-        .create_file(Context::default(), file_path1, FileCreateOptions::default())
-        .await?;
+    file_client1.create().into_future().await?;
 
-    file_system_client
-        .create_file(Context::default(), file_path2, FileCreateOptions::default())
-        .await?;
+    file_client2.create().into_future().await?;
 
-    let rename_file_if_not_exists_result = file_system_client
-        .rename_file_if_not_exists(Context::default(), file_path1, file_path2)
+    let rename_file_if_not_exists_result = file_client1
+        .rename_if_not_exists(file_path2)
+        .into_future()
         .await;
     assert!(rename_file_if_not_exists_result.is_err());
 

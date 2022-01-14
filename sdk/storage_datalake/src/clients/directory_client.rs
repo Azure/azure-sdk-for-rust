@@ -25,8 +25,7 @@ impl PathClient for DirectoryClient {
     }
 
     fn prepare_request(&self, uri: &str, http_method: http::Method) -> azure_core::Request {
-        self.file_system_client
-            .prepare_request_pipeline(uri, http_method)
+        self.file_system_client.prepare_request(uri, http_method)
     }
 
     fn pipeline(&self) -> &Pipeline {
@@ -98,8 +97,15 @@ impl DirectoryClient {
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
     }
 
-    pub fn delete(&self) -> DeleteFileSystemBuilder {
-        todo!()
+    pub fn delete<R>(&self, recursive: R) -> DeletePathBuilder<Self>
+    where
+        R: Into<Recursive>,
+    {
+        DeletePathBuilder::new(
+            self.clone(),
+            Some(recursive.into()),
+            self.file_system_client.context.clone(),
+        )
     }
 
     pub fn get_properties(&self) -> GetFileSystemPropertiesBuilder {

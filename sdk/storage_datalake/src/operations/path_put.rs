@@ -1,12 +1,10 @@
-use crate::clients::{DirectoryClient, PathClient};
+use crate::clients::PathClient;
 use crate::request_options::*;
 use crate::Properties;
-use azure_core::headers::{
-    date_from_headers, etag_from_headers, last_modified_from_headers, version_from_headers,
+use azure_core::headers::{etag_from_headers, last_modified_from_headers};
+use azure_core::prelude::{
+    ClientRequestId, Context, IfMatchCondition, IfModifiedSinceCondition, NextMarker, Timeout, *,
 };
-use azure_core::prelude::*;
-use azure_core::prelude::{ClientRequestId, Context, IfModifiedSinceCondition, Timeout};
-use azure_core::prelude::{IfMatchCondition, NextMarker};
 use azure_core::{
     headers::{add_mandatory_header2, add_optional_header2},
     AppendToUrlQuery, Response as HttpResponse,
@@ -80,8 +78,6 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
             self.mode.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            println!("url = {}", url);
-
             let mut request = this.client.prepare_request(url.as_str(), http::Method::PUT);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
@@ -106,10 +102,8 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
 pub struct PutPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
     pub etag: String,
-    pub date: DateTime<Utc>,
     pub last_modified: DateTime<Utc>,
     pub continuation: Option<NextMarker>,
-    pub version: String,
 }
 
 impl PutPathResponse {
@@ -119,10 +113,8 @@ impl PutPathResponse {
         Ok(Self {
             common_storage_response_headers: (&headers).try_into()?,
             etag: etag_from_headers(&headers)?,
-            date: date_from_headers(&headers)?,
             last_modified: last_modified_from_headers(&headers)?,
             continuation: NextMarker::from_header_optional(&headers)?,
-            version: version_from_headers(&headers)?.to_string(),
         })
     }
 }

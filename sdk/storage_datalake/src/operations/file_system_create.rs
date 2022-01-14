@@ -51,9 +51,7 @@ impl CreateFileSystemBuilder {
             url.query_pairs_mut().append_pair("resource", "filesystem");
             self.timeout.append_to_url_query(&mut url);
 
-            let mut request = this
-                .client
-                .prepare_request_pipeline(url.as_str(), http::Method::PUT);
+            let mut request = this.client.prepare_request(url.as_str(), http::Method::PUT);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
             add_optional_header2(&this.properties, &mut request)?;

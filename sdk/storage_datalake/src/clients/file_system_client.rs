@@ -86,50 +86,6 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self.clone(), properties)
     }
 
-    pub async fn create_file(
-        &self,
-        ctx: Context,
-        file_path: &str,
-        options: FileCreateOptions,
-    ) -> Result<FileCreateResponse> {
-        let mut request = self.prepare_file_create_request(file_path);
-
-        options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-
-        Ok(FileCreateResponse::try_from(response).await?)
-    }
-
-    pub async fn create_file_if_not_exists(
-        &self,
-        ctx: Context,
-        file_path: &str,
-    ) -> Result<FileCreateResponse> {
-        let options = FileCreateOptions::new()
-            .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
-
-        let mut request = self.prepare_file_create_request(file_path);
-
-        options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-
-        Ok(FileCreateResponse::try_from(response).await?)
-    }
-
-    pub async fn delete_file(
-        &self,
-        ctx: Context,
-        file_path: &str,
-        options: FileDeleteOptions,
-    ) -> Result<FileDeleteResponse> {
-        let mut request = self.prepare_file_delete_request(file_path);
-
-        options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-
-        Ok(FileDeleteResponse::try_from(response).await?)
-    }
-
     pub async fn rename_file(
         &self,
         ctx: Context,
@@ -195,29 +151,13 @@ impl FileSystemClient {
         Ok(FileFlushResponse::try_from(response).await?)
     }
 
-    pub(crate) fn prepare_request_pipeline(
+    pub(crate) fn prepare_request(
         &self,
         uri: &str,
         http_method: http::Method,
     ) -> azure_core::Request {
         self.data_lake_client
             .prepare_request_pipeline(uri, http_method)
-    }
-
-    pub(crate) fn prepare_file_create_request(&self, file_path: &str) -> azure_core::Request {
-        let uri = format!("{}/{}?resource=file", self.url().unwrap(), file_path);
-        http::request::Request::put(uri)
-            .body(bytes::Bytes::new()) // Request builder requires a body here
-            .unwrap()
-            .into()
-    }
-
-    pub(crate) fn prepare_file_delete_request(&self, file_path: &str) -> azure_core::Request {
-        let uri = format!("{}/{}", self.url().unwrap(), file_path);
-        http::request::Request::delete(uri)
-            .body(bytes::Bytes::new()) // Request builder requires a body here
-            .unwrap()
-            .into()
     }
 
     pub(crate) fn prepare_file_rename_request(

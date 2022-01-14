@@ -1,22 +1,13 @@
-use crate::clients::{DirectoryClient, PathClient};
+use crate::clients::PathClient;
 use crate::request_options::*;
-use crate::Properties;
-use azure_core::headers::{
-    date_from_headers, etag_from_headers, last_modified_from_headers, version_from_headers,
-};
-use azure_core::prelude::*;
 use azure_core::prelude::{ClientRequestId, Context, IfModifiedSinceCondition, Timeout};
 use azure_core::prelude::{IfMatchCondition, NextMarker};
-use azure_core::{
-    headers::{add_mandatory_header2, add_optional_header2},
-    AppendToUrlQuery, Response as HttpResponse,
-};
+use azure_core::{headers::add_optional_header2, AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
-use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
 /// A future of a delete file response
-type PutPath = futures::future::BoxFuture<'static, crate::Result<PutPathResponse>>;
+type PutPath = futures::future::BoxFuture<'static, crate::Result<DeletePathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct DeletePathBuilder<C>
@@ -24,8 +15,7 @@ where
     C: PathClient,
 {
     client: C,
-    mode: Option<PathRenameMode>,
-    resource: Option<ResourceType>,
+    recursive: Option<Recursive>,
     continuation: Option<NextMarker>,
     if_match_condition: Option<IfMatchCondition>,
     if_modified_since: Option<IfModifiedSinceCondition>,
@@ -35,12 +25,11 @@ where
 }
 
 impl<C: PathClient + 'static> DeletePathBuilder<C> {
-    pub(crate) fn new(client: C, context: Context) -> Self {
+    pub(crate) fn new(client: C, recursive: Option<Recursive>, context: Context) -> Self {
         Self {
             client,
-            mode: None,
+            recursive,
             continuation: None,
-            resource: None,
             if_match_condition: None,
             if_modified_since: None,
             client_request_id: None,
@@ -50,8 +39,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
     }
 
     setters! {
-        mode: PathRenameMode => Some(mode),
-        resource: ResourceType => Some(resource),
+        recursive: Recursive => Some(recursive),
         continuation: NextMarker => Some(continuation),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         if_modified_since: IfModifiedSinceCondition => Some(if_modified_since),
@@ -70,18 +58,18 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
             if let Some(continuation) = self.continuation {
                 continuation.append_to_url_query_as_continuation(&mut url);
             };
-            self.resource.append_to_url_query(&mut url);
-            self.mode.append_to_url_query(&mut url);
+            self.recursive.append_to_url_query(&mut url);
             self.timeout.append_to_url_query(&mut url);
 
-            println!("url = {}", url);
-
-            let mut request = this.client.prepare_request(url.as_str(), http::Method::PUT);
+            let mut request = this
+                .client
+                .prepare_request(url.as_str(), http::Method::DELETE);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
             add_optional_header2(&this.if_match_condition, &mut request)?;
             add_optional_header2(&this.if_modified_since, &mut request)?;
-            add_mandatory_header2(&ContentLength::new(0), &mut request)?;
+
+            println!("{:?}", request);
 
             let response = self
                 .client
@@ -89,32 +77,24 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
                 .send(&mut ctx.clone(), &mut request)
                 .await?;
 
-            PutPathResponse::try_from(response).await
+            DeletePathResponse::try_from(response).await
         })
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct PutPathResponse {
+pub struct DeletePathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
-    pub etag: String,
-    pub date: DateTime<Utc>,
-    pub last_modified: DateTime<Utc>,
     pub continuation: Option<NextMarker>,
-    pub version: String,
 }
 
-impl PutPathResponse {
+impl DeletePathResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {
             common_storage_response_headers: (&headers).try_into()?,
-            etag: etag_from_headers(&headers)?,
-            date: date_from_headers(&headers)?,
-            last_modified: last_modified_from_headers(&headers)?,
             continuation: NextMarker::from_header_optional(&headers)?,
-            version: version_from_headers(&headers)?.to_string(),
         })
     }
 }

@@ -46,7 +46,7 @@ impl DeleteFileSystemBuilder {
 
             let mut request = this
                 .client
-                .prepare_request_pipeline(url.as_str(), http::Method::DELETE);
+                .prepare_request(url.as_str(), http::Method::DELETE);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
             add_optional_header2(&this.if_modified_since_condition, &mut request)?;

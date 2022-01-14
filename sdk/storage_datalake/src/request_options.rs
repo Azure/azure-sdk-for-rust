@@ -38,6 +38,22 @@ impl AppendToUrlQuery for PathRenameMode {
 }
 
 #[derive(Debug, Clone)]
+pub struct Recursive(bool);
+
+impl AppendToUrlQuery for Recursive {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        let recursive = if self.0 { "true" } else { "false" };
+        url.query_pairs_mut().append_pair("recursive", recursive);
+    }
+}
+
+impl From<bool> for Recursive {
+    fn from(recursive: bool) -> Self {
+        Self(recursive)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum PathUpdateAction {
     Append,
     Flush,

@@ -20,8 +20,7 @@ impl PathClient for FileClient {
     }
 
     fn prepare_request(&self, uri: &str, http_method: http::Method) -> azure_core::Request {
-        self.file_system_client
-            .prepare_request_pipeline(uri, http_method)
+        self.file_system_client.prepare_request(uri, http_method)
     }
 
     fn pipeline(&self) -> &Pipeline {
@@ -73,10 +72,8 @@ impl FileClient {
         P: Into<String>,
     {
         let destination_client = self.file_system_client.get_file_client(destination_path);
-
         let fs_url = self.file_system_client.url().unwrap();
         let dir_path = vec![fs_url.path(), &self.path].join("/");
-        println!("{}", dir_path);
         destination_client
             .create()
             .mode(PathRenameMode::Legacy)
@@ -91,8 +88,8 @@ impl FileClient {
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
     }
 
-    pub fn delete(&self) -> DeleteFileSystemBuilder {
-        todo!()
+    pub fn delete(&self) -> DeletePathBuilder<Self> {
+        DeletePathBuilder::new(self.clone(), None, self.file_system_client.context.clone())
     }
 
     pub fn get_properties(&self) -> GetFileSystemPropertiesBuilder {

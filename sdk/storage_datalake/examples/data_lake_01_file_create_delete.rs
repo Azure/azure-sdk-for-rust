@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -25,9 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file response == {:?}\n", create_file_response);
 
     println!("creating file '{}' if not exists...", file_path);
-    let create_file_if_not_exists_result = file_system_client
-        .create_file_if_not_exists(Context::default(), file_path)
-        .await;
+    let create_file_if_not_exists_result = file_client.create_if_not_exists().into_future().await;
     println!(
         "create file result (should fail) == {:?}\n",
         create_file_if_not_exists_result
@@ -38,9 +35,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file response == {:?}\n", create_file_response);
 
     println!("deleting file '{}'...", file_path);
-    let delete_file_response = file_system_client
-        .delete_file(Context::default(), file_path, FileDeleteOptions::default())
-        .await?;
+    let delete_file_response = file_client.delete().into_future().await?;
     println!("delete_file file response == {:?}\n", delete_file_response);
 
     println!("deleting file system...");

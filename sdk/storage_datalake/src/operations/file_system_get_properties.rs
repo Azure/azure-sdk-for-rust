@@ -49,7 +49,7 @@ impl GetFileSystemPropertiesBuilder {
 
             let mut request = this
                 .client
-                .prepare_request_pipeline(url.as_str(), http::Method::HEAD);
+                .prepare_request(url.as_str(), http::Method::HEAD);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
             add_mandatory_header2(&ContentLength::new(0), &mut request)?;
