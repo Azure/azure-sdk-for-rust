@@ -73,8 +73,6 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
             add_optional_header2(&this.if_modified_since, &mut request)?;
             add_optional_header2(&this.lease_id, &mut request)?;
 
-            println!("{:?}", request);
-
             let response = self
                 .client
                 .pipeline()

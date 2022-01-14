@@ -69,8 +69,6 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
             add_optional_header2(&this.if_match_condition, &mut request)?;
             add_optional_header2(&this.if_modified_since, &mut request)?;
 
-            println!("{:?}", request);
-
             let response = self
                 .client
                 .pipeline()
