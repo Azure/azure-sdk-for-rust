@@ -48,6 +48,8 @@ pub enum Error {
     HttpPrepare(#[source] http::Error),
     #[error(transparent)]
     Stream(#[from] StreamError),
+    #[error("JSON error")]
+    Json(#[source] serde_json::Error),
     #[error("Other error")]
     Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
