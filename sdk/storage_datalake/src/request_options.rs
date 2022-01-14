@@ -38,6 +38,24 @@ impl AppendToUrlQuery for PathRenameMode {
 }
 
 #[derive(Debug, Clone)]
+pub enum PathGetPropertiesAction {
+    CheckAccess,
+    GetAccessControl,
+    GetStatus,
+}
+
+impl AppendToUrlQuery for PathGetPropertiesAction {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        let action = match self {
+            Self::CheckAccess => "checkAccess",
+            Self::GetAccessControl => "getAccessControl",
+            Self::GetStatus => "getStatus",
+        };
+        url.query_pairs_mut().append_pair("action", action);
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Recursive(bool);
 
 impl AppendToUrlQuery for Recursive {
@@ -50,6 +68,22 @@ impl AppendToUrlQuery for Recursive {
 impl From<bool> for Recursive {
     fn from(recursive: bool) -> Self {
         Self(recursive)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Upn(bool);
+
+impl AppendToUrlQuery for Upn {
+    fn append_to_url_query(&self, url: &mut url::Url) {
+        let upn = if self.0 { "true" } else { "false" };
+        url.query_pairs_mut().append_pair("upn", upn);
+    }
+}
+
+impl From<bool> for Upn {
+    fn from(upn: bool) -> Self {
+        Self(upn)
     }
 }
 

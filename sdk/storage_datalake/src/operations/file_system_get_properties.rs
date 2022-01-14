@@ -11,7 +11,7 @@ use azure_core::{
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 
 /// A future of a file system get properties response
 type GetFileSystemProperties =
@@ -83,7 +83,7 @@ impl GetFileSystemPropertiesResponse {
             etag: Etag::from(etag_from_headers(&headers)?),
             last_modified: last_modified_from_headers(&headers)?,
             namespace_enabled: namespace_enabled_from_headers(&headers)?,
-            properties: Properties::try_from(&headers)?,
+            properties: (&headers).try_into()?,
         })
     }
 }

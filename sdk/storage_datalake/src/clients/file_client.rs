@@ -91,8 +91,8 @@ impl FileClient {
         DeletePathBuilder::new(self.clone(), None, self.file_system_client.context.clone())
     }
 
-    pub fn get_properties(&self) -> GetFileSystemPropertiesBuilder {
-        todo!()
+    pub fn get_properties(&self) -> HeadPathBuilder<Self> {
+        HeadPathBuilder::new(self.clone(), self.file_system_client.context.clone())
     }
 
     pub fn set_properties(&self, _properties: Properties) -> SetFileSystemPropertiesBuilder {
