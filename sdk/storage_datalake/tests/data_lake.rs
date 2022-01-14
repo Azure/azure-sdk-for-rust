@@ -1,7 +1,6 @@
 #![cfg(feature = "mock_transport_framework")]
 
 use azure_storage_datalake::prelude::*;
-use chrono::Utc;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;
