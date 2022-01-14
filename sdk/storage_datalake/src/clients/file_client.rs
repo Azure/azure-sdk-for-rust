@@ -72,11 +72,12 @@ impl FileClient {
     {
         let destination_client = self.file_system_client.get_file_client(destination_path);
         let fs_url = self.file_system_client.url().unwrap();
+        // the path will contain a leading '/' as we extract if from the path component of the url
         let dir_path = vec![fs_url.path(), &self.path].join("/");
         destination_client
             .create()
             .mode(PathRenameMode::Legacy)
-            .rename_source(format!("{}/", dir_path))
+            .rename_source(dir_path)
     }
 
     pub fn rename_if_not_exists<P>(&self, destination_path: P) -> PutPathBuilder<Self>

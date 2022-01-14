@@ -2,16 +2,17 @@
 // #![cfg(feature = "mock_transport_framework")]
 
 use azure_core::prelude::*;
-use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
 use futures::stream::StreamExt;
 use std::error::Error;
 use std::num::NonZeroU32;
 
+mod setup;
+
 #[tokio::test]
 async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let data_lake_client = create_data_lake_client().await.unwrap();
+    let data_lake_client = setup::create_data_lake_client().await.unwrap();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-fs-{}",
@@ -88,7 +89,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
 #[tokio::test]
 async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let data_lake_client = create_data_lake_client().await.unwrap();
+    let data_lake_client = setup::create_data_lake_client().await.unwrap();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-create-{}",
@@ -125,7 +126,7 @@ async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Err
 
 #[tokio::test]
 async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let data_lake_client = create_data_lake_client().await.unwrap();
+    let data_lake_client = setup::create_data_lake_client().await.unwrap();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-upload-{}",
@@ -175,7 +176,7 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
 
 #[tokio::test]
 async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let data_lake_client = create_data_lake_client().await.unwrap();
+    let data_lake_client = setup::create_data_lake_client().await.unwrap();
 
     let file_system_name = format!(
         "azurerustsdk-datalake-e2etest-file-rename-{}",
@@ -218,16 +219,4 @@ async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Se
     file_system_client.delete().into_future().await?;
 
     Ok(())
-}
-
-async fn create_data_lake_client() -> Result<DataLakeClient, Box<dyn Error + Send + Sync>> {
-    let account_name = std::env::var("ADLSGEN2_STORAGE_ACCOUNT")
-        .expect("Set env variable ADLSGEN2_STORAGE_ACCOUNT first!");
-    let account_key = std::env::var("ADLSGEN2_STORAGE_MASTER_KEY")
-        .expect("Set env variable ADLSGEN2_STORAGE_MASTER_KEY first!");
-
-    Ok(DataLakeClient::new(
-        StorageSharedKeyCredential::new(account_name, account_key),
-        None,
-    ))
 }
