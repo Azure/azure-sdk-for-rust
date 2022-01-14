@@ -46,7 +46,9 @@ pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>> 
 
 pub fn continuation_token_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>> {
     if let Some(hc) = headers.get(CONTINUATION) {
-        Ok(Some(hc.to_str()?.to_owned()))
+        Ok(Some(
+            hc.to_str().map_err(HttpHeaderError::ToStr)?.to_owned(),
+        ))
     } else {
         Ok(None)
     }
@@ -146,7 +148,8 @@ pub fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a
     Ok(headers
         .get(key)
         .ok_or_else(|| Error::HeaderNotFound(key.to_owned()))?
-        .to_str()?)
+        .to_str()
+        .map_err(HttpHeaderError::ToStr)?)
 }
 
 pub fn get_from_headers<T: std::str::FromStr>(headers: &HeaderMap, key: &str) -> Result<T>
@@ -167,7 +170,8 @@ where
     match headers.get(key) {
         Some(header) => Ok(Some(
             header
-                .to_str()?
+                .to_str()
+                .map_err(HttpHeaderError::ToStr)?
                 .parse()
                 .map_err(|e: T::Err| Error::Parse(e.into()))?,
         )),
