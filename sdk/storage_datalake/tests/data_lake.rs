@@ -149,15 +149,7 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
 
     let bytes = bytes::Bytes::from("some data");
     let file_length = bytes.len() as i64;
-    file_system_client
-        .append_to_file(
-            Context::default(),
-            file_path,
-            bytes,
-            0,
-            FileAppendOptions::default(),
-        )
-        .await?;
+    file_client.append(0, bytes).into_future().await?;
 
     file_system_client
         .flush_file(

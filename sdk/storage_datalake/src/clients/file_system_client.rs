@@ -3,7 +3,6 @@ use crate::operations::*;
 use crate::{Properties, Result};
 use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
-use bytes::Bytes;
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -85,22 +84,6 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self.clone(), Some(properties))
     }
 
-    pub async fn append_to_file(
-        &self,
-        ctx: Context,
-        file_path: &str,
-        bytes: Bytes,
-        position: i64,
-        options: FileAppendOptions,
-    ) -> Result<FileAppendResponse> {
-        let mut request = self.prepare_file_append_request(file_path, position);
-
-        options.decorate_request(&mut request, bytes)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-
-        Ok(FileAppendResponse::try_from(response).await?)
-    }
-
     pub async fn flush_file(
         &self,
         ctx: Context,
@@ -123,23 +106,6 @@ impl FileSystemClient {
     ) -> azure_core::Request {
         self.data_lake_client
             .prepare_request_pipeline(uri, http_method)
-    }
-
-    pub(crate) fn prepare_file_append_request(
-        &self,
-        file_path: &str,
-        position: i64,
-    ) -> azure_core::Request {
-        let uri = format!(
-            "{}/{}?action=append&position={}",
-            self.url().unwrap(),
-            file_path,
-            position
-        );
-        http::request::Request::patch(uri)
-            .body(bytes::Bytes::new()) // Request builder requires a body here
-            .unwrap()
-            .into()
     }
 
     pub(crate) fn prepare_file_flush_request(

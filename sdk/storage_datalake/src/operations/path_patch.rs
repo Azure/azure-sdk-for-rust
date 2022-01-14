@@ -10,6 +10,7 @@ use azure_core::{
     AppendToUrlQuery, Response as HttpResponse,
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
+use bytes::Bytes;
 use chrono::{DateTime, Utc};
 use futures::future::BoxFuture;
 use std::convert::TryInto;
@@ -33,6 +34,7 @@ where
     if_modified_since: Option<IfModifiedSinceCondition>,
     client_request_id: Option<ClientRequestId>,
     properties: Option<Properties>,
+    bytes: Option<Bytes>,
     context: Context,
 }
 
@@ -50,6 +52,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             if_modified_since: None,
             client_request_id: None,
             properties: None,
+            bytes: None,
             context,
         }
     }
@@ -61,14 +64,11 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
         position: Position => Some(position),
         retain_uncommitted_data: RetainUncommittedData => Some(retain_uncommitted_data),
         timeout: Timeout => Some(timeout),
-
-        // mode: PathRenameMode => Some(mode),
-        // resource: ResourceType => Some(resource),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         if_modified_since: IfModifiedSinceCondition => Some(if_modified_since),
         client_request_id: ClientRequestId => Some(client_request_id),
         properties: Properties => Some(properties),
-
+        bytes: Bytes => Some(bytes),
         context: Context => context,
     }
 
@@ -97,7 +97,13 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
             add_optional_header2(&this.if_match_condition, &mut request)?;
             add_optional_header2(&this.if_modified_since, &mut request)?;
 
-            add_mandatory_header2(&ContentLength::new(0), &mut request)?;
+            if let Some(bytes) = this.bytes {
+                add_mandatory_header2(&ContentLength::new(bytes.len() as i32), &mut request)?;
+                add_mandatory_header2(&ContentType::new("application/octet-stream"), &mut request)?;
+                request.set_body(bytes.into())
+            } else {
+                add_mandatory_header2(&ContentLength::new(0), &mut request)?;
+            }
 
             let response = self
                 .client
@@ -113,8 +119,8 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
 #[derive(Debug, Clone)]
 pub struct PatchPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
-    pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    pub etag: Option<String>,
+    pub last_modified: Option<DateTime<Utc>>,
     pub continuation: Option<NextMarker>,
 }
 
@@ -122,10 +128,20 @@ impl PatchPathResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
+        let etag = match etag_from_headers(&headers) {
+            Ok(tag) => Some(tag),
+            _ => None,
+        };
+
+        let last_modified = match last_modified_from_headers(&headers) {
+            Ok(modified) => Some(modified),
+            _ => None,
+        };
+
         Ok(Self {
             common_storage_response_headers: (&headers).try_into()?,
-            etag: etag_from_headers(&headers)?,
-            last_modified: last_modified_from_headers(&headers)?,
+            etag,
+            last_modified,
             continuation: NextMarker::from_header_optional(&headers)?,
         })
     }

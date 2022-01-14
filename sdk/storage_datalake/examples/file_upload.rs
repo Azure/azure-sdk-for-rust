@@ -33,26 +33,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let data2_length = data2.len() as i64;
 
     println!("appending '{}' to file '{}'...", string1, file_path);
-    let append_to_file_response = file_system_client
-        .append_to_file(
-            Context::default(),
-            file_path,
-            data1,
-            0,
-            FileAppendOptions::default(),
-        )
-        .await?;
+    let append_to_file_response = file_client.append(0, data1).into_future().await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("appending '{}' to file '{}'...", string2, file_path);
-    let append_to_file_response = file_system_client
-        .append_to_file(
-            Context::default(),
-            file_path,
-            data2,
-            data1_length,
-            FileAppendOptions::default(),
-        )
+    let append_to_file_response = file_client
+        .append(data1_length, data2)
+        .into_future()
         .await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
