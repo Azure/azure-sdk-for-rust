@@ -1,1 +1,14 @@
-{"uri":"/azurerustsdk-datalake-file-rename/some/path/e2etest-file2.txt?resource=file&mode=legacy","method":"PUT","headers":{"authorization":"<<STRIPPED>>","content-language":"/azurerustsdk-datalake-file-rename/some/path/e2etest-file1.txt","content-length":"0","if-none-match":"*","user-agent":"azsdk-rust-storage_datalake/0.1.0 (1.57.0; linux; x86_64)","x-ms-date":"Fri, 14 Jan 2022 21:22:31 GMT","x-ms-version":"2019-12-12"},"body":""}
+{
+  "uri": "/azurerustsdk-datalake-file-rename/some/path/e2etest-file2.txt?resource=file&mode=legacy",
+  "method": "PUT",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "content-language": "/azurerustsdk-datalake-file-rename/some/path/e2etest-file1.txt",
+    "content-length": "0",
+    "if-none-match": "*",
+    "user-agent": "azsdk-rust-storage_datalake/0.1.0 (1.57.0; linux; x86_64)",
+    "x-ms-date": "Fri, 14 Jan 2022 21:22:31 GMT",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}

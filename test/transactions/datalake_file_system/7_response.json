@@ -1,1 +1,13 @@
-{"status":200,"headers":{"content-length":"0","date":"Fri, 14 Jan 2022 21:22:33 GMT","etag":"\"0x8D9D7A3FB7621E3\"","last-modified":"Fri, 14 Jan 2022 21:22:34 GMT","server":"Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0","x-ms-request-id":"e2a9aa52-a01f-007d-2f8c-09ca6d000000","x-ms-version":"2019-12-12"},"body":""}
+{
+  "status": 200,
+  "headers": {
+    "content-length": "0",
+    "date": "Fri, 14 Jan 2022 21:22:33 GMT",
+    "etag": "\"0x8D9D7A3FB7621E3\"",
+    "last-modified": "Fri, 14 Jan 2022 21:22:34 GMT",
+    "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
+    "x-ms-request-id": "e2a9aa52-a01f-007d-2f8c-09ca6d000000",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}

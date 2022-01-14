@@ -1,1 +1,12 @@
-{"uri":"/azurerustsdk-datalake-file-upload/some/path/e2etest-file.txt?action=flush&close=true&position=9","method":"PATCH","headers":{"authorization":"<<STRIPPED>>","content-length":"0","user-agent":"azsdk-rust-storage_datalake/0.1.0 (1.57.0; linux; x86_64)","x-ms-date":"Fri, 14 Jan 2022 21:22:31 GMT","x-ms-version":"2019-12-12"},"body":""}
+{
+  "uri": "/azurerustsdk-datalake-file-upload/some/path/e2etest-file.txt?action=flush&close=true&position=9",
+  "method": "PATCH",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "content-length": "0",
+    "user-agent": "azsdk-rust-storage_datalake/0.1.0 (1.57.0; linux; x86_64)",
+    "x-ms-date": "Fri, 14 Jan 2022 21:22:31 GMT",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}
