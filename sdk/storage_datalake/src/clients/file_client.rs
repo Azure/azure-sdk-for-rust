@@ -73,6 +73,12 @@ impl FileClient {
             .bytes(bytes)
     }
 
+    pub fn flush(&self, position: i64) -> PatchPathBuilder<Self> {
+        PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
+            .action(PathUpdateAction::Flush)
+            .position(position)
+    }
+
     // TODO rename seems to not delete source
     pub fn rename<P>(&self, destination_path: P) -> RenamePathBuilder<Self>
     where

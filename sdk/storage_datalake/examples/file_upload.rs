@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -44,14 +43,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("flushing file '{}'...", file_path);
-    let flush_file_response = file_system_client
-        .flush_file(
-            Context::default(),
-            file_path,
-            data1_length + data2_length,
-            true,
-            FileFlushOptions::default(),
-        )
+    let flush_file_response = file_client
+        .flush(data1_length + data2_length)
+        .close(true)
+        .into_future()
         .await?;
     println!("flush file response == {:?}\n", flush_file_response);
 

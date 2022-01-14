@@ -84,21 +84,6 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self.clone(), Some(properties))
     }
 
-    pub async fn flush_file(
-        &self,
-        ctx: Context,
-        file_path: &str,
-        position: i64,
-        close: bool,
-        options: FileFlushOptions,
-    ) -> Result<FileFlushResponse> {
-        let mut request = self.prepare_file_flush_request(file_path, position, close);
-        options.decorate_request(&mut request)?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-
-        Ok(FileFlushResponse::try_from(response).await?)
-    }
-
     pub(crate) fn prepare_request(
         &self,
         uri: &str,
@@ -106,25 +91,6 @@ impl FileSystemClient {
     ) -> azure_core::Request {
         self.data_lake_client
             .prepare_request_pipeline(uri, http_method)
-    }
-
-    pub(crate) fn prepare_file_flush_request(
-        &self,
-        file_path: &str,
-        position: i64,
-        close: bool,
-    ) -> azure_core::Request {
-        let uri = format!(
-            "{}/{}?action=flush&position={}&close={}",
-            self.url().unwrap(),
-            file_path,
-            position,
-            close,
-        );
-        http::request::Request::patch(uri)
-            .body(bytes::Bytes::new()) // Request builder requires a body here
-            .unwrap()
-            .into()
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {

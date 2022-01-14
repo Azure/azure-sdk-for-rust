@@ -1,7 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 // #![cfg(feature = "mock_transport_framework")]
 
-use azure_core::prelude::*;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
 use futures::stream::StreamExt;
@@ -151,14 +150,10 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
     let file_length = bytes.len() as i64;
     file_client.append(0, bytes).into_future().await?;
 
-    file_system_client
-        .flush_file(
-            Context::default(),
-            file_path,
-            file_length,
-            true,
-            FileFlushOptions::default(),
-        )
+    file_client
+        .flush(file_length)
+        .close(true)
+        .into_future()
         .await?;
 
     file_system_client.delete().into_future().await?;

@@ -2,8 +2,6 @@
 
 #![allow(missing_docs)]
 
-mod file_append;
-mod file_flush;
 mod file_system_create;
 mod file_system_delete;
 mod file_system_get_properties;
@@ -14,8 +12,6 @@ mod path_head;
 mod path_patch;
 mod path_put;
 
-pub use file_append::*;
-pub use file_flush::*;
 pub use file_system_create::*;
 pub use file_system_delete::*;
 pub use file_system_get_properties::*;
