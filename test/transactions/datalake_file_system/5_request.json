@@ -1,10 +1,11 @@
 {
-  "uri": "/?resource=account&maxresults=3&continuation=%2Fdevargusadlsv2%2Fingest",
-  "method": "GET",
+  "uri": "/azurerustsdk-datalake-file-system?resource=filesystem",
+  "method": "HEAD",
   "headers": {
     "authorization": "<<STRIPPED>>",
+    "content-length": "0",
     "user-agent": "azsdk-rust-storage_datalake/0.1.0 (1.57.0; linux; x86_64)",
-    "x-ms-date": "Fri, 14 Jan 2022 21:22:31 GMT",
+    "x-ms-date": "Fri, 14 Jan 2022 21:52:59 GMT",
     "x-ms-version": "2019-12-12"
   },
   "body": ""

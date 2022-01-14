@@ -1,13 +1,16 @@
 {
   "status": 200,
   "headers": {
-    "content-type": "application/json;charset=utf-8",
-    "date": "Fri, 14 Jan 2022 21:22:33 GMT",
+    "date": "Fri, 14 Jan 2022 21:53:01 GMT",
+    "etag": "\"0x8D9D7A83C8849DD\"",
+    "last-modified": "Fri, 14 Jan 2022 21:53:01 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
-    "transfer-encoding": "chunked",
-    "x-ms-continuation": "",
-    "x-ms-request-id": "e2a9aa2b-a01f-007d-088c-09ca6d000000",
+    "x-ms-default-encryption-scope": "$account-encryption-key",
+    "x-ms-deny-encryption-scope-override": "false",
+    "x-ms-namespace-enabled": "true",
+    "x-ms-properties": "AddedVia=QXp1cmUgU0RLIGZvciBSdXN0,ModifiedBy=SW90YQ==",
+    "x-ms-request-id": "f828c928-801f-0053-0691-09f943000000",
     "x-ms-version": "2019-12-12"
   },
-  "body": "eyJmaWxlc3lzdGVtcyI6W3siRGVmYXVsdEVuY3J5cHRpb25TY29wZSI6IiRhY2NvdW50LWVuY3J5cHRpb24ta2V5IiwiRGVueUVuY3J5cHRpb25TY29wZU92ZXJyaWRlIjoiZmFsc2UiLCJldGFnIjoiMHg4RDcyRkRBOUJBNjNGQzMiLCJsYXN0TW9kaWZpZWQiOiJNb24sIDAyIFNlcCAyMDE5IDE5OjIwOjI1IEdNVCIsIm5hbWUiOiJpbmdlc3QifSx7IkRlZmF1bHRFbmNyeXB0aW9uU2NvcGUiOiIkYWNjb3VudC1lbmNyeXB0aW9uLWtleSIsIkRlbnlFbmNyeXB0aW9uU2NvcGVPdmVycmlkZSI6ImZhbHNlIiwiZXRhZyI6IjB4OEQ5QTg1MzlFMjEwNkU1IiwibGFzdE1vZGlmaWVkIjoiTW9uLCAxNSBOb3YgMjAyMSAxNjoxODo1MyBHTVQiLCJuYW1lIjoic2ltcGxlIn0seyJEZWZhdWx0RW5jcnlwdGlvblNjb3BlIjoiJGFjY291bnQtZW5jcnlwdGlvbi1rZXkiLCJEZW55RW5jcnlwdGlvblNjb3BlT3ZlcnJpZGUiOiJmYWxzZSIsImV0YWciOiIweDhEOTQ5RjFFMjlDRDdFQSIsImxhc3RNb2RpZmllZCI6IlN1biwgMTggSnVsIDIwMjEgMTM6NDI6MjggR01UIiwibmFtZSI6InRlc3QifV19Cg=="
+  "body": ""
 }

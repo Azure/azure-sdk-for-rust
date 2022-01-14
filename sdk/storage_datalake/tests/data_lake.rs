@@ -34,6 +34,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
     let mut stream = data_lake_client
         .list_file_systems()
         .max_results(NonZeroU32::new(3).unwrap())
+        .prefix("azurerustsdk")
         .into_stream();
     let mut found = false;
     while let Some(list_fs_response) = stream.next().await {

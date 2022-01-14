@@ -2,12 +2,12 @@
   "status": 200,
   "headers": {
     "content-type": "application/json;charset=utf-8",
-    "date": "Fri, 14 Jan 2022 21:22:32 GMT",
+    "date": "Fri, 14 Jan 2022 21:53:00 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
     "transfer-encoding": "chunked",
-    "x-ms-continuation": "/devargusadlsv2/azurerustsdk-datalake-file-system",
-    "x-ms-request-id": "e2a9a9b3-a01f-007d-108c-09ca6d000000",
+    "x-ms-continuation": "/devargusadlsv2/azurerustsdk-datalake-file-upload",
+    "x-ms-request-id": "f828c91f-801f-0053-0191-09f943000000",
     "x-ms-version": "2019-12-12"
   },
-  "body": "eyJmaWxlc3lzdGVtcyI6W3siRGVmYXVsdEVuY3J5cHRpb25TY29wZSI6IiRhY2NvdW50LWVuY3J5cHRpb24ta2V5IiwiRGVueUVuY3J5cHRpb25TY29wZU92ZXJyaWRlIjoiZmFsc2UiLCJldGFnIjoiMHg4RDhERTE3RTI3Q0U0QjUiLCJsYXN0TW9kaWZpZWQiOiJXZWQsIDAzIE1hciAyMDIxIDA3OjQyOjIzIEdNVCIsIm5hbWUiOiJhY3J5bGljLWFjaWQifSx7IkRlZmF1bHRFbmNyeXB0aW9uU2NvcGUiOiIkYWNjb3VudC1lbmNyeXB0aW9uLWtleSIsIkRlbnlFbmNyeXB0aW9uU2NvcGVPdmVycmlkZSI6ImZhbHNlIiwiZXRhZyI6IjB4OEQ5RDdBM0ZBNTIzOUIxIiwibGFzdE1vZGlmaWVkIjoiRnJpLCAxNCBKYW4gMjAyMiAyMToyMjozMiBHTVQiLCJuYW1lIjoiYXp1cmVydXN0c2RrLWRhdGFsYWtlLWZpbGUtY3JlYXRlLWRlbGV0ZSJ9LHsiRGVmYXVsdEVuY3J5cHRpb25TY29wZSI6IiRhY2NvdW50LWVuY3J5cHRpb24ta2V5IiwiRGVueUVuY3J5cHRpb25TY29wZU92ZXJyaWRlIjoiZmFsc2UiLCJldGFnIjoiMHg4RDlEN0EzRkE1NjVEQzAiLCJsYXN0TW9kaWZpZWQiOiJGcmksIDE0IEphbiAyMDIyIDIxOjIyOjMyIEdNVCIsIm5hbWUiOiJhenVyZXJ1c3RzZGstZGF0YWxha2UtZmlsZS1yZW5hbWUifV19Cg=="
+  "body": "eyJmaWxlc3lzdGVtcyI6W3siRGVmYXVsdEVuY3J5cHRpb25TY29wZSI6IiRhY2NvdW50LWVuY3J5cHRpb24ta2V5IiwiRGVueUVuY3J5cHRpb25TY29wZU92ZXJyaWRlIjoiZmFsc2UiLCJldGFnIjoiMHg4RDlEN0E4M0I3QkZBNTUiLCJsYXN0TW9kaWZpZWQiOiJGcmksIDE0IEphbiAyMDIyIDIxOjUzOjAwIEdNVCIsIm5hbWUiOiJhenVyZXJ1c3RzZGstZGF0YWxha2UtZmlsZS1jcmVhdGUtZGVsZXRlIn0seyJEZWZhdWx0RW5jcnlwdGlvblNjb3BlIjoiJGFjY291bnQtZW5jcnlwdGlvbi1rZXkiLCJEZW55RW5jcnlwdGlvblNjb3BlT3ZlcnJpZGUiOiJmYWxzZSIsImV0YWciOiIweDhEOUQ3QTgzQjdDRjE1QiIsImxhc3RNb2RpZmllZCI6IkZyaSwgMTQgSmFuIDIwMjIgMjE6NTM6MDAgR01UIiwibmFtZSI6ImF6dXJlcnVzdHNkay1kYXRhbGFrZS1maWxlLXJlbmFtZSJ9LHsiRGVmYXVsdEVuY3J5cHRpb25TY29wZSI6IiRhY2NvdW50LWVuY3J5cHRpb24ta2V5IiwiRGVueUVuY3J5cHRpb25TY29wZU92ZXJyaWRlIjoiZmFsc2UiLCJldGFnIjoiMHg4RDlEN0E4M0I3REE2NEIiLCJsYXN0TW9kaWZpZWQiOiJGcmksIDE0IEphbiAyMDIyIDIxOjUzOjAwIEdNVCIsIm5hbWUiOiJhenVyZXJ1c3RzZGstZGF0YWxha2UtZmlsZS1zeXN0ZW0ifV19Cg=="
 }
