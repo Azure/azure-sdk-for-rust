@@ -16,42 +16,40 @@ pub enum PipelineError {
 /// An error caused by an HTTP header.
 #[derive(Debug, thiserror::Error)]
 pub enum HttpHeaderError {
-    #[error("{0}")]
+    #[error("invalid header value")]
     InvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
-    #[error("{0}")]
+    #[error("invalid header name")]
     InvalidHeaderName(#[from] http::header::InvalidHeaderName),
+    #[error("to str error")]
+    ToStr(#[source] http::header::ToStrError),
 }
 
 /// A general Azure error type.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("pipeline error: {0}")]
+    #[error("pipeline error")]
     Pipeline(#[from] PipelineError),
-    #[error("policy error: {0}")]
-    Policy(Box<dyn std::error::Error + Send + Sync>),
-    #[error("parsing error: {0}")]
+    #[error("policy error")]
+    Policy(#[source] Box<dyn std::error::Error + Send + Sync>),
+    #[error("parse error")]
     Parse(#[from] ParseError),
-    #[error("error getting token: {0}")]
-    GetToken(Box<dyn std::error::Error + Send + Sync>),
-    #[error("http error: {0}")]
+    #[error("error getting token")]
+    GetToken(#[source] Box<dyn std::error::Error + Send + Sync>),
+    #[error("http error")]
     Http(#[from] HttpError),
-    #[error("to str error: {0}")]
-    ToStr(#[from] http::header::ToStrError),
-    #[error("header error: {0}")]
+    #[error("header error")]
     Header(#[from] HttpHeaderError),
     #[error("header not found: {0}")]
     HeaderNotFound(String),
     #[error("at least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
-    #[error("error preparing HTTP request: {0}")]
-    HttpPrepare(#[from] http::Error),
+    #[error("error preparing HTTP request")]
+    HttpPrepare(#[source] http::Error),
     #[error(transparent)]
     Stream(#[from] StreamError),
-    #[error("JSON error: {0}")]
-    Json(#[from] serde_json::Error),
-    #[error("Other error: {0}")]
-    Other(Box<dyn std::error::Error + Send + Sync + 'static>),
+    #[error("Other error")]
+    Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
 #[cfg(feature = "enable_hyper")]
@@ -71,15 +69,15 @@ pub enum ParseError {
         token: String,
         full: String,
     },
-    #[error("error parsing int: {0}")]
+    #[error("error parsing int")]
     Int(#[from] std::num::ParseIntError),
-    #[error("error parsing uuid: {0}")]
+    #[error("error parsing uuid")]
     Uuid(#[from] uuid::Error),
-    #[error("error parsing date time: {0}")]
+    #[error("error parsing date time")]
     DateTime(#[from] chrono::ParseError),
-    #[error("error parsing a float: {0}")]
+    #[error("error parsing a float")]
     Float(#[from] std::num::ParseFloatError),
-    #[error("error parsing bool: {0}")]
+    #[error("error parsing bool")]
     Bool(#[from] std::str::ParseBoolError),
 }
 
@@ -124,16 +122,16 @@ pub enum HttpError {
     StatusCode { status: StatusCode, body: String },
     #[error("UTF8 conversion error: {0}")]
     Utf8(#[from] std::str::Utf8Error),
-    #[error("failed to build request: {0}")]
-    BuildClientRequest(HttpClientError),
-    #[error("failed to execute request: {0}")]
-    ExecuteRequest(HttpClientError),
-    #[error("failed to read response as bytes: {0}")]
-    ReadBytes(HttpClientError),
-    #[error("failed to build response: {0}")]
-    BuildResponse(http::Error),
-    #[error("failed to reset stream: {0}")]
-    StreamReset(StreamError),
+    #[error("failed to build request")]
+    BuildClientRequest(#[source] HttpClientError),
+    #[error("failed to execute request")]
+    ExecuteRequest(#[source] HttpClientError),
+    #[error("failed to read response as bytes")]
+    ReadBytes(#[source] HttpClientError),
+    #[error("failed to build response")]
+    BuildResponse(#[source] http::Error),
+    #[error("failed to reset stream")]
+    StreamReset(#[source] StreamError),
 }
 
 /// An error caused by invalid permissions.
@@ -160,18 +158,14 @@ pub enum TraversingError {
     EnumerationNotMatched(String),
     #[error("input string cannot be converted in boolean: {0}")]
     BooleanNotMatched(String),
-    #[error("unexpected node type received: expected {0}")]
-    UnexpectedNodeTypeError(String),
-    #[error("DateTime parse error: {0}")]
-    DateTimeParseError(#[from] chrono::format::ParseError),
+    #[error("DateTime parse error")]
+    DateTimeParse(#[from] chrono::format::ParseError),
     #[error("text not found")]
     TextNotFound,
-    #[error("parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("generic parse error: {0}")]
-    GenericParseError(String),
-    #[error("parsing error: {0:?}")]
-    ParseError(#[from] ParseError),
+    #[error("parse int error")]
+    ParseInt(#[from] std::num::ParseIntError),
+    #[error("parse error")]
+    Parse(#[from] ParseError),
 }
 
 /// Extract the headers and body from a `hyper` HTTP response.
