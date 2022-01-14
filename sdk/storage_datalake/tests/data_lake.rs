@@ -1,5 +1,4 @@
-#![cfg(all(test, feature = "test_e2e"))]
-// #![cfg(feature = "mock_transport_framework")]
+#![cfg(feature = "mock_transport_framework")]
 
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -11,12 +10,11 @@ mod setup;
 
 #[tokio::test]
 async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let data_lake_client = setup::create_data_lake_client().await.unwrap();
+    let data_lake_client = setup::create_data_lake_client("datalake_file_system")
+        .await
+        .unwrap();
 
-    let file_system_name = format!(
-        "azurerustsdk-datalake-e2etest-fs-{}",
-        Utc::now().timestamp()
-    );
+    let file_system_name = "azurerustsdk-datalake-file-system";
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());
@@ -88,12 +86,11 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
 #[tokio::test]
 async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let data_lake_client = setup::create_data_lake_client().await.unwrap();
+    let data_lake_client = setup::create_data_lake_client("datalake_file_create_delete")
+        .await
+        .unwrap();
 
-    let file_system_name = format!(
-        "azurerustsdk-datalake-e2etest-file-create-{}",
-        Utc::now().timestamp()
-    );
+    let file_system_name = "azurerustsdk-datalake-file-create-delete";
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());
@@ -125,12 +122,11 @@ async fn test_data_lake_file_create_delete_functions() -> Result<(), Box<dyn Err
 
 #[tokio::test]
 async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let data_lake_client = setup::create_data_lake_client().await.unwrap();
+    let data_lake_client = setup::create_data_lake_client("datalake_file_upload")
+        .await
+        .unwrap();
 
-    let file_system_name = format!(
-        "azurerustsdk-datalake-e2etest-file-upload-{}",
-        Utc::now().timestamp()
-    );
+    let file_system_name = "azurerustsdk-datalake-file-upload";
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());
@@ -163,12 +159,11 @@ async fn test_data_lake_file_upload_functions() -> Result<(), Box<dyn Error + Se
 
 #[tokio::test]
 async fn test_data_lake_file_rename_functions() -> Result<(), Box<dyn Error + Send + Sync>> {
-    let data_lake_client = setup::create_data_lake_client().await.unwrap();
+    let data_lake_client = setup::create_data_lake_client("datalake_file_rename")
+        .await
+        .unwrap();
 
-    let file_system_name = format!(
-        "azurerustsdk-datalake-e2etest-file-rename-{}",
-        Utc::now().timestamp()
-    );
+    let file_system_name = "azurerustsdk-datalake-file-rename";
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());

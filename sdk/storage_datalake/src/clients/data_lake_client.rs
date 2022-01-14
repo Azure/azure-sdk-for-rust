@@ -18,7 +18,7 @@ pub struct DataLakeClient {
 }
 
 impl DataLakeClient {
-    pub(crate) fn new_with_options(
+    pub fn new_with_options(
         credential: StorageSharedKeyCredential,
         custom_dns_suffix: Option<String>,
         options: ClientOptions,
