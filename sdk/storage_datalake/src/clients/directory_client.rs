@@ -8,7 +8,6 @@ use crate::{
 use azure_core::prelude::IfMatchCondition;
 use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
-use bytes::Bytes;
 use url::Url;
 
 #[derive(Debug, Clone)]
@@ -112,7 +111,10 @@ impl DirectoryClient {
         todo!()
     }
 
-    pub fn set_properties(&self, properties: Option<Properties>) -> SetFileSystemPropertiesBuilder {
+    pub fn set_properties(
+        &self,
+        _properties: Option<Properties>,
+    ) -> SetFileSystemPropertiesBuilder {
         todo!()
     }
 
