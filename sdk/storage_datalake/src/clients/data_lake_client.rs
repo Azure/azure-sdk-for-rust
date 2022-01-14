@@ -1,5 +1,5 @@
 use crate::clients::FileSystemClient;
-use crate::operations::ListFileSystems;
+use crate::operations::ListFileSystemsBuilder;
 use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
 use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
 use azure_storage::core::clients::ServiceType;
@@ -76,15 +76,15 @@ impl DataLakeClient {
         &self.url
     }
 
-    pub fn list_file_systems(&self) -> ListFileSystems {
-        ListFileSystems::new(self.clone(), Some(self.context.clone()))
+    pub fn list_file_systems(&self) -> ListFileSystemsBuilder {
+        ListFileSystemsBuilder::new(self.clone(), Some(self.context.clone()))
     }
 
     pub fn into_file_system_client(self, file_system_name: String) -> FileSystemClient {
         FileSystemClient::new(self, file_system_name)
     }
 
-    pub(crate) fn prepare_request_pipeline(
+    pub(crate) fn prepare_request(
         &self,
         uri: &str,
         http_method: http::Method,

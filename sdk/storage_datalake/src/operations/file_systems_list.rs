@@ -1,13 +1,17 @@
 use crate::clients::DataLakeClient;
 use crate::file_system::{FileSystem, FileSystemList};
 use azure_core::AppendToUrlQuery;
-use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
+use azure_core::{
+    collect_pinned_stream, headers::add_optional_header2, prelude::*, Pageable, Response,
+};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 use std::pin::Pin;
 
+type ListFileSystems = Pin<Box<Pageable<ListFileSystemsResponse>>>;
+
 #[derive(Debug, Clone)]
-pub struct ListFileSystems {
+pub struct ListFileSystemsBuilder {
     client: DataLakeClient,
     prefix: Option<Prefix>,
     next_marker: Option<NextMarker>,
@@ -17,7 +21,7 @@ pub struct ListFileSystems {
     context: Option<Context>,
 }
 
-impl ListFileSystems {
+impl ListFileSystemsBuilder {
     pub(crate) fn new(client: DataLakeClient, context: Option<Context>) -> Self {
         Self {
             client,
@@ -39,7 +43,7 @@ impl ListFileSystems {
         context: Context => Some(context),
     }
 
-    pub fn into_stream(self) -> Pin<Box<Pageable<ListFileSystemsResponse>>> {
+    pub fn into_stream(self) -> ListFileSystems {
         let make_request = move |continuation: Option<String>| {
             let this = self.clone();
             let ctx = self.context.clone().unwrap_or_default();
@@ -58,11 +62,9 @@ impl ListFileSystems {
                     this.next_marker.append_to_url_query(&mut url);
                 };
 
-                let mut request = this
-                    .client
-                    .prepare_request_pipeline(url.as_str(), http::Method::GET);
+                let mut request = this.client.prepare_request(url.as_str(), http::Method::GET);
 
-                azure_core::headers::add_optional_header2(&this.client_request_id, &mut request)?;
+                add_optional_header2(&this.client_request_id, &mut request)?;
 
                 let response = this
                     .client
