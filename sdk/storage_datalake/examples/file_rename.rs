@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -44,14 +43,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("renaming file '{}' to '{}'...", file_path1, file_path2);
-    let rename_file_response = file_system_client
-        .rename_file(
-            Context::default(),
-            file_path1,
-            file_path2,
-            FileRenameOptions::default(),
-        )
-        .await?;
+    let rename_file_response = file_client1.rename(file_path2).into_future().await?;
     println!("rename file response == {:?}\n", rename_file_response);
 
     println!("deleting file system...");

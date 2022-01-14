@@ -1,7 +1,6 @@
 use super::{DataLakeClient, DirectoryClient, FileClient};
 use crate::operations::*;
 use crate::{Properties, Result};
-use azure_core::prelude::IfMatchCondition;
 use azure_core::{ClientOptions, Context, Pipeline};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use bytes::Bytes;
@@ -86,40 +85,6 @@ impl FileSystemClient {
         SetFileSystemPropertiesBuilder::new(self.clone(), Some(properties))
     }
 
-    pub async fn rename_file(
-        &self,
-        ctx: Context,
-        source_file_path: &str,
-        destination_file_path: &str,
-        options: FileRenameOptions,
-    ) -> Result<FileRenameResponse> {
-        let mut request = self.prepare_file_rename_request(destination_file_path);
-
-        let rename_source = format!("/{}/{}", &self.name, source_file_path);
-        options.decorate_request(&mut request, rename_source.as_str())?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-
-        Ok(FileRenameResponse::try_from(response).await?)
-    }
-
-    pub async fn rename_file_if_not_exists(
-        &self,
-        ctx: Context,
-        source_file_path: &str,
-        destination_file_path: &str,
-    ) -> Result<FileRenameResponse> {
-        let options = FileRenameOptions::new()
-            .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
-
-        let mut request = self.prepare_file_rename_request(destination_file_path);
-
-        let rename_source = format!("/{}/{}", &self.name, source_file_path);
-        options.decorate_request(&mut request, rename_source.as_str())?;
-        let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-
-        Ok(FileRenameResponse::try_from(response).await?)
-    }
-
     pub async fn append_to_file(
         &self,
         ctx: Context,
@@ -158,21 +123,6 @@ impl FileSystemClient {
     ) -> azure_core::Request {
         self.data_lake_client
             .prepare_request_pipeline(uri, http_method)
-    }
-
-    pub(crate) fn prepare_file_rename_request(
-        &self,
-        destination_file_path: &str,
-    ) -> azure_core::Request {
-        let uri = format!(
-            "{}/{}?mode=legacy",
-            self.url().unwrap(),
-            destination_file_path
-        );
-        http::request::Request::put(uri)
-            .body(bytes::Bytes::new()) // Request builder requires a body here
-            .unwrap()
-            .into()
     }
 
     pub(crate) fn prepare_file_append_request(
