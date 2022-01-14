@@ -18,10 +18,23 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let file_path = "some/path/example-file.txt";
     let file_client = file_system_client.get_file_client(file_path);
+    let mut file_properties = Properties::new();
+    file_properties.insert("AddedVia", "Azure SDK for Rust");
 
     println!("creating file '{}'...", file_path);
-    let create_file_response = file_client.create().into_future().await?;
+    let create_file_response = file_client
+        .create()
+        .properties(file_properties)
+        .into_future()
+        .await?;
     println!("create file response == {:?}\n", create_file_response);
+
+    println!("getting properties for file '{}'...", file_path);
+    let get_properties_response = file_client.get_properties().into_future().await?;
+    println!(
+        "get file properties response == {:?}\n",
+        get_properties_response
+    );
 
     println!("creating file '{}' if not exists...", file_path);
     let create_file_if_not_exists_result = file_client.create_if_not_exists().into_future().await;

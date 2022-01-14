@@ -9,7 +9,7 @@ use chrono::{DateTime, Utc};
 use std::convert::TryInto;
 
 /// A future of a delete file response
-type PutPath = futures::future::BoxFuture<'static, crate::Result<HeadPathResponse>>;
+type HeadPath = futures::future::BoxFuture<'static, crate::Result<HeadPathResponse>>;
 
 #[derive(Debug, Clone)]
 pub struct HeadPathBuilder<C>
@@ -53,7 +53,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
         context: Context => context,
     }
 
-    pub fn into_future(self) -> PutPath {
+    pub fn into_future(self) -> HeadPath {
         let this = self.clone();
         let ctx = self.context.clone();
 
@@ -87,19 +87,19 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
 #[derive(Debug, Clone)]
 pub struct HeadPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
-    pub etag: String,
-    pub last_modified: DateTime<Utc>,
+    // pub etag: String,
+    // pub last_modified: DateTime<Utc>,
     pub properties: Properties,
 }
 
 impl HeadPathResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
-
+        println!("{:?}", headers);
         Ok(Self {
             common_storage_response_headers: (&headers).try_into()?,
-            etag: etag_from_headers(&headers)?,
-            last_modified: last_modified_from_headers(&headers)?,
+            // etag: etag_from_headers(&headers)?,
+            // last_modified: last_modified_from_headers(&headers)?,
             properties: (&headers).try_into()?,
         })
     }
