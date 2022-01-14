@@ -113,38 +113,4 @@ impl DirectoryClient {
     pub fn set_properties(&self, _properties: Properties) -> SetFileSystemPropertiesBuilder {
         todo!()
     }
-
-    // pub async fn rename(
-    //     &self,
-    //     ctx: Context,
-    //     source_file_path: &str,
-    //     destination_file_path: &str,
-    //     options: FileRenameOptions,
-    // ) -> Result<FileRenameResponse, crate::Error> {
-    //     let mut request = self.prepare_file_rename_request(destination_file_path);
-    //
-    //     let rename_source = format!("/{}/{}", &self.name, source_file_path);
-    //     options.decorate_request(&mut request, rename_source.as_str())?;
-    //     let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-    //
-    //     Ok(FileRenameResponse::try_from(response).await?)
-    // }
-    //
-    // pub async fn rename_if_not_exists(
-    //     &self,
-    //     ctx: Context,
-    //     source_file_path: &str,
-    //     destination_file_path: &str,
-    // ) -> Result<FileRenameResponse, crate::Error> {
-    //     let options = FileRenameOptions::new()
-    //         .if_match_condition(IfMatchCondition::NotMatch("*".to_string()));
-    //
-    //     let mut request = self.prepare_file_rename_request(destination_file_path);
-    //
-    //     let rename_source = format!("/{}/{}", &self.name, source_file_path);
-    //     options.decorate_request(&mut request, rename_source.as_str())?;
-    //     let response = self.pipeline().send(&mut ctx.clone(), &mut request).await?;
-    //
-    //     Ok(FileRenameResponse::try_from(response).await?)
-    // }
 }

@@ -66,7 +66,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
 
             let mut request = this
                 .client
-                .prepare_request(url.as_str(), http::Method::DELETE);
+                .prepare_request(url.as_str(), http::Method::HEAD);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
             add_optional_header2(&this.if_match_condition, &mut request)?;
@@ -87,19 +87,19 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
 #[derive(Debug, Clone)]
 pub struct HeadPathResponse {
     pub common_storage_response_headers: CommonStorageResponseHeaders,
-    // pub etag: String,
-    // pub last_modified: DateTime<Utc>,
+    pub etag: String,
+    pub last_modified: DateTime<Utc>,
     pub properties: Properties,
 }
 
 impl HeadPathResponse {
     pub async fn try_from(response: HttpResponse) -> Result<Self, crate::Error> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
-        println!("{:?}", headers);
+
         Ok(Self {
             common_storage_response_headers: (&headers).try_into()?,
-            // etag: etag_from_headers(&headers)?,
-            // last_modified: last_modified_from_headers(&headers)?,
+            etag: etag_from_headers(&headers)?,
+            last_modified: last_modified_from_headers(&headers)?,
             properties: (&headers).try_into()?,
         })
     }
