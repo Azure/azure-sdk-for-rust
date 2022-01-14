@@ -22,9 +22,9 @@ async fn main() {
     }
 }
 
-fn print_error_chain(error: impl std::error::Error){
+fn print_error_chain(error: impl std::error::Error) {
     println!("- {}", error.to_string());
-    if let Some(source) = error.source(){
+    if let Some(source) = error.source() {
         print_error_chain(source);
     }
 }
