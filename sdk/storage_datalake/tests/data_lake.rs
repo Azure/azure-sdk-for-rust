@@ -64,7 +64,7 @@ async fn test_data_lake_file_system_functions() -> Result<(), Box<dyn Error + Se
 
     fs_properties.insert("ModifiedBy", "Iota");
     file_system_client
-        .set_properties(Some(fs_properties))
+        .set_properties(fs_properties)
         .into_future()
         .await?;
 

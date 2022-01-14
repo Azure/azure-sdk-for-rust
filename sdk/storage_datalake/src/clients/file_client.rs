@@ -95,10 +95,7 @@ impl FileClient {
         todo!()
     }
 
-    pub fn set_properties(
-        &self,
-        _properties: Option<Properties>,
-    ) -> SetFileSystemPropertiesBuilder {
+    pub fn set_properties(&self, _properties: Properties) -> SetFileSystemPropertiesBuilder {
         todo!()
     }
 }

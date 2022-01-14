@@ -82,8 +82,8 @@ impl FileSystemClient {
         GetFileSystemPropertiesBuilder::new(self.clone())
     }
 
-    pub fn set_properties(&self, properties: Option<Properties>) -> SetFileSystemPropertiesBuilder {
-        SetFileSystemPropertiesBuilder::new(self.clone(), properties)
+    pub fn set_properties(&self, properties: Properties) -> SetFileSystemPropertiesBuilder {
+        SetFileSystemPropertiesBuilder::new(self.clone(), Some(properties))
     }
 
     pub async fn rename_file(

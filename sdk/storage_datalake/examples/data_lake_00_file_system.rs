@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
     let set_fs_props_response = file_system_client
-        .set_properties(Some(fs_properties))
+        .set_properties(fs_properties)
         .into_future()
         .await?;
     println!(
