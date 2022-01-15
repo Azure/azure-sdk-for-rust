@@ -5,8 +5,8 @@
     "authorization": "<<STRIPPED>>",
     "content-length": "9",
     "content-type": "application/octet-stream",
-    "user-agent": "azsdk-rust-storage_datalake/0.1.0 (1.57.0; linux; x86_64)",
-    "x-ms-date": "Fri, 14 Jan 2022 22:02:35 GMT",
+    "user-agent": "azsdk-rust-storage_datalake/0.1.0 (1.58.0; linux; x86_64)",
+    "x-ms-date": "Sat, 15 Jan 2022 08:54:15 GMT",
     "x-ms-version": "2019-12-12"
   },
   "body": "c29tZSBkYXRh"

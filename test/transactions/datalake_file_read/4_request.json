@@ -1,5 +1,5 @@
 {
-  "uri": "/azurerustsdk-datalake-file-create-delete?resource=filesystem",
+  "uri": "/azurerustsdk-datalake-file-read?resource=filesystem",
   "method": "DELETE",
   "headers": {
     "authorization": "<<STRIPPED>>",
