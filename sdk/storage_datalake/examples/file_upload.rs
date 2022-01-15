@@ -50,6 +50,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("flush file response == {:?}\n", flush_file_response);
 
+    println!("reading file '{}'...", file_path);
+    let read_file_response = file_client.read().into_future().await?;
+    println!("read file response == {:?}\n", read_file_response);
+
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().into_future().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);

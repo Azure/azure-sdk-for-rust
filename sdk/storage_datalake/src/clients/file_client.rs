@@ -79,6 +79,10 @@ impl FileClient {
             .position(position)
     }
 
+    pub fn read(&self) -> GetFileBuilder {
+        GetFileBuilder::new(self.clone(), self.file_system_client.context.clone())
+    }
+
     // TODO rename seems to not delete source
     pub fn rename<P>(&self, destination_path: P) -> RenamePathBuilder<Self>
     where
