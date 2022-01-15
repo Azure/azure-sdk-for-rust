@@ -4,6 +4,8 @@ use http::{HeaderMap, HeaderValue, Method};
 use ring::hmac;
 use std::sync::Arc;
 
+const AZURE_VERSION: &str = "2019-12-12";
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SharedKeyAuthorizationPolicy {
     base_url: String,
@@ -42,7 +44,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
         );
         headers_mut.append(
             azure_core::headers::VERSION,
-            HeaderValue::from_str("2019-12-12")?,
+            HeaderValue::from_str(AZURE_VERSION)?,
         ); // TODO: Remove duplication with storage_account_client.rs
 
         let url = url::Url::parse(&request.uri().to_string()).unwrap();
