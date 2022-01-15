@@ -1,13 +1,16 @@
 {
   "status": 200,
   "headers": {
-    "content-type": "application/json;charset=utf-8",
-    "date": "Fri, 14 Jan 2022 22:02:37 GMT",
+    "date": "Sat, 15 Jan 2022 07:15:42 GMT",
+    "etag": "\"0x8D9D7F6D7D4BF52\"",
+    "last-modified": "Sat, 15 Jan 2022 07:15:43 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
-    "transfer-encoding": "chunked",
-    "x-ms-continuation": "",
-    "x-ms-request-id": "a5305469-c01f-0047-2a92-09e569000000",
+    "x-ms-default-encryption-scope": "$account-encryption-key",
+    "x-ms-deny-encryption-scope-override": "false",
+    "x-ms-namespace-enabled": "true",
+    "x-ms-properties": "AddedVia=QXp1cmUgU0RLIGZvciBSdXN0",
+    "x-ms-request-id": "1b7ae11b-d01f-009e-1fdf-09a21c000000",
     "x-ms-version": "2019-12-12"
   },
-  "body": "eyJmaWxlc3lzdGVtcyI6W3siRGVmYXVsdEVuY3J5cHRpb25TY29wZSI6IiRhY2NvdW50LWVuY3J5cHRpb24ta2V5IiwiRGVueUVuY3J5cHRpb25TY29wZU92ZXJyaWRlIjoiZmFsc2UiLCJldGFnIjoiMHg4RDlEN0E5OTM4N0Y3N0YiLCJsYXN0TW9kaWZpZWQiOiJGcmksIDE0IEphbiAyMDIyIDIyOjAyOjM3IEdNVCIsIm5hbWUiOiJhenVyZXJ1c3RzZGstZGF0YWxha2UtZmlsZS11cGxvYWQifV19Cg=="
+  "body": ""
 }
