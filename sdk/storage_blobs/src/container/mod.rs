@@ -35,7 +35,7 @@ impl AddAsHeader for PublicAccess {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HTTPHeaderError> {
+    ) -> Result<(), azure_core::HttpHeaderError> {
         let (header_name, header_value) = match self {
             PublicAccess::Blob => (BLOB_PUBLIC_ACCESS, "blob"),
             PublicAccess::Container => (BLOB_PUBLIC_ACCESS, "container"),

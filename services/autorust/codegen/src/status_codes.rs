@@ -2,7 +2,7 @@
 
 use crate::identifier::ident;
 use autorust_openapi::{Response, StatusCode};
-use heck::{CamelCase, SnakeCase};
+use heck::{ToPascalCase, ToSnakeCase};
 use http::StatusCode as HttpStatusCode;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
@@ -45,13 +45,13 @@ pub fn get_status_code_ident(status_code: &StatusCode) -> Result<TokenStream, Er
 /// The canonical name in camel case.
 /// examples: Ok, Created, LoopDetected
 pub fn get_status_code_ident_camel_case(status_code: &StatusCode) -> Result<TokenStream, Error> {
-    ident(&get_status_code_name(status_code)?.to_camel_case()).map_err(Error::StatusCodeName)
+    ident(&get_status_code_name(status_code)?.to_pascal_case()).map_err(Error::StatusCodeName)
 }
 
 fn response_name(status_code: &HttpStatusCode) -> Result<String, Error> {
     let sc = status_code.as_u16();
     let name = status_code.canonical_reason().ok_or(Error::NoCanonicalReason(sc))?;
-    let name = name.to_camel_case();
+    let name = name.to_pascal_case();
     Ok(format!("{}{}", name, sc))
 }
 

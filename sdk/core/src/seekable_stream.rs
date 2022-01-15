@@ -32,7 +32,7 @@ impl Stream for dyn SeekableStream {
                 let bytes = bytes.slice(0..bytes_read);
                 Poll::Ready(Some(Ok(bytes)))
             }
-            Poll::Ready(Err(err)) => Poll::Ready(Some(Err(StreamError::PollError(err)))),
+            Poll::Ready(Err(err)) => Poll::Ready(Some(Err(StreamError::Poll(err)))),
             Poll::Pending => Poll::Pending,
         }
     }

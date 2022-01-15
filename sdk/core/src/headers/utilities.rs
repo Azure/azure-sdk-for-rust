@@ -46,7 +46,9 @@ pub fn last_modified_from_headers(headers: &HeaderMap) -> Result<DateTime<Utc>> 
 
 pub fn continuation_token_from_headers_optional(headers: &HeaderMap) -> Result<Option<String>> {
     if let Some(hc) = headers.get(CONTINUATION) {
-        Ok(Some(hc.to_str()?.to_owned()))
+        Ok(Some(
+            hc.to_str().map_err(HttpHeaderError::ToStr)?.to_owned(),
+        ))
     } else {
         Ok(None)
     }
@@ -138,7 +140,7 @@ pub async fn perform_http_request(
     let res = client
         .request(req)
         .await
-        .map_err(HttpError::ExecuteRequestError)?;
+        .map_err(HttpError::ExecuteRequest)?;
     check_status_extract_body_2(res, expected_status).await
 }
 
@@ -146,30 +148,32 @@ pub fn get_str_from_headers<'a>(headers: &'a HeaderMap, key: &str) -> Result<&'a
     Ok(headers
         .get(key)
         .ok_or_else(|| Error::HeaderNotFound(key.to_owned()))?
-        .to_str()?)
+        .to_str()
+        .map_err(HttpHeaderError::ToStr)?)
 }
 
 pub fn get_from_headers<T: std::str::FromStr>(headers: &HeaderMap, key: &str) -> Result<T>
 where
     T: std::str::FromStr,
-    T::Err: Into<ParsingError>,
+    T::Err: Into<ParseError>,
 {
     get_str_from_headers(headers, key)?
         .parse()
-        .map_err(|e: T::Err| Error::ParsingError(e.into()))
+        .map_err(|e: T::Err| Error::Parse(e.into()))
 }
 
 pub fn get_option_from_headers<T>(headers: &HeaderMap, key: &str) -> Result<Option<T>>
 where
     T: std::str::FromStr,
-    T::Err: Into<ParsingError>,
+    T::Err: Into<ParseError>,
 {
     match headers.get(key) {
         Some(header) => Ok(Some(
             header
-                .to_str()?
+                .to_str()
+                .map_err(HttpHeaderError::ToStr)?
                 .parse()
-                .map_err(|e: T::Err| Error::ParsingError(e.into()))?,
+                .map_err(|e: T::Err| Error::Parse(e.into()))?,
         )),
         None => Ok(None),
     }
@@ -178,19 +182,19 @@ where
 pub fn parse_date_from_str(
     date: &str,
     fmt: &str,
-) -> std::result::Result<DateTime<FixedOffset>, ParsingError> {
-    DateTime::parse_from_str(date, fmt).map_err(ParsingError::ParseDateTimeError)
+) -> std::result::Result<DateTime<FixedOffset>, ParseError> {
+    DateTime::parse_from_str(date, fmt).map_err(ParseError::DateTime)
 }
 
 pub fn parse_date_from_rfc2822(
     date: &str,
-) -> std::result::Result<DateTime<FixedOffset>, ParsingError> {
-    DateTime::parse_from_rfc2822(date).map_err(ParsingError::ParseDateTimeError)
+) -> std::result::Result<DateTime<FixedOffset>, ParseError> {
+    DateTime::parse_from_rfc2822(date).map_err(ParseError::DateTime)
 }
 
-pub fn parse_int<F>(s: &str) -> std::result::Result<F, ParsingError>
+pub fn parse_int<F>(s: &str) -> std::result::Result<F, ParseError>
 where
     F: FromStr<Err = std::num::ParseIntError>,
 {
-    FromStr::from_str(s).map_err(ParsingError::ParseIntError)
+    FromStr::from_str(s).map_err(ParseError::Int)
 }

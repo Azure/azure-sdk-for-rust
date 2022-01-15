@@ -1,5 +1,6 @@
 use crate::blob::responses::UpdatePageResponse;
 use crate::prelude::*;
+use crate::BA512Range;
 use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::headers::{BLOB_TYPE, PAGE_WRITE};
 use azure_core::prelude::*;

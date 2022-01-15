@@ -38,7 +38,7 @@ impl TryFrom<&Response<Bytes>> for SubmitTransactionResponse {
 
             let mut operation_response = OperationResponse::default();
 
-            for line in change_set_response.lines().into_iter() {
+            for line in change_set_response.lines() {
                 if line.starts_with("HTTP/1.1") {
                     operation_response.status_code = line
                         .split_whitespace()

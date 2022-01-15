@@ -1,5 +1,4 @@
 mod activity_id;
-mod ba512_range;
 mod client_request_id;
 mod content_disposition;
 mod content_encoding;
@@ -31,7 +30,6 @@ mod timeout;
 mod user_agent;
 
 pub use activity_id::ActivityId;
-pub use ba512_range::BA512Range;
 pub use client_request_id::ClientRequestId;
 pub use content_disposition::ContentDisposition;
 pub use content_encoding::ContentEncoding;
