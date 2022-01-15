@@ -650,15 +650,3 @@ fn create_struct_field_code(
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn test_enum_values_as_strings() {
-        let values = vec![json!("/"), json!("/keys")];
-        assert_eq!(enum_values_as_strings(&values), vec!["/", "/keys"]);
-    }
-}
