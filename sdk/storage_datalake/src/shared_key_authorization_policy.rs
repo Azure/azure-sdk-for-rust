@@ -37,7 +37,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
         headers_mut.append(
             azure_core::headers::MS_DATE,
             HeaderValue::from_str(
-                format!("{}", chrono::Utc::now().format("%a, %d %h %Y %T GMT")).as_str(),
+                &chrono::Utc::now().format("%a, %d %h %Y %T GMT").to_string(),
             )?,
         );
         headers_mut.append(
