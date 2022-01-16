@@ -38,9 +38,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
         let headers_mut = request.headers_mut();
         headers_mut.append(
             azure_core::headers::MS_DATE,
-            HeaderValue::from_str(
-                &chrono::Utc::now().format("%a, %d %h %Y %T GMT").to_string(),
-            )?,
+            HeaderValue::from_str(&chrono::Utc::now().format("%a, %d %h %Y %T GMT").to_string())?,
         );
         headers_mut.append(
             azure_core::headers::VERSION,
