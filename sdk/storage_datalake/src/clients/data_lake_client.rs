@@ -80,8 +80,11 @@ impl DataLakeClient {
         ListFileSystemsBuilder::new(self.clone(), Some(self.context.clone()))
     }
 
-    pub fn into_file_system_client(self, file_system_name: String) -> FileSystemClient {
-        FileSystemClient::new(self, file_system_name)
+    pub fn into_file_system_client<FS>(self, file_system_name: FS) -> FileSystemClient
+    where
+        FS: Into<String>,
+    {
+        FileSystemClient::new(self, file_system_name.into())
     }
 
     pub(crate) fn prepare_request(

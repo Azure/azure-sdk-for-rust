@@ -66,11 +66,14 @@ impl FileClient {
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
     }
 
-    pub fn append(&self, position: i64, bytes: Bytes) -> PatchPathBuilder<Self> {
+    pub fn append<B>(&self, position: i64, bytes: B) -> PatchPathBuilder<Self>
+    where
+        B: Into<Bytes>,
+    {
         PatchPathBuilder::new(self.clone(), self.file_system_client.context.clone())
             .action(PathUpdateAction::Append)
             .position(position)
-            .bytes(bytes)
+            .bytes(bytes.into())
     }
 
     pub fn flush(&self, position: i64) -> PatchPathBuilder<Self> {
