@@ -9,14 +9,14 @@ use url::Url;
 #[derive(Debug, Clone)]
 pub struct FileClient {
     file_system_client: FileSystemClient,
-    path: String,
+    file_path: String,
 }
 
 impl PathClient for FileClient {
     fn url(&self) -> Result<Url> {
         let fs_url = self.file_system_client.url()?;
-        let dir_path = vec![fs_url.path(), &self.path].join("/");
-        Ok(self.file_system_client.url()?.join(&dir_path)?)
+        let file_path = vec![fs_url.path(), &self.file_path].join("/");
+        Ok(self.file_system_client.url()?.join(&file_path)?)
     }
 
     fn prepare_request(&self, uri: &str, http_method: http::Method) -> azure_core::Request {
@@ -33,10 +33,13 @@ impl PathClient for FileClient {
 }
 
 impl FileClient {
-    pub(crate) fn new(file_system_client: FileSystemClient, path: String) -> Self {
+    pub(crate) fn new<P>(file_system_client: FileSystemClient, path: P) -> Self
+    where
+        P: Into<String>,
+    {
         Self {
             file_system_client,
-            path,
+            file_path: path.into(),
         }
     }
 
@@ -94,11 +97,11 @@ impl FileClient {
         let destination_client = self.file_system_client.get_file_client(destination_path);
         let fs_url = self.file_system_client.url().unwrap();
         // the path will contain a leading '/' as we extract if from the path component of the url
-        let dir_path = vec![fs_url.path(), &self.path].join("/");
+        let file_path = vec![fs_url.path(), &self.file_path].join("/");
         RenamePathBuilder::new(destination_client, self.file_system_client.context.clone())
             .resource(ResourceType::File)
             .mode(PathRenameMode::Legacy)
-            .rename_source(dir_path)
+            .rename_source(file_path)
     }
 
     pub fn rename_if_not_exists<P>(&self, destination_path: P) -> RenamePathBuilder<Self>
