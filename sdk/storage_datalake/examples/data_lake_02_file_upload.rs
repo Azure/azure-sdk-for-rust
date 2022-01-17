@@ -8,7 +8,7 @@ use std::error::Error;
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let data_lake_client = create_data_lake_client().await.unwrap();
 
-    let file_system_name = format!("azurerustsdk-datalake-example01-{}", Utc::now().timestamp());
+    let file_system_name = format!("azurerustsdk-datalake-example02-{}", Utc::now().timestamp());
     let file_system_client = data_lake_client
         .clone()
         .into_file_system_client(file_system_name.to_string());
