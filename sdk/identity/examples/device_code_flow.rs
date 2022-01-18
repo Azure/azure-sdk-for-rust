@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("{:?}", resp);
 
         // if we have the authorization, let's store it for later use.
-        if let DeviceCodeResponse::AuthorizationSucceded(auth) = resp? {
+        if let DeviceCodeResponse::AuthorizationSucceeded(auth) = resp? {
             authorization = Some(auth);
         }
     }

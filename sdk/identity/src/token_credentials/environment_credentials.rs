@@ -27,11 +27,13 @@ pub struct EnvironmentCredential {
 }
 
 impl EnvironmentCredential {
+    /// Creates a new `EnvironmentCredential` with the given `TokenCredentialOptions`.
     pub fn new(options: TokenCredentialOptions) -> Self {
         Self { options }
     }
 }
 
+#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum EnvironmentCredentialError {
