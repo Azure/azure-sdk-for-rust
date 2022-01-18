@@ -1,4 +1,4 @@
-use heck::{CamelCase, SnakeCase};
+use heck::{ToPascalCase, ToSnakeCase};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
@@ -19,8 +19,8 @@ impl CamelCaseIdent for str {
         txt = replace_first(&txt, true, false);
         txt = replace_special_chars(&txt);
         if !is_number {
-            // heck::CamelCase::to_camel_case will remove underscores
-            txt = txt.to_camel_case();
+            // will remove underscores
+            txt = txt.to_pascal_case();
         }
         let idt = syn::parse_str::<syn::Ident>(&txt).map_err(|source| Error::ParseIdentError {
             source,
@@ -180,7 +180,7 @@ fn is_keyword(word: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use heck::SnakeCase;
+    use heck::ToSnakeCase;
 
     #[test]
     fn test_unicode() -> Result<(), Error> {

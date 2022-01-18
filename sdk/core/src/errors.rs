@@ -15,52 +15,43 @@ pub enum PipelineError {
 
 /// An error caused by an HTTP header.
 #[derive(Debug, thiserror::Error)]
-pub enum HTTPHeaderError {
-    #[error("{0}")]
+pub enum HttpHeaderError {
+    #[error("invalid header value")]
     InvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
-    #[error("{0}")]
+    #[error("invalid header name")]
     InvalidHeaderName(#[from] http::header::InvalidHeaderName),
+    #[error("to str error")]
+    ToStr(#[source] http::header::ToStrError),
 }
 
 /// A general Azure error type.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("pipeline error: {0}")]
-    PipelineError(#[from] PipelineError),
-    #[error("policy error: {0}")]
-    PolicyError(Box<dyn std::error::Error + Send + Sync>),
-    #[error("parsing error: {0}")]
-    ParsingError(#[from] ParsingError),
-    #[error("error getting token: {0}")]
-    GetTokenError(Box<dyn std::error::Error + Send + Sync>),
-    #[error("http error: {0}")]
-    HttpError(#[from] HttpError),
-    #[error("to str error: {0}")]
-    ToStrError(#[from] http::header::ToStrError),
-    #[error("header error: {0}")]
-    HeaderError(#[from] HTTPHeaderError),
+    #[error("pipeline error")]
+    Pipeline(#[from] PipelineError),
+    #[error("policy error")]
+    Policy(#[source] Box<dyn std::error::Error + Send + Sync>),
+    #[error("parse error")]
+    Parse(#[from] ParseError),
+    #[error("error getting token")]
+    GetToken(#[source] Box<dyn std::error::Error + Send + Sync>),
+    #[error("http error")]
+    Http(#[from] HttpError),
+    #[error("header error")]
+    Header(#[from] HttpHeaderError),
     #[error("header not found: {0}")]
     HeaderNotFound(String),
     #[error("at least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
-    #[error(
-        "the expected query parameter {} was not found in the provided Url: {:?}",
-        expected_parameter,
-        url
-    )]
-    UrlQueryParameterNotFound {
-        expected_parameter: String,
-        url: url::Url,
-    },
-    #[error("error preparing HTTP request: {0}")]
-    HttpPrepareError(#[from] http::Error),
+    #[error("error preparing HTTP request")]
+    HttpPrepare(#[source] http::Error),
     #[error(transparent)]
-    StreamError(#[from] StreamError),
-    #[error("JSON error: {0}")]
-    JsonError(#[from] serde_json::Error),
-    #[error("Other error: {0}")]
-    Other(Box<dyn std::error::Error + Send + Sync + 'static>),
+    Stream(#[from] StreamError),
+    #[error("JSON error")]
+    Json(#[source] serde_json::Error),
+    #[error("Other error")]
+    Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
 #[cfg(feature = "enable_hyper")]
@@ -71,7 +62,7 @@ type HttpClientError = reqwest::Error;
 /// An error caused by a failure to parse data.
 #[non_exhaustive]
 #[derive(Debug, PartialEq, thiserror::Error)]
-pub enum ParsingError {
+pub enum ParseError {
     #[error("unknown variant of {item} found: \"{variant}\"")]
     UnknownVariant { item: &'static str, variant: String },
     #[error("expected token \"{token}\" not found when parsing {item} from \"{full}\"")]
@@ -80,16 +71,16 @@ pub enum ParsingError {
         token: String,
         full: String,
     },
-    #[error("error parsing int: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("error parsing uuid: {0}")]
-    ParseUuidError(#[from] uuid::Error),
-    #[error("error parsing date time: {0}")]
-    ParseDateTimeError(#[from] chrono::ParseError),
-    #[error("error parsing a float: {0}")]
-    ParseFloatError(#[from] std::num::ParseFloatError),
-    #[error("error parsing bool: {0}")]
-    ParseBoolError(#[from] std::str::ParseBoolError),
+    #[error("error parsing int")]
+    Int(#[from] std::num::ParseIntError),
+    #[error("error parsing uuid")]
+    Uuid(#[from] uuid::Error),
+    #[error("error parsing date time")]
+    DateTime(#[from] chrono::ParseError),
+    #[error("error parsing a float")]
+    Float(#[from] std::num::ParseFloatError),
+    #[error("error parsing bool")]
+    Bool(#[from] std::str::ParseBoolError),
 }
 
 /// An unexpected value.
@@ -115,61 +106,34 @@ impl UnexpectedValue {
     }
 }
 
-/// An unexpected HTTP Result.
-#[derive(Debug, Clone, PartialEq)]
-pub struct UnexpectedHTTPResult {
-    expected: Vec<StatusCode>,
-    received: StatusCode,
-    body: String,
-}
-
 /// An error originating from a streaming response.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum StreamError {
     #[error("error polling stream: {0}")]
-    PollError(std::io::Error),
+    Poll(std::io::Error),
     #[error("error reading stream: {0}")]
-    ReadError(HttpClientError),
+    Read(HttpClientError),
 }
 
 /// An error originating from an HTTP client.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum HttpError {
-    #[error("Failed to serialize request body as json: {0}")]
-    BodySerializationError(serde_json::Error),
     #[error("HTTP error status (status: {:?}, body: {:?})", status, body)]
-    ErrorStatusCode { status: StatusCode, body: String },
+    StatusCode { status: StatusCode, body: String },
     #[error("UTF8 conversion error: {0}")]
-    Utf8Error(#[from] std::str::Utf8Error),
-    #[error("from UTF8 conversion error: {0}")]
-    FromUtf8Error(#[from] std::string::FromUtf8Error),
-    #[error("failed to build request: {0}")]
-    BuildRequestError(http::Error),
-    #[error("failed to build request: {0}")]
-    BuildClientRequestError(HttpClientError),
-    #[error("failed to execute request: {0}")]
-    ExecuteRequestError(HttpClientError),
-    #[error("failed to read response as bytes: {0}")]
-    ReadBytesError(HttpClientError),
-    #[error("failed to read response as stream: {0}")]
-    ReadStreamError(HttpClientError),
-    #[error("failed to build response: {0}")]
-    BuildResponseError(http::Error),
-    #[error("to str error: {0}")]
-    ToStrError(#[from] http::header::ToStrError),
-    #[error("failed to reset stream: {0}")]
-    StreamResetError(StreamError),
-}
-
-/// An error caused by a range not being 512-byte aligned.
-#[derive(Debug, PartialEq, thiserror::Error)]
-pub enum Not512ByteAlignedError {
-    #[error("start range not 512-byte aligned: {0}")]
-    StartRange(u64),
-    #[error("end range not 512-byte aligned: {0}")]
-    EndRange(u64),
+    Utf8(#[from] std::str::Utf8Error),
+    #[error("failed to build request")]
+    BuildClientRequest(#[source] HttpClientError),
+    #[error("failed to execute request")]
+    ExecuteRequest(#[source] HttpClientError),
+    #[error("failed to read response as bytes")]
+    ReadBytes(#[source] HttpClientError),
+    #[error("failed to build response")]
+    BuildResponse(#[source] http::Error),
+    #[error("failed to reset stream")]
+    StreamReset(#[source] StreamError),
 }
 
 /// An error caused by invalid permissions.
@@ -184,17 +148,6 @@ pub enum PermissionError {
     },
 }
 
-/// An error caused by a range not being 512-byte aligned or by a parse failure.
-#[derive(Debug, PartialEq, thiserror::Error)]
-pub enum Parse512AlignedError {
-    #[error("split not found")]
-    SplitNotFound,
-    #[error("parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("not 512 byte aligned error: {0}")]
-    Not512ByteAlignedError(#[from] Not512ByteAlignedError),
-}
-
 /// An error caused by failure to traverse a data structure.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
@@ -207,18 +160,14 @@ pub enum TraversingError {
     EnumerationNotMatched(String),
     #[error("input string cannot be converted in boolean: {0}")]
     BooleanNotMatched(String),
-    #[error("unexpected node type received: expected {0}")]
-    UnexpectedNodeTypeError(String),
-    #[error("DateTime parse error: {0}")]
-    DateTimeParseError(#[from] chrono::format::ParseError),
+    #[error("DateTime parse error")]
+    DateTimeParse(#[from] chrono::format::ParseError),
     #[error("text not found")]
     TextNotFound,
-    #[error("parse int error: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
-    #[error("generic parse error: {0}")]
-    GenericParseError(String),
-    #[error("parsing error: {0:?}")]
-    ParsingError(#[from] ParsingError),
+    #[error("parse int error")]
+    ParseInt(#[from] std::num::ParseIntError),
+    #[error("parse error")]
+    Parse(#[from] ParseError),
 }
 
 /// Extract the headers and body from a `hyper` HTTP response.
@@ -227,13 +176,11 @@ pub enum TraversingError {
 pub async fn extract_status_headers_and_body(
     resp: hyper::client::ResponseFuture,
 ) -> Result<(hyper::StatusCode, hyper::HeaderMap, body::Bytes), Error> {
-    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
+    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
     let (head, body) = res.into_parts();
     let status = head.status;
     let headers = head.headers;
-    let body = body::to_bytes(body)
-        .await
-        .map_err(HttpError::ReadBytesError)?;
+    let body = body::to_bytes(body).await.map_err(HttpError::ReadBytes)?;
     Ok((status, headers, body))
 }
 
@@ -243,11 +190,11 @@ pub async fn extract_status_headers_and_body(
 pub async fn extract_status_and_body(
     resp: hyper::client::ResponseFuture,
 ) -> Result<(StatusCode, String), HttpError> {
-    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
+    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
     let status = res.status();
     let body = body::to_bytes(res.into_body())
         .await
-        .map_err(HttpError::ReadBytesError)?;
+        .map_err(HttpError::ReadBytes)?;
     Ok((status, std::str::from_utf8(&body)?.to_owned()))
 }
 
@@ -257,7 +204,7 @@ pub async fn extract_status_and_body(
 pub async fn extract_location_status_and_body(
     resp: hyper::client::ResponseFuture,
 ) -> Result<(http::StatusCode, String, String), HttpError> {
-    let res = resp.await.map_err(HttpError::ExecuteRequestError)?;
+    let res = resp.await.map_err(HttpError::ExecuteRequest)?;
     let status = res.status();
     let location: String = match res.headers().get("Location") {
         Some(header_value) => header_value.to_str()?.to_owned(),
@@ -265,7 +212,7 @@ pub async fn extract_location_status_and_body(
     };
     let body = body::to_bytes(res.into_body())
         .await
-        .map_err(HttpError::ReadBytesError)?;
+        .map_err(HttpError::ReadBytes)?;
     Ok((status, location, std::str::from_utf8(&body)?.to_owned()))
 }
 
@@ -295,7 +242,7 @@ pub async fn check_status_extract_body_2(
     let received_status = resp.status();
     let body = body::to_bytes(resp.into_body())
         .await
-        .map_err(HttpError::ReadBytesError)?;
+        .map_err(HttpError::ReadBytes)?;
     let s = String::from_utf8(body.to_vec())?;
     debug!("body: {}", s);
     if received_status != expected_status {

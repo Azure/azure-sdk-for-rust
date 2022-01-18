@@ -25,7 +25,7 @@ impl AddAsHeader for MaxItemCount {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError> {
+    ) -> Result<(), crate::errors::HttpHeaderError> {
         let (header_name, header_value) = if self.0 <= 0 {
             (headers::MAX_ITEM_COUNT, -1)
         } else {

@@ -27,7 +27,7 @@ impl AddAsHeader for SequenceNumberCondition {
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HTTPHeaderError> {
+    ) -> Result<(), crate::errors::HttpHeaderError> {
         let (header_name, val) = match self {
             SequenceNumberCondition::Equal(val) => (IF_SEQUENCE_NUMBER_EQ, val),
             SequenceNumberCondition::LessOrEqual(val) => (IF_SEQUENCE_NUMBER_LE, val),

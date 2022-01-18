@@ -9,17 +9,17 @@ use crate::{
     CodeGen,
 };
 use autorust_openapi::{CollectionFormat, ParameterType, Response};
-use heck::CamelCase;
-use heck::SnakeCase;
+use heck::ToPascalCase;
+use heck::ToSnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::TokenStream;
 use quote::quote;
 use std::collections::{BTreeSet, HashSet};
 
 fn error_variant(operation: &WebOperationGen) -> Result<TokenStream, Error> {
-    let function = operation.rust_function_name().to_camel_case();
+    let function = operation.rust_function_name().to_pascal_case();
     if let Some(module) = operation.rust_module_name() {
-        let module = module.to_camel_case();
+        let module = module.to_pascal_case();
         ident(&format!("{}_{}", module, function)).map_err(Error::EnumVariantName)
     } else {
         ident(&function).map_err(Error::ModuleName)
@@ -687,20 +687,20 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
             #[derive(Debug, thiserror::Error)]
             pub enum Error {
                 #error_responses_ts
-                #[error("Failed to parse request URL: {0}")]
-                ParseUrl(url::ParseError),
-                #[error("Failed to build request: {0}")]
-                BuildRequest(http::Error),
-                #[error("Failed to serialize request body: {0}")]
-                Serialize(serde_json::Error),
-                #[error("Failed to get access token: {0}")]
-                GetToken(azure_core::Error),
-                #[error("Failed to execute request: {0}")]
-                SendRequest(azure_core::Error),
-                #[error("Failed to get response bytes: {0}")]
-                ResponseBytes(azure_core::StreamError),
-                #[error("Failed to deserialize response: {0}, body: {1:?}")]
-                Deserialize(serde_json::Error, bytes::Bytes),
+                #[error("Failed to parse request URL")]
+                ParseUrl(#[source] url::ParseError),
+                #[error("Failed to build request")]
+                BuildRequest(#[source] http::Error),
+                #[error("Failed to serialize request body")]
+                Serialize(#[source] serde_json::Error),
+                #[error("Failed to get access token")]
+                GetToken(#[source] azure_core::Error),
+                #[error("Failed to execute request")]
+                SendRequest(#[source] azure_core::Error),
+                #[error("Failed to get response bytes")]
+                ResponseBytes(#[source] azure_core::StreamError),
+                #[error("Failed to deserialize response, body: {1:?}")]
+                Deserialize(#[source] serde_json::Error, bytes::Bytes),
             }
 
             #builder_struct_code

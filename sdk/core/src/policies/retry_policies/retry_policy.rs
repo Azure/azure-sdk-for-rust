@@ -61,7 +61,7 @@ where
                     // Error status code
                     let status = response.status();
                     let body = response.into_body_string().await;
-                    let error = Box::new(HttpError::ErrorStatusCode { status, body });
+                    let error = Box::new(HttpError::StatusCode { status, body });
                     if !RETRY_STATUSES.contains(&status) {
                         log::error!(
                             "server returned error status which will not be retried: {}",

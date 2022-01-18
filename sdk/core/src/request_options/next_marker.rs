@@ -1,4 +1,4 @@
-use crate::{AppendToUrlQuery, Error};
+use crate::{AppendToUrlQuery, Error, HttpHeaderError};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct NextMarker(String);
@@ -32,7 +32,8 @@ impl NextMarker {
         let header_as_str = headers
             .get("x-ms-continuation")
             .map(|item| item.to_str())
-            .transpose()?;
+            .transpose()
+            .map_err(HttpHeaderError::ToStr)?;
 
         Ok(header_as_str
             .filter(|h| !h.is_empty())

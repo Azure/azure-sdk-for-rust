@@ -8,8 +8,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     #[error(transparent)]
     CoreError(#[from] azure_core::Error),
-    #[error("Parsing error: {0}")]
-    ParsingError(#[from] azure_core::ParsingError),
+    #[error("Parse error: {0}")]
+    ParseError(#[from] azure_core::ParseError),
     #[error("Permission error: {0}")]
     PermissionError(#[from] azure_core::PermissionError),
     #[error("Parse bool error: {0}")]
@@ -72,12 +72,18 @@ pub enum Error {
     #[error("At least one of these headers must be present: {0:?}")]
     HeadersNotFound(Vec<String>),
     #[error("error writing the header value: {0}")]
-    InvalidHeaderValue(#[from] azure_core::HTTPHeaderError),
+    InvalidHeaderValue(#[from] azure_core::HttpHeaderError),
 }
 
 impl From<azure_core::HttpError> for Error {
     fn from(error: azure_core::HttpError) -> Self {
-        Self::CoreError(azure_core::Error::HttpError(error))
+        Self::CoreError(azure_core::Error::Http(error))
+    }
+}
+
+impl From<azure_core::StreamError> for Error {
+    fn from(error: azure_core::StreamError) -> Self {
+        Self::CoreError(azure_core::Error::Stream(error))
     }
 }
 

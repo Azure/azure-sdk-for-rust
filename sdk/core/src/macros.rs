@@ -81,19 +81,19 @@ macro_rules! create_enum {
 
         impl $crate::parsing::FromStringOptional<$name> for $name {
             fn from_str_optional(s : &str) -> ::std::result::Result<$name, $crate::TraversingError> {
-                s.parse::<$name>().map_err(|e| { $crate::TraversingError::ParsingError(e) })
+                s.parse::<$name>().map_err(|e| { $crate::TraversingError::Parse(e) })
             }
         }
 
         impl ::std::str::FromStr for $name {
-            type Err = $crate::ParsingError;
+            type Err = $crate::ParseError;
 
-            fn from_str(s: &str) -> ::std::result::Result<$name, $crate::ParsingError> {
+            fn from_str(s: &str) -> ::std::result::Result<$name, $crate::ParseError> {
                 match s {
                     $(
                         $value => Ok($name::$variant),
                     )*
-                    _ => Err($crate::ParsingError::UnknownVariant {
+                    _ => Err($crate::ParseError::UnknownVariant {
                         item: stringify!($name),
                         variant: s.to_owned()
                     })
@@ -148,7 +148,7 @@ macro_rules! create_enum {
 
 #[cfg(test)]
 mod test {
-    use crate::ParsingError;
+    use crate::ParseError;
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));
     create_enum!(ColorsMonochrome, (Black, "Black"), (White, "White"));
 
@@ -188,7 +188,7 @@ mod test {
         let err = "Red".parse::<ColorsMonochrome>().unwrap_err();
         assert_eq!(
             err,
-            ParsingError::UnknownVariant {
+            ParseError::UnknownVariant {
                 item: "ColorsMonochrome",
                 variant: "Red".to_string()
             }

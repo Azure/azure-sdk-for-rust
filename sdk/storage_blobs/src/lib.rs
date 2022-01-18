@@ -8,6 +8,7 @@ extern crate azure_core;
 pub use azure_storage::{Error, Result};
 
 mod access_tier;
+mod ba512_range;
 #[allow(clippy::module_inception)]
 pub mod blob;
 mod blob_content_md5;
@@ -17,6 +18,7 @@ mod condition_append_position;
 mod condition_max_size;
 pub mod container;
 mod delete_snapshot_method;
+mod errors;
 mod hash;
 mod headers;
 mod incomplete_vector;
@@ -26,11 +28,13 @@ mod version_id;
 
 pub use access_tier::AccessTier;
 use azure_core::{AddAsHeader, AppendToUrlQuery};
+pub use ba512_range::BA512Range;
 pub use blob_content_md5::BlobContentMD5;
 pub use block_id::BlockId;
 pub use condition_append_position::ConditionAppendPosition;
 pub use condition_max_size::ConditionMaxSize;
 pub use delete_snapshot_method::DeleteSnapshotsMethod;
+pub use errors::*;
 pub use hash::Hash;
 use http::request::Builder;
 pub use snapshot::Snapshot;
@@ -75,7 +79,7 @@ impl AddAsHeader for RehydratePriority {
     fn add_as_header2(
         &self,
         request: &mut azure_core::Request,
-    ) -> std::result::Result<(), azure_core::HTTPHeaderError> {
+    ) -> std::result::Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             headers::REHYDRATE_PRIORITY,
             http::header::HeaderValue::from_str(&self.to_string())?,
