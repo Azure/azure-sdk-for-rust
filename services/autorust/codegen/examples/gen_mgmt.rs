@@ -18,6 +18,7 @@ const SKIP_SERVICES: &[&str] = &[
     "service-map",   // Ident "Ref:machine"
     "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
+    "web", // multiple duplicate `DnsType` and `SupportedTls` definitions
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[

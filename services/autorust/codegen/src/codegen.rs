@@ -65,6 +65,8 @@ impl CodeGen {
 pub enum Error {
     #[error("SpecError: {0}")]
     Spec(#[from] spec::Error),
+    #[error("creating code name for schema: {source}")]
+    CodeName { source: crate::identifier::Error },
     #[error("creating function name: {0}")]
     FunctionName(#[source] crate::identifier::Error),
     #[error("creating type name for schema ref: {0}")]

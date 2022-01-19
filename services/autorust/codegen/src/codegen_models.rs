@@ -56,6 +56,18 @@ impl SchemaGen {
         Ok(&self.ref_key.as_ref().ok_or(Error::NoRefKey)?.name)
     }
 
+    fn code_name(&self, default_name: &str) -> Result<TokenStream, Error> {
+        match &self.schema.common.x_ms_enum {
+            Some(x_ms_enum) => &x_ms_enum.name,
+            None => match self.name() {
+                Ok(name) => name,
+                Err(_) => default_name,
+            },
+        }
+        .to_camel_case_ident()
+        .map_err(|source| Error::CodeName { source })
+    }
+
     fn is_array(&self) -> bool {
         matches!(self.schema.common.type_, Some(DataType::Array))
     }
@@ -371,15 +383,7 @@ fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_
 
 fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<TypeCode, Error> {
     let enum_values = property.enum_values();
-    let id = match &property.schema.common.x_ms_enum {
-        Some(x_ms_enum) => x_ms_enum.name.as_str(),
-        None => property_name,
-    }
-    .to_camel_case_ident()
-    .map_err(|source| Error::EnumName {
-        source,
-        property: property_name.to_owned(),
-    })?;
+    let id = property.code_name(property_name)?;
 
     let mut value_tokens = TokenStream::new();
     for enum_value in enum_values {
@@ -411,6 +415,18 @@ fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &st
         };
         value_tokens.extend(value_token);
     }
+
+    // To support x-ms-enum.model_as_string, we want to be able to capture unknown
+    // string values as a separate field, e.g. Unknown(String).
+    // Unfortunately serde does not support this directly:
+    //   https://github.com/serde-rs/serde/issues/912
+    // Looks like we'll need a custom deserializer (see suggestion at the end of linked page)...
+    // if let Some(x_ms_enum) = &property.schema.common.x_ms_enum {
+    //     if x_ms_enum.model_as_string == Some(true) {
+    //         let str_field = quote! { Unknown(String) };
+    //         value_tokens.extend(str_field);
+    //     }
+    // }
 
     let default_code = if let Some(default_name) = property.default() {
         let default_name = default_name.to_camel_case_ident().map_err(|source| Error::EnumName {
@@ -471,7 +487,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
 
     for schema in schema.all_of() {
         let schema_name = schema.name()?;
-        let type_name = schema_name.to_camel_case_ident().map_err(Error::StructFieldName)?;
+        let type_name = schema.code_name(schema_name)?;
         let field_name = schema_name.to_snake_case_ident().map_err(Error::StructFieldName)?;
         props.extend(quote! {
             #[serde(flatten)]
@@ -570,7 +586,13 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         quote! {}
     };
 
+    let doc_comment = match &schema.schema.common.description {
+        Some(description) => quote! { #[doc = #description] },
+        None => quote! {},
+    };
+
     let struct_code = quote! {
+        #doc_comment
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #default_code
         pub struct #struct_name_code {
@@ -626,8 +648,8 @@ fn create_struct_field_code(
     lowercase_workaround: bool,
 ) -> Result<TypeCode, Error> {
     match &property.ref_key {
-        Some(ref_key) => {
-            let tp = ref_key.name.to_camel_case_ident().map_err(Error::PropertyName)?;
+        Some(_ref_key) => {
+            let tp = property.code_name(property_name)?;
             Ok(TypeCode {
                 type_name: tp,
                 code: TokenStream::new(),
