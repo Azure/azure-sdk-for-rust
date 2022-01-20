@@ -47,7 +47,7 @@ where
         .body(encoded)
         .send()
         .await
-        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))?;
+        .map_err(|e| DeviceCodeError::Request(Box::new(e)))?;
 
     if !response.status().is_success() {
         return Err(DeviceCodeError::UnsuccessfulResponse(
@@ -58,7 +58,7 @@ where
     let s = response
         .text()
         .await
-        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))?;
+        .map_err(|e| DeviceCodeError::Request(Box::new(e)))?;
 
     serde_json::from_str::<DeviceCodePhaseOneResponse>(&s)
         // we need to capture some variables that will be useful in
@@ -145,7 +145,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                         .body(encoded)
                         .send()
                         .await
-                        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))
+                        .map_err(|e| DeviceCodeError::Request(Box::new(e)))
                     {
                         Ok(result) => result,
                         Err(error) => return Some((Err(error), NextState::Finish)),
@@ -154,7 +154,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                     let result = match result
                         .text()
                         .await
-                        .map_err(|e| DeviceCodeError::RequestError(Box::new(e)))
+                        .map_err(|e| DeviceCodeError::Request(Box::new(e)))
                     {
                         Ok(result) => result,
                         Err(error) => return Some((Err(error), NextState::Finish)),

@@ -12,16 +12,16 @@ use url::form_urlencoded;
 #[derive(Debug, thiserror::Error)]
 /// An unrecognized error response from an identity service.
 pub enum Error {
-    #[error("Refresh token send error: {0}")]
-    SendError(reqwest::Error),
-    #[error("Error getting text for refresh token: {0}")]
-    TextError(reqwest::Error),
-    #[error("Error deserializing refresh token: {0}")]
-    DeserializeError(serde_json::Error),
-    #[error("Error parsing url for refresh token: {0}")]
-    ParseUrlError(url::ParseError),
+    #[error("Refresh token send error")]
+    Send(#[source] reqwest::Error),
+    #[error("Error getting text for refresh token")]
+    Text(#[source] reqwest::Error),
+    #[error("Error deserializing refresh token")]
+    Deserialize(#[source] serde_json::Error),
+    #[error("Error parsing url for refresh token")]
+    ParseUrl(#[source] url::ParseError),
     #[error("Error requesting token: {0}")]
-    TokenError(ErrorToken),
+    Token(ErrorToken),
 }
 
 /// Exchange a refresh token for a new access token and refresh token
@@ -50,7 +50,7 @@ pub async fn exchange(
         "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
         tenant_id
     ))
-    .map_err(Error::ParseUrlError)?;
+    .map_err(Error::ParseUrl)?;
 
     let ret = client
         .post(url)
@@ -58,18 +58,18 @@ pub async fn exchange(
         .body(encoded)
         .send()
         .await
-        .map_err(Error::SendError)?
+        .map_err(Error::Send)?
         .text()
         .await
-        .map_err(Error::TextError)?;
+        .map_err(Error::Text)?;
 
     debug!("refresh token response: {:?}", ret);
 
-    match serde_json::from_str::<RefreshTokenResponse>(&ret).map_err(Error::DeserializeError) {
+    match serde_json::from_str::<RefreshTokenResponse>(&ret).map_err(Error::Deserialize) {
         Ok(r) => Ok(r),
         Err(e) => {
             if let Ok(token_error) = serde_json::from_str::<ErrorToken>(&ret) {
-                Err(Error::TokenError(token_error))
+                Err(Error::Token(token_error))
             } else {
                 Err(e)
             }
