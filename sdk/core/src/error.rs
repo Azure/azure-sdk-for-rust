@@ -74,11 +74,11 @@ pub struct Error<O> {
     context: Context<O>,
 }
 
-impl<O> Error<O> {
+impl<O: Clone + Copy> Error<O> {
     /// Create a new `Error` based on a specific error kind and an underlying error cause
-    pub fn new<ERR>(kind: ErrorKind<O>, error: ERR) -> Self
+    pub fn new<E>(kind: ErrorKind<O>, error: E) -> Self
     where
-        ERR: Into<Box<dyn std::error::Error + Send + Sync>>,
+        E: Into<Box<dyn std::error::Error + Send + Sync>>,
     {
         Self {
             context: Context::Custom(Custom {
@@ -102,8 +102,8 @@ impl<O> Error<O> {
     }
 
     /// Get the `ErrorKind` of this `Error`
-    pub fn kind(&self) -> &ErrorKind<O> {
-        match &self.context {
+    pub fn kind(&self) -> ErrorKind<O> {
+        match self.context {
             Context::Simple(kind) => kind,
             Context::Message { kind, .. } => kind,
             Context::Custom(Custom { kind, .. }) => kind,
@@ -385,19 +385,19 @@ mod tests {
 
         let err = test_ensure(false).unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(*err.kind(), ErrorKind::Other);
+        assert_eq!(err.kind(), ErrorKind::Other);
 
         assert!(test_ensure(true).is_ok());
 
         let err = test_ensure_eq("foo", "bar").unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(*err.kind(), ErrorKind::Other);
+        assert_eq!(err.kind(), ErrorKind::Other);
 
         assert!(test_ensure_eq("foo", "foo").is_ok());
 
         let err = test_ensure_ne("foo", "foo").unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(*err.kind(), ErrorKind::Other);
+        assert_eq!(err.kind(), ErrorKind::Other);
 
         assert!(test_ensure_ne("foo", "bar").is_ok());
     }

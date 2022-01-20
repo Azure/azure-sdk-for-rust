@@ -2,6 +2,7 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Database;
 use crate::ResourceQuota;
+use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::{collect_pinned_stream, Context, Response as HttpResponse};
 use chrono::{DateTime, Utc};
@@ -44,13 +45,20 @@ impl CreateDatabaseBuilder {
                 id: self.database_name.as_str(),
             };
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)
+                .with_context(ErrorKind::Serialization, || {
+                    format!(
+                        "could not encode '{:?}' as an http header",
+                        self.consistency_level
+                    )
+                })?;
             request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
             let response = self
                 .client
                 .pipeline()
                 .send(self.context.insert(ResourceType::Databases), &mut request)
-                .await?;
+                .await
+                .context(ErrorKind::Other, "error when running pipeline")?;
 
             CreateDatabaseResponse::try_from(response).await
         })
@@ -58,7 +66,10 @@ impl CreateDatabaseBuilder {
 }
 
 /// A future of a create database response
-type CreateDatabase = futures::future::BoxFuture<'static, crate::Result<CreateDatabaseResponse>>;
+type CreateDatabase = futures::future::BoxFuture<
+    'static,
+    azure_core::error::Result<CreateDatabaseResponse, CreateDatabaseError>,
+>;
 
 #[derive(Serialize)]
 struct CreateDatabaseBody<'a> {
@@ -84,25 +95,51 @@ pub struct CreateDatabaseResponse {
 }
 
 impl CreateDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(
+        response: HttpResponse,
+    ) -> azure_core::error::Result<Self, CreateDatabaseError> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body = collect_pinned_stream(pinned_stream).await?;
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream)
+            .await
+            .context(ErrorKind::Io, "failed to collect stream")?;
 
-        Ok(Self {
-            database: serde_json::from_slice(&body)?,
-            charge: request_charge_from_headers(&headers)?,
-            etag: etag_from_headers(&headers)?,
-            session_token: session_token_from_headers(&headers)?,
-            last_state_change: last_state_change_from_headers(&headers)?,
-            resource_quota: resource_quota_from_headers(&headers)?,
-            resource_usage: resource_usage_from_headers(&headers)?,
-            quorum_acked_lsn: quorum_acked_lsn_from_headers(&headers)?,
-            current_write_quorum: current_write_quorum_from_headers(&headers)?,
-            current_replica_set_size: current_replica_set_size_from_headers(&headers)?,
-            schema_version: schema_version_from_headers(&headers)?.to_owned(),
-            service_version: service_version_from_headers(&headers)?.to_owned(),
-            activity_id: activity_id_from_headers(&headers)?,
-            gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
-        })
+        let res = || {
+            crate::Result::Ok(Self {
+                database: serde_json::from_slice(&body)?,
+                charge: request_charge_from_headers(&headers)?,
+                etag: etag_from_headers(&headers)?,
+                session_token: session_token_from_headers(&headers)?,
+                last_state_change: last_state_change_from_headers(&headers)?,
+                resource_quota: resource_quota_from_headers(&headers)?,
+                resource_usage: resource_usage_from_headers(&headers)?,
+                quorum_acked_lsn: quorum_acked_lsn_from_headers(&headers)?,
+                current_write_quorum: current_write_quorum_from_headers(&headers)?,
+                current_replica_set_size: current_replica_set_size_from_headers(&headers)?,
+                schema_version: schema_version_from_headers(&headers)?.to_owned(),
+                service_version: service_version_from_headers(&headers)?.to_owned(),
+                activity_id: activity_id_from_headers(&headers)?,
+                gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
+            })
+        };
+
+        res().context(
+            ErrorKind::Deserialization,
+            "error converting headers to CreateDatabaseResponse",
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Expected errors which may be returned by the `CreateDatabase` operation.
+pub enum CreateDatabaseError {
+    /// Returned when the JSON body is invalid. Check for missing curly brackets or quotes.
+    BadRequest,
+    /// Returned when the ID provided for the new database has been taken by an existing database.
+    Conflict,
+}
+
+impl std::fmt::Display for CreateDatabaseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
     }
 }
