@@ -36,7 +36,7 @@ tokio = { version = "1", features = ["macros"] }
 hyper = "0.14"
 hyper-rustls = "0.23"
 reqwest = "0.11.0"
-stop-token = { version = "0.6.1", features = ["tokio"] }
+stop-token = { version = "0.7.0", features = ["tokio"] }
 
 [features]
 test_e2e = []
