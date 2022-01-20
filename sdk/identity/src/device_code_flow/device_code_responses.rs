@@ -74,7 +74,7 @@ pub enum DeviceCodeError {
     ExpiredToken(DeviceCodeErrorResponse),
     /// The authorization response returned an unrecognized error
     #[error("unrecognized device code error response error kind: {0}")]
-    UnrecognizedError(DeviceCodeErrorResponse),
+    UnrecognizedResponse(DeviceCodeErrorResponse),
     /// The supplied tenant id could not be url encoded
     #[error("the supplied tenant id could not be url encoded: {0}")]
     InvalidTenantId(String),
@@ -85,8 +85,8 @@ pub enum DeviceCodeError {
     #[error("the http response body could not be turned into a device code response: {0}")]
     InvalidResponseBody(String),
     /// An error occurred when trying to make a request
-    #[error("an error occurred when trying to make a request: {0}")]
-    RequestError(Box<dyn std::error::Error + Send + Sync>),
+    #[error("an error occurred when trying to make a request")]
+    Request(#[source] Box<dyn std::error::Error + Send + Sync>),
 }
 
 /// Expected responses while polling the /token endpoint.
@@ -127,7 +127,7 @@ impl TryInto<DeviceCodeResponse> for String {
                             "expired_token" => {
                                 Err(DeviceCodeError::ExpiredToken(device_code_error_response))
                             }
-                            _ => Err(DeviceCodeError::UnrecognizedError(
+                            _ => Err(DeviceCodeError::UnrecognizedResponse(
                                 device_code_error_response,
                             )),
                         }

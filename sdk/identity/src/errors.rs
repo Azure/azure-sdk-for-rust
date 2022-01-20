@@ -1,5 +1,5 @@
 //! Errors specific to identity services.
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::fmt;
 
 /// Errors specific to identity services
@@ -7,42 +7,32 @@ use std::fmt;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// An error getting credentials from the Azure CLI
-    #[error("Error getting token credentials from Azure CLI: {0}")]
-    AzureCliCredentialError(#[from] crate::token_credentials::AzureCliCredentialError),
+    #[error("Error getting token credentials from Azure CLI")]
+    AzureCliCredential(#[from] crate::token_credentials::AzureCliCredentialError),
     /// An error getting credentials through the client secrect token credential flow
-    #[error("Client secret credentials error: {0}")]
-    ClientSecretCredentialError(#[from] crate::token_credentials::ClientSecretCredentialError),
+    #[error("Client secret credentials error")]
+    ClientSecretCredential(#[from] crate::token_credentials::ClientSecretCredentialError),
     /// An error getting credentials from the environment
-    #[error("Error getting environment credential: {0}")]
-    EnvironmentCredentialError(#[from] crate::token_credentials::EnvironmentCredentialError),
+    #[error("Error getting environment credential")]
+    EnvironmentCredential(#[from] crate::token_credentials::EnvironmentCredentialError),
     /// An error getting managed identity credentials
-    #[error("Error getting managed identity credential: {0}")]
-    ManagedIdentityCredentialError(
-        #[from] crate::token_credentials::ManagedIdentityCredentialError,
-    ),
+    #[error("Error getting managed identity credential")]
+    ManagedIdentityCredential(#[from] crate::token_credentials::ManagedIdentityCredentialError),
     /// An error using the default token credential flow
-    #[error("Error getting default credential: {0}")]
+    #[error("Error getting default credential")]
     DefaultAzureCredentialError(#[from] crate::token_credentials::DefaultAzureCredentialError),
     /// An error getting a refresh token
-    #[error("Error refreshing token: {0}")]
-    RefreshTokenError(#[from] crate::refresh_token::Error),
+    #[error("Error refreshing token")]
+    RefreshToken(#[from] crate::refresh_token::Error),
     /// An error performing the device code flow
-    #[error("Error performing the device code flow: {0}")]
-    DeviceCodeError(#[from] crate::device_code_flow::DeviceCodeError),
+    #[error("Error performing the device code flow")]
+    DeviceCode(#[from] crate::device_code_flow::DeviceCodeError),
     /// An error performing the device code flow
-    #[error("Error performing the device code flow: {0}")]
-    ClientCredentialError(#[from] crate::client_credentials_flow::ClientCredentialError),
+    #[error("Error performing the device code flow")]
+    ClientCredential(#[from] crate::client_credentials_flow::ClientCredentialError),
     /// An unrecognized error response from an identity service.
     #[error("Error response from service: {0}")]
     ErrorResponse(String),
-}
-
-/// An HTTP error response from the identity service.
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub(crate) enum ErrorResponse {
-    /// An unrecognized error response from an identity service.
-    GenericError { error_description: String },
 }
 
 /// Error Token
