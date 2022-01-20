@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 
 /// A convience alias for `Result` where the error type is hard coded to `Error`
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T, O> = std::result::Result<T, Error<O>>;
 
 /// A convenient way to create a new error using the normal formatting infrastructure
 #[macro_export]
@@ -70,15 +70,15 @@ macro_rules! ensure_ne {
 
 /// An error encountered from interfacing with Azure
 #[derive(Debug)]
-pub struct Error {
-    context: Context,
+pub struct Error<O> {
+    context: Context<O>,
 }
 
-impl Error {
+impl<O> Error<O> {
     /// Create a new `Error` based on a specific error kind and an underlying error cause
-    pub fn new<E>(kind: ErrorKind, error: E) -> Self
+    pub fn new<ERR>(kind: ErrorKind<O>, error: ERR) -> Self
     where
-        E: Into<Box<dyn std::error::Error + Send + Sync>>,
+        ERR: Into<Box<dyn std::error::Error + Send + Sync>>,
     {
         Self {
             context: Context::Custom(Custom {
@@ -89,7 +89,7 @@ impl Error {
     }
 
     /// Create an `Error` based on an error kind and some sort of message
-    pub fn with_message<C>(kind: ErrorKind, message: C) -> Self
+    pub fn with_message<C>(kind: ErrorKind<O>, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
     {
@@ -102,8 +102,8 @@ impl Error {
     }
 
     /// Get the `ErrorKind` of this `Error`
-    pub fn kind(&self) -> ErrorKind {
-        match self.context {
+    pub fn kind(&self) -> &ErrorKind<O> {
+        match &self.context {
             Context::Simple(kind) => kind,
             Context::Message { kind, .. } => kind,
             Context::Custom(Custom { kind, .. }) => kind,
@@ -139,7 +139,7 @@ impl Error {
     }
 }
 
-impl std::error::Error for Error {
+impl<O: Debug + Display> std::error::Error for Error<O> {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.context {
             Context::Custom(Custom { error, .. }) => error.source(),
@@ -149,15 +149,15 @@ impl std::error::Error for Error {
     }
 }
 
-impl From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Self {
+impl<O> From<ErrorKind<O>> for Error<O> {
+    fn from(kind: ErrorKind<O>) -> Self {
         Self {
             context: Context::Simple(kind),
         }
     }
 }
 
-impl From<std::io::Error> for Error {
+impl<O> From<std::io::Error> for Error<O> {
     fn from(error: std::io::Error) -> Self {
         Self {
             context: Context::Custom(Custom {
@@ -168,7 +168,7 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl From<serde_json::Error> for Error {
+impl<O> From<serde_json::Error> for Error<O> {
     fn from(error: serde_json::Error) -> Self {
         Self {
             context: Context::Custom(Custom {
@@ -179,7 +179,7 @@ impl From<serde_json::Error> for Error {
     }
 }
 
-impl Display for Error {
+impl<O: std::fmt::Display> Display for Error<O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
             Context::Simple(kind) => write!(f, "{}", kind),
@@ -196,18 +196,22 @@ impl Display for Error {
 ///
 /// The classification of error is intentionally fairly coarse.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ErrorKind {
-    HttpStatus { status: u16 },
+pub enum ErrorKind<O> {
+    Operation(O),
+    UnexpectedOperation { status: u16 },
     Io,
     Serialization,
     Deserialization,
     Other,
 }
 
-impl Display for ErrorKind {
+impl<O: Display> Display for ErrorKind<O> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ErrorKind::HttpStatus { status } => write!(f, "HttpStatus({})", status),
+            ErrorKind::Operation(o) => write!(f, "Operation({})", o),
+            ErrorKind::UnexpectedOperation { status } => {
+                write!(f, "UnexpectedOperation({})", status)
+            }
             ErrorKind::Io => write!(f, "Io"),
             ErrorKind::Serialization => write!(f, "Serialization"),
             ErrorKind::Deserialization => write!(f, "Deserialization"),
@@ -219,24 +223,24 @@ impl Display for ErrorKind {
 /// An extention to the `Result` type that easy allows creating `Error` values from exsiting errors
 ///
 /// This trait should not be implemented on custom types and is meant for usage with `Result`
-pub trait ResultExt<T> {
-    fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
+pub trait ResultExt<T, O> {
+    fn context<C>(self, kind: ErrorKind<O>, message: C) -> Result<T, O>
     where
         Self: Sized,
         C: Into<Cow<'static, str>>;
 
-    fn with_context<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
+    fn with_context<F, C>(self, kind: ErrorKind<O>, f: F) -> Result<T, O>
     where
         Self: Sized,
         F: FnOnce() -> C,
         C: Into<Cow<'static, str>>;
 }
 
-impl<T, E> ResultExt<T> for std::result::Result<T, E>
+impl<T, E, O> ResultExt<T, O> for std::result::Result<T, E>
 where
     E: std::error::Error + Send + Sync + 'static,
 {
-    fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
+    fn context<C>(self, kind: ErrorKind<O>, message: C) -> Result<T, O>
     where
         Self: Sized,
         C: Into<Cow<'static, str>>,
@@ -252,7 +256,7 @@ where
         })
     }
 
-    fn with_context<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
+    fn with_context<F, C>(self, kind: ErrorKind<O>, f: F) -> Result<T, O>
     where
         Self: Sized,
         F: FnOnce() -> C,
@@ -263,19 +267,19 @@ where
 }
 
 #[derive(Debug)]
-enum Context {
-    Simple(ErrorKind),
+enum Context<O> {
+    Simple(ErrorKind<O>),
     Message {
-        kind: ErrorKind,
+        kind: ErrorKind<O>,
         message: Cow<'static, str>,
     },
-    Custom(Custom),
-    Full(Custom, Cow<'static, str>),
+    Custom(Custom<O>),
+    Full(Custom<O>, Cow<'static, str>),
 }
 
 #[derive(Debug)]
-struct Custom {
-    kind: ErrorKind,
+struct Custom<O> {
+    kind: ErrorKind<O>,
     error: Box<dyn std::error::Error + Send + Sync>,
 }
 
@@ -284,13 +288,22 @@ mod tests {
     use super::*;
     use std::io;
 
+    #[derive(Debug, PartialEq, Copy, Clone)]
+    struct OperationError;
+
+    impl Display for OperationError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "OperationError")
+        }
+    }
+
     #[derive(thiserror::Error, Debug)]
     enum IntermediateError {
         #[error("second error")]
         Io(#[from] std::io::Error),
     }
 
-    fn create_error() -> Error {
+    fn create_error() -> Error<OperationError> {
         // Create a nested std::io::Error
         let inner = io::Error::new(io::ErrorKind::BrokenPipe, "third error");
         let inner: IntermediateError = inner.into();
@@ -317,15 +330,16 @@ mod tests {
         assert_eq!(errors.join(","), "second error,third error");
 
         let inner = io::Error::new(io::ErrorKind::BrokenPipe, "third error");
-        let error = std::result::Result::<(), std::io::Error>::Err(inner)
-            .context(ErrorKind::Io, "oh no broken pipe!");
+        let error: Result<(), OperationError> =
+            std::result::Result::<(), std::io::Error>::Err(inner)
+                .context(ErrorKind::Io, "oh no broken pipe!");
         assert_eq!(format!("{}", error.unwrap_err()), "oh no broken pipe!");
     }
 
     #[test]
     fn downcasting_works() {
         let error = &create_error() as &dyn std::error::Error;
-        assert!(error.is::<Error>());
+        assert!(error.is::<Error<OperationError>>());
         let downcasted = error
             .source()
             .unwrap()
@@ -354,36 +368,36 @@ mod tests {
 
     #[test]
     fn ensure_works() {
-        fn test_ensure(predicate: bool) -> Result<()> {
+        fn test_ensure(predicate: bool) -> Result<(), OperationError> {
             ensure!(predicate, ErrorKind::Other, "predicate failed");
             Ok(())
         }
 
-        fn test_ensure_eq(item1: &str, item2: &str) -> Result<()> {
+        fn test_ensure_eq(item1: &str, item2: &str) -> Result<(), OperationError> {
             ensure_eq!(item1, item2, ErrorKind::Other, "predicate failed");
             Ok(())
         }
 
-        fn test_ensure_ne(item1: &str, item2: &str) -> Result<()> {
+        fn test_ensure_ne(item1: &str, item2: &str) -> Result<(), OperationError> {
             ensure_ne!(item1, item2, ErrorKind::Other, "predicate failed");
             Ok(())
         }
 
         let err = test_ensure(false).unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
+        assert_eq!(*err.kind(), ErrorKind::Other);
 
         assert!(test_ensure(true).is_ok());
 
         let err = test_ensure_eq("foo", "bar").unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
+        assert_eq!(*err.kind(), ErrorKind::Other);
 
         assert!(test_ensure_eq("foo", "foo").is_ok());
 
         let err = test_ensure_ne("foo", "foo").unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
+        assert_eq!(*err.kind(), ErrorKind::Other);
 
         assert!(test_ensure_ne("foo", "bar").is_ok());
     }
