@@ -29,8 +29,8 @@ impl Properties {
         self.0.insert(k.into(), v.into())
     }
 
-    pub fn hash_map(&self) -> &BTreeMap<Cow<'static, str>, Cow<'static, str>> {
-        &self.0
+    pub fn get(&self, key: &str) -> std::option::Option<&Cow<'_, str>> {
+        self.0.get(key)
     }
 }
 

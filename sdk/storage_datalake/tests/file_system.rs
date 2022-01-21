@@ -48,8 +48,7 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
     assert!(found, "did not find created file system");
 
     let get_fs_props_response = file_system_client.get_properties().into_future().await?;
-    let properties_hashmap = get_fs_props_response.properties.hash_map();
-    let added_via_option = properties_hashmap.get("AddedVia");
+    let added_via_option = get_fs_props_response.properties.get("AddedVia");
     assert!(
         added_via_option.is_some(),
         "did not find expected property: AddedVia"
@@ -67,8 +66,7 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
         .await?;
 
     let get_fs_props_response = file_system_client.get_properties().into_future().await?;
-    let properties_hashmap = get_fs_props_response.properties.hash_map();
-    let modified_by_option = properties_hashmap.get("ModifiedBy");
+    let modified_by_option = get_fs_props_response.properties.get("ModifiedBy");
     assert!(
         modified_by_option.is_some(),
         "did not find expected property: ModifiedBy"
