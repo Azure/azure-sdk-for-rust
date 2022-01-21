@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -18,11 +17,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path = "some/path/example-file.txt";
+    let file_client = file_system_client.get_file_client(file_path);
 
     println!("creating file '{}'...", file_path);
-    let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
+    let create_file_response = file_client.create().into_future().await?;
     println!("create file response == {:?}\n", create_file_response);
 
     let string1 = "some data";
@@ -34,40 +32,27 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let data2_length = data2.len() as i64;
 
     println!("appending '{}' to file '{}'...", string1, file_path);
-    let append_to_file_response = file_system_client
-        .append_to_file(
-            Context::default(),
-            file_path,
-            data1,
-            0,
-            FileAppendOptions::default(),
-        )
-        .await?;
+    let append_to_file_response = file_client.append(0, data1).into_future().await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("appending '{}' to file '{}'...", string2, file_path);
-    let append_to_file_response = file_system_client
-        .append_to_file(
-            Context::default(),
-            file_path,
-            data2,
-            data1_length,
-            FileAppendOptions::default(),
-        )
+    let append_to_file_response = file_client
+        .append(data1_length, data2)
+        .into_future()
         .await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("flushing file '{}'...", file_path);
-    let flush_file_response = file_system_client
-        .flush_file(
-            Context::default(),
-            file_path,
-            data1_length + data2_length,
-            true,
-            FileFlushOptions::default(),
-        )
+    let flush_file_response = file_client
+        .flush(data1_length + data2_length)
+        .close(true)
+        .into_future()
         .await?;
     println!("flush file response == {:?}\n", flush_file_response);
+
+    println!("reading file '{}'...", file_path);
+    let read_file_response = file_client.read().into_future().await?;
+    println!("read file response == {:?}\n", read_file_response);
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().into_future().await?;

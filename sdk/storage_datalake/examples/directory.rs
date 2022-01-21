@@ -1,9 +1,7 @@
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
-use futures::stream::StreamExt;
 use std::error::Error;
-use std::num::NonZeroU32;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -25,38 +23,40 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
-    println!("listing file systems...");
-    let mut stream = data_lake_client
-        .list_file_systems()
-        .max_results(NonZeroU32::new(3).unwrap())
-        .into_stream();
-    while let Some(list_fs_response) = stream.next().await {
-        println!("list file system response == {:?}\n", list_fs_response);
-    }
-
-    println!("getting file system properties...");
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
-    println!(
-        "get file system properties response == {:?}\n",
-        get_fs_props_response
-    );
-
-    println!("setting file system properties...");
-    fs_properties.insert("ModifiedBy", "Iota");
-    let set_fs_props_response = file_system_client
-        .set_properties(Some(fs_properties))
+    let directory_name = "some/directory";
+    let directory_client = file_system_client.get_directory_client(directory_name);
+    println!("creating directory '{}'...", &directory_name);
+    let create_directory_response = directory_client
+        .create()
+        .properties(fs_properties.clone())
         .into_future()
         .await?;
     println!(
-        "set file system properties response == {:?}\n",
-        set_fs_props_response
+        "create directory response == {:?}\n",
+        create_directory_response
     );
 
-    println!("getting file system properties...");
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    println!("creating directory '{}' if not exists...", directory_name);
+    let create_directory_if_not_exists_result =
+        directory_client.create_if_not_exists().into_future().await;
     println!(
-        "get file system properties response == {:?}\n",
-        get_fs_props_response
+        "create directory result (should fail) == {:?}\n",
+        create_directory_if_not_exists_result
+    );
+
+    let new_directory_name = "some/directory2";
+    println!(
+        "renaming directory '{}' to '{}' ...",
+        &directory_name, &new_directory_name
+    );
+    let rename_directory_response = directory_client
+        .rename(new_directory_name)
+        .properties(fs_properties.clone())
+        .into_future()
+        .await?;
+    println!(
+        "rename directory response == {:?}\n",
+        rename_directory_response
     );
 
     println!("deleting file system...");

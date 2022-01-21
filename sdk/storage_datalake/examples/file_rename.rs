@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -18,26 +17,25 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path1 = "some/path/example-file1.txt";
+    let file_client1 = file_system_client.get_file_client(file_path1);
     let file_path2 = "some/path/example-file2.txt";
+    let file_client2 = file_system_client.get_file_client(file_path2);
 
     println!("creating file '{}'...", file_path1);
-    let create_file_response1 = file_system_client
-        .create_file(Context::default(), file_path1, FileCreateOptions::default())
-        .await?;
+    let create_file_response1 = file_client1.create().into_future().await?;
     println!("create file response == {:?}\n", create_file_response1);
 
     println!("creating file '{}'...", file_path2);
-    let create_file_response2 = file_system_client
-        .create_file(Context::default(), file_path2, FileCreateOptions::default())
-        .await?;
+    let create_file_response2 = file_client2.create().into_future().await?;
     println!("create file response == {:?}\n", create_file_response2);
 
     println!(
         "renaming file '{}' to '{}' if not exists...",
         file_path1, file_path2
     );
-    let rename_file_if_not_exists_result = file_system_client
-        .rename_file_if_not_exists(Context::default(), file_path1, file_path2)
+    let rename_file_if_not_exists_result = file_client1
+        .rename_if_not_exists(file_path2)
+        .into_future()
         .await;
     println!(
         "rename file result (should fail) == {:?}\n",
@@ -45,14 +43,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("renaming file '{}' to '{}'...", file_path1, file_path2);
-    let rename_file_response = file_system_client
-        .rename_file(
-            Context::default(),
-            file_path1,
-            file_path2,
-            FileRenameOptions::default(),
-        )
-        .await?;
+    let rename_file_response = file_client1.rename(file_path2).into_future().await?;
     println!("rename file response == {:?}\n", rename_file_response);
 
     println!("deleting file system...");

@@ -2,11 +2,11 @@ use azure_core::AddAsHeader;
 use http::request::Builder;
 use http::HeaderMap;
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Properties(HashMap<Cow<'static, str>, Cow<'static, str>>);
+pub struct Properties(BTreeMap<Cow<'static, str>, Cow<'static, str>>);
 
 const HEADER: &str = "x-ms-properties";
 
@@ -18,7 +18,7 @@ impl Default for Properties {
 
 impl Properties {
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self(BTreeMap::new())
     }
 
     pub fn insert<K: Into<Cow<'static, str>>, V: Into<Cow<'static, str>>>(
@@ -29,8 +29,8 @@ impl Properties {
         self.0.insert(k.into(), v.into())
     }
 
-    pub fn hash_map(&self) -> &HashMap<Cow<'static, str>, Cow<'static, str>> {
-        &self.0
+    pub fn get(&self, key: &str) -> std::option::Option<&Cow<'_, str>> {
+        self.0.get(key)
     }
 }
 

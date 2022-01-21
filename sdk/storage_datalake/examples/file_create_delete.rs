@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_storage::storage_shared_key_credential::StorageSharedKeyCredential;
 use azure_storage_datalake::prelude::*;
 use chrono::Utc;
@@ -18,32 +17,49 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path = "some/path/example-file.txt";
+    let file_client = file_system_client.get_file_client(file_path);
+    let mut file_properties = Properties::new();
+    file_properties.insert("AddedVia", "Azure SDK for Rust");
 
     println!("creating file '{}'...", file_path);
-    let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
+    let create_file_response = file_client
+        .create()
+        .properties(file_properties.clone())
+        .into_future()
         .await?;
     println!("create file response == {:?}\n", create_file_response);
 
+    println!("getting properties for file '{}'...", file_path);
+    let get_properties_response = file_client.get_properties().into_future().await?;
+    println!(
+        "get file properties response == {:?}\n",
+        get_properties_response
+    );
+
+    println!("setting properties for file '{}'...", file_path);
+    file_properties.insert("ModifiedBy", "Iota");
+    let set_properties_response = file_client
+        .set_properties(file_properties)
+        .into_future()
+        .await?;
+    println!(
+        "set file properties response == {:?}\n",
+        set_properties_response
+    );
+
     println!("creating file '{}' if not exists...", file_path);
-    let create_file_if_not_exists_result = file_system_client
-        .create_file_if_not_exists(Context::default(), file_path)
-        .await;
+    let create_file_if_not_exists_result = file_client.create_if_not_exists().into_future().await;
     println!(
         "create file result (should fail) == {:?}\n",
         create_file_if_not_exists_result
     );
 
     println!("creating file '{}' (overwrite)...", file_path);
-    let create_file_response = file_system_client
-        .create_file(Context::default(), file_path, FileCreateOptions::default())
-        .await?;
+    let create_file_response = file_client.create().into_future().await?;
     println!("create file response == {:?}\n", create_file_response);
 
     println!("deleting file '{}'...", file_path);
-    let delete_file_response = file_system_client
-        .delete_file(Context::default(), file_path, FileDeleteOptions::default())
-        .await?;
+    let delete_file_response = file_client.delete().into_future().await?;
     println!("delete_file file response == {:?}\n", delete_file_response);
 
     println!("deleting file system...");

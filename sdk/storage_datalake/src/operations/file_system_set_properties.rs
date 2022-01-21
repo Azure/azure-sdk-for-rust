@@ -49,13 +49,13 @@ impl SetFileSystemPropertiesBuilder {
         let ctx = self.client.context.clone();
 
         Box::pin(async move {
-            let mut url = this.client.url().clone();
+            let mut url = this.client.url()?;
             self.timeout.append_to_url_query(&mut url);
             url.query_pairs_mut().append_pair("resource", "filesystem");
 
             let mut request = this
                 .client
-                .prepare_request_pipeline(url.as_str(), http::Method::PATCH);
+                .prepare_request(url.as_str(), http::Method::PATCH);
 
             add_optional_header2(&this.client_request_id, &mut request)?;
             add_optional_header2(&this.if_modified_since_condition, &mut request)?;
