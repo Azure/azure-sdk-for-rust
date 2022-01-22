@@ -104,26 +104,23 @@ impl<'a> ConnectionString<'a> {
             .filter(|s| !s.chars().all(char::is_whitespace));
 
         for kv_pair_str in kv_str_pairs {
-            let mut kv = kv_pair_str.trim().split('=');
-            let k = match kv.next() {
-                Some(k) if k.chars().all(char::is_whitespace) => {
+            let kv = kv_pair_str.trim().split_once('=');
+
+            let (k, v) = match kv {
+                Some((k, _)) if k.chars().all(char::is_whitespace) => {
                     return Err(ConnectionStringError::ParseError {
                         msg: "No key found".to_owned(),
                     })
                 }
-                None => {
-                    return Err(ConnectionStringError::ParseError {
-                        msg: "No key found".to_owned(),
-                    })
-                }
-                Some(k) => k,
-            };
-            let v = match kv.next() {
-                Some(v) if v.chars().all(char::is_whitespace) => {
+                Some((k, v)) if v.chars().all(char::is_whitespace) => {
                     return Err(ConnectionStringError::MissingValue { key: k.to_owned() })
                 }
-                None => return Err(ConnectionStringError::MissingValue { key: k.to_owned() }),
-                Some(v) => v,
+                Some((k, v)) => (k, v),
+                None => {
+                    return Err(ConnectionStringError::ParseError {
+                        msg: "No key/value found".to_owned(),
+                    })
+                }
             };
 
             match k {
@@ -245,6 +242,14 @@ mod tests {
             Ok(ConnectionString {
                 account_name: Some("guywald"),
                 sas: Some("s"),
+                ..
+            })
+        ));
+        assert!(matches!(
+            ConnectionString::new("AccountName=guywald;SharedAccessSignature=se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
+            Ok(ConnectionString {
+                account_name: Some("guywald"),
+                sas: Some("se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
                 ..
             })
         ));
