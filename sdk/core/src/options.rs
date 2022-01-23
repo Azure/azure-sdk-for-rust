@@ -10,7 +10,7 @@ use std::time::Duration;
 /// You can override default options and even add your own per-call or per-retry policies:
 ///
 /// ```
-/// use azure_core::{ClientOptions, RetryOptions, TelemetryOptions};
+/// use azure_core2::{ClientOptions, RetryOptions, TelemetryOptions};
 /// let options: ClientOptions = ClientOptions::default()
 ///     .retry(RetryOptions::default().max_retries(10u32))
 ///     .telemetry(TelemetryOptions::default().application_id("my-application"));
