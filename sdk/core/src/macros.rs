@@ -5,7 +5,7 @@
 ///
 /// In other words. The following macro call:
 /// ```
-/// # #[macro_use] extern crate azure_core;
+/// # #[macro_use] extern crate azure_core2;
 /// struct MyStruct<'a> { foo: Option<&'a str> };
 /// impl <'a> MyStruct<'a> {
 ///     setters! { foo: &'a str => Some(foo), }
@@ -55,7 +55,7 @@ macro_rules! setters {
 
 /// The following macro invocation:
 /// ```
-/// # #[macro_use] extern crate azure_core;
+/// # #[macro_use] extern crate azure_core2;
 /// create_enum!(Words, (Pollo, "Pollo"), (Bianco, "Bianco"), (Giallo, "Giallo"));
 /// ```
 /// Turns into a struct where each variant can be turned into and construct from the corresponding string.
