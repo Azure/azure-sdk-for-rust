@@ -14,7 +14,7 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.1.0", default-features=false }
+azure_core = { package = "azure_core2", path = "../core", version = "0.1.0", default-features=false }
 ring = "0.16"
 base64 = "0.13"
 chrono = "0.4"
