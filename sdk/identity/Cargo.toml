@@ -28,8 +28,6 @@ async-trait = "0.1"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros"] }
-azure_storage = { version = "0.1", path = "../storage" }
-azure_storage_blobs = { version = "0.1", path = "../storage_blobs" }
 env_logger = "0.9"
 serde_test = "1"
 
