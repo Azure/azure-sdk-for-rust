@@ -13,7 +13,7 @@ categories = ["api-bindings"]
 edition = "2018"
 
 [dependencies]
-azure_core = { package = "azure_core2", path = "../core", version = "0.1.0", default-features=false }
+azure_core = { package = "azure_base", path = "../core", version = "0.1.0", default-features=false }
 azure_storage = { path = "../storage", version = "0.1.0", default-features=false, features=["account"] }
 bytes = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
