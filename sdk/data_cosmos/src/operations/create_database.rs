@@ -46,7 +46,7 @@ impl CreateDatabaseBuilder {
             };
 
             azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)
-                .with_context(ErrorKind::Serialization, || {
+                .with_context(ErrorKind::DataConversion, || {
                     format!(
                         "could not encode '{:?}' as an http header",
                         self.consistency_level
@@ -123,7 +123,7 @@ impl CreateDatabaseResponse {
         };
 
         res().context(
-            ErrorKind::Deserialization,
+            ErrorKind::DataConversion,
             "error converting headers to CreateDatabaseResponse",
         )
     }

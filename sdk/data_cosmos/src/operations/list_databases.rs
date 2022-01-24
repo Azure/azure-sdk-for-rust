@@ -47,14 +47,14 @@ impl ListDatabases {
                     .prepare_request_pipeline("dbs", http::Method::GET);
 
                 azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)
-                    .with_context(ErrorKind::Serialization, || {
+                    .with_context(ErrorKind::DataConversion, || {
                         format!(
                             "could not encode '{:?}' as an http header",
                             this.consistency_level
                         )
                     })?;
                 azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)
-                    .with_context(ErrorKind::Serialization, || {
+                    .with_context(ErrorKind::DataConversion, || {
                         format!(
                             "could not encode '{:?}' as an http header",
                             this.max_item_count
@@ -63,7 +63,7 @@ impl ListDatabases {
 
                 if let Some(c) = continuation {
                     let h = http::HeaderValue::from_str(c.as_str())
-                        .with_context(ErrorKind::Serialization, || {
+                        .with_context(ErrorKind::DataConversion, || {
                             format!("could not encode '{:?}' as an http header", c)
                         })?;
                     request.headers_mut().append(headers::CONTINUATION, h);
@@ -141,7 +141,7 @@ impl ListDatabasesResponse {
         };
 
         res().context(
-            ErrorKind::Deserialization,
+            ErrorKind::DataConversion,
             "error converting headers to ListDatabasesResponse",
         )
     }

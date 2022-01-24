@@ -1,5 +1,5 @@
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, Response};
+use crate::{Context, Request};
 use http::header::HeaderMap;
 use std::sync::Arc;
 
@@ -22,7 +22,7 @@ impl Policy for CustomHeadersPolicy {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         if let Some(CustomHeaders(custom_headers)) = ctx.get::<CustomHeaders>() {
             custom_headers
                 .iter()

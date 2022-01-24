@@ -1,6 +1,8 @@
-use crate::policies::{Policy, PolicyResult, Request, Response};
+use crate::error::{Error, ErrorKind};
+use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
-use crate::{Context, HttpError};
+use crate::Context;
+
 use chrono::{DateTime, Local};
 use http::StatusCode;
 use std::sync::Arc;
@@ -42,7 +44,7 @@ where
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         let mut first_retry_time = None;
         let mut retry_count = 0;
 
@@ -61,7 +63,11 @@ where
                     // Error status code
                     let status = response.status();
                     let body = response.into_body_string().await;
-                    let error = Box::new(HttpError::StatusCode { status, body });
+                    let error = Error::with_data(
+                        ErrorKind::unexpected(status.as_u16()),
+                        "server returned error status which will not be retried",
+                        body,
+                    );
                     if !RETRY_STATUSES.contains(&status) {
                         log::error!(
                             "server returned error status which will not be retried: {}",

@@ -1,71 +1,51 @@
 use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 
+mod azure_core_errors;
+mod hyperium_http;
+mod macros;
+
 /// A convience alias for `Result` where the error type is hard coded to `Error`
-pub type Result<T, O> = std::result::Result<T, Error<O>>;
+pub type Result<T, O = std::convert::Infallible> = std::result::Result<T, Error<O>>;
 
-/// A convenient way to create a new error using the normal formatting infrastructure
-#[macro_export]
-macro_rules! format_err {
-    ($kind:expr, $msg:literal $(,)?) => {{
-        // Handle $:literal as a special case to make cargo-expanded code more
-        // concise in the common case.
-        $crate::error::Error::new($kind, $msg)
-    }};
-    ($kind:expr, $msg:expr $(,)?) => {{
-        $crate::error::Error::new($kind, $msg)
-    }};
-    ($kind:expr, $msg:expr, $($arg:tt)*) => {{
-        $crate::error::Error::new($kind, format!($msg, $($arg)*))
-    }};
+/// The kind of error
+///
+/// The classification of error is intentionally fairly coarse.
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ErrorKind<O> {
+    /// An error specific to a certain operation
+    Operation(O),
+    /// An HTTP status code that was not expected
+    UnexpectedOperation { status: u16 },
+    /// An error performing IO
+    Io,
+    /// An error converting data
+    DataConversion,
+    /// An error getting an API credential token
+    Credential,
+    /// A catch all for other kinds of errors
+    Other,
 }
 
-/// Return early with an error if a condition is not satisfied.
-#[macro_export]
-macro_rules! ensure {
-    ($cond:expr, $kind:expr, $msg:literal $(,)?) => {
-        if !$cond {
-            return ::std::result::Result::Err($crate::format_err!($kind, $msg));
-        }
-    };
-    ($cond:expr, $kind:expr, dicate $msg:expr $(,)?) => {
-        if !$cond {
-            return ::std::result::Result::Err($crate::format_err!($kind, $msg));
-        }
-    };
-    ($cond:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
-        if !$cond {
-            return ::std::result::Result::Err($crate::format_err!($kind, $msg, $($arg)*));
-        }
-    };
+impl<O> ErrorKind<O> {
+    pub fn unexpected(status: u16) -> Self {
+        Self::UnexpectedOperation { status }
+    }
 }
 
-/// Return early with an error if two expressions are not equal to each other.
-#[macro_export]
-macro_rules! ensure_eq {
-    ($left:expr, $right:expr, $kind:expr, $msg:literal $(,)?) => {
-        $crate::ensure!($left == $right, $kind, $msg);
-    };
-    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr $(,)?) => {
-        $crate::ensure!($left == $right, $kind, $msg);
-    };
-    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
-        $crate::ensure!($left == $right, $kind, $msg, $($arg)*);
-    };
-}
-
-/// Return early with an error if two expressions are equal to each other.
-#[macro_export]
-macro_rules! ensure_ne {
-    ($left:expr, $right:expr, $kind:expr, $msg:literal $(,)?) => {
-        $crate::ensure!($left != $right, $kind, $msg);
-    };
-    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr $(,)?) => {
-        $crate::ensure!($left != $right, $kind, $msg);
-    };
-    ($left:expr, $right:expr, $kind:expr, dicate $msg:expr, $($arg:tt)*) => {
-        $crate::ensure!($left != $right, $kind, $msg, $($arg)*);
-    };
+impl<O: Display> Display for ErrorKind<O> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ErrorKind::Operation(o) => write!(f, "Operation({})", o),
+            ErrorKind::UnexpectedOperation { status } => {
+                write!(f, "UnexpectedOperation({})", status)
+            }
+            ErrorKind::Io => write!(f, "Io"),
+            ErrorKind::DataConversion => write!(f, "DataConversion"),
+            ErrorKind::Credential => write!(f, "Credential"),
+            ErrorKind::Other => write!(f, "Other"),
+        }
+    }
 }
 
 /// An error encountered from interfacing with Azure
@@ -98,6 +78,25 @@ impl<O: Clone + Copy> Error<O> {
                 kind,
                 message: message.into(),
             },
+        }
+    }
+
+    /// Create an `Error` based on an error kind and some sort of message
+    // NOTE(rylev,yoshuawuyts): we're not thrilled about the internal
+    // representation of this, but we're ok with it for now
+    pub fn with_data<C>(kind: ErrorKind<O>, message: C, data: String) -> Self
+    where
+        C: Into<Cow<'static, str>>,
+    {
+        let error: Error<std::convert::Infallible> = Error::new(ErrorKind::Other, data);
+        Error {
+            context: Context::Full(
+                Custom {
+                    error: Box::new(error),
+                    kind,
+                },
+                message.into(),
+            ),
         }
     }
 
@@ -172,7 +171,7 @@ impl<O> From<serde_json::Error> for Error<O> {
     fn from(error: serde_json::Error) -> Self {
         Self {
             context: Context::Custom(Custom {
-                kind: ErrorKind::Deserialization,
+                kind: ErrorKind::DataConversion,
                 error: Box::new(error),
             }),
         }
@@ -188,34 +187,6 @@ impl<O: std::fmt::Display> Display for Error<O> {
             Context::Full(_, message) => {
                 write!(f, "{}", message)
             }
-        }
-    }
-}
-
-/// The kind of error
-///
-/// The classification of error is intentionally fairly coarse.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ErrorKind<O> {
-    Operation(O),
-    UnexpectedOperation { status: u16 },
-    Io,
-    Serialization,
-    Deserialization,
-    Other,
-}
-
-impl<O: Display> Display for ErrorKind<O> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ErrorKind::Operation(o) => write!(f, "Operation({})", o),
-            ErrorKind::UnexpectedOperation { status } => {
-                write!(f, "UnexpectedOperation({})", status)
-            }
-            ErrorKind::Io => write!(f, "Io"),
-            ErrorKind::Serialization => write!(f, "Serialization"),
-            ErrorKind::Deserialization => write!(f, "Deserialization"),
-            ErrorKind::Other => write!(f, "Other"),
         }
     }
 }
@@ -364,41 +335,5 @@ mod tests {
         let inner = error.get_mut().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
         assert_eq!(format!("{}", inner), "second error");
-    }
-
-    #[test]
-    fn ensure_works() {
-        fn test_ensure(predicate: bool) -> Result<(), OperationError> {
-            ensure!(predicate, ErrorKind::Other, "predicate failed");
-            Ok(())
-        }
-
-        fn test_ensure_eq(item1: &str, item2: &str) -> Result<(), OperationError> {
-            ensure_eq!(item1, item2, ErrorKind::Other, "predicate failed");
-            Ok(())
-        }
-
-        fn test_ensure_ne(item1: &str, item2: &str) -> Result<(), OperationError> {
-            ensure_ne!(item1, item2, ErrorKind::Other, "predicate failed");
-            Ok(())
-        }
-
-        let err = test_ensure(false).unwrap_err();
-        assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
-
-        assert!(test_ensure(true).is_ok());
-
-        let err = test_ensure_eq("foo", "bar").unwrap_err();
-        assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
-
-        assert!(test_ensure_eq("foo", "foo").is_ok());
-
-        let err = test_ensure_ne("foo", "foo").unwrap_err();
-        assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
-
-        assert!(test_ensure_ne("foo", "bar").is_ok());
     }
 }

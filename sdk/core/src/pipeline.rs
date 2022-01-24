@@ -107,9 +107,9 @@ impl Pipeline {
     }
 
     pub async fn send(&self, ctx: &mut Context, request: &mut Request) -> Result<Response, Error> {
-        self.pipeline[0]
+        let res = self.pipeline[0]
             .send(ctx, request, &self.pipeline[1..])
-            .await
-            .map_err(Error::Policy)
+            .await?;
+        Ok(res)
     }
 }
