@@ -107,15 +107,17 @@ impl<'a> ConnectionString<'a> {
             let kv = kv_pair_str.trim().split_once('=');
 
             let (k, v) = match kv {
-                Some((k, _)) if k.chars().all(char::is_whitespace) => {
+                Some((k, _)) if (k.chars().all(char::is_whitespace) || k.trim() == "") => {
                     return Err(ConnectionStringError::ParseError {
                         msg: "No key found".to_owned(),
                     })
                 }
-                Some((k, v)) if v.chars().all(char::is_whitespace) => {
-                    return Err(ConnectionStringError::MissingValue { key: k.to_owned() })
+                Some((k, v)) if (v.chars().all(char::is_whitespace) || v.trim() == "") => {
+                    return Err(ConnectionStringError::MissingValue {
+                        key: k.trim().to_owned(),
+                    })
                 }
-                Some((k, v)) => (k, v),
+                Some((k, v)) => (k.trim(), v.trim()),
                 None => {
                     return Err(ConnectionStringError::ParseError {
                         msg: "No key/value found".to_owned(),
@@ -196,6 +198,14 @@ mod tests {
             Err(ConnectionStringError::MissingValue { key }) if key == "AccountName"
         ));
         assert!(matches!(
+            ConnectionString::new("AccountName    ="),
+            Err(ConnectionStringError::MissingValue { key }) if key == "AccountName"
+        ));
+        assert!(matches!(
+            ConnectionString::new("MissingEquals"),
+            Err(ConnectionStringError::ParseError { msg: _ })
+        ));
+        assert!(matches!(
             ConnectionString::new("="),
             Err(ConnectionStringError::ParseError { msg: _ })
         ));
@@ -247,6 +257,15 @@ mod tests {
         ));
         assert!(matches!(
             ConnectionString::new("AccountName=guywald;SharedAccessSignature=se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
+            Ok(ConnectionString {
+                account_name: Some("guywald"),
+                sas: Some("se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
+                ..
+            })
+        ));
+
+        assert!(matches!(
+            ConnectionString::new("AccountName = guywald;SharedAccessSignature = se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
             Ok(ConnectionString {
                 account_name: Some("guywald"),
                 sas: Some("se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
