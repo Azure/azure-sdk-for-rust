@@ -119,6 +119,11 @@ impl<O: Clone + Copy> Error<O> {
         }
     }
 
+    /// Consumes the error attempting to downcast the inner error as the type provided
+    pub fn into_downcast<T: std::error::Error + 'static>(self) -> Option<T> {
+        self.into_inner()?.downcast().ok().map(|t| *t)
+    }
+
     /// Returns a reference to the inner error wrapped by this error (if any).
     pub fn get_ref(&self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
         match &self.context {
@@ -128,13 +133,23 @@ impl<O: Clone + Copy> Error<O> {
         }
     }
 
+    /// Returns a reference to the inner error (if any) downcasted to the type provided
+    pub fn downcast_ref<T: std::error::Error + 'static>(&self) -> Option<&T> {
+        self.get_ref()?.downcast_ref()
+    }
+
     /// Returns a mutable reference to the inner error wrapped by this error (if any).
-    pub fn get_mut(&mut self) -> Option<&(dyn std::error::Error + Send + Sync + 'static)> {
+    pub fn get_mut(&mut self) -> Option<&mut (dyn std::error::Error + Send + Sync + 'static)> {
         match &mut self.context {
             Context::Custom(Custom { error, .. }) => Some(error.as_mut()),
             Context::Full(Custom { error, .. }, _) => Some(error.as_mut()),
             _ => None,
         }
+    }
+
+    /// Returns a mutable reference to the inner error (if any) downcasted to the type provided
+    pub fn downcast_mut<T: std::error::Error + 'static>(&mut self) -> Option<&mut T> {
+        self.get_mut()?.downcast_mut()
     }
 }
 

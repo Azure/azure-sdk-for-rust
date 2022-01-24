@@ -57,8 +57,7 @@ impl CreateDatabaseBuilder {
                 .client
                 .pipeline()
                 .send(self.context.insert(ResourceType::Databases), &mut request)
-                .await
-                .context(ErrorKind::Other, "error when running pipeline")?;
+                .await?;
 
             CreateDatabaseResponse::try_from(response).await
         })

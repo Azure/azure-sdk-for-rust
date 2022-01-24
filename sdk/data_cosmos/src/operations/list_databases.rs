@@ -73,8 +73,7 @@ impl ListDatabases {
                     .client
                     .pipeline()
                     .send(ctx.clone().insert(ResourceType::Databases), &mut request)
-                    .await
-                    .context(ErrorKind::Other, "error when running pipeline")?;
+                    .await?;
 
                 ListDatabasesResponse::try_from(response).await
             }
@@ -163,7 +162,7 @@ impl IntoIterator for ListDatabasesResponse {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum ListDatabasesError {}
 
 impl std::fmt::Display for ListDatabasesError {
