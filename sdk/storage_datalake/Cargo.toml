@@ -14,7 +14,7 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.1.0" }
+azure_core = { package = "azure_base", path = "../core", version = "0.1.0" }
 azure_storage = { path = "../storage", version = "0.1.0" }
 base64 = "0.13"
 bytes = "1.0"

@@ -1,5 +1,5 @@
 [package]
-name = "azure_core"
+name = "azure_base"
 version = "0.1.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
@@ -7,7 +7,7 @@ authors = ["Microsoft Corp."]
 license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
-documentation = "https://docs.rs/azure_core"
+documentation = "https://docs.rs/azure_base"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
 edition = "2018"
