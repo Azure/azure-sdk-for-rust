@@ -13,8 +13,8 @@ categories = ["api-bindings"]
 edition = "2018"
 
 [dependencies]
-azure_core = { package = "azure_base", path = "../core", version = "0.1.0", default-features=false }
-azure_storage = { path = "../storage", version = "0.1.0", default-features=false, features=["account"] }
+azure_core = { path = "../core", version = "0.1", default-features=false }
+azure_storage = { path = "../storage", version = "0.1", default-features=false, features=["account"] }
 base64 = "0.13"
 bytes = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
@@ -34,7 +34,7 @@ thiserror = "1.0"
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
 env_logger = "0.9"
-azure_identity = { path = "../identity" }
+azure_identity = { path = "../identity", version = "0.1" }
 reqwest = "0.11"
 oauth2 = { version = "4.0.0", default-features = false }
 
