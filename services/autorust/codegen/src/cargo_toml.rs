@@ -22,6 +22,8 @@ pub fn create(crate_name: &str, feature_mod_names: &[(String, String)], path: &P
 name = "{}"
 version = "0.1.0"
 edition = "2018"
+license = "MIT"
+description = "generated REST API bindings"
 
 [dependencies]
 azure_core = {{ path = "../../../sdk/core", version = "0.1", default-features = false }}
