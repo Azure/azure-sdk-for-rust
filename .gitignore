@@ -19,3 +19,4 @@ __queuestorage__
 .idea/
 *.iml
 *.bat
+*.ps1
