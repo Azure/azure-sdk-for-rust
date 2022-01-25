@@ -30,14 +30,14 @@ cargo run --package azure_mgmt_storage --example storage_account_list
 ```
 
 ## Dependencies
-These creates depend on `azure_core` and `azure_identity`. They are not yet published to [crates.io](https://crates.io/). See the [milestones](https://github.com/Azure/azure-sdk-for-rust/milestones) to see what is left before that happens. Here is an example of adding `azure_svc_batch` as a dependency.
+These crates depend on `azure_core` and `azure_identity`. Here is an example of adding `azure_svc_batch` as a dependency.
 
 ``` toml
 [dependencies]
 tokio = { version = "1.0", features = ["macros"] }
-azure_core = { git = "https://github.com/Azure/azure-sdk-for-rust" }
-azure_identity = { git = "https://github.com/Azure/azure-sdk-for-rust" }
-azure_svc_batch = { git = "https://github.com/Azure/azure-sdk-for-rust" }
+azure_core = "0.1"
+azure_identity = "0.1"
+azure_svc_batch = "0.1"
 ```
 
 Each crate may support several [API versions](api-versions.md).
