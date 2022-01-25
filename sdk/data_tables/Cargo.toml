@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_data_tables"
-keywords = ["sdk", "azure", "rest", "iot", "cloud", "data", "tables"]
+keywords = ["sdk", "azure", "storage", "data-tables"]
 categories = ["api-bindings"]
 edition = "2018"
 
