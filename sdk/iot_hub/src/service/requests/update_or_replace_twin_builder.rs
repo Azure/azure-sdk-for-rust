@@ -56,7 +56,7 @@ where
     /// # Example
     /// ```
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
-    /// use iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::ServiceClient;
     /// # let http_client = azure_core::new_http_client();
     ///
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
@@ -77,7 +77,7 @@ where
     ///
     /// # Example
     /// ```
-    /// use iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::ServiceClient;
     /// # let http_client = azure_core::new_http_client();
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
@@ -97,7 +97,7 @@ where
     /// Set the ETag for the twin
     ///
     /// ```
-    /// use iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::ServiceClient;
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// # let http_client = azure_core::new_http_client();
@@ -117,7 +117,7 @@ where
     /// Updates the twin with the desired settings
     ///
     /// ```
-    /// use iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::ServiceClient;
     ///
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
     /// # let http_client = azure_core::new_http_client();

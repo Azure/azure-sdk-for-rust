@@ -1,5 +1,5 @@
-use iot_hub::service::resources::{AuthenticationMechanism, DesiredCapability, Status};
-use iot_hub::service::ServiceClient;
+use azure_iot_hub::service::resources::{AuthenticationMechanism, DesiredCapability, Status};
+use azure_iot_hub::service::ServiceClient;
 use std::error::Error;
 
 #[tokio::main]

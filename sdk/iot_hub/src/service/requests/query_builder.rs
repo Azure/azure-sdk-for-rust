@@ -42,7 +42,7 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
     /// ```
     /// use std::sync::Arc;
     /// use azure_core::HttpClient;
-    /// use iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::ServiceClient;
     ///
     /// # let http_client = azure_core::new_http_client();
     /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
