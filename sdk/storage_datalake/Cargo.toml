@@ -14,8 +14,8 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { package = "azure_base", path = "../core", version = "0.1.0" }
-azure_storage = { path = "../storage", version = "0.1.0" }
+azure_core = { path = "../core", version = "0.1" }
+azure_storage = { path = "../storage", version = "0.1" }
 base64 = "0.13"
 bytes = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
@@ -32,7 +32,7 @@ ring = "0.16"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }
-azure_identity = { path = "../identity", version = "0.1.0" }
+azure_identity = { path = "../identity", version = "0.1" }
 
 [features]
 default = ["enable_reqwest"]

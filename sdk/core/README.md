@@ -8,5 +8,5 @@ To set this crate as a dependency, add this to your Cargo.toml
 
 ```toml
 [dependencies]
-azure_core = { version = "0.1.0", git = "https://github.com/Azure/azure-sdk-for-rust" }
+azure_core = "0.1"
 ```
