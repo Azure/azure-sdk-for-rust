@@ -22,6 +22,12 @@ pub enum Error {
     InvalidHeaderValue(#[from] azure_core::HttpHeaderError),
 }
 
+impl From<azure_core::error::Error> for Error {
+    fn from(err: azure_core::error::Error) -> Self {
+        Self::Core(err.into())
+    }
+}
+
 impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
         Self::Core(azure_core::Error::Json(error))

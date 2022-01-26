@@ -35,9 +35,7 @@ impl ListDatabases {
         context: Context => Some(context),
     }
 
-    pub fn into_stream(
-        self,
-    ) -> Pageable<ListDatabasesResponse, azure_core::error::Error<ListDatabasesError>> {
+    pub fn into_stream(self) -> Pageable<ListDatabasesResponse, azure_core::error::Error> {
         let make_request = move |continuation: Option<String>| {
             let this = self.clone();
             let ctx = self.context.clone().unwrap_or_default();
@@ -101,13 +99,9 @@ pub struct ListDatabasesResponse {
 }
 
 impl ListDatabasesResponse {
-    pub(crate) async fn try_from(
-        response: Response,
-    ) -> azure_core::error::Result<Self, ListDatabasesError> {
+    pub(crate) async fn try_from(response: Response) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream)
-            .await
-            .context(ErrorKind::Io, "failed to collect stream")?;
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
 
         #[derive(Deserialize, Debug)]
         pub struct Response {
@@ -159,14 +153,5 @@ impl IntoIterator for ListDatabasesResponse {
 
     fn into_iter(self) -> Self::IntoIter {
         self.databases.into_iter()
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
-pub enum ListDatabasesError {}
-
-impl std::fmt::Display for ListDatabasesError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ListDataBasesError")
     }
 }

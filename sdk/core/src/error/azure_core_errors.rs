@@ -1,7 +1,7 @@
 use super::{Error, ErrorKind};
 
-impl<O: Copy> From<crate::errors::Error> for Error<O> {
-    fn from(err: crate::errors::Error) -> Error<O> {
+impl From<crate::errors::Error> for Error {
+    fn from(err: crate::errors::Error) -> Error {
         match err {
             crate::errors::Error::Json(e) => e.into(),
             crate::errors::Error::Header(e) => Error::new(ErrorKind::DataConversion, e),
@@ -23,11 +23,11 @@ impl<O: Copy> From<crate::errors::Error> for Error<O> {
     }
 }
 
-impl<O: Copy> From<crate::errors::HttpError> for Error<O> {
-    fn from(err: crate::errors::HttpError) -> Error<O> {
+impl From<crate::errors::HttpError> for Error {
+    fn from(err: crate::errors::HttpError) -> Error {
         match err {
             crate::HttpError::StatusCode { status, body } => Error::with_data(
-                ErrorKind::UnexpectedOperation {
+                ErrorKind::HttpResponse {
                     status: status.as_u16(),
                 },
                 "an unspecified and unexpected HTTP error occurred",

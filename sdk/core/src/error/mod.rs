@@ -6,17 +6,15 @@ mod hyperium_http;
 mod macros;
 
 /// A convience alias for `Result` where the error type is hard coded to `Error`
-pub type Result<T, O = std::convert::Infallible> = std::result::Result<T, Error<O>>;
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// The kind of error
 ///
 /// The classification of error is intentionally fairly coarse.
 #[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ErrorKind<O> {
-    /// An error specific to a certain operation
-    Operation(O),
+pub enum ErrorKind {
     /// An HTTP status code that was not expected
-    UnexpectedOperation { status: u16 },
+    HttpResponse { status: u16 },
     /// An error performing IO
     Io,
     /// An error converting data
@@ -27,19 +25,16 @@ pub enum ErrorKind<O> {
     Other,
 }
 
-impl<O> ErrorKind<O> {
-    pub fn unexpected(status: u16) -> Self {
-        Self::UnexpectedOperation { status }
+impl ErrorKind {
+    pub fn http_response(status: u16) -> Self {
+        Self::HttpResponse { status }
     }
 }
 
-impl<O: Display> Display for ErrorKind<O> {
+impl Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ErrorKind::Operation(o) => write!(f, "Operation({})", o),
-            ErrorKind::UnexpectedOperation { status } => {
-                write!(f, "UnexpectedOperation({})", status)
-            }
+            ErrorKind::HttpResponse { status } => write!(f, "HttpResponse({})", status),
             ErrorKind::Io => write!(f, "Io"),
             ErrorKind::DataConversion => write!(f, "DataConversion"),
             ErrorKind::Credential => write!(f, "Credential"),
@@ -50,13 +45,13 @@ impl<O: Display> Display for ErrorKind<O> {
 
 /// An error encountered from interfacing with Azure
 #[derive(Debug)]
-pub struct Error<O> {
-    context: Context<O>,
+pub struct Error {
+    context: Context,
 }
 
-impl<O: Clone + Copy> Error<O> {
+impl Error {
     /// Create a new `Error` based on a specific error kind and an underlying error cause
-    pub fn new<E>(kind: ErrorKind<O>, error: E) -> Self
+    pub fn new<E>(kind: ErrorKind, error: E) -> Self
     where
         E: Into<Box<dyn std::error::Error + Send + Sync>>,
     {
@@ -68,8 +63,26 @@ impl<O: Clone + Copy> Error<O> {
         }
     }
 
+    /// Create a new `Error` based on a specific error kind and an underlying error cause
+    /// along with a message
+    pub fn full<E, C>(kind: ErrorKind, error: E, message: C) -> Self
+    where
+        E: Into<Box<dyn std::error::Error + Send + Sync>>,
+        C: Into<Cow<'static, str>>,
+    {
+        Self {
+            context: Context::Full(
+                Custom {
+                    kind,
+                    error: error.into(),
+                },
+                message.into(),
+            ),
+        }
+    }
+
     /// Create an `Error` based on an error kind and some sort of message
-    pub fn with_message<C>(kind: ErrorKind<O>, message: C) -> Self
+    pub fn with_message<C>(kind: ErrorKind, message: C) -> Self
     where
         C: Into<Cow<'static, str>>,
     {
@@ -84,11 +97,11 @@ impl<O: Clone + Copy> Error<O> {
     /// Create an `Error` based on an error kind and some sort of message
     // NOTE(rylev,yoshuawuyts): we're not thrilled about the internal
     // representation of this, but we're ok with it for now
-    pub fn with_data<C>(kind: ErrorKind<O>, message: C, data: String) -> Self
+    pub fn with_data<C>(kind: ErrorKind, message: C, data: String) -> Self
     where
         C: Into<Cow<'static, str>>,
     {
-        let error: Error<std::convert::Infallible> = Error::new(ErrorKind::Other, data);
+        let error = Error::new(ErrorKind::Other, data);
         Error {
             context: Context::Full(
                 Custom {
@@ -101,7 +114,7 @@ impl<O: Clone + Copy> Error<O> {
     }
 
     /// Get the `ErrorKind` of this `Error`
-    pub fn kind(&self) -> ErrorKind<O> {
+    pub fn kind(&self) -> ErrorKind {
         match self.context {
             Context::Simple(kind) => kind,
             Context::Message { kind, .. } => kind,
@@ -111,17 +124,26 @@ impl<O: Clone + Copy> Error<O> {
     }
 
     /// Consumes the Error, returning its inner error (if any).
-    pub fn into_inner(self) -> Option<Box<dyn std::error::Error + Send + Sync>> {
+    pub fn into_inner(self) -> std::result::Result<Box<dyn std::error::Error + Send + Sync>, Self> {
         match self.context {
-            Context::Custom(Custom { error, .. }) => Some(error),
-            Context::Full(Custom { error, .. }, _) => Some(error),
-            _ => None,
+            Context::Custom(Custom { error, .. }) => Ok(error),
+            Context::Full(Custom { error, .. }, _) => Ok(error),
+            _ => Err(self),
         }
     }
 
     /// Consumes the error attempting to downcast the inner error as the type provided
-    pub fn into_downcast<T: std::error::Error + 'static>(self) -> Option<T> {
-        self.into_inner()?.downcast().ok().map(|t| *t)
+    ///
+    /// Returns `Err(self)` if the downcast is not possible
+    pub fn into_downcast<T: std::error::Error + 'static>(self) -> std::result::Result<T, Self> {
+        if self.downcast_ref::<T>().is_none() {
+            return Err(self);
+        }
+        // Unwrapping is ok here since we already check above that the downcast will work
+        Ok(*self
+            .into_inner()?
+            .downcast()
+            .expect("failed to unwrap downcast"))
     }
 
     /// Returns a reference to the inner error wrapped by this error (if any).
@@ -153,7 +175,7 @@ impl<O: Clone + Copy> Error<O> {
     }
 }
 
-impl<O: Debug + Display> std::error::Error for Error<O> {
+impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self.context {
             Context::Custom(Custom { error, .. }) => error.source(),
@@ -163,15 +185,15 @@ impl<O: Debug + Display> std::error::Error for Error<O> {
     }
 }
 
-impl<O> From<ErrorKind<O>> for Error<O> {
-    fn from(kind: ErrorKind<O>) -> Self {
+impl From<ErrorKind> for Error {
+    fn from(kind: ErrorKind) -> Self {
         Self {
             context: Context::Simple(kind),
         }
     }
 }
 
-impl<O> From<std::io::Error> for Error<O> {
+impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
         Self {
             context: Context::Custom(Custom {
@@ -182,7 +204,7 @@ impl<O> From<std::io::Error> for Error<O> {
     }
 }
 
-impl<O> From<serde_json::Error> for Error<O> {
+impl From<serde_json::Error> for Error {
     fn from(error: serde_json::Error) -> Self {
         Self {
             context: Context::Custom(Custom {
@@ -193,7 +215,7 @@ impl<O> From<serde_json::Error> for Error<O> {
     }
 }
 
-impl<O: std::fmt::Display> Display for Error<O> {
+impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.context {
             Context::Simple(kind) => write!(f, "{}", kind),
@@ -209,24 +231,24 @@ impl<O: std::fmt::Display> Display for Error<O> {
 /// An extention to the `Result` type that easy allows creating `Error` values from exsiting errors
 ///
 /// This trait should not be implemented on custom types and is meant for usage with `Result`
-pub trait ResultExt<T, O> {
-    fn context<C>(self, kind: ErrorKind<O>, message: C) -> Result<T, O>
+pub trait ResultExt<T> {
+    fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
     where
         Self: Sized,
         C: Into<Cow<'static, str>>;
 
-    fn with_context<F, C>(self, kind: ErrorKind<O>, f: F) -> Result<T, O>
+    fn with_context<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
     where
         Self: Sized,
         F: FnOnce() -> C,
         C: Into<Cow<'static, str>>;
 }
 
-impl<T, E, O> ResultExt<T, O> for std::result::Result<T, E>
+impl<T, E> ResultExt<T> for std::result::Result<T, E>
 where
     E: std::error::Error + Send + Sync + 'static,
 {
-    fn context<C>(self, kind: ErrorKind<O>, message: C) -> Result<T, O>
+    fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
     where
         Self: Sized,
         C: Into<Cow<'static, str>>,
@@ -242,7 +264,7 @@ where
         })
     }
 
-    fn with_context<F, C>(self, kind: ErrorKind<O>, f: F) -> Result<T, O>
+    fn with_context<F, C>(self, kind: ErrorKind, f: F) -> Result<T>
     where
         Self: Sized,
         F: FnOnce() -> C,
@@ -253,19 +275,19 @@ where
 }
 
 #[derive(Debug)]
-enum Context<O> {
-    Simple(ErrorKind<O>),
+enum Context {
+    Simple(ErrorKind),
     Message {
-        kind: ErrorKind<O>,
+        kind: ErrorKind,
         message: Cow<'static, str>,
     },
-    Custom(Custom<O>),
-    Full(Custom<O>, Cow<'static, str>),
+    Custom(Custom),
+    Full(Custom, Cow<'static, str>),
 }
 
 #[derive(Debug)]
-struct Custom<O> {
-    kind: ErrorKind<O>,
+struct Custom {
+    kind: ErrorKind,
     error: Box<dyn std::error::Error + Send + Sync>,
 }
 
@@ -274,22 +296,13 @@ mod tests {
     use super::*;
     use std::io;
 
-    #[derive(Debug, PartialEq, Copy, Clone)]
-    struct OperationError;
-
-    impl Display for OperationError {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(f, "OperationError")
-        }
-    }
-
     #[derive(thiserror::Error, Debug)]
     enum IntermediateError {
         #[error("second error")]
         Io(#[from] std::io::Error),
     }
 
-    fn create_error() -> Error<OperationError> {
+    fn create_error() -> Error {
         // Create a nested std::io::Error
         let inner = io::Error::new(io::ErrorKind::BrokenPipe, "third error");
         let inner: IntermediateError = inner.into();
@@ -316,16 +329,15 @@ mod tests {
         assert_eq!(errors.join(","), "second error,third error");
 
         let inner = io::Error::new(io::ErrorKind::BrokenPipe, "third error");
-        let error: Result<(), OperationError> =
-            std::result::Result::<(), std::io::Error>::Err(inner)
-                .context(ErrorKind::Io, "oh no broken pipe!");
+        let error: Result<()> = std::result::Result::<(), std::io::Error>::Err(inner)
+            .context(ErrorKind::Io, "oh no broken pipe!");
         assert_eq!(format!("{}", error.unwrap_err()), "oh no broken pipe!");
     }
 
     #[test]
     fn downcasting_works() {
         let error = &create_error() as &dyn std::error::Error;
-        assert!(error.is::<Error<OperationError>>());
+        assert!(error.is::<Error>());
         let downcasted = error
             .source()
             .unwrap()

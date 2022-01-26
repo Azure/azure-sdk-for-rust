@@ -65,10 +65,8 @@ impl CreateDatabaseBuilder {
 }
 
 /// A future of a create database response
-type CreateDatabase = futures::future::BoxFuture<
-    'static,
-    azure_core::error::Result<CreateDatabaseResponse, CreateDatabaseError>,
->;
+type CreateDatabase =
+    futures::future::BoxFuture<'static, azure_core::error::Result<CreateDatabaseResponse>>;
 
 #[derive(Serialize)]
 struct CreateDatabaseBody<'a> {
@@ -94,13 +92,9 @@ pub struct CreateDatabaseResponse {
 }
 
 impl CreateDatabaseResponse {
-    pub async fn try_from(
-        response: HttpResponse,
-    ) -> azure_core::error::Result<Self, CreateDatabaseError> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream)
-            .await
-            .context(ErrorKind::Io, "failed to collect stream")?;
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
 
         let res = || {
             crate::Result::Ok(Self {
@@ -125,20 +119,5 @@ impl CreateDatabaseResponse {
             ErrorKind::DataConversion,
             "error converting headers to CreateDatabaseResponse",
         )
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-/// Expected errors which may be returned by the `CreateDatabase` operation.
-pub enum CreateDatabaseError {
-    /// Returned when the JSON body is invalid. Check for missing curly brackets or quotes.
-    BadRequest,
-    /// Returned when the ID provided for the new database has been taken by an existing database.
-    Conflict,
-}
-
-impl std::fmt::Display for CreateDatabaseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{self:?}")
     }
 }

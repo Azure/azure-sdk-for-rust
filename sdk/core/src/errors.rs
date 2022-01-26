@@ -2,7 +2,7 @@ use http::StatusCode;
 #[cfg(feature = "enable_hyper")]
 use hyper::{self, body, Body};
 use std::cmp::PartialEq;
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 /// A specialized `Result` type for this crate.
 pub type Result<T> = std::result::Result<T, Error>;
@@ -44,9 +44,12 @@ pub enum Error {
     Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
-impl<O: Display + Debug + Send + Sync + 'static> From<super::error::Error<O>> for Error {
-    fn from(err: super::error::Error<O>) -> Self {
-        Self::Other(Box::new(err))
+impl From<super::error::Error> for Error {
+    fn from(err: super::error::Error) -> Self {
+        match err.into_downcast() {
+            Ok(e) => e,
+            Err(e) => Self::Other(Box::new(e)),
+        }
     }
 }
 
