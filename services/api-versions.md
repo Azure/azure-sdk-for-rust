@@ -4,7 +4,7 @@ A `Configuration` section `Tag` in a `readme.md` represents a set of operations 
 
 Unfortunately, some services use [multiple API versions](https://github.com/Azure/azure-sdk-for-rust/issues/563) in their tags. In this case, different service operations will use different API versions of the same service.
 
-Using the `azure_mgmt_storage` crate as an example. I is generated from the [specification/storage/resource-manager/readme.md](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/storage/resource-manager/readme.md). In its [Cargo.toml](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/mgmt/storage/Cargo.toml), you can see the list of `features`. A crate feature is generated for each tag. The first tag without `-preview` is selected as the default. In its [lib.rs](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/mgmt/storage/src/lib.rs), you can see that a module is generated for each tag as well.
+Using the `azure_mgmt_storage` crate as an example. It is generated from the [specification/storage/resource-manager/readme.md](https://github.com/Azure/azure-rest-api-specs/blob/master/specification/storage/resource-manager/readme.md). In its [Cargo.toml](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/mgmt/storage/Cargo.toml), you can see the list of `features`. A crate feature is generated for each tag. The first tag without `-preview` is selected as the default. In its [lib.rs](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/mgmt/storage/src/lib.rs), you can see that a module is generated for each tag as well.
 
 Here is an example `Cargo.toml`.
 ``` toml
