@@ -3,6 +3,8 @@ name = "azure_iot_hub"
 version = "0.1.0"
 authors = ["Microsoft Corp."]
 edition = "2018"
+description = "Azure IoT Hub"
+license = "MIT"
 
 [dependencies]
 azure_core = { path = "../core", version = "0.1" }
