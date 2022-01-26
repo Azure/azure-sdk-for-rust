@@ -35,7 +35,7 @@ impl MockResponse {
 
     pub(crate) async fn duplicate(
         response: crate::Response,
-    ) -> Result<(crate::Response, Self), crate::StreamError> {
+    ) -> crate::error::Result<(crate::Response, Self)> {
         let (status_code, header_map, pinned_stream) = response.deconstruct();
         let response_bytes = collect_pinned_stream(pinned_stream).await?;
 

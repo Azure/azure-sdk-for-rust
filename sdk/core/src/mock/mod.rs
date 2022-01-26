@@ -17,8 +17,6 @@ pub const TESTING_MODE_RECORD: &str = "RECORD";
 #[cfg(feature = "mock_transport_framework")]
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum MockFrameworkError {
-    #[error("{0}: {1}")]
-    IOError(String, std::io::Error),
     #[error("{0}")]
     TransactionStorageError(String),
     #[error("{0}")]
@@ -35,6 +33,12 @@ pub(crate) enum MockFrameworkError {
     MismatchedRequestHTTPMethod(http::Method, http::Method),
     #[error("mismatched request body. Actual: {0:?}, Expected: {1:?}")]
     MismatchedRequestBody(Vec<u8>, Vec<u8>),
+}
+
+impl From<MockFrameworkError> for crate::error::Error {
+    fn from(err: MockFrameworkError) -> Self {
+        Self::new(crate::error::ErrorKind::MockFramework, err)
+    }
 }
 
 // Replace the default transport policy at runtime

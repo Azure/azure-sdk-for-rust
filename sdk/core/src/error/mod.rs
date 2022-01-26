@@ -21,6 +21,9 @@ pub enum ErrorKind {
     DataConversion,
     /// An error getting an API credential token
     Credential,
+    #[cfg(feature = "mock_transport_framework")]
+    /// An error having to do with the mock framework
+    MockFramework,
     /// A catch all for other kinds of errors
     Other,
 }
@@ -38,6 +41,8 @@ impl Display for ErrorKind {
             ErrorKind::Io => write!(f, "Io"),
             ErrorKind::DataConversion => write!(f, "DataConversion"),
             ErrorKind::Credential => write!(f, "Credential"),
+            #[cfg(feature = "mock_transport_framework")]
+            ErrorKind::MockFramework => write!(f, "MockFramework"),
             ErrorKind::Other => write!(f, "Other"),
         }
     }
