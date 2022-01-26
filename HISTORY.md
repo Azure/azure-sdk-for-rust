@@ -24,8 +24,14 @@ They were last published in September of 2020 before moving the code to https://
 The above crates have become:
 - azure_core
 - azure_identity
-- azure_cosmos
+- azure_data_cosmos
 - azure_storage
+- azure_storage
+- azure_storage_blobs
+- azure_data_tables
+- azure_storage_queues
+
+They were first published in January of 2022.
 
 ## azure-sdk-keyvault
 
