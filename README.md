@@ -19,7 +19,7 @@ These [SDK crates](sdk) are available:
 - [azure_storage_queues](https://crates.io/crates/azure_storage_queues)
 
 ### Services
-More than 230 generated Azure service crates are available in [services](services). They are generated from the [Azure REST API Specifications](https://github.com/Azure/azure-rest-api-specs).
+Azure service crates generated from [Azure REST API Specifications](https://github.com/Azure/azure-rest-api-specs) are available in [services](services).
 
 ## Status
 
