@@ -2,8 +2,11 @@ use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 
 mod azure_core_errors;
+mod http_error;
 mod hyperium_http;
 mod macros;
+
+pub use http_error::HttpError;
 
 /// A convience alias for `Result` where the error type is hard coded to `Error`
 pub type Result<T> = std::result::Result<T, Error>;
@@ -11,10 +14,13 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// The kind of error
 ///
 /// The classification of error is intentionally fairly coarse.
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum ErrorKind {
     /// An HTTP status code that was not expected
-    HttpResponse { status: u16 },
+    HttpResponse {
+        status: u16,
+        error_code: Option<String>,
+    },
     /// An error performing IO
     Io,
     /// An error converting data
@@ -29,15 +35,27 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
-    pub fn http_response(status: u16) -> Self {
-        Self::HttpResponse { status }
+    pub fn http_response(status: u16, error_code: Option<String>) -> Self {
+        Self::HttpResponse { status, error_code }
+    }
+
+    pub fn http_response_from_body(status: u16, body: &str) -> Self {
+        let error_code = http_error::get_error_code_from_body(body);
+        Self::HttpResponse { status, error_code }
     }
 }
 
 impl Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ErrorKind::HttpResponse { status } => write!(f, "HttpResponse({})", status),
+            ErrorKind::HttpResponse { status, error_code } => {
+                write!(
+                    f,
+                    "HttpResponse({},{})",
+                    status,
+                    error_code.as_deref().unwrap_or("unknown")
+                )
+            }
             ErrorKind::Io => write!(f, "Io"),
             ErrorKind::DataConversion => write!(f, "DataConversion"),
             ErrorKind::Credential => write!(f, "Credential"),
@@ -99,28 +117,9 @@ impl Error {
         }
     }
 
-    /// Create an `Error` based on an error kind and some sort of message
-    // NOTE(rylev,yoshuawuyts): we're not thrilled about the internal
-    // representation of this, but we're ok with it for now
-    pub fn with_data<C>(kind: ErrorKind, message: C, data: String) -> Self
-    where
-        C: Into<Cow<'static, str>>,
-    {
-        let error = Error::new(ErrorKind::Other, data);
-        Error {
-            context: Context::Full(
-                Custom {
-                    error: Box::new(error),
-                    kind,
-                },
-                message.into(),
-            ),
-        }
-    }
-
     /// Get the `ErrorKind` of this `Error`
-    pub fn kind(&self) -> ErrorKind {
-        match self.context {
+    pub fn kind(&self) -> &ErrorKind {
+        match &self.context {
             Context::Simple(kind) => kind,
             Context::Message { kind, .. } => kind,
             Context::Custom(Custom { kind, .. }) => kind,
@@ -367,5 +366,29 @@ mod tests {
         let inner = error.get_mut().unwrap();
         let inner = inner.downcast_ref::<std::io::Error>().unwrap();
         assert_eq!(format!("{}", inner), "second error");
+    }
+
+    #[test]
+    fn matching_against_http_error() {
+        let kind = ErrorKind::http_response_from_body(418, "{}");
+
+        assert!(matches!(
+            kind,
+            ErrorKind::HttpResponse {
+                status: 418,
+                error_code: None
+            }
+        ));
+
+        let kind = ErrorKind::http_response_from_body(418, r#"{"error": {"code":"teepot"}}"#);
+
+        assert!(matches!(
+            kind,
+            ErrorKind::HttpResponse {
+                status: 418,
+                error_code
+            }
+            if error_code.as_deref() == Some("teepot")
+        ));
     }
 }

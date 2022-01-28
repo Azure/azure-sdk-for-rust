@@ -26,12 +26,9 @@ impl From<crate::errors::Error> for Error {
 impl From<crate::errors::HttpError> for Error {
     fn from(err: crate::errors::HttpError) -> Error {
         match err {
-            crate::HttpError::StatusCode { status, body } => Error::with_data(
-                ErrorKind::HttpResponse {
-                    status: status.as_u16(),
-                },
-                "an unspecified and unexpected HTTP error occurred",
-                body,
+            crate::HttpError::StatusCode { status, ref body } => Error::new(
+                ErrorKind::http_response_from_body(status.as_u16(), body),
+                err,
             ),
             crate::HttpError::ExecuteRequest(e) => Error::new(ErrorKind::Io, e),
             crate::HttpError::ReadBytes(e) => Error::new(ErrorKind::Io, e),

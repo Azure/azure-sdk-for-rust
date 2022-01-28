@@ -1,5 +1,5 @@
-use crate::error::{Error, ErrorKind};
-use crate::policies::{Policy, PolicyResult, Request, Response};
+use crate::error::{Error, ErrorKind, HttpError};
+use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
 use crate::Context;
 
@@ -62,9 +62,12 @@ where
                 Ok(response) => {
                     // Error status code
                     let error = HttpError::new(response).await;
-                    let status = StatusCode::from_u16(error.status).unwrap();
+                    let status = StatusCode::from_u16(error.status()).unwrap();
                     let error = Error::full(
-                        ErrorKind::http_response(status.as_u16()),
+                        ErrorKind::http_response(
+                            status.as_u16(),
+                            error.error_code().map(|s| s.to_owned()),
+                        ),
                         error,
                         "server returned error status which will not be retried",
                     );
@@ -100,80 +103,4 @@ where
             sleep(self.sleep_duration(retry_count)).await;
         }
     }
-}
-
-/// An error type that packs all relevant data related to an HTTP response
-/// with an unsuccessful status code.
-#[derive(Debug)]
-struct HttpError {
-    status: u16,
-    error_code: Option<String>,
-    headers: std::collections::HashMap<String, String>,
-    body: String,
-}
-
-impl HttpError {
-    async fn new(response: Response) -> Self {
-        let status = response.status();
-        let mut error_code = get_error_code_from_header(&response);
-        let headers = response
-            .headers()
-            .into_iter()
-            // TODO: the following will panic if a non-UTF8 header value is sent back
-            // We should not panic but instead handle this gracefully
-            .map(|(n, v)| (n.as_str().to_owned(), v.to_str().unwrap().to_owned()))
-            .collect();
-        let body = response.into_body_string().await;
-        error_code = error_code.or_else(|| get_error_code_from_body(&body));
-        HttpError {
-            status: status.as_u16(),
-            headers,
-            error_code,
-            body,
-        }
-    }
-}
-
-impl std::fmt::Display for HttpError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("HttpError")
-            .field("status", &self.status)
-            .field("error_code", &self.error_code)
-            .field("headers", &self.headers)
-            .field("body", &self.body)
-            .finish()
-    }
-}
-
-impl std::error::Error for HttpError {}
-
-/// Gets the error code if it's present in the headers
-///
-/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-fn get_error_code_from_header(response: &Response) -> Option<String> {
-    Some(
-        response
-            .headers()
-            .get(http::header::HeaderName::from_static("x-ms-error-code"))?
-            .to_str()
-            .ok()?
-            .to_owned(),
-    )
-}
-
-/// Gets the error code if it's present in the body
-///
-/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-fn get_error_code_from_body(body: &str) -> Option<String> {
-    #[derive(Deserialize)]
-    struct ErrorResponse {
-        error: InnerError,
-    }
-
-    #[derive(Deserialize)]
-    struct InnerError {
-        code: String,
-    }
-
-    Some(serde_json::from_str::<ErrorResponse>(body).ok()?.error.code)
 }

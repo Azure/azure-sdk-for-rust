@@ -100,19 +100,19 @@ mod tests {
 
         let err = test_ensure(false).unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
+        assert_eq!(err.kind(), &ErrorKind::Other);
 
         assert!(test_ensure(true).is_ok());
 
         let err = test_ensure_eq("foo", "bar").unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
+        assert_eq!(err.kind(), &ErrorKind::Other);
 
         assert!(test_ensure_eq("foo", "foo").is_ok());
 
         let err = test_ensure_ne("foo", "foo").unwrap_err();
         assert_eq!(format!("{}", err), "predicate failed");
-        assert_eq!(err.kind(), ErrorKind::Other);
+        assert_eq!(err.kind(), &ErrorKind::Other);
 
         assert!(test_ensure_ne("foo", "bar").is_ok());
     }
