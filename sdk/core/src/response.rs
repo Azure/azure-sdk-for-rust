@@ -86,15 +86,11 @@ impl std::fmt::Debug for Response {
 }
 
 /// Convenience function that transforms a `PinnedStream` in a `bytes::Bytes` struct by collecting all the chunks. It consumes the response stream.
-pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> crate::error::Result<Bytes> {
-    use crate::error::ResultExt;
+pub async fn collect_pinned_stream(mut pinned_stream: PinnedStream) -> Result<Bytes, StreamError> {
     let mut final_result = Vec::new();
 
     while let Some(res) = pinned_stream.next().await {
-        let res = res.context(
-            crate::error::ErrorKind::Io,
-            "an error occurred fetching the next part of the byte stream",
-        )?;
+        let res = res?;
         final_result.extend(&res);
     }
 

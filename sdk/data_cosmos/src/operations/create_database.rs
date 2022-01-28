@@ -94,7 +94,10 @@ pub struct CreateDatabaseResponse {
 impl CreateDatabaseResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await.context(
+            azure_core::error::ErrorKind::Io,
+            "an error occurred fetching the next part of the byte stream",
+        )?;
 
         let res = || {
             crate::Result::Ok(Self {

@@ -101,7 +101,10 @@ pub struct ListDatabasesResponse {
 impl ListDatabasesResponse {
     pub(crate) async fn try_from(response: Response) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
-        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await.context(
+            azure_core::error::ErrorKind::Io,
+            "an error occurred fetching the next part of the byte stream",
+        )?;
 
         #[derive(Deserialize, Debug)]
         pub struct Response {

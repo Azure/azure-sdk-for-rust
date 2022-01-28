@@ -102,37 +102,6 @@ where
     }
 }
 
-/// Gets the error code if it's present in the headers
-///
-/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-fn get_error_code_from_header(response: &Response) -> Option<String> {
-    Some(
-        response
-            .headers()
-            .get(http::header::HeaderName::from_static("x-ms-error-code"))?
-            .to_str()
-            .ok()?
-            .to_owned(),
-    )
-}
-
-/// Gets the error code if it's present in the body
-///
-/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-fn get_error_code_from_body(body: &str) -> Option<String> {
-    #[derive(Deserialize)]
-    struct ErrorResponse {
-        error: InnerError,
-    }
-
-    #[derive(Deserialize)]
-    struct InnerError {
-        code: String,
-    }
-
-    Some(serde_json::from_str::<ErrorResponse>(body).ok()?.error.code)
-}
-
 /// An error type that packs all relevant data related to an HTTP response
 /// with an unsuccessful status code.
 #[derive(Debug)]
@@ -177,3 +146,34 @@ impl std::fmt::Display for HttpError {
 }
 
 impl std::error::Error for HttpError {}
+
+/// Gets the error code if it's present in the headers
+///
+/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
+fn get_error_code_from_header(response: &Response) -> Option<String> {
+    Some(
+        response
+            .headers()
+            .get(http::header::HeaderName::from_static("x-ms-error-code"))?
+            .to_str()
+            .ok()?
+            .to_owned(),
+    )
+}
+
+/// Gets the error code if it's present in the body
+///
+/// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
+fn get_error_code_from_body(body: &str) -> Option<String> {
+    #[derive(Deserialize)]
+    struct ErrorResponse {
+        error: InnerError,
+    }
+
+    #[derive(Deserialize)]
+    struct InnerError {
+        code: String,
+    }
+
+    Some(serde_json::from_str::<ErrorResponse>(body).ok()?.error.code)
+}
