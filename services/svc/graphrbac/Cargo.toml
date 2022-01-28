@@ -3,6 +3,8 @@
 name = "azure_svc_graphrbac"
 version = "0.1.0"
 edition = "2018"
+license = "MIT"
+description = "generated REST API bindings"
 
 [dependencies]
 azure_core = { path = "../../../sdk/core", version = "0.1", default-features = false }
@@ -22,8 +24,8 @@ tokio = { version = "1.0", features = ["macros"] }
 all-features = true
 
 [features]
-default = ["1.6", "enable_reqwest"]
+default = ["1_6", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []
-"1.6" = []
+"1_6" = []

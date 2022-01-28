@@ -1,4 +1,4 @@
-use iot_hub::service::ServiceClient;
+use azure_iot_hub::service::ServiceClient;
 
 use std::error::Error;
 

@@ -3,6 +3,8 @@
 name = "azure_svc_iotcentral"
 version = "0.1.0"
 edition = "2018"
+license = "MIT"
+description = "generated REST API bindings"
 
 [dependencies]
 azure_core = { path = "../../../sdk/core", version = "0.1", default-features = false }
@@ -22,10 +24,10 @@ tokio = { version = "1.0", features = ["macros"] }
 all-features = true
 
 [features]
-default = ["package-1.0", "enable_reqwest"]
+default = ["package-1_0", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []
-"package-1.1-preview" = []
+"package-1_1-preview" = []
 "package-2021-04-30-preview" = []
-"package-1.0" = []
+"package-1_0" = []

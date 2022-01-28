@@ -1,6 +1,10 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
-use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_svc_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
+use autorust_codegen::{
+    self, cargo_toml,
+    config_parser::{to_mod_name, to_tag_name},
+    get_svc_readmes, lib_rs, path, Config, PropertyName, SpecReadme,
+};
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../svc";
@@ -18,11 +22,11 @@ const SKIP_SERVICES: &[&str] = &[
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("agrifood", "package-2021-03-31-preview"), // duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
     ("purview", "package-2021-05-01-preview"),  // need to box types
-    ("maps", "package-preview-2.0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
-    ("maps", "package-1.0-preview"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
-    ("servicefabric", "6.2"),                   // invalid model TimeBasedBackupScheduleDescription
-    ("servicefabric", "6.3"),                   // invalid model TimeBasedBackupScheduleDescription
-    ("servicefabric", "6.4"),                   // invalid model TimeBasedBackupScheduleDescription
+    ("maps", "package-preview-2_0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
+    ("maps", "package-1_0-preview"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
+    ("servicefabric", "6_2"),                   // invalid model TimeBasedBackupScheduleDescription
+    ("servicefabric", "6_3"),                   // invalid model TimeBasedBackupScheduleDescription
+    ("servicefabric", "6_4"),                   // invalid model TimeBasedBackupScheduleDescription
     ("storagedatalake", "package-2018-11"),     // "invalid value: string \"ErrorResponse\", expected length 3"
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
@@ -241,16 +245,16 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     }
 
     for config in spec.configs()? {
-        let tag = config.tag.as_str();
-        if skip_service_tags.contains(&(spec.spec(), tag)) {
+        let tag = to_tag_name(config.tag.as_str());
+        if skip_service_tags.contains(&(spec.spec(), tag.as_ref())) {
             // println!("  skipping {}", tag);
             continue;
         }
         println!("  {}", tag);
-        let mod_name = &to_mod_name(tag);
-        feature_mod_names.push((tag.to_string(), mod_name.clone()));
+        let mod_name = to_mod_name(&tag);
+        let mod_output_folder = path::join(&src_folder, &mod_name).map_err(|source| Error::PathError { source })?;
+        feature_mod_names.push((tag, mod_name));
         // println!("  {}", mod_name);
-        let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
         // println!("  {:?}", mod_output_folder);
         // for input_file in &config.input_files {
         //     println!("  {}", input_file);

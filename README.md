@@ -1,33 +1,31 @@
-# \[Unofficial\] Azure SDK for Rust
+# Azure SDK for Rust
 
-This repository is for the development of the *unofficial* Azure SDK for Rust. It is *unofficial* because it is not yet supported by Azure Support or the Azure SDK team. It has been built primarily by volunteers on their own time. For more information, see the [project history](HISTORY.md) or [FAQs](FAQ.md):
-- When will the crates be published to crates.io?
-- How do we build a case for making it official?
+This repository is for the development of the [unofficial](https://github.com/Azure/azure-sdk-for-rust/blob/main/FAQ.md#why-is-it-unofficial) Azure SDK for Rust.
 
 ## Crates
 
+[All Azure SDK for Rust crates](https://crates.io/teams/github:azure:azure-sdk-publish-rust) are published on crates.io.
+
 ### SDK
-These crates are available from in (sdk):
-- azure_core
-- azure_identity
-- azure_data_cosmos
-- azure_data_tables
-- azure_iot_hub
-- azure_security_keyvault
-- azure_storage_blobs
-- azure_storage_datalake
-- azure_storage_queues
+These [SDK crates](sdk) are available:
+- [azure_core](https://crates.io/crates/azure_core)
+- [azure_identity](https://crates.io/crates/azure_identity)
+- [azure_data_cosmos](https://crates.io/crates/azure_data_cosmos)
+- [azure_data_tables](https://crates.io/crates/azure_data_tables)
+- [azure_iot_hub](https://crates.io/crates/azure_iot_hub)
+- [azure_security_keyvault](https://crates.io/crates/azure_security_keyvault)
+- [azure_storage_blobs](https://crates.io/crates/azure_storage_blobs)
+- [azure_storage_datalake](https://crates.io/crates/azure_storage_datalake)
+- [azure_storage_queues](https://crates.io/crates/azure_storage_queues)
 
 ### Services
-More than 200 Azure service crates are available in [services](services). They are generated from the [Azure REST API Specifications](https://github.com/Azure/azure-rest-api-specs).
+Azure service crates generated from [Azure REST API Specifications](https://github.com/Azure/azure-rest-api-specs) are available in [services](services).
 
 ## Status
 
-🚨🚨🚨**WARNING**: This project is currently under very active development.🚨🚨🚨
+🚨 WARNING 🚨: This project is under active development. Be aware that large breaking changes will happen before 1.0 is reached.
 
-This projects' crates have yet to released to crates.io so in order to use them you will need to specify them as git dependencies. You should be aware that large, breaking changes can happen at any time, and thus it's not yet recommended to use these crates in any serious capacity yet.
-
-Additionally, this project is the logical successor to the previous Azure SDK crates found under [github.com/MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated.
+This project is the successor to the `azure_sdk*` crates from [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust). The crates have been renamed, so those older crates should be considered fully deprecated. See [history](HISTORY.md) for more details.
 
 ## Project Structure
 

@@ -104,26 +104,25 @@ impl<'a> ConnectionString<'a> {
             .filter(|s| !s.chars().all(char::is_whitespace));
 
         for kv_pair_str in kv_str_pairs {
-            let mut kv = kv_pair_str.trim().split('=');
-            let k = match kv.next() {
-                Some(k) if k.chars().all(char::is_whitespace) => {
+            let kv = kv_pair_str.trim().split_once('=');
+
+            let (k, v) = match kv {
+                Some((k, _)) if (k.chars().all(char::is_whitespace) || k.trim() == "") => {
                     return Err(ConnectionStringError::ParseError {
                         msg: "No key found".to_owned(),
                     })
                 }
+                Some((k, v)) if (v.chars().all(char::is_whitespace) || v.trim() == "") => {
+                    return Err(ConnectionStringError::MissingValue {
+                        key: k.trim().to_owned(),
+                    })
+                }
+                Some((k, v)) => (k.trim(), v.trim()),
                 None => {
                     return Err(ConnectionStringError::ParseError {
-                        msg: "No key found".to_owned(),
+                        msg: "No key/value found".to_owned(),
                     })
                 }
-                Some(k) => k,
-            };
-            let v = match kv.next() {
-                Some(v) if v.chars().all(char::is_whitespace) => {
-                    return Err(ConnectionStringError::MissingValue { key: k.to_owned() })
-                }
-                None => return Err(ConnectionStringError::MissingValue { key: k.to_owned() }),
-                Some(v) => v,
             };
 
             match k {
@@ -199,6 +198,14 @@ mod tests {
             Err(ConnectionStringError::MissingValue { key }) if key == "AccountName"
         ));
         assert!(matches!(
+            ConnectionString::new("AccountName    ="),
+            Err(ConnectionStringError::MissingValue { key }) if key == "AccountName"
+        ));
+        assert!(matches!(
+            ConnectionString::new("MissingEquals"),
+            Err(ConnectionStringError::ParseError { msg: _ })
+        ));
+        assert!(matches!(
             ConnectionString::new("="),
             Err(ConnectionStringError::ParseError { msg: _ })
         ));
@@ -245,6 +252,23 @@ mod tests {
             Ok(ConnectionString {
                 account_name: Some("guywald"),
                 sas: Some("s"),
+                ..
+            })
+        ));
+        assert!(matches!(
+            ConnectionString::new("AccountName=guywald;SharedAccessSignature=se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
+            Ok(ConnectionString {
+                account_name: Some("guywald"),
+                sas: Some("se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
+                ..
+            })
+        ));
+
+        assert!(matches!(
+            ConnectionString::new("AccountName = guywald;SharedAccessSignature = se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
+            Ok(ConnectionString {
+                account_name: Some("guywald"),
+                sas: Some("se=2036-01-01&sp=acw&sv=2018-11-09&sr=c&sig=c2lnbmF0dXJlCg%3D%3D"),
                 ..
             })
         ));

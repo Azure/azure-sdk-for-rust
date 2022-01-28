@@ -8,7 +8,7 @@ license = "MIT"
 repository = "https://github.com/azure/azure-sdk-for-rust"
 homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_blobs"
-keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+keywords = ["sdk", "azure", "storage", "blobs"]
 categories = ["api-bindings"]
 edition = "2018"
 
@@ -41,5 +41,6 @@ oauth2 = { version = "4.0.0", default-features = false }
 [features]
 default = ["enable_reqwest"]
 test_e2e = []
+azurite_workaround = []
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls", "azure_storage/enable_reqwest_rustls"]
