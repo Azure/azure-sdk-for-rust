@@ -34,14 +34,14 @@ impl GetDocumentOptions {
     }
 
     pub(crate) fn decorate_request(
-        &self, 
+        &self,
         request: &mut HttpRequest,
         serialized_partition_key: &str,
     ) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
         azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        
+
         crate::cosmos_entity::add_as_partition_key_header_serialized2(
             serialized_partition_key,
             request,
