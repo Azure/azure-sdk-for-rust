@@ -69,7 +69,7 @@ impl DocumentClient {
     {
         let mut request = self.prepare_request_pipeline_with_document_name(http::Method::GET);
 
-        options.decorate_request(&mut request)?;
+        options.decorate_request(&mut request, self.partition_key_serialized())?;   
 
         let response = self
             .cosmos_client()
