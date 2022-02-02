@@ -3,7 +3,7 @@ use http::{header, HeaderMap, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-use crate::{collect_pinned_stream, BytesStream, Response, error};
+use crate::{collect_pinned_stream, error, BytesStream, Response};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct MockResponse {
