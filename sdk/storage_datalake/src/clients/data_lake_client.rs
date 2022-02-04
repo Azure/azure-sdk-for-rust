@@ -1,6 +1,6 @@
+use crate::authorization_policies::SharedKeyAuthorizationPolicy;
 use crate::clients::FileSystemClient;
 use crate::operations::ListFileSystemsBuilder;
-use crate::shared_key_authorization_policy::SharedKeyAuthorizationPolicy;
 use azure_core::{ClientOptions, Context, HttpClient, Pipeline};
 use azure_storage::core::clients::ServiceType;
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
