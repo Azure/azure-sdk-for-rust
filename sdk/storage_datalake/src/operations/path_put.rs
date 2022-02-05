@@ -82,7 +82,6 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
             add_optional_header2(&this.properties, &mut request)?;
             add_optional_header2(&this.if_match_condition, &mut request)?;
             add_optional_header2(&this.if_modified_since, &mut request)?;
-            // add_optional_header2(&this.rename_source, &mut request)?;
             add_mandatory_header2(&ContentLength::new(0), &mut request)?;
 
             let response = self
