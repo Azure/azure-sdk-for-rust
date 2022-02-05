@@ -1,12 +1,12 @@
 {
-  "uri": "/azurerustsdk-datalake-file-rename/some/path/e2etest-file2.txt?resource=file&mode=legacy",
+  "uri": "/azurerustsdk-datalake-file-rename/some/path/e2etest-file2.txt?mode=legacy",
   "method": "PUT",
   "headers": {
     "authorization": "<<STRIPPED>>",
-    "content-language": "/azurerustsdk-datalake-file-rename/some/path/e2etest-file1.txt",
     "content-length": "0",
     "user-agent": "azsdk-rust-storage_datalake/0.1.0 (1.58.0; linux; x86_64)",
-    "x-ms-date": "Fri, 21 Jan 2022 19:04:19 GMT",
+    "x-ms-date": "Sat, 05 Feb 2022 09:46:55 GMT",
+    "x-ms-rename-source": "%2Fazurerustsdk-datalake-file-rename%2Fsome%2Fpath%2Fe2etest-file1.txt",
     "x-ms-version": "2019-12-12"
   },
   "body": ""

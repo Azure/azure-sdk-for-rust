@@ -1,10 +1,10 @@
 {
-  "status": 202,
+  "status": 404,
   "headers": {
-    "content-length": "0",
     "date": "Sat, 05 Feb 2022 09:46:56 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
-    "x-ms-request-id": "511fa013-201f-0031-0f75-1aed65000000",
+    "x-ms-error-code": "PathNotFound",
+    "x-ms-request-id": "1c0d9bf1-501f-0002-7275-1ab172000000",
     "x-ms-version": "2019-12-12"
   },
   "body": ""

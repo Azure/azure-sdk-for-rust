@@ -81,7 +81,6 @@ impl DirectoryClient {
             .if_match_condition(IfMatchCondition::NotMatch("*".to_string()))
     }
 
-    // TODO rename seems to not delete source
     pub fn rename<P>(&self, destination_path: P) -> RenamePathBuilder<Self>
     where
         P: Into<String>,
@@ -93,7 +92,6 @@ impl DirectoryClient {
         // the path will contain a leading '/' as we extract if from the path component of the url
         let dir_path = vec![fs_url.path(), &self.dir_path].join("/");
         RenamePathBuilder::new(destination_client, self.file_system_client.context.clone())
-            .resource(ResourceType::Directory)
             .mode(PathRenameMode::Legacy)
             .rename_source(dir_path)
     }

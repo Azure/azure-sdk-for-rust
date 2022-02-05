@@ -1,4 +1,5 @@
 #![cfg(feature = "mock_transport_framework")]
+use azure_storage_datalake::Properties;
 use std::error::Error;
 
 mod setup;
@@ -138,7 +139,14 @@ async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
     let file_path2 = "some/path/e2etest-file2.txt";
     let file_client2 = file_system_client.get_file_client(file_path2);
 
-    file_client1.create().into_future().await?;
+    let mut file_properties = Properties::new();
+    file_properties.insert("AddedVia", "Azure SDK for Rust");
+
+    file_client1
+        .create()
+        .properties(file_properties.clone())
+        .into_future()
+        .await?;
     file_client2.create().into_future().await?;
 
     let rename_file_if_not_exists_result = file_client1
@@ -147,7 +155,15 @@ async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await;
     assert!(rename_file_if_not_exists_result.is_err());
 
-    file_client1.rename(file_path2).into_future().await?;
+    let file_client3 = file_client1.rename(file_path2).into_future().await?;
+    let renamed_file_properties = file_client3.get_properties().into_future().await?;
+
+    // when renaming a file, the source file properties should be propagated
+    assert_eq!(renamed_file_properties.properties, file_properties);
+
+    // getting properties for the source file should fail, when the file no longer exists
+    let source_file_properties_result = file_client1.get_properties().into_future().await;
+    assert!(source_file_properties_result.is_err());
 
     file_system_client.delete().into_future().await?;
 
