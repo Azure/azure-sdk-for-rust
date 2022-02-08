@@ -1,13 +1,13 @@
 {
-  "status": 201,
+  "status": 409,
   "headers": {
-    "content-length": "0",
-    "date": "Sat, 05 Feb 2022 09:46:56 GMT",
-    "etag": "\"0x8D9E88C724E1FDE\"",
-    "last-modified": "Sat, 05 Feb 2022 09:46:56 GMT",
+    "content-length": "168",
+    "content-type": "application/json;charset=utf-8",
+    "date": "Tue, 08 Feb 2022 19:19:35 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
-    "x-ms-request-id": "1c0d9bef-501f-0002-7075-1ab172000000",
+    "x-ms-error-code": "PathAlreadyExists",
+    "x-ms-request-id": "3cedf7a7-c01f-003f-1320-1d4f78000000",
     "x-ms-version": "2019-12-12"
   },
-  "body": ""
+  "body": "eyJlcnJvciI6eyJjb2RlIjoiUGF0aEFscmVhZHlFeGlzdHMiLCJtZXNzYWdlIjoiVGhlIHNwZWNpZmllZCBwYXRoIGFscmVhZHkgZXhpc3RzLlxuUmVxdWVzdElkOjNjZWRmN2E3LWMwMWYtMDAzZi0xMzIwLTFkNGY3ODAwMDAwMFxuVGltZToyMDIyLTAyLTA4VDE5OjE5OjM2LjIxMTUwNzNaIn19"
 }

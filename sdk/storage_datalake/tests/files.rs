@@ -149,6 +149,9 @@ async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     file_client2.create().into_future().await?;
 
+    // original file properties
+    let original_target_file_properties = file_client2.get_properties().into_future().await?;
+
     let rename_file_if_not_exists_result = file_client1
         .rename_if_not_exists(file_path2)
         .into_future()
@@ -160,6 +163,10 @@ async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // when renaming a file, the source file properties should be propagated
     assert_eq!(renamed_file_properties.properties, file_properties);
+    assert_ne!(
+        renamed_file_properties.properties,
+        original_target_file_properties.properties
+    );
 
     // getting properties for the source file should fail, when the file no longer exists
     let source_file_properties_result = file_client1.get_properties().into_future().await;

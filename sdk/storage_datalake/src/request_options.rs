@@ -3,7 +3,6 @@ use azure_core::AddAsHeader;
 use azure_core::AppendToUrlQuery;
 use azure_storage::core::headers::RENAME_SOURCE;
 use http::request::Builder;
-use url::form_urlencoded::byte_serialize;
 
 #[derive(Debug, Clone)]
 pub enum ResourceType {
@@ -199,7 +198,7 @@ impl AddAsHeader for RenameSource {
         &self,
         request: &mut azure_core::Request,
     ) -> Result<(), azure_core::HttpHeaderError> {
-        let encoded: String = byte_serialize(self.0.as_bytes()).collect();
+        let encoded: String = url::form_urlencoded::byte_serialize(self.0.as_bytes()).collect();
         request
             .headers_mut()
             .append(RENAME_SOURCE, http::HeaderValue::from_str(&encoded)?);
