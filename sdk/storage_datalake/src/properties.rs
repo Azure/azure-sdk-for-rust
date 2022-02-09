@@ -76,6 +76,14 @@ impl TryFrom<&HeaderMap> for Properties {
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
         let mut properties = Self::new();
 
+        let header_value = headers
+            .get(HEADER)
+            .ok_or_else(|| crate::Error::HeaderNotFound(HEADER.to_owned()))?
+            .to_str()?;
+        if header_value.is_empty() {
+            return Ok(properties);
+        }
+
         // this is probably too complicated. Should we split
         // it in more manageable code blocks?
         // The logic is this:
@@ -86,10 +94,7 @@ impl TryFrom<&HeaderMap> for Properties {
         //      5. For each pair:
         //          6. Base64 decode the second entry (value). If error, return error.
         //          7. Insert the key value pair in the returned struct.
-        headers
-            .get(HEADER)
-            .ok_or_else(|| crate::Error::HeaderNotFound(HEADER.to_owned()))? // HEADER must exists or we return Err
-            .to_str()?
+        header_value
             .split(',') // The list is a CSV so we split by comma
             .map(|key_value_pair| {
                 let mut key_and_value = key_value_pair.split('='); // Each entry is key and value separated by =

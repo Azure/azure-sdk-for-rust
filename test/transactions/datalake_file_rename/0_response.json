@@ -2,12 +2,12 @@
   "status": 201,
   "headers": {
     "content-length": "0",
-    "date": "Fri, 21 Jan 2022 19:04:20 GMT",
-    "etag": "\"0x8D9DD10D468A80D\"",
-    "last-modified": "Fri, 21 Jan 2022 19:04:20 GMT",
+    "date": "Tue, 08 Feb 2022 19:19:34 GMT",
+    "etag": "\"0x8D9EB37F1191B43\"",
+    "last-modified": "Tue, 08 Feb 2022 19:19:35 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
     "x-ms-namespace-enabled": "true",
-    "x-ms-request-id": "7bb8be81-f01f-009c-4cf9-0ef418000000",
+    "x-ms-request-id": "3cedf6ee-c01f-003f-5d20-1d4f78000000",
     "x-ms-version": "2019-12-12"
   },
   "body": ""

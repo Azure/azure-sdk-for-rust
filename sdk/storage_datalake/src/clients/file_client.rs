@@ -89,7 +89,6 @@ impl FileClient {
         GetFileBuilder::new(self.clone(), self.file_system_client.context.clone())
     }
 
-    // TODO rename seems to not delete source
     pub fn rename<P>(&self, destination_path: P) -> RenamePathBuilder<Self>
     where
         P: Into<String>,
@@ -99,7 +98,6 @@ impl FileClient {
         // the path will contain a leading '/' as we extract if from the path component of the url
         let file_path = vec![fs_url.path(), &self.file_path].join("/");
         RenamePathBuilder::new(destination_client, self.file_system_client.context.clone())
-            .resource(ResourceType::File)
             .mode(PathRenameMode::Legacy)
             .rename_source(file_path)
     }

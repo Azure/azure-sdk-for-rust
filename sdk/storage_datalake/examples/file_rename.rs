@@ -43,8 +43,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("renaming file '{}' to '{}'...", file_path1, file_path2);
-    let rename_file_response = file_client1.rename(file_path2).into_future().await?;
-    println!("rename file response == {:?}\n", rename_file_response);
+    let file_client3 = file_client1.rename(file_path2).into_future().await?;
+    let renamed_file_properties = file_client3.get_properties().into_future().await?;
+    println!("renamed file properties == {:?}\n", renamed_file_properties);
+
+    // getting properties for the source file should fail, when the file no longer exists
+    // Eventually we will implement the `exists` method, which internally employs a similar check
+    let source_file_properties_result = file_client1.get_properties().into_future().await;
+    assert!(source_file_properties_result.is_err());
 
     println!("deleting file system...");
     let delete_fs_response = file_system_client.delete().into_future().await?;
