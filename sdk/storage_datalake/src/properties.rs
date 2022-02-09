@@ -2,11 +2,11 @@ use azure_core::AddAsHeader;
 use http::request::Builder;
 use http::HeaderMap;
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Properties(HashMap<Cow<'static, str>, Cow<'static, str>>);
+pub struct Properties(BTreeMap<Cow<'static, str>, Cow<'static, str>>);
 
 const HEADER: &str = "x-ms-properties";
 
@@ -18,7 +18,7 @@ impl Default for Properties {
 
 impl Properties {
     pub fn new() -> Self {
-        Self(HashMap::new())
+        Self(BTreeMap::new())
     }
 
     pub fn insert<K: Into<Cow<'static, str>>, V: Into<Cow<'static, str>>>(
@@ -29,8 +29,8 @@ impl Properties {
         self.0.insert(k.into(), v.into())
     }
 
-    pub fn hash_map(&self) -> &HashMap<Cow<'static, str>, Cow<'static, str>> {
-        &self.0
+    pub fn get(&self, key: &str) -> std::option::Option<&Cow<'_, str>> {
+        self.0.get(key)
     }
 }
 
@@ -76,6 +76,14 @@ impl TryFrom<&HeaderMap> for Properties {
     fn try_from(headers: &HeaderMap) -> Result<Self, Self::Error> {
         let mut properties = Self::new();
 
+        let header_value = headers
+            .get(HEADER)
+            .ok_or_else(|| crate::Error::HeaderNotFound(HEADER.to_owned()))?
+            .to_str()?;
+        if header_value.is_empty() {
+            return Ok(properties);
+        }
+
         // this is probably too complicated. Should we split
         // it in more manageable code blocks?
         // The logic is this:
@@ -86,10 +94,7 @@ impl TryFrom<&HeaderMap> for Properties {
         //      5. For each pair:
         //          6. Base64 decode the second entry (value). If error, return error.
         //          7. Insert the key value pair in the returned struct.
-        headers
-            .get(HEADER)
-            .ok_or_else(|| crate::Error::HeaderNotFound(HEADER.to_owned()))? // HEADER must exists or we return Err
-            .to_str()?
+        header_value
             .split(',') // The list is a CSV so we split by comma
             .map(|key_value_pair| {
                 let mut key_and_value = key_value_pair.split('='); // Each entry is key and value separated by =

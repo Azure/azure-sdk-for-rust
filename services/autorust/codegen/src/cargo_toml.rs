@@ -22,9 +22,11 @@ pub fn create(crate_name: &str, feature_mod_names: &[(String, String)], path: &P
 name = "{}"
 version = "0.1.0"
 edition = "2018"
+license = "MIT"
+description = "generated REST API bindings"
 
 [dependencies]
-azure_core = {{ path = "../../../sdk/core", version = "0.1.0", default-features = false }}
+azure_core = {{ path = "../../../sdk/core", version = "0.1", default-features = false }}
 serde = {{ version = "1.0", features = ["derive"] }}
 serde_json = "1.0"
 bytes = "1.0"
@@ -34,7 +36,7 @@ url = "2.2"
 futures = "0.3"
 
 [dev-dependencies]
-azure_identity = {{ path = "../../../sdk/identity", version = "0.1.0" }}
+azure_identity = {{ path = "../../../sdk/identity", version = "0.1" }}
 tokio = {{ version = "1.0", features = ["macros"] }}
 
 [package.metadata.docs.rs]

@@ -1,0 +1,11 @@
+{
+  "uri": "/azurerustsdk-datalake-file-rename/some/path/e2etest-file2.txt",
+  "method": "HEAD",
+  "headers": {
+    "authorization": "<<STRIPPED>>",
+    "user-agent": "azsdk-rust-storage_datalake/0.1.0 (1.58.0; linux; x86_64)",
+    "x-ms-date": "Tue, 08 Feb 2022 19:19:35 GMT",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}

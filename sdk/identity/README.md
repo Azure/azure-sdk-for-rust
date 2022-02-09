@@ -1,6 +1,6 @@
-# Azure SDK for Rust - Azure OAuth2 Crate
+# Azure SDK for Rust - Azure Identity Crate
 
- Azure OAuth2 helper crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
+ Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 This crate provides mechanisms for several ways to authenticate against Azure
 
 For example, to authenticate using the client credential flow, you can do the following:
@@ -51,5 +51,5 @@ To set this crate as a dependency, add this to your Cargo.toml
 
 ```toml
 [dependencies]
-azure_identity = { version = "0.1.0", git = "https://github.com/Azure/azure-sdk-for-rust" }
+azure_identity = "0.1"
 ```

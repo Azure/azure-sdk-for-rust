@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.1.0"
+version = "0.1.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]

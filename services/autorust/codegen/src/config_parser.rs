@@ -194,6 +194,16 @@ pub fn get_input_file_api_version(input_file: &str) -> Option<String> {
     }
 }
 
+/// Create a Rust tag name, based on the feature naem.
+pub fn to_tag_name(name: &str) -> String {
+    name.chars()
+        .map(|x| match x {
+            'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => x,
+            _ => '_',
+        })
+        .collect()
+}
+
 /// Create a Rust module name, based on the feature naem.
 pub fn to_mod_name(feature_name: &str) -> String {
     let mut name = feature_name.to_owned();
@@ -213,6 +223,13 @@ mod tests {
             Some("2019-05-05-preview".to_owned()),
             get_input_file_api_version("Microsoft.AlertsManagement/preview/2019-05-05-preview/ActionRules.json")
         );
+    }
+
+    #[test]
+    fn test_tag_name() {
+        assert_eq!("2019-06", to_tag_name("2019-06"));
+        assert_eq!("2019_06", to_tag_name("2019.06"));
+        assert_eq!("2019_06", to_tag_name("2019!06"));
     }
 
     #[test]

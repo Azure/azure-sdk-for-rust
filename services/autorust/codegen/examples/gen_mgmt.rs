@@ -1,6 +1,10 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
-use autorust_codegen::{self, cargo_toml, config_parser::to_mod_name, get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
+use autorust_codegen::{
+    self, cargo_toml,
+    config_parser::{to_mod_name, to_tag_name},
+    get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme,
+};
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
@@ -28,6 +32,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("authorization", "package-2018-05-01-preview"),
     ("authorization", "package-2021-03-01-preview-only"),
     ("authorization", "package-2021-07-01-preview-only"),
+    ("authorization", "package-preview-2021-11"),
     ("azureactivedirectory", "package-preview-2020-07"),
     ("consumption", "package-2018-03"), // defines get_balances_by_billing_account twice
     ("consumption", "package-2019-11"), // ReservationRecommendationDetails_Get has a path and query param both named "scope"
@@ -285,6 +290,8 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/keyvault/resource-manager/Microsoft.KeyVault/preview/2020-04-01-preview/managedHsm.json", "Error" , "innererror"),
     ("../../../azure-rest-api-specs/specification/keyvault/resource-manager/Microsoft.KeyVault/preview/2021-04-01-preview/managedHsm.json", "Error" , "innererror"),
     ("../../../azure-rest-api-specs/specification/keyvault/resource-manager/Microsoft.KeyVault/preview/2021-06-01-preview/managedHsm.json", "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/resource-manager/Microsoft.KeyVault/preview/2021-11-01-preview/managedHsm.json", "Error" , "innererror"),
+    ("../../../azure-rest-api-specs/specification/keyvault/resource-manager/Microsoft.KeyVault/stable/2021-10-01/managedHsm.json", "Error", "innererror"),
 ];
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -352,17 +359,17 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     }
 
     for config in spec.configs()? {
-        let tag = config.tag.as_str();
-        if skip_service_tags.contains(&(spec.spec(), tag)) {
+        let tag = to_tag_name(&config.tag);
+        if skip_service_tags.contains(&(spec.spec(), tag.as_ref())) {
             println!("  skipping {}", tag);
             continue;
         }
         println!("  {}", tag);
         // println!("  {}", api_version);
-        let mod_name = &to_mod_name(tag);
-        feature_mod_names.push((tag.to_string(), mod_name.clone()));
+        let mod_name = to_mod_name(&tag);
+        let mod_output_folder = path::join(&src_folder, &mod_name).map_err(|source| Error::PathError { source })?;
+        feature_mod_names.push((tag, mod_name));
         // println!("  {}", mod_name);
-        let mod_output_folder = path::join(&src_folder, mod_name).map_err(|source| Error::PathError { source })?;
         // println!("  {:?}", mod_output_folder);
         // for input_file in &config.input_files {
         //     println!("  {}", input_file);

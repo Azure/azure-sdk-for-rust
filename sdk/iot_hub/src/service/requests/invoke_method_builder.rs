@@ -48,7 +48,7 @@ impl<'a> InvokeMethodBuilder<'a> {
     /// ```
     /// # use std::sync::Arc;
     /// # use azure_core::HttpClient;
-    /// use iot_hub::service::ServiceClient;
+    /// use azure_iot_hub::service::ServiceClient;
     /// # let http_client = azure_core::new_http_client();
     ///
     /// let service = ServiceClient::from_sas_token(http_client, "some-iot-hub", "sas_token");

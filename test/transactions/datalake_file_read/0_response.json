@@ -1,0 +1,14 @@
+{
+  "status": 201,
+  "headers": {
+    "content-length": "0",
+    "date": "Tue, 08 Feb 2022 19:19:34 GMT",
+    "etag": "\"0x8D9EB37F123D262\"",
+    "last-modified": "Tue, 08 Feb 2022 19:19:35 GMT",
+    "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
+    "x-ms-namespace-enabled": "true",
+    "x-ms-request-id": "0259eb0d-501f-003e-5720-1d647a000000",
+    "x-ms-version": "2019-12-12"
+  },
+  "body": ""
+}

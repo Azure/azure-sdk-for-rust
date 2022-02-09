@@ -31,6 +31,7 @@ impl TryFrom<&HeaderMap> for CommonStorageResponseHeaders {
 pub const CONTENT_CRC64: &str = "x-ms-content-crc64";
 pub const CONTENT_MD5: &str = "Content-MD5";
 pub const COPY_ID: &str = "x-ms-copy-id";
+pub const RENAME_SOURCE: &str = "x-ms-rename-source";
 
 pub fn content_crc64_from_headers(headers: &HeaderMap) -> crate::Result<ConsistencyCRC64> {
     let content_crc64 = headers

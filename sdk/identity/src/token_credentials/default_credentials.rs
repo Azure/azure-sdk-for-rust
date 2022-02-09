@@ -45,6 +45,7 @@ impl DefaultAzureCredentialBuilder {
         self
     }
 
+    /// Create a `DefaultAzureCredential` from this builder.
     pub fn build(&self) -> DefaultAzureCredential {
         let source_count = self.include_cli_credential as usize
             + self.include_cli_credential as usize
@@ -67,15 +68,16 @@ impl DefaultAzureCredentialBuilder {
     }
 }
 
+#[allow(missing_docs)]
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum DefaultAzureCredentialError {
-    #[error("Error getting token credential from Azure CLI: {0}")]
-    AzureCliCredentialError(#[from] super::AzureCliCredentialError),
-    #[error("Error getting environment credential: {0}")]
-    EnvironmentCredentialError(#[from] super::EnvironmentCredentialError),
-    #[error("Error getting managed identity credential: {0}")]
-    ManagedIdentityCredentialError(#[from] super::ManagedIdentityCredentialError),
+    #[error("Error getting token credential from Azure CLI")]
+    AzureCliCredential(#[source] super::AzureCliCredentialError),
+    #[error("Error getting environment credential")]
+    EnvironmentCredential(#[source] super::EnvironmentCredentialError),
+    #[error("Error getting managed identity credential")]
+    ManagedIdentityCredential(#[source] super::ManagedIdentityCredentialError),
     #[error(
         "Multiple errors were encountered while attempting to authenticate:\n{}",
         format_aggregate_error(.0)
@@ -85,8 +87,11 @@ pub enum DefaultAzureCredentialError {
 
 /// Types of TokenCredential supported by DefaultAzureCredential
 pub enum DefaultAzureCredentialEnum {
+    /// `TokenCredential` from environment variable.
     Environment(EnvironmentCredential),
+    /// `TokenCredential` from managed identity that has been assigned in this deployment environment.
     ManagedIdentity(ImdsManagedIdentityCredential),
+    /// `TokenCredential` from Azure CLI.
     AzureCli(AzureCliCredential),
 }
 
@@ -99,15 +104,15 @@ impl TokenCredential for DefaultAzureCredentialEnum {
             DefaultAzureCredentialEnum::Environment(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(DefaultAzureCredentialError::EnvironmentCredentialError),
+                .map_err(DefaultAzureCredentialError::EnvironmentCredential),
             DefaultAzureCredentialEnum::ManagedIdentity(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(DefaultAzureCredentialError::ManagedIdentityCredentialError),
+                .map_err(DefaultAzureCredentialError::ManagedIdentityCredential),
             DefaultAzureCredentialEnum::AzureCli(credential) => credential
                 .get_token(resource)
                 .await
-                .map_err(DefaultAzureCredentialError::AzureCliCredentialError),
+                .map_err(DefaultAzureCredentialError::AzureCliCredential),
         }
     }
 }
@@ -124,6 +129,9 @@ pub struct DefaultAzureCredential {
 }
 
 impl DefaultAzureCredential {
+    /// Creates a `DefaultAzureCredential` with specified sources.
+    ///
+    /// These sources will be tried in the order provided in the `TokenCredential` authentication flow.
     pub fn with_sources(sources: Vec<DefaultAzureCredentialEnum>) -> Self {
         DefaultAzureCredential { sources }
     }

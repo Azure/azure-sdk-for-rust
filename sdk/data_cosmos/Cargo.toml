@@ -16,7 +16,7 @@ edition = "2018"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.1.0" }
+azure_core = { path = "../core", version = "0.1" }
 ring = "0.16"
 base64 = "0.13"
 chrono = "0.4"
@@ -36,7 +36,7 @@ tokio = { version = "1", features = ["macros"] }
 hyper = "0.14"
 hyper-rustls = "0.23"
 reqwest = "0.11.0"
-stop-token = { version = "0.6.1", features = ["tokio"] }
+stop-token = { version = "0.7.0", features = ["tokio"] }
 
 [features]
 test_e2e = []
