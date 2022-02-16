@@ -8,17 +8,28 @@ const OUTPUT_FOLDER: &str = "../mgmt";
 const ONLY_SERVICES: &[&str] = &[];
 
 const SKIP_SERVICES: &[&str] = &[
+    "apimanagement",   // Vec of renamed enum BearerTokenSendingMethodsContract
+    "cdn",             // DeliveryRuleAction for struct and enum
+    "commerce",        // OfferTermInfo defined as struct and enum
+    "customproviders", // ProvisioningState namespace issues
+    "customerlockbox", // Multiple definitions of enum Status
     "datamigration",
+    "deviceupdate",               // ProvisioningState namespace issues
     "deviceprovisioningservices", // TODO #82 certificate_name used as parameter more than once
     "dnc",                        // https://github.com/Azure/azure-rest-api-specs/pull/11578 two ControllerDetails types
     "iotspaces",                  // no operations
+    "kubernetesconfiguration",    // ResourceIdentityType not found (renamed?)
     "m365securityandcompliance",  // can't find privateLinkServicesForO365ManagementActivityAPI.json
     "marketplace",
     "mixedreality",  // TODO #83 AccountKeyRegenerateRequest not generated
+    "network",       // Conflicting definitions of Direction, issues with Vec<renamed enum>
+    "scheduler",     // Duplicate definition of RecurrenceFrequency
+    "security",      // AadConnectivityState, ExternalSecuritySolutionKind defined as struct and enum
     "service-map",   // Ident "Ref:machine"
     "servicefabric", // https://github.com/Azure/azure-rest-api-specs/pull/11581 allOf mistakes and duplicate Operations_List
     "servicefabricmanagedclusters",
-    "web", // multiple duplicate `DnsType` and `SupportedTls` definitions
+    "storagecache", // ProvisioningStateType enum defined in cache namespace, should be top-level
+    "web", // CertificateProductType, ProvisioningState, CertificateOrderStatus defined in namespaces, should be top-level. Options with renamed enums.
 ];
 
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[

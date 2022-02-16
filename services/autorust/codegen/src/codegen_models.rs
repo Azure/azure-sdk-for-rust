@@ -15,13 +15,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct PropertyGen {
     name: String,
     schema: SchemaGen,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct SchemaGen {
     ref_key: Option<RefKey>,
     schema: Schema,
@@ -330,6 +330,8 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         });
     }
 
+    let mut defined_property_types = HashSet::<String>::new();
+
     let mut schema_names = IndexMap::new();
     let schemas = all_schemas(&cg.spec)?;
     let schemas = resolve_all_schema_properties(&schemas, &cg.spec)?;
@@ -348,14 +350,13 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream, Error> {
         } else if schema.is_array() {
             file.extend(create_vec_alias(schema)?);
         } else if schema.is_local_enum() {
-            let no_namespace = TokenStream::new();
-            let TypeCode { code: enum_code, .. } = create_enum(&no_namespace, schema, schema_name, false)?;
+            let TypeCode { code: enum_code, .. } = create_enum(schema, schema_name, false)?;
             file.extend(enum_code);
         } else if schema.is_basic_type() {
             let (id, value) = create_basic_type_alias(schema_name, schema)?;
             file.extend(quote! { pub type #id = #value;});
         } else {
-            file.extend(create_struct(cg, schema, schema_name)?);
+            file.extend(create_struct(cg, schema, schema_name, &mut defined_property_types)?);
         }
     }
     Ok(file)
@@ -381,7 +382,7 @@ fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_
     Ok(())
 }
 
-fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<TypeCode, Error> {
+fn create_enum(property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<TypeCode, Error> {
     let enum_values = property.enum_values();
     let id = property.code_name(property_name)?;
 
@@ -460,8 +461,13 @@ fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &st
         }
         #default_code
     };
-    let type_name = quote! {#namespace::#id};
-    Ok(TypeCode { type_name, code })
+    let type_name = quote! {#id};
+    let submod_code = quote! {};
+    Ok(TypeCode {
+        type_name,
+        code,
+        submod_code,
+    })
 }
 
 fn lookup_ms_enum_value<'a>(x_ms_enum: &'a MsEnum, value: &str) -> Option<&'a MsEnumValue> {
@@ -475,7 +481,12 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream, Error> {
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
-fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<TokenStream, Error> {
+fn create_struct(
+    cg: &CodeGen,
+    schema: &SchemaGen,
+    struct_name: &str,
+    defined_property_types: &mut HashSet<String>,
+) -> Result<TokenStream, Error> {
     let mut code = TokenStream::new();
     let mut mod_code = TokenStream::new();
     let mut props = TokenStream::new();
@@ -515,8 +526,17 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         let TypeCode {
             mut type_name,
             code: field_code,
-        } = create_struct_field_code(cg, &ns, &property.schema, property_name, lowercase_workaround)?;
-        mod_code.extend(field_code);
+            submod_code,
+        } = create_struct_field_code(
+            cg,
+            &ns,
+            &property.schema,
+            property_name,
+            lowercase_workaround,
+            defined_property_types,
+        )?;
+        code.extend(field_code);
+        mod_code.extend(submod_code);
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path.display(), prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
@@ -556,7 +576,14 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         if should_box {
             type_name = quote! { Box<#type_name> };
         }
+
+        let doc_comment = match &property.schema.schema.common.description {
+            Some(description) => quote! { #[doc = #description] },
+            None => quote! {},
+        };
+
         props.extend(quote! {
+            #doc_comment
             #serde
             pub #field_name: #type_name,
         });
@@ -636,6 +663,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
 struct TypeCode {
     type_name: TokenStream,
     code: TokenStream,
+    submod_code: TokenStream,
 }
 
 /// Creates the type reference for a struct field from a struct property.
@@ -646,6 +674,7 @@ fn create_struct_field_code(
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
+    defined_property_types: &mut HashSet<String>,
 ) -> Result<TypeCode, Error> {
     match &property.ref_key {
         Some(_ref_key) => {
@@ -653,20 +682,52 @@ fn create_struct_field_code(
             Ok(TypeCode {
                 type_name: tp,
                 code: TokenStream::new(),
+                submod_code: TokenStream::new(),
             })
         }
         None => {
             if property.is_local_enum() {
-                create_enum(namespace, property, property_name, lowercase_workaround)
+                let code_name = property.code_name(property_name)?;
+                let code_name_string = code_name.to_string();
+                // Some specs have multiple duplicate enum definitions.
+                // If we detect this then skip code generation for the duplicates.
+                // Note: Currently only checks for duplicate names - does not verify
+                // that all the definitions are identical.
+                if !defined_property_types.contains(&code_name_string) {
+                    defined_property_types.insert(code_name_string);
+                    create_enum(property, property_name, lowercase_workaround)
+                } else {
+                    // This is a duplicate enum type, so don't generate any code for it.
+                    Ok(TypeCode {
+                        type_name: quote! {#code_name},
+                        code: TokenStream::new(),
+                        submod_code: TokenStream::new(),
+                    })
+                }
             } else if property.is_local_struct() {
-                let id = property_name.to_camel_case_ident().map_err(Error::PropertyName)?;
+                let id = property.code_name(property_name)?;
                 let type_name = quote! {#namespace::#id};
-                let code = create_struct(cg, property, property_name)?;
-                Ok(TypeCode { type_name, code })
+                let submod_code = create_struct(cg, property, property_name, defined_property_types)?;
+                Ok(TypeCode {
+                    type_name,
+                    code: TokenStream::new(),
+                    submod_code,
+                })
+            } else if property.is_array() {
+                println!("property is array:\n{:#?}", property);
+                println!("array_items: {:#?}", property.array_items());
+                let type_name = type_name_gen(&property.type_name()?, false, false)?;
+                println!("type_name: {:#?}", type_name);
+                Ok(TypeCode {
+                    type_name: type_name_gen(&property.type_name()?, false, false)?,
+                    code: TokenStream::new(),
+                    submod_code: TokenStream::new(),
+                })
             } else {
                 Ok(TypeCode {
                     type_name: type_name_gen(&property.type_name()?, false, false)?,
                     code: TokenStream::new(),
+                    submod_code: TokenStream::new(),
                 })
             }
         }

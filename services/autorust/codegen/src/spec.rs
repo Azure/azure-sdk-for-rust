@@ -682,6 +682,7 @@ fn add_references_for_schema(list: &mut Vec<TypedReference>, schema: &Schema) {
     }
 }
 
+#[derive(Debug)]
 pub enum TypeName {
     Reference(String),
     Array(Box<TypeName>),
@@ -702,6 +703,9 @@ pub fn get_type_name_for_schema(schema: &SchemaCommon) -> Result<TypeName> {
             DataType::Array => {
                 let items = get_schema_array_items(schema)?;
                 let vec_items_typ = get_type_name_for_schema_ref(items)?;
+                if let TypeName::Reference(_) = vec_items_typ {
+                    //println!("vec_items_typ={:#?}\nitems={:#?}\nschema={:#?}", vec_items_typ, items, schema);
+                }
                 TypeName::Array(Box::new(vec_items_typ))
             }
             DataType::Integer => {
