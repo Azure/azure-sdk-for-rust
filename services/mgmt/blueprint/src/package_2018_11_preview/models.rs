@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Represents a blueprint artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Artifact {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Specifies the kind of blueprint artifact."]
     pub kind: artifact::Kind,
 }
 impl Artifact {
@@ -18,6 +20,7 @@ impl Artifact {
 }
 pub mod artifact {
     use super::*;
+    #[doc = "Specifies the kind of blueprint artifact."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "template")]
@@ -28,10 +31,13 @@ pub mod artifact {
         PolicyAssignment,
     }
 }
+#[doc = "List of blueprint artifacts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactList {
+    #[doc = "List of blueprint artifacts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Artifact>,
+    #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -40,8 +46,10 @@ impl ArtifactList {
         Self::default()
     }
 }
+#[doc = "Common properties shared by different artifacts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactPropertiesBase {
+    #[doc = "Artifacts which need to be deployed before the specified artifact."]
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<String>,
 }
@@ -50,11 +58,14 @@ impl ArtifactPropertiesBase {
         Self::default()
     }
 }
+#[doc = "Represents a blueprint assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Assignment {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Managed identity generic object."]
     pub identity: ManagedServiceIdentity,
+    #[doc = "Detailed properties for a blueprint assignment."]
     pub properties: AssignmentProperties,
 }
 impl Assignment {
@@ -66,20 +77,28 @@ impl Assignment {
         }
     }
 }
+#[doc = "Represents individual job in given blueprint assignment operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentDeploymentJob {
+    #[doc = "Kind of job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Name of the action performed in this job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
+    #[doc = "Id of this job."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
+    #[doc = "State of this job."]
     #[serde(rename = "jobState", default, skip_serializing_if = "Option::is_none")]
     pub job_state: Option<String>,
+    #[doc = "Result of each individual deployment in a blueprint assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<AssignmentDeploymentJobResult>,
+    #[doc = "Result of this deployment job for each retry."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub history: Vec<AssignmentDeploymentJobResult>,
+    #[doc = "Reference to deployment job resource id."]
     #[serde(rename = "requestUri", default, skip_serializing_if = "Option::is_none")]
     pub request_uri: Option<String>,
 }
@@ -88,10 +107,13 @@ impl AssignmentDeploymentJob {
         Self::default()
     }
 }
+#[doc = "Result of each individual deployment in a blueprint assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentDeploymentJobResult {
+    #[doc = "Error code and message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<AzureResourceManagerError>,
+    #[doc = "Resources created as result of the deployment job."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<AssignmentJobCreatedResource>,
 }
@@ -100,10 +122,12 @@ impl AssignmentDeploymentJobResult {
         Self::default()
     }
 }
+#[doc = "Azure resource created from deployment job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentJobCreatedResource {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Additional properties in a dictionary."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -112,10 +136,13 @@ impl AssignmentJobCreatedResource {
         Self::default()
     }
 }
+#[doc = "List of blueprint assignments"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentList {
+    #[doc = "List of blueprint assignments."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Assignment>,
+    #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -124,12 +151,16 @@ impl AssignmentList {
         Self::default()
     }
 }
+#[doc = "Defines how resources deployed by a blueprint assignment are locked."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentLockSettings {
+    #[doc = "Lock mode."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<assignment_lock_settings::Mode>,
+    #[doc = "List of AAD principals excluded from blueprint locks. Up to 5 principals are permitted."]
     #[serde(rename = "excludedPrincipals", default, skip_serializing_if = "Vec::is_empty")]
     pub excluded_principals: Vec<String>,
+    #[doc = "List\u{a0}of\u{a0}management\u{a0}operations\u{a0}that\u{a0}are\u{a0}excluded\u{a0}from\u{a0}blueprint\u{a0}locks.\u{a0}Up\u{a0}to\u{a0}200\u{a0}actions\u{a0}are\u{a0}permitted. If the lock mode is set to 'AllResourcesReadOnly', then the following actions are automatically appended to 'excludedActions': '*/read', 'Microsoft.Network/virtualNetworks/subnets/join/action' and 'Microsoft.Authorization/locks/delete'. If the lock mode is set to 'AllResourcesDoNotDelete', then the following actions are automatically appended to 'excludedActions': 'Microsoft.Authorization/locks/delete'. Duplicate actions will get removed."]
     #[serde(rename = "excludedActions", default, skip_serializing_if = "Vec::is_empty")]
     pub excluded_actions: Vec<String>,
 }
@@ -140,6 +171,7 @@ impl AssignmentLockSettings {
 }
 pub mod assignment_lock_settings {
     use super::*;
+    #[doc = "Lock mode."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         None,
@@ -147,10 +179,12 @@ pub mod assignment_lock_settings {
         AllResourcesDoNotDelete,
     }
 }
+#[doc = "Represents underlying deployment detail for each update to the blueprint assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentOperation {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Properties of AssignmentOperation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssignmentOperationProperties>,
 }
@@ -159,10 +193,13 @@ impl AssignmentOperation {
         Self::default()
     }
 }
+#[doc = "List of AssignmentOperation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentOperationList {
+    #[doc = "List of AssignmentOperation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AssignmentOperation>,
+    #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -171,18 +208,25 @@ impl AssignmentOperationList {
         Self::default()
     }
 }
+#[doc = "Properties of AssignmentOperation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentOperationProperties {
+    #[doc = "The published version of the blueprint definition used for the blueprint assignment operation."]
     #[serde(rename = "blueprintVersion", default, skip_serializing_if = "Option::is_none")]
     pub blueprint_version: Option<String>,
+    #[doc = "State of this blueprint assignment operation."]
     #[serde(rename = "assignmentState", default, skip_serializing_if = "Option::is_none")]
     pub assignment_state: Option<String>,
+    #[doc = "Create time of this blueprint assignment operation."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "Start time of the underlying deployment."]
     #[serde(rename = "timeStarted", default, skip_serializing_if = "Option::is_none")]
     pub time_started: Option<String>,
+    #[doc = "Finish time of the overall underlying deployments."]
     #[serde(rename = "timeFinished", default, skip_serializing_if = "Option::is_none")]
     pub time_finished: Option<String>,
+    #[doc = "List of jobs in this blueprint assignment operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub deployments: Vec<AssignmentDeploymentJob>,
 }
@@ -191,21 +235,29 @@ impl AssignmentOperationProperties {
         Self::default()
     }
 }
+#[doc = "Detailed properties for a blueprint assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssignmentProperties {
     #[serde(flatten)]
     pub blueprint_resource_properties_base: BlueprintResourcePropertiesBase,
+    #[doc = "ID of the published version of a blueprint definition."]
     #[serde(rename = "blueprintId", default, skip_serializing_if = "Option::is_none")]
     pub blueprint_id: Option<String>,
+    #[doc = "The target subscription scope of the blueprint assignment (format: '/subscriptions/{subscriptionId}'). For management group level assignments, the property is required."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "Blueprint assignment parameter values."]
     pub parameters: serde_json::Value,
+    #[doc = "Names and locations of resource group placeholders."]
     #[serde(rename = "resourceGroups")]
     pub resource_groups: serde_json::Value,
+    #[doc = "The status of a blueprint assignment. This field is readonly."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<AssignmentStatus>,
+    #[doc = "Defines how resources deployed by a blueprint assignment are locked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locks: Option<AssignmentLockSettings>,
+    #[doc = "State of the blueprint assignment."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<assignment_properties::ProvisioningState>,
 }
@@ -225,6 +277,7 @@ impl AssignmentProperties {
 }
 pub mod assignment_properties {
     use super::*;
+    #[doc = "State of the blueprint assignment."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         #[serde(rename = "creating")]
@@ -249,10 +302,12 @@ pub mod assignment_properties {
         Deleting,
     }
 }
+#[doc = "The status of a blueprint assignment. This field is readonly."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentStatus {
     #[serde(flatten)]
     pub blueprint_resource_status_base: BlueprintResourceStatusBase,
+    #[doc = "List of resources that were created by the blueprint assignment."]
     #[serde(rename = "managedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub managed_resources: Vec<String>,
 }
@@ -261,12 +316,16 @@ impl AssignmentStatus {
         Self::default()
     }
 }
+#[doc = "Common properties for all Azure resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceBase {
+    #[doc = "String Id used to locate any resource on Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Type of this resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Name of this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -275,10 +334,13 @@ impl AzureResourceBase {
         Self::default()
     }
 }
+#[doc = "Error code and message"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceManagerError {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -287,10 +349,12 @@ impl AzureResourceManagerError {
         Self::default()
     }
 }
+#[doc = "Represents a Blueprint definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Blueprint {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Schema for blueprint definition properties."]
     pub properties: BlueprintProperties,
 }
 impl Blueprint {
@@ -301,10 +365,13 @@ impl Blueprint {
         }
     }
 }
+#[doc = "List of blueprint definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlueprintList {
+    #[doc = "List of blueprint definitions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Blueprint>,
+    #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -313,12 +380,15 @@ impl BlueprintList {
         Self::default()
     }
 }
+#[doc = "Schema for blueprint definition properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlueprintProperties {
     #[serde(flatten)]
     pub shared_blueprint_properties: SharedBlueprintProperties,
+    #[doc = "Published versions of this blueprint definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub versions: Option<serde_json::Value>,
+    #[doc = "Layout view of the blueprint definition for UI reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub layout: Option<serde_json::Value>,
 }
@@ -331,10 +401,13 @@ impl BlueprintProperties {
         }
     }
 }
+#[doc = "Shared properties between all blueprint resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlueprintResourcePropertiesBase {
+    #[doc = "One-liner string explain this resource."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Multi-line explain this resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -343,10 +416,13 @@ impl BlueprintResourcePropertiesBase {
         Self::default()
     }
 }
+#[doc = "Shared status properties between all blueprint resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlueprintResourceStatusBase {
+    #[doc = "Creation time of this blueprint definition."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "Last modified time of this blueprint definition."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
 }
@@ -355,6 +431,7 @@ impl BlueprintResourceStatusBase {
         Self::default()
     }
 }
+#[doc = "The status of the blueprint. This field is readonly."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlueprintStatus {
     #[serde(flatten)]
@@ -367,6 +444,7 @@ impl BlueprintStatus {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -375,10 +453,13 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -387,16 +468,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -405,14 +492,19 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Managed identity generic object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedServiceIdentity {
+    #[doc = "Type of the managed identity."]
     #[serde(rename = "type")]
     pub type_: managed_service_identity::Type,
+    #[doc = "Azure Active Directory principal ID associated with this Identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "ID of the Azure Active Directory."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The list of user-assigned managed identities associated with the resource. Key is the Azure resource Id of the managed identity."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
@@ -428,6 +520,7 @@ impl ManagedServiceIdentity {
 }
 pub mod managed_service_identity {
     use super::*;
+    #[doc = "Type of the managed identity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         None,
@@ -435,14 +528,19 @@ pub mod managed_service_identity {
         UserAssigned,
     }
 }
+#[doc = "Represent a parameter with constrains and metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterDefinition {
+    #[doc = "Allowed data types for Resource Manager template parameters."]
     #[serde(rename = "type")]
     pub type_: parameter_definition::Type,
+    #[doc = "User-friendly properties for this parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ParameterDefinitionMetadata>,
+    #[doc = "Default Value for this parameter."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<serde_json::Value>,
+    #[doc = "Array of allowed values for this parameter."]
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_values: Vec<serde_json::Value>,
 }
@@ -458,6 +556,7 @@ impl ParameterDefinition {
 }
 pub mod parameter_definition {
     use super::*;
+    #[doc = "Allowed data types for Resource Manager template parameters."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "string")]
@@ -476,12 +575,16 @@ pub mod parameter_definition {
         SecureString,
     }
 }
+#[doc = "User-friendly properties for this parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterDefinitionMetadata {
+    #[doc = "DisplayName of this parameter/resourceGroup."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Description of this parameter/resourceGroup."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "StrongType for UI to render rich experience during blueprint assignment. Supported strong types are resourceType, principalId and location."]
     #[serde(rename = "strongType", default, skip_serializing_if = "Option::is_none")]
     pub strong_type: Option<String>,
 }
@@ -490,10 +593,13 @@ impl ParameterDefinitionMetadata {
         Self::default()
     }
 }
+#[doc = "Value for the specified parameter. Can be either 'value' or 'reference' but not both."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterValue {
+    #[doc = "Parameter value. Any valid JSON value is allowed including objects, arrays, strings, numbers and booleans."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
+    #[doc = "Reference to a Key Vault secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reference: Option<SecretValueReference>,
 }
@@ -502,10 +608,12 @@ impl ParameterValue {
         Self::default()
     }
 }
+#[doc = "Blueprint artifact that applies a Policy assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyAssignmentArtifact {
     #[serde(flatten)]
     pub artifact: Artifact,
+    #[doc = "Properties of a Policy assignment blueprint artifact."]
     pub properties: PolicyAssignmentArtifactProperties,
 }
 impl PolicyAssignmentArtifact {
@@ -513,15 +621,19 @@ impl PolicyAssignmentArtifact {
         Self { artifact, properties }
     }
 }
+#[doc = "Properties of a Policy assignment blueprint artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyAssignmentArtifactProperties {
     #[serde(flatten)]
     pub blueprint_resource_properties_base: BlueprintResourcePropertiesBase,
     #[serde(flatten)]
     pub artifact_properties_base: ArtifactPropertiesBase,
+    #[doc = "Azure resource ID of the policy definition."]
     #[serde(rename = "policyDefinitionId")]
     pub policy_definition_id: String,
+    #[doc = "Parameter values for the policy definition."]
     pub parameters: serde_json::Value,
+    #[doc = "Name of the resource group placeholder to which the policy will be assigned."]
     #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
 }
@@ -536,10 +648,12 @@ impl PolicyAssignmentArtifactProperties {
         }
     }
 }
+#[doc = "Represents a published blueprint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublishedBlueprint {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "Schema for published blueprint definition properties."]
     pub properties: PublishedBlueprintProperties,
 }
 impl PublishedBlueprint {
@@ -550,10 +664,13 @@ impl PublishedBlueprint {
         }
     }
 }
+#[doc = "List of published blueprint definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublishedBlueprintList {
+    #[doc = "List of published blueprint definitions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PublishedBlueprint>,
+    #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -562,12 +679,15 @@ impl PublishedBlueprintList {
         Self::default()
     }
 }
+#[doc = "Schema for published blueprint definition properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublishedBlueprintProperties {
     #[serde(flatten)]
     pub shared_blueprint_properties: SharedBlueprintProperties,
+    #[doc = "Name of the published blueprint definition."]
     #[serde(rename = "blueprintName", default, skip_serializing_if = "Option::is_none")]
     pub blueprint_name: Option<String>,
+    #[doc = "Version-specific change notes."]
     #[serde(rename = "changeNotes", default, skip_serializing_if = "Option::is_none")]
     pub change_notes: Option<String>,
 }
@@ -576,16 +696,22 @@ impl PublishedBlueprintProperties {
         Self::default()
     }
 }
+#[doc = "Represents an Azure resource group in a blueprint definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceGroupDefinition {
+    #[doc = "Name of this resourceGroup. Leave empty if the resource group name will be specified during the blueprint assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Location of this resourceGroup. Leave empty if the resource group location will be specified during the blueprint assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "User-friendly properties for this parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<ParameterDefinitionMetadata>,
+    #[doc = "Artifacts which need to be deployed before this resource group."]
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<String>,
+    #[doc = "Tags to be assigned to this resource group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -594,10 +720,13 @@ impl ResourceGroupDefinition {
         Self::default()
     }
 }
+#[doc = "Represents an Azure resource group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceGroupValue {
+    #[doc = "Name of the resource group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Location of the resource group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -606,10 +735,13 @@ impl ResourceGroupValue {
         Self::default()
     }
 }
+#[doc = "Supported operations of this resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperation {
+    #[doc = "Operation name, in format of {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
 }
@@ -620,14 +752,19 @@ impl ResourceProviderOperation {
 }
 pub mod resource_provider_operation {
     use super::*;
+    #[doc = "Display metadata associated with the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Resource provider: Microsoft Blueprint."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Type of operation: get, read, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of this operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -637,8 +774,10 @@ pub mod resource_provider_operation {
         }
     }
 }
+#[doc = "Results of the request to list operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
+    #[doc = "List of operations supported by this resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperation>,
 }
@@ -647,10 +786,12 @@ impl ResourceProviderOperationList {
         Self::default()
     }
 }
+#[doc = "Blueprint artifact that applies a Role assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentArtifact {
     #[serde(flatten)]
     pub artifact: Artifact,
+    #[doc = "Properties of a Role assignment blueprint artifact."]
     pub properties: RoleAssignmentArtifactProperties,
 }
 impl RoleAssignmentArtifact {
@@ -658,16 +799,20 @@ impl RoleAssignmentArtifact {
         Self { artifact, properties }
     }
 }
+#[doc = "Properties of a Role assignment blueprint artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentArtifactProperties {
     #[serde(flatten)]
     pub blueprint_resource_properties_base: BlueprintResourcePropertiesBase,
     #[serde(flatten)]
     pub artifact_properties_base: ArtifactPropertiesBase,
+    #[doc = "Azure resource ID of the RoleDefinition."]
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
+    #[doc = "Array of user or group identities in Azure Active Directory. The roleDefinition will apply to each identity."]
     #[serde(rename = "principalIds")]
     pub principal_ids: serde_json::Value,
+    #[doc = "RoleAssignment will be scope to this resourceGroup. If empty, it scopes to the subscription."]
     #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
 }
@@ -682,12 +827,16 @@ impl RoleAssignmentArtifactProperties {
         }
     }
 }
+#[doc = "Reference to a Key Vault secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretValueReference {
+    #[doc = "Specifies the link to a Key Vault."]
     #[serde(rename = "keyVault")]
     pub key_vault: KeyVaultReference,
+    #[doc = "Name of the secret."]
     #[serde(rename = "secretName")]
     pub secret_name: String,
+    #[doc = "The version of the secret to use. If left blank, the latest version of the secret is used."]
     #[serde(rename = "secretVersion", default, skip_serializing_if = "Option::is_none")]
     pub secret_version: Option<String>,
 }
@@ -700,16 +849,21 @@ impl SecretValueReference {
         }
     }
 }
+#[doc = "Shared Schema for both blueprintProperties and publishedBlueprintProperties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedBlueprintProperties {
     #[serde(flatten)]
     pub blueprint_resource_properties_base: BlueprintResourcePropertiesBase,
+    #[doc = "The status of the blueprint. This field is readonly."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<BlueprintStatus>,
+    #[doc = "The scope where this blueprint definition can be assigned."]
     #[serde(rename = "targetScope", default, skip_serializing_if = "Option::is_none")]
     pub target_scope: Option<shared_blueprint_properties::TargetScope>,
+    #[doc = "Parameters required by this blueprint definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Resource group placeholders defined by this blueprint definition."]
     #[serde(rename = "resourceGroups", default, skip_serializing_if = "Option::is_none")]
     pub resource_groups: Option<serde_json::Value>,
 }
@@ -720,6 +874,7 @@ impl SharedBlueprintProperties {
 }
 pub mod shared_blueprint_properties {
     use super::*;
+    #[doc = "The scope where this blueprint definition can be assigned."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TargetScope {
         #[serde(rename = "subscription")]
@@ -728,10 +883,12 @@ pub mod shared_blueprint_properties {
         ManagementGroup,
     }
 }
+#[doc = "Blueprint artifact that deploys a Resource Manager template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateArtifact {
     #[serde(flatten)]
     pub artifact: Artifact,
+    #[doc = "Properties of a Resource Manager template blueprint artifact."]
     pub properties: TemplateArtifactProperties,
 }
 impl TemplateArtifact {
@@ -739,15 +896,19 @@ impl TemplateArtifact {
         Self { artifact, properties }
     }
 }
+#[doc = "Properties of a Resource Manager template blueprint artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateArtifactProperties {
     #[serde(flatten)]
     pub blueprint_resource_properties_base: BlueprintResourcePropertiesBase,
     #[serde(flatten)]
     pub artifact_properties_base: ArtifactPropertiesBase,
+    #[doc = "The Resource Manager template blueprint artifact body."]
     pub template: serde_json::Value,
+    #[doc = "If applicable, the name of the resource group placeholder to which the Resource Manager template blueprint artifact will be deployed."]
     #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
+    #[doc = "Resource Manager template blueprint artifact parameter values."]
     pub parameters: serde_json::Value,
 }
 impl TemplateArtifactProperties {
@@ -761,10 +922,12 @@ impl TemplateArtifactProperties {
         }
     }
 }
+#[doc = "Common properties for all Azure tracked resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
+    #[doc = "The location of this blueprint assignment."]
     pub location: String,
 }
 impl TrackedResource {
@@ -775,10 +938,13 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "User-assigned managed identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
+    #[doc = "Azure Active Directory principal ID associated with this Identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "Client App Id associated with this identity."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
@@ -787,8 +953,10 @@ impl UserAssignedIdentity {
         Self::default()
     }
 }
+#[doc = "Response schema for querying the Azure Blueprints service principal in the tenant."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WhoIsBlueprintContract {
+    #[doc = "AAD object Id of the Azure Blueprints service principal in the tenant."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
 }
@@ -797,8 +965,10 @@ impl WhoIsBlueprintContract {
         Self::default()
     }
 }
+#[doc = "Specifies the link to a Key Vault."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultReference {
+    #[doc = "Azure resource ID of the Key Vault."]
     pub id: String,
 }
 impl KeyVaultReference {

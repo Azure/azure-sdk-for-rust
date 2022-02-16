@@ -34,12 +34,16 @@ pub mod agent_configuration {
         NotRebooted,
     }
 }
+#[doc = "Application in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Application {
+    #[doc = "Name of the Application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Version of the Application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Provider of the Application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
 }
@@ -48,24 +52,34 @@ impl Application {
         Self::default()
     }
 }
+#[doc = "AppsAndRoles in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppsAndRoles {
+    #[doc = "Applications of the AppsAndRoles."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub applications: Vec<Application>,
+    #[doc = "WebApplications of the AppsAndRoles."]
     #[serde(rename = "webApplications", default, skip_serializing_if = "Vec::is_empty")]
     pub web_applications: Vec<WebApplication>,
+    #[doc = "Features of the AppsAndRoles."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<Feature>,
+    #[doc = "SQLServers of the AppsAndRoles."]
     #[serde(rename = "sqlServers", default, skip_serializing_if = "Vec::is_empty")]
     pub sql_servers: Vec<SqlServer>,
+    #[doc = "SharePointServers of the AppsAndRoles."]
     #[serde(rename = "sharePointServers", default, skip_serializing_if = "Vec::is_empty")]
     pub share_point_servers: Vec<SharePointServer>,
+    #[doc = "SystemCenters of the AppsAndRoles."]
     #[serde(rename = "systemCenters", default, skip_serializing_if = "Vec::is_empty")]
     pub system_centers: Vec<SystemCenter>,
+    #[doc = "BizTalkServers of the AppsAndRoles."]
     #[serde(rename = "bizTalkServers", default, skip_serializing_if = "Vec::is_empty")]
     pub biz_talk_servers: Vec<BizTalkServer>,
+    #[doc = "ExchangeServers of the AppsAndRoles."]
     #[serde(rename = "exchangeServers", default, skip_serializing_if = "Vec::is_empty")]
     pub exchange_servers: Vec<ExchangeServer>,
+    #[doc = "OtherDatabaseServers of the AppsAndRoles."]
     #[serde(rename = "otherDatabases", default, skip_serializing_if = "Vec::is_empty")]
     pub other_databases: Vec<OtherDatabase>,
 }
@@ -74,10 +88,13 @@ impl AppsAndRoles {
         Self::default()
     }
 }
+#[doc = "Available operations of the service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableOperations {
+    #[doc = "Collection of available operation details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationDetail>,
+    #[doc = "URL client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -86,10 +103,13 @@ impl AvailableOperations {
         Self::default()
     }
 }
+#[doc = "BizTalkServer in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BizTalkServer {
+    #[doc = "ProductName of the BizTalkServer."]
     #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+    #[doc = "Status of the BizTalkServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
@@ -98,8 +118,10 @@ impl BizTalkServer {
         Self::default()
     }
 }
+#[doc = "An error response from the Azure Migrate service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "An error response from the Azure Migrate service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -108,14 +130,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "An error response from the Azure Migrate service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -124,26 +151,37 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Error contract returned when some exception occurs in Rest API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Possible causes of error."]
     #[serde(rename = "possibleCauses", default, skip_serializing_if = "Option::is_none")]
     pub possible_causes: Option<String>,
+    #[doc = "Recommended action to resolve error."]
     #[serde(rename = "recommendedAction", default, skip_serializing_if = "Option::is_none")]
     pub recommended_action: Option<String>,
+    #[doc = "Error severity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
+    #[doc = "Value indicating whether the error originated from a agent or not."]
     #[serde(rename = "isAgentReportedError", default, skip_serializing_if = "Option::is_none")]
     pub is_agent_reported_error: Option<bool>,
+    #[doc = "Agent error code."]
     #[serde(rename = "agentErrorCode", default, skip_serializing_if = "Option::is_none")]
     pub agent_error_code: Option<String>,
+    #[doc = "Error message from the agent."]
     #[serde(rename = "agentErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub agent_error_message: Option<String>,
+    #[doc = "Possible causes for the agent error."]
     #[serde(rename = "agentErrorPossibleCauses", default, skip_serializing_if = "Option::is_none")]
     pub agent_error_possible_causes: Option<String>,
+    #[doc = "Recommended action for the agent error."]
     #[serde(rename = "agentErrorRecommendedAction", default, skip_serializing_if = "Option::is_none")]
     pub agent_error_recommended_action: Option<String>,
 }
@@ -152,16 +190,22 @@ impl ErrorDetails {
         Self::default()
     }
 }
+#[doc = "ExchangeServer in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExchangeServer {
+    #[doc = "ProductName of the ExchangeServer."]
     #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+    #[doc = "Edition of the ExchangeServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<String>,
+    #[doc = "Roles of the ExchangeServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub roles: Option<String>,
+    #[doc = "ServicePack of the ExchangeServer."]
     #[serde(rename = "servicePack", default, skip_serializing_if = "Option::is_none")]
     pub service_pack: Option<String>,
+    #[doc = "Version of the ExchangeServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -170,14 +214,19 @@ impl ExchangeServer {
         Self::default()
     }
 }
+#[doc = "Feature in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Feature {
+    #[doc = "Name of the Feature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "FeatureType of the Feature."]
     #[serde(rename = "featureType", default, skip_serializing_if = "Option::is_none")]
     pub feature_type: Option<String>,
+    #[doc = "Parent of the Feature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
+    #[doc = "Status of the Feature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
@@ -186,12 +235,16 @@ impl Feature {
         Self::default()
     }
 }
+#[doc = "Data related to a machine's operating system. Serialized and stored as part of Machine Rest object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestOsDetails {
+    #[doc = "Type of the operating system."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
+    #[doc = "Name of the operating system."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
+    #[doc = "Version of the operating system."]
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
 }
@@ -200,24 +253,34 @@ impl GuestOsDetails {
         Self::default()
     }
 }
+#[doc = "Error contract returned when some exception occurs in Rest API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthErrorDetails {
+    #[doc = "Error ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
+    #[doc = "Error name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Possible causes of error."]
     #[serde(rename = "possibleCauses", default, skip_serializing_if = "Option::is_none")]
     pub possible_causes: Option<String>,
+    #[doc = "Recommended action to resolve error."]
     #[serde(rename = "recommendedAction", default, skip_serializing_if = "Option::is_none")]
     pub recommended_action: Option<String>,
+    #[doc = "Error severity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
+    #[doc = "Error summary message."]
     #[serde(rename = "summaryMessage", default, skip_serializing_if = "Option::is_none")]
     pub summary_message: Option<String>,
+    #[doc = "Error source."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    #[doc = "Message parameters."]
     #[serde(rename = "messageParameters", default, skip_serializing_if = "Option::is_none")]
     pub message_parameters: Option<serde_json::Value>,
 }
@@ -236,14 +299,19 @@ impl HostingConfiguration {
         Self::default()
     }
 }
+#[doc = "Cluster REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVCluster {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/hyperVSites/clusters."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for cluster properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HyperVClusterProperties>,
 }
@@ -252,10 +320,13 @@ impl HyperVCluster {
         Self::default()
     }
 }
+#[doc = "Collection of Hyper-V clusters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVClusterCollection {
+    #[doc = "List of clusters."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVCluster>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -264,22 +335,31 @@ impl HyperVClusterCollection {
         Self::default()
     }
 }
+#[doc = "Class for cluster properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVClusterProperties {
+    #[doc = "Timestamp marking Hyper-V cluster creation."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Timestamp marking last updated on the Hyper-V cluster."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "FQDN/IPAddress of the Hyper-V cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Functional level of the Hyper-V cluster."]
     #[serde(rename = "functionalLevel", default, skip_serializing_if = "Option::is_none")]
     pub functional_level: Option<i32>,
+    #[doc = "Status of the Hyper-V cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Run as account ID of the Hyper-V cluster."]
     #[serde(rename = "runAsAccountId", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_id: Option<String>,
+    #[doc = "List of hosts (FQDN) currently being tracked by the cluster."]
     #[serde(rename = "hostFqdnList", default, skip_serializing_if = "Vec::is_empty")]
     pub host_fqdn_list: Vec<String>,
+    #[doc = "Errors for Hyper-V clusters."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<HealthErrorDetails>,
 }
@@ -288,20 +368,28 @@ impl HyperVClusterProperties {
         Self::default()
     }
 }
+#[doc = "Second level object returned as part of Machine REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVDisk {
+    #[doc = "Id of the disk."]
     #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
+    #[doc = "VHD Id of the disk."]
     #[serde(rename = "vhdId", default, skip_serializing_if = "Option::is_none")]
     pub vhd_id: Option<String>,
+    #[doc = "Bytes allocated for the disk."]
     #[serde(rename = "maxSizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_bytes: Option<i64>,
+    #[doc = "Name of the disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the disk."]
     #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<String>,
+    #[doc = "LUN of the disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
+    #[doc = "Path of the disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
 }
@@ -310,14 +398,19 @@ impl HyperVDisk {
         Self::default()
     }
 }
+#[doc = "Host REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVHost {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the host."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/hyperVSites/hosts."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for host properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HyperVHostProperties>,
 }
@@ -326,10 +419,13 @@ impl HyperVHost {
         Self::default()
     }
 }
+#[doc = "Collection of Hyper-V hosts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVHostCollection {
+    #[doc = "List of hosts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVHost>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -338,18 +434,25 @@ impl HyperVHostCollection {
         Self::default()
     }
 }
+#[doc = "Class for host properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVHostProperties {
+    #[doc = "Timestamp marking Hyper-V host creation."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Timestamp marking last updated on the Hyper-V host."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "FQDN/IPAddress of the Hyper-V host."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Run as account ID of the Hyper-V host."]
     #[serde(rename = "runAsAccountId", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_id: Option<String>,
+    #[doc = "Version of the Hyper-V host."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Errors for Hyper-V hosts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<HealthErrorDetails>,
 }
@@ -358,14 +461,19 @@ impl HyperVHostProperties {
         Self::default()
     }
 }
+#[doc = "Job REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVJob {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/HyperVSites/Jobs."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for machine properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
 }
@@ -374,10 +482,13 @@ impl HyperVJob {
         Self::default()
     }
 }
+#[doc = "Collection of Hyper-V jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVJobCollection {
+    #[doc = "List of jobs."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVJob>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -386,14 +497,19 @@ impl HyperVJobCollection {
         Self::default()
     }
 }
+#[doc = "Machine REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVMachine {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Sites."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/HyperVSites/Machines."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for machine properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HyperVMachineProperties>,
 }
@@ -402,10 +518,13 @@ impl HyperVMachine {
         Self::default()
     }
 }
+#[doc = "Collection of Hyper-V machines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVMachineCollection {
+    #[doc = "List of machines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVMachine>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -414,70 +533,103 @@ impl HyperVMachineCollection {
         Self::default()
     }
 }
+#[doc = "Class for machine properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVMachineProperties {
+    #[doc = "Host FQDN/IPAddress."]
     #[serde(rename = "hostFqdn", default, skip_serializing_if = "Option::is_none")]
     pub host_fqdn: Option<String>,
+    #[doc = "Host ARM ID."]
     #[serde(rename = "hostId", default, skip_serializing_if = "Option::is_none")]
     pub host_id: Option<String>,
+    #[doc = "Cluster FQDN/IPAddress."]
     #[serde(rename = "clusterFqdn", default, skip_serializing_if = "Option::is_none")]
     pub cluster_fqdn: Option<String>,
+    #[doc = "Cluster ARM ID."]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
+    #[doc = "Management server type of the machine. It is either Host or Cluster."]
     #[serde(rename = "managementServerType", default, skip_serializing_if = "Option::is_none")]
     pub management_server_type: Option<String>,
+    #[doc = "Generation of the virtual machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub generation: Option<i32>,
+    #[doc = "VM version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Value indicating whether the VM is highly available."]
     #[serde(rename = "highAvailability", default, skip_serializing_if = "Option::is_none")]
     pub high_availability: Option<hyper_v_machine_properties::HighAvailability>,
+    #[doc = "Max memory of the virtual machine in MB."]
     #[serde(rename = "maxMemoryMB", default, skip_serializing_if = "Option::is_none")]
     pub max_memory_mb: Option<i32>,
+    #[doc = "Firmware of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub firmware: Option<String>,
+    #[doc = "Value indicating whether dynamic memory is enabled for the VM."]
     #[serde(rename = "isDynamicMemoryEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_dynamic_memory_enabled: Option<bool>,
+    #[doc = "Disks attached to the machine."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<HyperVDisk>,
+    #[doc = "AppsAndRoles in the guest virtual machine."]
     #[serde(rename = "appsAndRoles", default, skip_serializing_if = "Option::is_none")]
     pub apps_and_roles: Option<AppsAndRoles>,
+    #[doc = "Network adapters attached to the machine."]
     #[serde(rename = "networkAdapters", default, skip_serializing_if = "Vec::is_empty")]
     pub network_adapters: Vec<HyperVNetworkAdapter>,
+    #[doc = "Display name of the machine."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Number of Processor Cores allocated for the machine."]
     #[serde(rename = "numberOfProcessorCore", default, skip_serializing_if = "Option::is_none")]
     pub number_of_processor_core: Option<i32>,
+    #[doc = "Allocated Memory in MB."]
     #[serde(rename = "allocatedMemoryInMB", default, skip_serializing_if = "Option::is_none")]
     pub allocated_memory_in_mb: Option<f64>,
+    #[doc = "Root location of the VM configuration file."]
     #[serde(rename = "vmConfigurationFileLocation", default, skip_serializing_if = "Option::is_none")]
     pub vm_configuration_file_location: Option<String>,
+    #[doc = "Second level object returned as part of Machine REST resource."]
     #[serde(rename = "operatingSystemDetails", default, skip_serializing_if = "Option::is_none")]
     pub operating_system_details: Option<OperatingSystem>,
+    #[doc = "Data related to a machine's operating system. Serialized and stored as part of Machine Rest object."]
     #[serde(rename = "guestOSDetails", default, skip_serializing_if = "Option::is_none")]
     pub guest_os_details: Option<GuestOsDetails>,
+    #[doc = "Number of applications installed in the guest VM."]
     #[serde(rename = "numberOfApplications", default, skip_serializing_if = "Option::is_none")]
     pub number_of_applications: Option<i32>,
+    #[doc = "The last time at which the Guest Details of machine was discovered."]
     #[serde(rename = "guestDetailsDiscoveryTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub guest_details_discovery_timestamp: Option<String>,
+    #[doc = "Whether Refresh Fabric Layout Guest Details has been completed once. Portal will show discovery in progress, if this value is true."]
     #[serde(rename = "isGuestDetailsDiscoveryInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_guest_details_discovery_in_progress: Option<bool>,
+    #[doc = "Timestamp marking machine creation."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Timestamp marking last updated on the machine."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "On-premise Instance UUID of the machine."]
     #[serde(rename = "instanceUuid", default, skip_serializing_if = "Option::is_none")]
     pub instance_uuid: Option<String>,
+    #[doc = "Machine power status."]
     #[serde(rename = "powerStatus", default, skip_serializing_if = "Option::is_none")]
     pub power_status: Option<String>,
+    #[doc = "Machine BIOS serial number."]
     #[serde(rename = "biosSerialNumber", default, skip_serializing_if = "Option::is_none")]
     pub bios_serial_number: Option<String>,
+    #[doc = "Machine BIOS GUID."]
     #[serde(rename = "biosGuid", default, skip_serializing_if = "Option::is_none")]
     pub bios_guid: Option<String>,
+    #[doc = "Machine FQDN."]
     #[serde(rename = "vmFqdn", default, skip_serializing_if = "Option::is_none")]
     pub vm_fqdn: Option<String>,
+    #[doc = "Value indicating whether VM is deleted."]
     #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
     pub is_deleted: Option<bool>,
+    #[doc = "Errors for machine."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<HealthErrorDetails>,
 }
@@ -488,6 +640,7 @@ impl HyperVMachineProperties {
 }
 pub mod hyper_v_machine_properties {
     use super::*;
+    #[doc = "Value indicating whether the VM is highly available."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HighAvailability {
         Unknown,
@@ -495,24 +648,34 @@ pub mod hyper_v_machine_properties {
         Yes,
     }
 }
+#[doc = "Second level object represented in responses as part of Machine REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVNetworkAdapter {
+    #[doc = "Network Id."]
     #[serde(rename = "networkId", default, skip_serializing_if = "Option::is_none")]
     pub network_id: Option<String>,
+    #[doc = "Name of the VM subnet within the virtual network the NIC is attached to."]
     #[serde(rename = "subnetName", default, skip_serializing_if = "Option::is_none")]
     pub subnet_name: Option<String>,
+    #[doc = "Static IP address."]
     #[serde(rename = "staticIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub static_ip_address: Option<String>,
+    #[doc = "Mac address of the NIC."]
     #[serde(rename = "nicType", default, skip_serializing_if = "Option::is_none")]
     pub nic_type: Option<String>,
+    #[doc = "NIC Id."]
     #[serde(rename = "nicId", default, skip_serializing_if = "Option::is_none")]
     pub nic_id: Option<String>,
+    #[doc = "Mac address of the NIC."]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
+    #[doc = "IP addresses for the machine."]
     #[serde(rename = "ipAddressList", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_address_list: Vec<String>,
+    #[doc = "Network Name."]
     #[serde(rename = "networkName", default, skip_serializing_if = "Option::is_none")]
     pub network_name: Option<String>,
+    #[doc = "Type of the IP address."]
     #[serde(rename = "ipAddressType", default, skip_serializing_if = "Option::is_none")]
     pub ip_address_type: Option<String>,
 }
@@ -521,14 +684,19 @@ impl HyperVNetworkAdapter {
         Self::default()
     }
 }
+#[doc = "Run as account REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVRunAsAccount {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Sites."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/HyperVSites/RunAsAccounts."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for run as account properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunAsAccountProperties>,
 }
@@ -537,10 +705,13 @@ impl HyperVRunAsAccount {
         Self::default()
     }
 }
+#[doc = "Collection of Hyper-V run as accounts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVRunAsAccountCollection {
+    #[doc = "List of run as accounts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVRunAsAccount>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -549,22 +720,30 @@ impl HyperVRunAsAccountCollection {
         Self::default()
     }
 }
+#[doc = "Site REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVSite {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Hyper-V site."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/HyperVSites."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "eTag for concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Azure location in which Sites is created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Class for site properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SiteProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -573,14 +752,19 @@ impl HyperVSite {
         Self::default()
     }
 }
+#[doc = "Hyper-V site usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVSiteUsage {
+    #[doc = "Number of machines discovered in the site."]
     #[serde(rename = "machineCount", default, skip_serializing_if = "Option::is_none")]
     pub machine_count: Option<i32>,
+    #[doc = "Number of run as accounts in the site."]
     #[serde(rename = "runAsAccountCount", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_count: Option<i32>,
+    #[doc = "Number of hosts part of the site."]
     #[serde(rename = "hostCount", default, skip_serializing_if = "Option::is_none")]
     pub host_count: Option<i32>,
+    #[doc = "Number of clusters part of the site."]
     #[serde(rename = "clusterCount", default, skip_serializing_if = "Option::is_none")]
     pub cluster_count: Option<i32>,
 }
@@ -589,8 +773,10 @@ impl HyperVSiteUsage {
         Self::default()
     }
 }
+#[doc = "List of sites."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HyperVSitesResultList {
+    #[doc = "List of sites."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HyperVSite>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -645,20 +831,28 @@ impl Ipv6NetworkInterface {
         Self::default()
     }
 }
+#[doc = "Class for machine properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobProperties {
+    #[doc = "Operation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Operation start time."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Operation end time."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Display name of the Job."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Client request Id used in the operation execution context."]
     #[serde(rename = "clientRequestId", default, skip_serializing_if = "Option::is_none")]
     pub client_request_id: Option<String>,
+    #[doc = "Activity Id used in the operation execution context."]
     #[serde(rename = "activityId", default, skip_serializing_if = "Option::is_none")]
     pub activity_id: Option<String>,
+    #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<ErrorDetails>,
 }
@@ -760,20 +954,28 @@ pub mod machine_resources_configuration {
         Estimated,
     }
 }
+#[doc = "Site REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MasterSite {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Master site."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/MasterSites."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "eTag for concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Azure location in which Sites is created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Class for site properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MasterSiteProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -782,8 +984,10 @@ impl MasterSite {
         Self::default()
     }
 }
+#[doc = "List of sites."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MasterSiteList {
+    #[doc = "List of projects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MasterSite>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -794,16 +998,22 @@ impl MasterSiteList {
         Self::default()
     }
 }
+#[doc = "Class for site properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MasterSiteProperties {
+    #[doc = "Gets or sets the state of public network access."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<master_site_properties::PublicNetworkAccess>,
+    #[doc = "Value indicating whether multiple sites per site type are allowed."]
     #[serde(rename = "allowMultipleSites", default, skip_serializing_if = "Option::is_none")]
     pub allow_multiple_sites: Option<bool>,
+    #[doc = "List of sites that are a part of Master Site."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sites: Vec<String>,
+    #[doc = "Gets or sets a value for customer storage account ARM id."]
     #[serde(rename = "customerStorageAccountArmId", default, skip_serializing_if = "Option::is_none")]
     pub customer_storage_account_arm_id: Option<String>,
+    #[doc = "Gets the private endpoint connections."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
 }
@@ -814,6 +1024,7 @@ impl MasterSiteProperties {
 }
 pub mod master_site_properties {
     use super::*;
+    #[doc = "Gets or sets the state of public network access."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicNetworkAccess {
         NotSpecified,
@@ -850,12 +1061,16 @@ impl Object {
         Self::default()
     }
 }
+#[doc = "Second level object returned as part of Machine REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperatingSystem {
+    #[doc = "Type of the operating system."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
+    #[doc = "Name of the operating system."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
+    #[doc = "Version of the operating system."]
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
 }
@@ -901,14 +1116,19 @@ pub mod operating_system_configuration {
         N64bit,
     }
 }
+#[doc = "Operation detail payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDetail {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Operation display payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -917,14 +1137,19 @@ impl OperationDetail {
         Self::default()
     }
 }
+#[doc = "Operation display payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Resource provider of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Localized friendly name for the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Localized friendly description for the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -933,20 +1158,28 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "Operation status REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Status of the operation. ARM expects the terminal status to be one of Succeeded/ Failed/ Canceled. All other values imply that the operation is still running."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Start time."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "End time."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Class for operation status errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<OperationStatusError>,
+    #[doc = "Class for operation result properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationStatusProperties>,
 }
@@ -955,10 +1188,13 @@ impl OperationStatus {
         Self::default()
     }
 }
+#[doc = "Class for operation status errors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatusError {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -967,8 +1203,10 @@ impl OperationStatusError {
         Self::default()
     }
 }
+#[doc = "Class for operation result properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatusProperties {
+    #[doc = "Result or output of the workflow."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub result: Option<String>,
 }
@@ -977,12 +1215,16 @@ impl OperationStatusProperties {
         Self::default()
     }
 }
+#[doc = "OtherDatabase in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OtherDatabase {
+    #[doc = "DatabaseType of the OtherDatabase."]
     #[serde(rename = "databaseType", default, skip_serializing_if = "Option::is_none")]
     pub database_type: Option<String>,
+    #[doc = "Instance of the OtherDatabase."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instance: Option<String>,
+    #[doc = "Version of the OtherDatabase."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -991,18 +1233,24 @@ impl OtherDatabase {
         Self::default()
     }
 }
+#[doc = "REST model used to encapsulate the user visible state of a PrivateEndpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
+    #[doc = "Relative URL to get this Sites."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets the resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Gets the tag for optimistic concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1011,10 +1259,13 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "Collection of PrivateLink resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionCollection {
+    #[doc = "Gets the list of machines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateEndpointConnection>,
+    #[doc = "Gets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1047,12 +1298,16 @@ pub mod private_endpoint_connection_properties {
         Failed,
     }
 }
+#[doc = "REST model used to encapsulate Private Link properties for tracked resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
+    #[doc = "Relative URL to get this Sites."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets the resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1063,10 +1318,13 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "Collection of PrivateLink resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceCollection {
+    #[doc = "Gets the list of machines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+    #[doc = "Gets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1123,14 +1381,19 @@ impl ResourceId {
         Self::default()
     }
 }
+#[doc = "Class for run as account properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunAsAccountProperties {
+    #[doc = "Display name of the run as account."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Credential type of the run as account."]
     #[serde(rename = "credentialType", default, skip_serializing_if = "Option::is_none")]
     pub credential_type: Option<run_as_account_properties::CredentialType>,
+    #[doc = "Timestamp marking run as account creation."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Timestamp marking last updated on the run as account."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
 }
@@ -1141,6 +1404,7 @@ impl RunAsAccountProperties {
 }
 pub mod run_as_account_properties {
     use super::*;
+    #[doc = "Credential type of the run as account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CredentialType {
         VMwareFabric,
@@ -1151,18 +1415,25 @@ pub mod run_as_account_properties {
         WindowsServer,
     }
 }
+#[doc = "SQLServer in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlServer {
+    #[doc = "Name of the SQLServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Edition of the SQLServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<String>,
+    #[doc = "ServicePack of the SQLServer."]
     #[serde(rename = "servicePack", default, skip_serializing_if = "Option::is_none")]
     pub service_pack: Option<String>,
+    #[doc = "Version of the SQLServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Clustered of the SQLServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub clustered: Option<String>,
+    #[doc = "ClusterName of the SQLServer."]
     #[serde(rename = "clusterName", default, skip_serializing_if = "Option::is_none")]
     pub cluster_name: Option<String>,
 }
@@ -1171,14 +1442,19 @@ impl SqlServer {
         Self::default()
     }
 }
+#[doc = "SharePointServer in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharePointServer {
+    #[doc = "ProductName of the SharePointServer."]
     #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+    #[doc = "Value indicating whether the SharePointServer is Enterprise."]
     #[serde(rename = "isEnterprise", default, skip_serializing_if = "Option::is_none")]
     pub is_enterprise: Option<bool>,
+    #[doc = "Status of the SharePointServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Version of the SharePointServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -1187,16 +1463,22 @@ impl SharePointServer {
         Self::default()
     }
 }
+#[doc = "Class for site agent properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteAgentProperties {
+    #[doc = "ID of the agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Version of the agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Last heartbeat time of the agent in UTC."]
     #[serde(rename = "lastHeartBeatUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_heart_beat_utc: Option<String>,
+    #[doc = "Key vault URI."]
     #[serde(rename = "keyVaultUri", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_uri: Option<String>,
+    #[doc = "Key vault ARM Id."]
     #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_id: Option<String>,
 }
@@ -1205,28 +1487,40 @@ impl SiteAgentProperties {
         Self::default()
     }
 }
+#[doc = "Site health summary model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteHealthSummary {
+    #[doc = "Appliance name."]
     #[serde(rename = "applianceName", default, skip_serializing_if = "Option::is_none")]
     pub appliance_name: Option<String>,
+    #[doc = "Error message."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "Summary message."]
     #[serde(rename = "summaryMessage", default, skip_serializing_if = "Option::is_none")]
     pub summary_message: Option<String>,
+    #[doc = "Error Id."]
     #[serde(rename = "errorId", default, skip_serializing_if = "Option::is_none")]
     pub error_id: Option<i64>,
+    #[doc = "Error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[doc = "Count of affected objects."]
     #[serde(rename = "affectedObjectsCount", default, skip_serializing_if = "Option::is_none")]
     pub affected_objects_count: Option<i64>,
+    #[doc = "Hit count of the error."]
     #[serde(rename = "hitCount", default, skip_serializing_if = "Option::is_none")]
     pub hit_count: Option<i64>,
+    #[doc = "Severity of error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
+    #[doc = "Remediation guidance."]
     #[serde(rename = "remediationGuidance", default, skip_serializing_if = "Option::is_none")]
     pub remediation_guidance: Option<String>,
+    #[doc = "Affected resource type."]
     #[serde(rename = "affectedResourceType", default, skip_serializing_if = "Option::is_none")]
     pub affected_resource_type: Option<String>,
+    #[doc = "Affected resources."]
     #[serde(rename = "affectedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub affected_resources: Vec<String>,
 }
@@ -1235,10 +1529,13 @@ impl SiteHealthSummary {
         Self::default()
     }
 }
+#[doc = "Collection of SiteHealthSummary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteHealthSummaryCollection {
+    #[doc = "List of SiteHealthSummary."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SiteHealthSummary>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1247,16 +1544,22 @@ impl SiteHealthSummaryCollection {
         Self::default()
     }
 }
+#[doc = "Class for site properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteProperties {
+    #[doc = "Class for site properties."]
     #[serde(rename = "servicePrincipalIdentityDetails", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_identity_details: Option<SiteSpnProperties>,
+    #[doc = "Class for site agent properties."]
     #[serde(rename = "agentDetails", default, skip_serializing_if = "Option::is_none")]
     pub agent_details: Option<SiteAgentProperties>,
+    #[doc = "Service endpoint."]
     #[serde(rename = "serviceEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_endpoint: Option<String>,
+    #[doc = "ARM ID of migration hub solution for SDS."]
     #[serde(rename = "discoverySolutionId", default, skip_serializing_if = "Option::is_none")]
     pub discovery_solution_id: Option<String>,
+    #[doc = "Appliance Name."]
     #[serde(rename = "applianceName", default, skip_serializing_if = "Option::is_none")]
     pub appliance_name: Option<String>,
 }
@@ -1265,18 +1568,25 @@ impl SiteProperties {
         Self::default()
     }
 }
+#[doc = "Class for site properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteSpnProperties {
+    #[doc = "Tenant Id for the service principal with which the on-premise management/data plane components would communicate with our Azure services."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Application/client Id for the service principal with which the on-premise management/data plane components would communicate with our Azure services."]
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
+    #[doc = "Object Id of the service principal with which the on-premise management/data plane components would communicate with our Azure services."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
+    #[doc = "Intended audience for the service principal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub audience: Option<String>,
+    #[doc = "AAD Authority URL which was used to request the token for the service principal."]
     #[serde(rename = "aadAuthority", default, skip_serializing_if = "Option::is_none")]
     pub aad_authority: Option<String>,
+    #[doc = "Raw certificate data for building certificate expiry flows."]
     #[serde(rename = "rawCertData", default, skip_serializing_if = "Option::is_none")]
     pub raw_cert_data: Option<String>,
 }
@@ -1285,12 +1595,16 @@ impl SiteSpnProperties {
         Self::default()
     }
 }
+#[doc = "SystemCenter in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemCenter {
+    #[doc = "ProductName of the SystemCenter."]
     #[serde(rename = "productName", default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+    #[doc = "Status of the SystemCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Version of the SystemCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -1309,14 +1623,19 @@ impl Timezone {
         Self::default()
     }
 }
+#[doc = "VCenter REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VCenter {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/VMWareSites/VCenters."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for vCenter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VCenterProperties>,
 }
@@ -1325,10 +1644,13 @@ impl VCenter {
         Self::default()
     }
 }
+#[doc = "Collection of vCenter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VCenterCollection {
+    #[doc = "List of vCenter."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VCenter>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1337,24 +1659,34 @@ impl VCenterCollection {
         Self::default()
     }
 }
+#[doc = "Class for vCenter properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VCenterProperties {
+    #[doc = "Timestamp marking vCenter creation."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Timestamp marking last updated on the vCenter."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "FQDN/IPAddress of the vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Port of the vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<String>,
+    #[doc = "Run as account ID of the vCenter."]
     #[serde(rename = "runAsAccountId", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_id: Option<String>,
+    #[doc = "Version of the vCenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Performance statistics enabled on the vCenter."]
     #[serde(rename = "perfStatisticsLevel", default, skip_serializing_if = "Option::is_none")]
     pub perf_statistics_level: Option<String>,
+    #[doc = "Instance UUID of the vCenter."]
     #[serde(rename = "instanceUuid", default, skip_serializing_if = "Option::is_none")]
     pub instance_uuid: Option<String>,
+    #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<HealthErrorDetails>,
 }
@@ -1363,8 +1695,10 @@ impl VCenterProperties {
         Self::default()
     }
 }
+#[doc = "List of sites."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmWareSitesResultList {
+    #[doc = "List of sites."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VMwareSite>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -1375,26 +1709,37 @@ impl VmWareSitesResultList {
         Self::default()
     }
 }
+#[doc = "Second level object returned as part of Machine REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareDisk {
+    #[doc = "Disk UUID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
+    #[doc = "Label of the disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "The provisioning policy of the disk. It is Thin or Thick or Unknown for the VMWare."]
     #[serde(rename = "diskProvisioningPolicy", default, skip_serializing_if = "Option::is_none")]
     pub disk_provisioning_policy: Option<String>,
+    #[doc = "The scrubbing policy of disks which can be eagerly zeroed or lazily zeroed."]
     #[serde(rename = "diskScrubbingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub disk_scrubbing_policy: Option<String>,
+    #[doc = "Disk mode property used for identifying independent disks."]
     #[serde(rename = "diskMode", default, skip_serializing_if = "Option::is_none")]
     pub disk_mode: Option<v_mware_disk::DiskMode>,
+    #[doc = "Bytes allocated for the disk."]
     #[serde(rename = "maxSizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_bytes: Option<i64>,
+    #[doc = "Name of the disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the disk."]
     #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
     pub disk_type: Option<String>,
+    #[doc = "LUN of the disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
+    #[doc = "Path of the disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
 }
@@ -1405,6 +1750,7 @@ impl VMwareDisk {
 }
 pub mod v_mware_disk {
     use super::*;
+    #[doc = "Disk mode property used for identifying independent disks."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DiskMode {
         #[serde(rename = "persistent")]
@@ -1421,14 +1767,19 @@ pub mod v_mware_disk {
         Append,
     }
 }
+#[doc = "Job REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareJob {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/VMWareSites/Jobs."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for machine properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
 }
@@ -1437,10 +1788,13 @@ impl VMwareJob {
         Self::default()
     }
 }
+#[doc = "Collection of VMware jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareJobCollection {
+    #[doc = "List of jobs."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VMwareJob>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1449,14 +1803,19 @@ impl VMwareJobCollection {
         Self::default()
     }
 }
+#[doc = "Machine REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareMachine {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Sites."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/VMWareSites/Machines."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for machine properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VMwareMachineProperties>,
 }
@@ -1465,10 +1824,13 @@ impl VMwareMachine {
         Self::default()
     }
 }
+#[doc = "Collection of VMware machines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareMachineCollection {
+    #[doc = "List of machines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VMwareMachine>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1477,78 +1839,115 @@ impl VMwareMachineCollection {
         Self::default()
     }
 }
+#[doc = "Class for machine properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareMachineProperties {
+    #[doc = "Scope of the data center."]
     #[serde(rename = "dataCenterScope", default, skip_serializing_if = "Option::is_none")]
     pub data_center_scope: Option<String>,
+    #[doc = "Firmware of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub firmware: Option<String>,
+    #[doc = "User description of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "VCenter FQDN/IPAddress."]
     #[serde(rename = "vCenterFQDN", default, skip_serializing_if = "Option::is_none")]
     pub v_center_fqdn: Option<String>,
+    #[doc = "VCenter ARM ID."]
     #[serde(rename = "vCenterId", default, skip_serializing_if = "Option::is_none")]
     pub v_center_id: Option<String>,
+    #[doc = "VMware tools status."]
     #[serde(rename = "vMwareToolsStatus", default, skip_serializing_if = "Option::is_none")]
     pub v_mware_tools_status: Option<String>,
+    #[doc = "Value indicating whether change tracking is supported."]
     #[serde(rename = "changeTrackingSupported", default, skip_serializing_if = "Option::is_none")]
     pub change_tracking_supported: Option<bool>,
+    #[doc = "Value indicating whether change tracking is enabled."]
     #[serde(rename = "changeTrackingEnabled", default, skip_serializing_if = "Option::is_none")]
     pub change_tracking_enabled: Option<bool>,
+    #[doc = "Maximum number of snapshots for the VM. Default value is -1."]
     #[serde(rename = "maxSnapshots", default, skip_serializing_if = "Option::is_none")]
     pub max_snapshots: Option<i32>,
+    #[doc = "Disks attached to the machine."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<VMwareDisk>,
+    #[doc = "AppsAndRoles in the guest virtual machine."]
     #[serde(rename = "appsAndRoles", default, skip_serializing_if = "Option::is_none")]
     pub apps_and_roles: Option<AppsAndRoles>,
+    #[doc = "Indicates whether the host is in maintenance mode."]
     #[serde(rename = "hostInMaintenanceMode", default, skip_serializing_if = "Option::is_none")]
     pub host_in_maintenance_mode: Option<bool>,
+    #[doc = "The host name."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "The host power state."]
     #[serde(rename = "hostPowerState", default, skip_serializing_if = "Option::is_none")]
     pub host_power_state: Option<String>,
+    #[doc = "The host version."]
     #[serde(rename = "hostVersion", default, skip_serializing_if = "Option::is_none")]
     pub host_version: Option<String>,
+    #[doc = "Network adapters attached to the machine."]
     #[serde(rename = "networkAdapters", default, skip_serializing_if = "Vec::is_empty")]
     pub network_adapters: Vec<VMwareNetworkAdapter>,
+    #[doc = "If dependency mapping feature is enabled or not for the VM."]
     #[serde(rename = "dependencyMapping", default, skip_serializing_if = "Option::is_none")]
     pub dependency_mapping: Option<String>,
+    #[doc = "When dependency mapping collection is last started."]
     #[serde(rename = "dependencyMappingStartTime", default, skip_serializing_if = "Option::is_none")]
     pub dependency_mapping_start_time: Option<String>,
+    #[doc = "Display name of the machine."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Number of Processor Cores allocated for the machine."]
     #[serde(rename = "numberOfProcessorCore", default, skip_serializing_if = "Option::is_none")]
     pub number_of_processor_core: Option<i32>,
+    #[doc = "Allocated Memory in MB."]
     #[serde(rename = "allocatedMemoryInMB", default, skip_serializing_if = "Option::is_none")]
     pub allocated_memory_in_mb: Option<f64>,
+    #[doc = "Root location of the VM configuration file."]
     #[serde(rename = "vmConfigurationFileLocation", default, skip_serializing_if = "Option::is_none")]
     pub vm_configuration_file_location: Option<String>,
+    #[doc = "Second level object returned as part of Machine REST resource."]
     #[serde(rename = "operatingSystemDetails", default, skip_serializing_if = "Option::is_none")]
     pub operating_system_details: Option<OperatingSystem>,
+    #[doc = "Data related to a machine's operating system. Serialized and stored as part of Machine Rest object."]
     #[serde(rename = "guestOSDetails", default, skip_serializing_if = "Option::is_none")]
     pub guest_os_details: Option<GuestOsDetails>,
+    #[doc = "Number of applications installed in the guest VM."]
     #[serde(rename = "numberOfApplications", default, skip_serializing_if = "Option::is_none")]
     pub number_of_applications: Option<i32>,
+    #[doc = "The last time at which the Guest Details was discovered or the error while discovering guest details based discovery of the machine."]
     #[serde(rename = "guestDetailsDiscoveryTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub guest_details_discovery_timestamp: Option<String>,
+    #[doc = "Whether Refresh Fabric Layout Guest Details has been completed once. Portal will show discovery in progress, if this value is true."]
     #[serde(rename = "isGuestDetailsDiscoveryInProgress", default, skip_serializing_if = "Option::is_none")]
     pub is_guest_details_discovery_in_progress: Option<bool>,
+    #[doc = "Timestamp marking machine creation."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub created_timestamp: Option<String>,
+    #[doc = "Timestamp marking last updated on the machine."]
     #[serde(rename = "updatedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub updated_timestamp: Option<String>,
+    #[doc = "On-premise Instance UUID of the machine."]
     #[serde(rename = "instanceUuid", default, skip_serializing_if = "Option::is_none")]
     pub instance_uuid: Option<String>,
+    #[doc = "Machine power status."]
     #[serde(rename = "powerStatus", default, skip_serializing_if = "Option::is_none")]
     pub power_status: Option<String>,
+    #[doc = "Machine BIOS serial number."]
     #[serde(rename = "biosSerialNumber", default, skip_serializing_if = "Option::is_none")]
     pub bios_serial_number: Option<String>,
+    #[doc = "BIOS GUID."]
     #[serde(rename = "biosGuid", default, skip_serializing_if = "Option::is_none")]
     pub bios_guid: Option<String>,
+    #[doc = "Machine FQDN."]
     #[serde(rename = "vmFqdn", default, skip_serializing_if = "Option::is_none")]
     pub vm_fqdn: Option<String>,
+    #[doc = "Value indicating whether VM is deleted."]
     #[serde(rename = "isDeleted", default, skip_serializing_if = "Option::is_none")]
     pub is_deleted: Option<bool>,
+    #[doc = "Errors for machine."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<HealthErrorDetails>,
 }
@@ -1557,18 +1956,25 @@ impl VMwareMachineProperties {
         Self::default()
     }
 }
+#[doc = "Second level object represented in responses as part of Machine REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareNetworkAdapter {
+    #[doc = "Label of the NIC."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
+    #[doc = "NIC Id."]
     #[serde(rename = "nicId", default, skip_serializing_if = "Option::is_none")]
     pub nic_id: Option<String>,
+    #[doc = "Mac address of the NIC."]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
+    #[doc = "IP addresses for the machine."]
     #[serde(rename = "ipAddressList", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_address_list: Vec<String>,
+    #[doc = "Network Name."]
     #[serde(rename = "networkName", default, skip_serializing_if = "Option::is_none")]
     pub network_name: Option<String>,
+    #[doc = "Type of the IP address."]
     #[serde(rename = "ipAddressType", default, skip_serializing_if = "Option::is_none")]
     pub ip_address_type: Option<String>,
 }
@@ -1577,14 +1983,19 @@ impl VMwareNetworkAdapter {
         Self::default()
     }
 }
+#[doc = "Run as account REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareRunAsAccount {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Run as account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/VMWareSites/RunAsAccounts."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Class for run as account properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunAsAccountProperties>,
 }
@@ -1593,10 +2004,13 @@ impl VMwareRunAsAccount {
         Self::default()
     }
 }
+#[doc = "Collection of VMware run as accounts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareRunAsAccountCollection {
+    #[doc = "List of run as accounts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VMwareRunAsAccount>,
+    #[doc = "Value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1605,22 +2019,30 @@ impl VMwareRunAsAccountCollection {
         Self::default()
     }
 }
+#[doc = "Site REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareSite {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the VMware site."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. Type = Microsoft.OffAzure/VMWareSites."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "eTag for concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Azure location in which Sites is created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Class for site properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SiteProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1629,12 +2051,16 @@ impl VMwareSite {
         Self::default()
     }
 }
+#[doc = "VMware site usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VMwareSiteUsage {
+    #[doc = "Number of machines discovered in the site."]
     #[serde(rename = "machineCount", default, skip_serializing_if = "Option::is_none")]
     pub machine_count: Option<i32>,
+    #[doc = "Number of run as accounts in the site."]
     #[serde(rename = "runAsAccountCount", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_count: Option<i32>,
+    #[doc = "Number of vCenters part of the site."]
     #[serde(rename = "vCenterCount", default, skip_serializing_if = "Option::is_none")]
     pub v_center_count: Option<i32>,
 }
@@ -1679,18 +2105,25 @@ pub mod virtual_machine_configuration {
         Xen,
     }
 }
+#[doc = "WebApplication in the guest virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebApplication {
+    #[doc = "Name of the WebApplication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Status of the WebApplication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Platform of the WebApplication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<String>,
+    #[doc = "GroupName of the WebApplication."]
     #[serde(rename = "groupName", default, skip_serializing_if = "Option::is_none")]
     pub group_name: Option<String>,
+    #[doc = "WebServer of the WebApplication."]
     #[serde(rename = "webServer", default, skip_serializing_if = "Option::is_none")]
     pub web_server: Option<String>,
+    #[doc = "ApplicationPool of the WebApplication."]
     #[serde(rename = "applicationPool", default, skip_serializing_if = "Option::is_none")]
     pub application_pool: Option<String>,
 }
@@ -1699,18 +2132,25 @@ impl WebApplication {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -1721,6 +2161,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -1728,6 +2169,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

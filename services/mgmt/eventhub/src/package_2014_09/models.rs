@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Parameter supplied to check Namespace name availability operation "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameter {
+    #[doc = "Name to check the namespace name availability"]
     pub name: String,
 }
 impl CheckNameAvailabilityParameter {
@@ -11,12 +13,16 @@ impl CheckNameAvailabilityParameter {
         Self { name }
     }
 }
+#[doc = "The Result of the CheckNameAvailability operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
+    #[doc = "Value indicating Namespace is availability, true if the Namespace is available; otherwise, false."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "Specifies the reason for the unavailability of the service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
+    #[doc = "The detailed info regarding the reason associated with the Namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -25,13 +31,18 @@ impl CheckNameAvailabilityResult {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Consumer Group operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerGroupCreateOrUpdateParameters {
+    #[doc = "Location of the resource."]
     pub location: String,
+    #[doc = "ARM type of the Namespace."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Name of the consumer group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties supplied to the Create Or Update Consumer Group operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConsumerGroupProperties>,
 }
@@ -45,10 +56,13 @@ impl ConsumerGroupCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The result to the List Consumer Group operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsumerGroupListResult {
+    #[doc = "Result of the List Consumer Group operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConsumerGroupResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Consumer Group"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -57,14 +71,19 @@ impl ConsumerGroupListResult {
         Self::default()
     }
 }
+#[doc = "Properties supplied to the Create Or Update Consumer Group operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsumerGroupProperties {
+    #[doc = "Exact time the message was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The path of the Event Hub."]
     #[serde(rename = "eventHubPath", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_path: Option<String>,
+    #[doc = "The exact time the message was updated."]
     #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+    #[doc = "The user metadata."]
     #[serde(rename = "userMetadata", default, skip_serializing_if = "Option::is_none")]
     pub user_metadata: Option<String>,
 }
@@ -73,10 +92,12 @@ impl ConsumerGroupProperties {
         Self::default()
     }
 }
+#[doc = "Single item in List or Get Consumer group operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsumerGroupResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties supplied to the Create Or Update Consumer Group operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConsumerGroupProperties>,
 }
@@ -85,13 +106,18 @@ impl ConsumerGroupResource {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Event Hub operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubCreateOrUpdateParameters {
+    #[doc = "Location of the resource."]
     pub location: String,
+    #[doc = "ARM type of the Namespace."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Name of the Event Hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties supplied to the Create Or Update Event Hub operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubProperties>,
 }
@@ -105,10 +131,13 @@ impl EventHubCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The result of the List EventHubs operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubListResult {
+    #[doc = "Result of the List EventHubs operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EventHubResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of EventHubs."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -117,18 +146,25 @@ impl EventHubListResult {
         Self::default()
     }
 }
+#[doc = "Properties supplied to the Create Or Update Event Hub operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubProperties {
+    #[doc = "Exact time the Event Hub was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "Number of days to retain the events for this Event Hub."]
     #[serde(rename = "messageRetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub message_retention_in_days: Option<i64>,
+    #[doc = "Number of partitions created for the Event Hub."]
     #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
     pub partition_count: Option<i64>,
+    #[doc = "Current number of shards on the Event Hub."]
     #[serde(rename = "partitionIds", default, skip_serializing_if = "Vec::is_empty")]
     pub partition_ids: Vec<String>,
+    #[doc = "Enumerates the possible values for the status of the Event Hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<event_hub_properties::Status>,
+    #[doc = "The exact time the message was updated."]
     #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
@@ -139,6 +175,7 @@ impl EventHubProperties {
 }
 pub mod event_hub_properties {
     use super::*;
+    #[doc = "Enumerates the possible values for the status of the Event Hub."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Active,
@@ -152,10 +189,12 @@ pub mod event_hub_properties {
         Unknown,
     }
 }
+#[doc = "Single item in List or Get Event Hub operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties supplied to the Create Or Update Event Hub operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubProperties>,
 }
@@ -164,13 +203,18 @@ impl EventHubResource {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Namespace operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamespaceCreateOrUpdateParameters {
+    #[doc = "Namespace location."]
     pub location: String,
+    #[doc = "SKU parameters supplied to the create Namespace operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Namespace tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties of the Namespace supplied for create or update Namespace operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamespaceProperties>,
 }
@@ -184,10 +228,13 @@ impl NamespaceCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The response of the List Namespace operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceListResult {
+    #[doc = "Result of the List Namespace operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NamespaceResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of namespaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -196,20 +243,28 @@ impl NamespaceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the Namespace supplied for create or update Namespace operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceProperties {
+    #[doc = "State of the Namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<namespace_properties::Status>,
+    #[doc = "Provisioning state of the Namespace."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The time the Namespace was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The time the Namespace was updated."]
     #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+    #[doc = "Endpoint you can use to perform Service Bus operations."]
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_bus_endpoint: Option<String>,
+    #[doc = "Identifier for Azure Insights metrics"]
     #[serde(rename = "metricId", default, skip_serializing_if = "Option::is_none")]
     pub metric_id: Option<String>,
+    #[doc = "Specifies whether this instance is enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -220,6 +275,7 @@ impl NamespaceProperties {
 }
 pub mod namespace_properties {
     use super::*;
+    #[doc = "State of the Namespace."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Unknown,
@@ -237,12 +293,15 @@ pub mod namespace_properties {
         Failed,
     }
 }
+#[doc = "Single Namespace item in List or Get Operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamespaceResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "SKU parameters supplied to the create Namespace operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Properties of the Namespace supplied for create or update Namespace operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamespaceProperties>,
 }
@@ -255,10 +314,13 @@ impl NamespaceResource {
         }
     }
 }
+#[doc = "Parameters supplied to the Patch/update Namespace operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceUpdateParameter {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "SKU parameters supplied to the create Namespace operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
@@ -267,10 +329,13 @@ impl NamespaceUpdateParameter {
         Self::default()
     }
 }
+#[doc = "A Event Hub REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -281,12 +346,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.EventHub"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Invoice, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -296,10 +365,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list Event Hub operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of Event Hub operations supported by the Microsoft.EventHub resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -308,14 +380,19 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "The Resource definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -324,12 +401,16 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Authorization Rules operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleCreateOrUpdateParameters {
+    #[doc = "Data center location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Name of the AuthorizationRule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties supplied to create or update SharedAccessAuthorizationRule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedAccessAuthorizationRuleProperties>,
 }
@@ -338,10 +419,13 @@ impl SharedAccessAuthorizationRuleCreateOrUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The response from the List Namespace operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleListResult {
+    #[doc = "Result of the List Authorization Rules operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SharedAccessAuthorizationRuleResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains an incomplete list of Authorization Rules"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -350,21 +434,30 @@ impl SharedAccessAuthorizationRuleListResult {
         Self::default()
     }
 }
+#[doc = "AuthorizationRule properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedAccessAuthorizationRulePostProperties {
+    #[doc = "The rights associated with the rule."]
     pub rights: Vec<String>,
+    #[doc = "A base64-encoded 256-bit primary key for signing and validating the SAS token."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "A base64-encoded 256-bit primary key for signing and validating the SAS token."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
+    #[doc = "A string that describes the Key Name of authorization rule."]
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
+    #[doc = "A string that describes Claim Type for authorization rule."]
     #[serde(rename = "claimType", default, skip_serializing_if = "Option::is_none")]
     pub claim_type: Option<String>,
+    #[doc = "A string that describes Claim Value of authorization rule."]
     #[serde(rename = "claimValue", default, skip_serializing_if = "Option::is_none")]
     pub claim_value: Option<String>,
+    #[doc = "The time the namespace was created."]
     #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
     pub created_time: Option<String>,
+    #[doc = "The time the namespace was updated."]
     #[serde(rename = "modifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub modified_time: Option<String>,
 }
@@ -382,10 +475,12 @@ impl SharedAccessAuthorizationRulePostProperties {
         }
     }
 }
+#[doc = "Single item in a List or Get AuthorizationRule operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRulePostResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "AuthorizationRule properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedAccessAuthorizationRulePostProperties>,
 }
@@ -394,8 +489,10 @@ impl SharedAccessAuthorizationRulePostResource {
         Self::default()
     }
 }
+#[doc = "Properties supplied to create or update SharedAccessAuthorizationRule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedAccessAuthorizationRuleProperties {
+    #[doc = "The rights associated with the rule."]
     pub rights: Vec<String>,
 }
 impl SharedAccessAuthorizationRuleProperties {
@@ -403,10 +500,12 @@ impl SharedAccessAuthorizationRuleProperties {
         Self { rights }
     }
 }
+#[doc = "Single item in a List or Get AuthorizationRule operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties supplied to create or update SharedAccessAuthorizationRule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedAccessAuthorizationRuleProperties>,
 }
@@ -415,11 +514,15 @@ impl SharedAccessAuthorizationRuleResource {
         Self::default()
     }
 }
+#[doc = "SKU parameters supplied to the create Namespace operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "Name of this SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
+    #[doc = "The billing tier of this particular SKU."]
     pub tier: sku::Tier,
+    #[doc = "The Event Hubs throughput units."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
@@ -434,11 +537,13 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Name of this SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         Basic,
         Standard,
     }
+    #[doc = "The billing tier of this particular SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Basic,
@@ -446,11 +551,14 @@ pub mod sku {
         Premium,
     }
 }
+#[doc = "Definition of Resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -463,6 +571,7 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "Specifies the reason for the unavailability of the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UnavailableReason {
     None,

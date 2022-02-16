@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The agent that initiated the event. For most situations, this could be from the authorization context of the request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Actor {
+    #[doc = "The subject or username associated with the request context that generated the event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -12,16 +14,22 @@ impl Actor {
         Self::default()
     }
 }
+#[doc = "Properties that describe a base image dependency."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaseImageDependency {
+    #[doc = "The type of the base image dependency."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<base_image_dependency::Type>,
+    #[doc = "The registry login server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
+    #[doc = "The repository name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<String>,
+    #[doc = "The tag name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
+    #[doc = "The sha256-based digest of the image manifest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
 }
@@ -32,16 +40,19 @@ impl BaseImageDependency {
 }
 pub mod base_image_dependency {
     use super::*;
+    #[doc = "The type of the base image dependency."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         BuildTime,
         RunTime,
     }
 }
+#[doc = "Build resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Build {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties for a build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildProperties>,
 }
@@ -50,12 +61,17 @@ impl Build {
         Self::default()
     }
 }
+#[doc = "Properties of a build argument."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildArgument {
+    #[doc = "The type of the argument."]
     #[serde(rename = "type")]
     pub type_: build_argument::Type,
+    #[doc = "The name of the argument."]
     pub name: String,
+    #[doc = "The value of the argument."]
     pub value: String,
+    #[doc = "Flag to indicate whether the argument represents a secret and want to be removed from build logs."]
     #[serde(rename = "isSecret", default, skip_serializing_if = "Option::is_none")]
     pub is_secret: Option<bool>,
 }
@@ -71,15 +87,19 @@ impl BuildArgument {
 }
 pub mod build_argument {
     use super::*;
+    #[doc = "The type of the argument."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         DockerBuildArgument,
     }
 }
+#[doc = "The list of build arguments for a build step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildArgumentList {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BuildArgument>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -88,22 +108,31 @@ impl BuildArgumentList {
         Self::default()
     }
 }
+#[doc = "Properties that are enabled for Odata querying."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildFilter {
+    #[doc = "The unique identifier for the build."]
     #[serde(rename = "buildId", default, skip_serializing_if = "Option::is_none")]
     pub build_id: Option<String>,
+    #[doc = "The type of build."]
     #[serde(rename = "buildType", default, skip_serializing_if = "Option::is_none")]
     pub build_type: Option<build_filter::BuildType>,
+    #[doc = "The current status of the build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<build_filter::Status>,
+    #[doc = "The create time for a build."]
     #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
     pub create_time: Option<String>,
+    #[doc = "The time the build finished."]
     #[serde(rename = "finishTime", default, skip_serializing_if = "Option::is_none")]
     pub finish_time: Option<String>,
+    #[doc = "The list of comma-separated image manifests that were generated from the build."]
     #[serde(rename = "outputImageManifests", default, skip_serializing_if = "Option::is_none")]
     pub output_image_manifests: Option<String>,
+    #[doc = "The value that indicates whether archiving is enabled or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
+    #[doc = "The name of the build task that the build corresponds to."]
     #[serde(rename = "buildTaskName", default, skip_serializing_if = "Option::is_none")]
     pub build_task_name: Option<String>,
 }
@@ -114,11 +143,13 @@ impl BuildFilter {
 }
 pub mod build_filter {
     use super::*;
+    #[doc = "The type of build."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BuildType {
         AutoBuild,
         QuickBuild,
     }
+    #[doc = "The current status of the build."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Queued,
@@ -131,8 +162,10 @@ pub mod build_filter {
         Timeout,
     }
 }
+#[doc = "The result of get log link operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildGetLogResult {
+    #[doc = "The link to logs for a azure container registry build."]
     #[serde(rename = "logLink", default, skip_serializing_if = "Option::is_none")]
     pub log_link: Option<String>,
 }
@@ -141,10 +174,13 @@ impl BuildGetLogResult {
         Self::default()
     }
 }
+#[doc = "Collection of builds."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Build>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -153,34 +189,49 @@ impl BuildListResult {
         Self::default()
     }
 }
+#[doc = "The properties for a build."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildProperties {
+    #[doc = "The unique identifier for the build."]
     #[serde(rename = "buildId", default, skip_serializing_if = "Option::is_none")]
     pub build_id: Option<String>,
+    #[doc = "The current status of the build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<build_properties::Status>,
+    #[doc = "The last updated time for the build."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "The type of build."]
     #[serde(rename = "buildType", default, skip_serializing_if = "Option::is_none")]
     pub build_type: Option<build_properties::BuildType>,
+    #[doc = "The time the build was created."]
     #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
     pub create_time: Option<String>,
+    #[doc = "The time the build started."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The time the build finished."]
     #[serde(rename = "finishTime", default, skip_serializing_if = "Option::is_none")]
     pub finish_time: Option<String>,
+    #[doc = "The list of all images that were generated from the build."]
     #[serde(rename = "outputImages", default, skip_serializing_if = "Vec::is_empty")]
     pub output_images: Vec<ImageDescriptor>,
+    #[doc = "The build task with which the build was started."]
     #[serde(rename = "buildTask", default, skip_serializing_if = "Option::is_none")]
     pub build_task: Option<String>,
+    #[doc = "The image update trigger that caused a build."]
     #[serde(rename = "imageUpdateTrigger", default, skip_serializing_if = "Option::is_none")]
     pub image_update_trigger: Option<ImageUpdateTrigger>,
+    #[doc = "The git commit trigger that caused a build."]
     #[serde(rename = "gitCommitTrigger", default, skip_serializing_if = "Option::is_none")]
     pub git_commit_trigger: Option<GitCommitTrigger>,
+    #[doc = "The value that indicates whether archiving is enabled or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
+    #[doc = "The platform properties against which the build has to happen."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<PlatformProperties>,
+    #[doc = "The provisioning state of a build."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<build_properties::ProvisioningState>,
 }
@@ -191,6 +242,7 @@ impl BuildProperties {
 }
 pub mod build_properties {
     use super::*;
+    #[doc = "The current status of the build."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Queued,
@@ -202,11 +254,13 @@ pub mod build_properties {
         Error,
         Timeout,
     }
+    #[doc = "The type of build."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BuildType {
         AutoBuild,
         QuickBuild,
     }
+    #[doc = "The provisioning state of a build."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -217,10 +271,12 @@ pub mod build_properties {
         Canceled,
     }
 }
+#[doc = "Build step resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildStep {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Base properties for any build step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildStepProperties>,
 }
@@ -229,10 +285,13 @@ impl BuildStep {
         Self::default()
     }
 }
+#[doc = "The collection of build items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildStepList {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BuildStep>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -241,10 +300,13 @@ impl BuildStepList {
         Self::default()
     }
 }
+#[doc = "Base properties for any build step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildStepProperties {
+    #[doc = "The provisioning state of the build step."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<build_step_properties::ProvisioningState>,
+    #[doc = "The type of the step."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<build_step_properties::Type>,
 }
@@ -255,6 +317,7 @@ impl BuildStepProperties {
 }
 pub mod build_step_properties {
     use super::*;
+    #[doc = "The provisioning state of the build step."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -264,13 +327,16 @@ pub mod build_step_properties {
         Failed,
         Canceled,
     }
+    #[doc = "The type of the step."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Docker,
     }
 }
+#[doc = "The properties for updating a build step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildStepPropertiesUpdateParameters {
+    #[doc = "The type of the step."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<build_step_properties_update_parameters::Type>,
 }
@@ -281,15 +347,19 @@ impl BuildStepPropertiesUpdateParameters {
 }
 pub mod build_step_properties_update_parameters {
     use super::*;
+    #[doc = "The type of the step."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Docker,
     }
 }
+#[doc = "The parameters for updating a build step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildStepUpdateParameters {
+    #[doc = "The properties for updating a build step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildStepPropertiesUpdateParameters>,
+    #[doc = "The ARM resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -298,10 +368,12 @@ impl BuildStepUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The build task that has the resource properties and all build items. The build task will have all information to schedule a build against it."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildTask {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The properties of a build task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildTaskProperties>,
 }
@@ -313,10 +385,12 @@ impl BuildTask {
         }
     }
 }
+#[doc = "The queue build parameters based on a build task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildTaskBuildRequest {
     #[serde(flatten)]
     pub queue_build_request: QueueBuildRequest,
+    #[doc = "The name of build task against which build has to be queued."]
     #[serde(rename = "buildTaskName")]
     pub build_task_name: String,
 }
@@ -328,8 +402,10 @@ impl BuildTaskBuildRequest {
         }
     }
 }
+#[doc = "The filter that can be used for listing build tasks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildTaskFilter {
+    #[doc = "The alternative name for build task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
 }
@@ -338,10 +414,13 @@ impl BuildTaskFilter {
         Self::default()
     }
 }
+#[doc = "The collection of build tasks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildTaskListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BuildTask>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -350,18 +429,26 @@ impl BuildTaskListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a build task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuildTaskProperties {
+    #[doc = "The provisioning state of the build task."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<build_task_properties::ProvisioningState>,
+    #[doc = "The creation date of build task."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The alternative updatable name for a build task."]
     pub alias: String,
+    #[doc = "The current status of build task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<build_task_properties::Status>,
+    #[doc = "The properties of the source code repository."]
     #[serde(rename = "sourceRepository")]
     pub source_repository: SourceRepositoryProperties,
+    #[doc = "The platform properties against which the build has to happen."]
     pub platform: PlatformProperties,
+    #[doc = "Build timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
 }
@@ -380,6 +467,7 @@ impl BuildTaskProperties {
 }
 pub mod build_task_properties {
     use super::*;
+    #[doc = "The provisioning state of the build task."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -389,22 +477,29 @@ pub mod build_task_properties {
         Failed,
         Canceled,
     }
+    #[doc = "The current status of build task."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
         Enabled,
     }
 }
+#[doc = "The properties for updating a build task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildTaskPropertiesUpdateParameters {
+    #[doc = "The alternative updatable name for a build task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
+    #[doc = "The current status of build task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<build_task_properties_update_parameters::Status>,
+    #[doc = "The platform properties against which the build has to happen."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<PlatformProperties>,
+    #[doc = "Build timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
+    #[doc = "The properties for updating the source code repository configuration."]
     #[serde(rename = "sourceRepository", default, skip_serializing_if = "Option::is_none")]
     pub source_repository: Option<SourceRepositoryUpdateParameters>,
 }
@@ -415,16 +510,20 @@ impl BuildTaskPropertiesUpdateParameters {
 }
 pub mod build_task_properties_update_parameters {
     use super::*;
+    #[doc = "The current status of build task."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
         Enabled,
     }
 }
+#[doc = "The parameters for updating a build task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildTaskUpdateParameters {
+    #[doc = "The properties for updating a build task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildTaskPropertiesUpdateParameters>,
+    #[doc = "The ARM resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -433,8 +532,10 @@ impl BuildTaskUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The set of build properties that can be updated."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildUpdateParameters {
+    #[doc = "The value that indicates whether archiving is enabled or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
 }
@@ -443,10 +544,13 @@ impl BuildUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The configuration of service URI and custom headers for the webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CallbackConfig {
+    #[doc = "The service URI for the webhook to post notifications."]
     #[serde(rename = "serviceUri")]
     pub service_uri: String,
+    #[doc = "Custom headers that will be added to the webhook notifications."]
     #[serde(rename = "customHeaders", default, skip_serializing_if = "Option::is_none")]
     pub custom_headers: Option<serde_json::Value>,
 }
@@ -458,26 +562,36 @@ impl CallbackConfig {
         }
     }
 }
+#[doc = "The Docker build step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DockerBuildStep {
     #[serde(flatten)]
     pub build_step_properties: BuildStepProperties,
+    #[doc = "The repository branch name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    #[doc = "The fully qualified image names including the repository and tag."]
     #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
     pub image_names: Vec<String>,
+    #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_push_enabled: Option<bool>,
+    #[doc = "The value of this property indicates whether the image cache is enabled or not."]
     #[serde(rename = "noCache", default, skip_serializing_if = "Option::is_none")]
     pub no_cache: Option<bool>,
+    #[doc = "The Docker file path relative to the source control root."]
     #[serde(rename = "dockerFilePath", default, skip_serializing_if = "Option::is_none")]
     pub docker_file_path: Option<String>,
+    #[doc = "The relative context path for a docker build in the source."]
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
     pub context_path: Option<String>,
+    #[doc = "The custom arguments for building this build step."]
     #[serde(rename = "buildArguments", default, skip_serializing_if = "Vec::is_empty")]
     pub build_arguments: Vec<BuildArgument>,
+    #[doc = "List of base image dependencies for a step."]
     #[serde(rename = "baseImageDependencies", default, skip_serializing_if = "Vec::is_empty")]
     pub base_image_dependencies: Vec<BaseImageDependency>,
+    #[doc = "The type of the auto trigger for base image dependency updates."]
     #[serde(rename = "baseImageTrigger", default, skip_serializing_if = "Option::is_none")]
     pub base_image_trigger: Option<docker_build_step::BaseImageTrigger>,
 }
@@ -488,6 +602,7 @@ impl DockerBuildStep {
 }
 pub mod docker_build_step {
     use super::*;
+    #[doc = "The type of the auto trigger for base image dependency updates."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BaseImageTrigger {
         All,
@@ -495,24 +610,33 @@ pub mod docker_build_step {
         None,
     }
 }
+#[doc = "The properties for updating a docker build step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildStepUpdateParameters {
     #[serde(flatten)]
     pub build_step_properties_update_parameters: BuildStepPropertiesUpdateParameters,
+    #[doc = "The repository branch name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    #[doc = "The fully qualified image names including the repository and tag."]
     #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
     pub image_names: Vec<String>,
+    #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_push_enabled: Option<bool>,
+    #[doc = "The value of this property indicates whether the image cache is enabled or not."]
     #[serde(rename = "noCache", default, skip_serializing_if = "Option::is_none")]
     pub no_cache: Option<bool>,
+    #[doc = "The Docker file path relative to the source control root."]
     #[serde(rename = "dockerFilePath", default, skip_serializing_if = "Option::is_none")]
     pub docker_file_path: Option<String>,
+    #[doc = "The relative context path for a docker build in the source."]
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
     pub context_path: Option<String>,
+    #[doc = "The custom arguments for building this build step."]
     #[serde(rename = "buildArguments", default, skip_serializing_if = "Vec::is_empty")]
     pub build_arguments: Vec<BuildArgument>,
+    #[doc = "The type of the auto trigger for base image dependency updates."]
     #[serde(rename = "baseImageTrigger", default, skip_serializing_if = "Option::is_none")]
     pub base_image_trigger: Option<docker_build_step_update_parameters::BaseImageTrigger>,
 }
@@ -533,6 +657,7 @@ impl DockerBuildStepUpdateParameters {
 }
 pub mod docker_build_step_update_parameters {
     use super::*;
+    #[doc = "The type of the auto trigger for base image dependency updates."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BaseImageTrigger {
         All,
@@ -540,12 +665,15 @@ pub mod docker_build_step_update_parameters {
         None,
     }
 }
+#[doc = "The event for a webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Event {
     #[serde(flatten)]
     pub event_info: EventInfo,
+    #[doc = "The event request message sent to the service URI."]
     #[serde(rename = "eventRequestMessage", default, skip_serializing_if = "Option::is_none")]
     pub event_request_message: Option<EventRequestMessage>,
+    #[doc = "The event response message received from the service URI."]
     #[serde(rename = "eventResponseMessage", default, skip_serializing_if = "Option::is_none")]
     pub event_response_message: Option<EventResponseMessage>,
 }
@@ -554,20 +682,28 @@ impl Event {
         Self::default()
     }
 }
+#[doc = "The content of the event request message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventContent {
+    #[doc = "The event ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The time at which the event occurred."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
+    #[doc = "The action that encompasses the provided event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
+    #[doc = "The target of the event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<Target>,
+    #[doc = "The request that generated the event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<Request>,
+    #[doc = "The agent that initiated the event. For most situations, this could be from the authorization context of the request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub actor: Option<Actor>,
+    #[doc = "The registry node that generated the event. Put differently, while the actor initiates the event, the source generates it."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<Source>,
 }
@@ -576,8 +712,10 @@ impl EventContent {
         Self::default()
     }
 }
+#[doc = "The basic information of an event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventInfo {
+    #[doc = "The event ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -586,10 +724,13 @@ impl EventInfo {
         Self::default()
     }
 }
+#[doc = "The result of a request to list events for a webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventListResult {
+    #[doc = "The list of events. Since this list may be incomplete, the nextLink field should be used to request the next list of events."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Event>,
+    #[doc = "The URI that can be used to request the next list of events."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -598,16 +739,22 @@ impl EventListResult {
         Self::default()
     }
 }
+#[doc = "The event request message sent to the service URI."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventRequestMessage {
+    #[doc = "The content of the event request message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<EventContent>,
+    #[doc = "The headers of the event request message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
+    #[doc = "The HTTP method used to send the event request message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
+    #[doc = "The URI used to send the event request message."]
     #[serde(rename = "requestUri", default, skip_serializing_if = "Option::is_none")]
     pub request_uri: Option<String>,
+    #[doc = "The HTTP message version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -616,16 +763,22 @@ impl EventRequestMessage {
         Self::default()
     }
 }
+#[doc = "The event response message received from the service URI."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventResponseMessage {
+    #[doc = "The content of the event response message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
+    #[doc = "The headers of the event response message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
+    #[doc = "The reason phrase of the event response message."]
     #[serde(rename = "reasonPhrase", default, skip_serializing_if = "Option::is_none")]
     pub reason_phrase: Option<String>,
+    #[doc = "The status code of the event response message."]
     #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<String>,
+    #[doc = "The HTTP message version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -634,16 +787,22 @@ impl EventResponseMessage {
         Self::default()
     }
 }
+#[doc = "The git commit trigger that caused a build."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitCommitTrigger {
+    #[doc = "The unique ID of the trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The unique ID that identifies a commit."]
     #[serde(rename = "commitId", default, skip_serializing_if = "Option::is_none")]
     pub commit_id: Option<String>,
+    #[doc = "The repository URL."]
     #[serde(rename = "repositoryUrl", default, skip_serializing_if = "Option::is_none")]
     pub repository_url: Option<String>,
+    #[doc = "The branch name in the repository."]
     #[serde(rename = "branchName", default, skip_serializing_if = "Option::is_none")]
     pub branch_name: Option<String>,
+    #[doc = "The source control provider type."]
     #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
     pub provider_type: Option<String>,
 }
@@ -652,10 +811,13 @@ impl GitCommitTrigger {
         Self::default()
     }
 }
+#[doc = "IP rule with specific IP or IP range in CIDR format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpRule {
+    #[doc = "The action of IP ACL rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ip_rule::Action>,
+    #[doc = "Specifies the IP or IP range in CIDR format. Only IPV4 address is allowed."]
     pub value: String,
 }
 impl IpRule {
@@ -665,6 +827,7 @@ impl IpRule {
 }
 pub mod ip_rule {
     use super::*;
+    #[doc = "The action of IP ACL rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
@@ -675,14 +838,19 @@ pub mod ip_rule {
         }
     }
 }
+#[doc = "Properties for a registry image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageDescriptor {
+    #[doc = "The registry login server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
+    #[doc = "The repository name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<String>,
+    #[doc = "The tag name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
+    #[doc = "The sha256-based digest of the image manifest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
 }
@@ -691,12 +859,16 @@ impl ImageDescriptor {
         Self::default()
     }
 }
+#[doc = "The image update trigger that caused a build."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageUpdateTrigger {
+    #[doc = "The unique ID of the trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The timestamp when the image update happened."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
+    #[doc = "The list of image updates that caused the build."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub images: Vec<ImageDescriptor>,
 }
@@ -708,10 +880,13 @@ impl ImageUpdateTrigger {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportImageParameters {
     pub source: ImportSource,
+    #[doc = "List of strings of the form repo[:tag]. When tag is omitted the source will be used (or 'latest' if source tag is also omitted)."]
     #[serde(rename = "targetTags", default, skip_serializing_if = "Vec::is_empty")]
     pub target_tags: Vec<String>,
+    #[doc = "List of strings of repository names to do a manifest only copy. No tag will be created."]
     #[serde(rename = "untaggedTargetRepositories", default, skip_serializing_if = "Vec::is_empty")]
     pub untagged_target_repositories: Vec<String>,
+    #[doc = "When Force, any existing target tags will be overwritten. When NoForce, any existing target tags will fail the operation before any copying begins."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<import_image_parameters::Mode>,
 }
@@ -727,6 +902,7 @@ impl ImportImageParameters {
 }
 pub mod import_image_parameters {
     use super::*;
+    #[doc = "When Force, any existing target tags will be overwritten. When NoForce, any existing target tags will fail the operation before any copying begins."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         NoForce,
@@ -740,12 +916,15 @@ pub mod import_image_parameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportSource {
+    #[doc = "The resource identifier of the source Azure Container Registry."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "The address of the source registry (e.g. 'mcr.microsoft.com')."]
     #[serde(rename = "registryUri", default, skip_serializing_if = "Option::is_none")]
     pub registry_uri: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<ImportSourceCredentials>,
+    #[doc = "Repository name of the source image.\r\nSpecify an image by repository ('hello-world'). This will use the 'latest' tag.\r\nSpecify an image by tag ('hello-world:latest').\r\nSpecify an image by sha256-based manifest digest ('hello-world@sha256:abc123')."]
     #[serde(rename = "sourceImage")]
     pub source_image: String,
 }
@@ -761,8 +940,10 @@ impl ImportSource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportSourceCredentials {
+    #[doc = "The username to authenticate with the source registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[doc = "The password used to authenticate with the source registry."]
     pub password: String,
 }
 impl ImportSourceCredentials {
@@ -770,12 +951,16 @@ impl ImportSourceCredentials {
         Self { username: None, password }
     }
 }
+#[doc = "The network rule set for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRuleSet {
+    #[doc = "The default action of allow or deny when no other rules match."]
     #[serde(rename = "defaultAction")]
     pub default_action: network_rule_set::DefaultAction,
+    #[doc = "The virtual network rules."]
     #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
+    #[doc = "The IP ACL rules."]
     #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_rules: Vec<IpRule>,
 }
@@ -790,6 +975,7 @@ impl NetworkRuleSet {
 }
 pub mod network_rule_set {
     use super::*;
+    #[doc = "The default action of allow or deny when no other rules match."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultAction {
         Allow,
@@ -801,14 +987,19 @@ pub mod network_rule_set {
         }
     }
 }
+#[doc = "The definition of a container registry operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDefinition {
+    #[doc = "The origin information of the container registry operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The display information for a container registry operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayDefinition>,
+    #[doc = "The definition of Azure Monitoring properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationPropertiesDefinition>,
 }
@@ -817,14 +1008,19 @@ impl OperationDefinition {
         Self::default()
     }
 }
+#[doc = "The display information for a container registry operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayDefinition {
+    #[doc = "The resource provider name: Microsoft.ContainerRegistry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The resource on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The operation that users can perform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The description for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -833,10 +1029,13 @@ impl OperationDisplayDefinition {
         Self::default()
     }
 }
+#[doc = "The result of a request to list container registry operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "The list of container registry operations. Since this list may be incomplete, the nextLink field should be used to request the next list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationDefinition>,
+    #[doc = "The URI that can be used to request the next list of container registry operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -845,18 +1044,25 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "The definition of Azure Monitoring metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetricSpecificationDefinition {
+    #[doc = "Metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Metric display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Metric description."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "Metric unit."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Metric aggregation type."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "Internal metric name."]
     #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
 }
@@ -865,8 +1071,10 @@ impl OperationMetricSpecificationDefinition {
         Self::default()
     }
 }
+#[doc = "The definition of Azure Monitoring properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationPropertiesDefinition {
+    #[doc = "The definition of Azure Monitoring metrics list."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<OperationServiceSpecificationDefinition>,
 }
@@ -875,8 +1083,10 @@ impl OperationPropertiesDefinition {
         Self::default()
     }
 }
+#[doc = "The definition of Azure Monitoring metrics list."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationServiceSpecificationDefinition {
+    #[doc = "A list of Azure Monitoring metrics definition."]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<OperationMetricSpecificationDefinition>,
 }
@@ -885,10 +1095,13 @@ impl OperationServiceSpecificationDefinition {
         Self::default()
     }
 }
+#[doc = "The platform properties against which the build has to happen."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlatformProperties {
+    #[doc = "The operating system type required for the build."]
     #[serde(rename = "osType")]
     pub os_type: platform_properties::OsType,
+    #[doc = "The CPU configuration in terms of number of cores required for the build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cpu: Option<i32>,
 }
@@ -899,18 +1112,23 @@ impl PlatformProperties {
 }
 pub mod platform_properties {
     use super::*;
+    #[doc = "The operating system type required for the build."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
 }
+#[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
+    #[doc = "The resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -919,8 +1137,10 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "An object that represents quarantine policy for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuarantinePolicy {
+    #[doc = "The value that indicates whether the policy is enabled or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<quarantine_policy::Status>,
 }
@@ -931,6 +1151,7 @@ impl QuarantinePolicy {
 }
 pub mod quarantine_policy {
     use super::*;
+    #[doc = "The value that indicates whether the policy is enabled or not."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "enabled")]
@@ -939,8 +1160,10 @@ pub mod quarantine_policy {
         Disabled,
     }
 }
+#[doc = "The queue build request parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueueBuildRequest {
+    #[doc = "The type of the build request."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -949,23 +1172,32 @@ impl QueueBuildRequest {
         Self::default()
     }
 }
+#[doc = "The queue build request parameters for a quick build."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QuickBuildRequest {
     #[serde(flatten)]
     pub queue_build_request: QueueBuildRequest,
+    #[doc = "The fully qualified image names including the repository and tag."]
     #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
     pub image_names: Vec<String>,
+    #[doc = "The URL(absolute or relative) of the source that needs to be built. For Docker build, it can be an URL to a tar or github repository as supported by Docker.\r\nIf it is relative URL, the relative path should be obtained from calling getSourceUploadUrl API."]
     #[serde(rename = "sourceLocation")]
     pub source_location: String,
+    #[doc = "The collection of build arguments to be used."]
     #[serde(rename = "buildArguments", default, skip_serializing_if = "Vec::is_empty")]
     pub build_arguments: Vec<BuildArgument>,
+    #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_push_enabled: Option<bool>,
+    #[doc = "The value of this property indicates whether the image cache is enabled or not."]
     #[serde(rename = "noCache", default, skip_serializing_if = "Option::is_none")]
     pub no_cache: Option<bool>,
+    #[doc = "Build timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
+    #[doc = "The platform properties against which the build has to happen."]
     pub platform: PlatformProperties,
+    #[doc = "The Docker file path relative to the source location."]
     #[serde(rename = "dockerFilePath")]
     pub docker_file_path: String,
 }
@@ -984,8 +1216,10 @@ impl QuickBuildRequest {
         }
     }
 }
+#[doc = "The parameters used to regenerate the login credential."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateCredentialParameters {
+    #[doc = "Specifies name of the password which should be regenerated -- password or password2."]
     pub name: regenerate_credential_parameters::Name,
 }
 impl RegenerateCredentialParameters {
@@ -995,6 +1229,7 @@ impl RegenerateCredentialParameters {
 }
 pub mod regenerate_credential_parameters {
     use super::*;
+    #[doc = "Specifies name of the password which should be regenerated -- password or password2."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "password")]
@@ -1003,11 +1238,14 @@ pub mod regenerate_credential_parameters {
         Password2,
     }
 }
+#[doc = "An object that represents a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Registry {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The SKU of a container registry."]
     pub sku: Sku,
+    #[doc = "The properties of a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryProperties>,
 }
@@ -1020,10 +1258,13 @@ impl Registry {
         }
     }
 }
+#[doc = "The response from the ListCredentials operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListCredentialsResult {
+    #[doc = "The username for a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[doc = "The list of passwords for a container registry."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub passwords: Vec<RegistryPassword>,
 }
@@ -1032,10 +1273,13 @@ impl RegistryListCredentialsResult {
         Self::default()
     }
 }
+#[doc = "The result of a request to list container registries."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListResult {
+    #[doc = "The list of container registries. Since this list may be incomplete, the nextLink field should be used to request the next list of container registries."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Registry>,
+    #[doc = "The URI that can be used to request the next list of container registries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1044,9 +1288,12 @@ impl RegistryListResult {
         Self::default()
     }
 }
+#[doc = "A request to check whether a container registry name is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryNameCheckRequest {
+    #[doc = "The name of the container registry."]
     pub name: String,
+    #[doc = "The resource type of the container registry. This field must be set to 'Microsoft.ContainerRegistry/registries'."]
     #[serde(rename = "type")]
     pub type_: registry_name_check_request::Type,
 }
@@ -1057,18 +1304,23 @@ impl RegistryNameCheckRequest {
 }
 pub mod registry_name_check_request {
     use super::*;
+    #[doc = "The resource type of the container registry. This field must be set to 'Microsoft.ContainerRegistry/registries'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.ContainerRegistry/registries")]
         MicrosoftContainerRegistryRegistries,
     }
 }
+#[doc = "The result of a request to check the availability of a container registry name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryNameStatus {
+    #[doc = "The value that indicates whether the name is available."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "If any, the reason that the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "If any, the error message that provides more detail for the reason that the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -1077,10 +1329,13 @@ impl RegistryNameStatus {
         Self::default()
     }
 }
+#[doc = "The login password for the container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPassword {
+    #[doc = "The password name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<registry_password::Name>,
+    #[doc = "The password value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -1091,6 +1346,7 @@ impl RegistryPassword {
 }
 pub mod registry_password {
     use super::*;
+    #[doc = "The password name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "password")]
@@ -1099,10 +1355,13 @@ pub mod registry_password {
         Password2,
     }
 }
+#[doc = "An object that represents policies for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPolicies {
+    #[doc = "An object that represents quarantine policy for a container registry."]
     #[serde(rename = "quarantinePolicy", default, skip_serializing_if = "Option::is_none")]
     pub quarantine_policy: Option<QuarantinePolicy>,
+    #[doc = "An object that represents content trust policy for a container registry."]
     #[serde(rename = "trustPolicy", default, skip_serializing_if = "Option::is_none")]
     pub trust_policy: Option<TrustPolicy>,
 }
@@ -1111,20 +1370,28 @@ impl RegistryPolicies {
         Self::default()
     }
 }
+#[doc = "The properties of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryProperties {
+    #[doc = "The URL that can be used to log into the container registry."]
     #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
     pub login_server: Option<String>,
+    #[doc = "The creation date of the container registry in ISO8601 format."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The provisioning state of the container registry at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registry_properties::ProvisioningState>,
+    #[doc = "The status of an Azure resource at the time the operation was called."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
+    #[doc = "The value that indicates whether the admin user is enabled."]
     #[serde(rename = "adminUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
+    #[doc = "The properties of a storage account for a container registry. Only applicable to Classic SKU."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountProperties>,
+    #[doc = "The network rule set for a container registry."]
     #[serde(rename = "networkRuleSet", default, skip_serializing_if = "Option::is_none")]
     pub network_rule_set: Option<NetworkRuleSet>,
 }
@@ -1135,6 +1402,7 @@ impl RegistryProperties {
 }
 pub mod registry_properties {
     use super::*;
+    #[doc = "The provisioning state of the container registry at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1145,12 +1413,16 @@ pub mod registry_properties {
         Canceled,
     }
 }
+#[doc = "The parameters for updating the properties of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPropertiesUpdateParameters {
+    #[doc = "The value that indicates whether the admin user is enabled."]
     #[serde(rename = "adminUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
+    #[doc = "The properties of a storage account for a container registry. Only applicable to Classic SKU."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountProperties>,
+    #[doc = "The network rule set for a container registry."]
     #[serde(rename = "networkRuleSet", default, skip_serializing_if = "Option::is_none")]
     pub network_rule_set: Option<NetworkRuleSet>,
 }
@@ -1159,12 +1431,16 @@ impl RegistryPropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters for updating a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryUpdateParameters {
+    #[doc = "The tags for the container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The SKU of a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "The parameters for updating the properties of a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryPropertiesUpdateParameters>,
 }
@@ -1173,14 +1449,19 @@ impl RegistryUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The quota usage for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryUsage {
+    #[doc = "The name of the usage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The limit of the usage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "The current value of the usage."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i64>,
+    #[doc = "The unit of measurement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<registry_usage::Unit>,
 }
@@ -1191,14 +1472,17 @@ impl RegistryUsage {
 }
 pub mod registry_usage {
     use super::*;
+    #[doc = "The unit of measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
         Bytes,
     }
 }
+#[doc = "The result of a request to get container registry quota usages."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryUsageListResult {
+    #[doc = "The list of container registry quota usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegistryUsage>,
 }
@@ -1207,10 +1491,12 @@ impl RegistryUsageListResult {
         Self::default()
     }
 }
+#[doc = "An object that represents a replication for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Replication {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The properties of a replication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReplicationProperties>,
 }
@@ -1222,10 +1508,13 @@ impl Replication {
         }
     }
 }
+#[doc = "The result of a request to list replications for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationListResult {
+    #[doc = "The list of replications. Since this list may be incomplete, the nextLink field should be used to request the next list of replications."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Replication>,
+    #[doc = "The URI that can be used to request the next list of replications."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1234,10 +1523,13 @@ impl ReplicationListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a replication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationProperties {
+    #[doc = "The provisioning state of the replication at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<replication_properties::ProvisioningState>,
+    #[doc = "The status of an Azure resource at the time the operation was called."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
 }
@@ -1248,6 +1540,7 @@ impl ReplicationProperties {
 }
 pub mod replication_properties {
     use super::*;
+    #[doc = "The provisioning state of the replication at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1258,8 +1551,10 @@ pub mod replication_properties {
         Canceled,
     }
 }
+#[doc = "The parameters for updating a replication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationUpdateParameters {
+    #[doc = "The tags for the replication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1268,16 +1563,22 @@ impl ReplicationUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The request that generated the event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Request {
+    #[doc = "The ID of the request that initiated the event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The IP or hostname and possibly port of the client connection that initiated the event. This is the RemoteAddr from the standard http request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub addr: Option<String>,
+    #[doc = "The externally accessible hostname of the registry instance, as specified by the http host header on incoming requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub host: Option<String>,
+    #[doc = "The request method that generated the event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
+    #[doc = "The user agent header of the request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub useragent: Option<String>,
 }
@@ -1286,15 +1587,21 @@ impl Request {
         Self::default()
     }
 }
+#[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "The resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The location of the resource. This cannot be changed after the resource is created."]
     pub location: String,
+    #[doc = "The tags of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1309,9 +1616,12 @@ impl Resource {
         }
     }
 }
+#[doc = "The SKU of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "The SKU name of the container registry. Required for registry creation."]
     pub name: sku::Name,
+    #[doc = "The SKU tier based on the SKU name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
@@ -1322,6 +1632,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "The SKU name of the container registry. Required for registry creation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         Classic,
@@ -1329,6 +1640,7 @@ pub mod sku {
         Standard,
         Premium,
     }
+    #[doc = "The SKU tier based on the SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Classic,
@@ -1337,10 +1649,13 @@ pub mod sku {
         Premium,
     }
 }
+#[doc = "The registry node that generated the event. Put differently, while the actor initiates the event, the source generates it."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Source {
+    #[doc = "The IP or hostname and the port of the registry node that generated the event. Generally, this will be resolved by os.Hostname() along with the running port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub addr: Option<String>,
+    #[doc = "The running instance of an application. Changes after each restart."]
     #[serde(rename = "instanceID", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
 }
@@ -1349,15 +1664,21 @@ impl Source {
         Self::default()
     }
 }
+#[doc = "The authorization properties for accessing the source code repository."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceControlAuthInfo {
+    #[doc = "The type of Auth token."]
     #[serde(rename = "tokenType", default, skip_serializing_if = "Option::is_none")]
     pub token_type: Option<source_control_auth_info::TokenType>,
+    #[doc = "The access token used to access the source control provider."]
     pub token: String,
+    #[doc = "The refresh token used to refresh the access token."]
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<String>,
+    #[doc = "The scope of the access token."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "Time in seconds that the token remains valid"]
     #[serde(rename = "expiresIn", default, skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<i32>,
 }
@@ -1374,6 +1695,7 @@ impl SourceControlAuthInfo {
 }
 pub mod source_control_auth_info {
     use super::*;
+    #[doc = "The type of Auth token."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TokenType {
         #[serde(rename = "PAT")]
@@ -1381,14 +1703,19 @@ pub mod source_control_auth_info {
         OAuth,
     }
 }
+#[doc = "The properties of the source code repository."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceRepositoryProperties {
+    #[doc = "The type of source control service."]
     #[serde(rename = "sourceControlType")]
     pub source_control_type: source_repository_properties::SourceControlType,
+    #[doc = "The full URL to the source code repository"]
     #[serde(rename = "repositoryUrl")]
     pub repository_url: String,
+    #[doc = "The value of this property indicates whether the source control commit trigger is enabled or not."]
     #[serde(rename = "isCommitTriggerEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_commit_trigger_enabled: Option<bool>,
+    #[doc = "The authorization properties for accessing the source code repository."]
     #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
     pub source_control_auth_properties: Option<SourceControlAuthInfo>,
 }
@@ -1404,16 +1731,20 @@ impl SourceRepositoryProperties {
 }
 pub mod source_repository_properties {
     use super::*;
+    #[doc = "The type of source control service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceControlType {
         Github,
         VisualStudioTeamService,
     }
 }
+#[doc = "The properties for updating the source code repository configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceRepositoryUpdateParameters {
+    #[doc = "The authorization properties for accessing the source code repository."]
     #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
     pub source_control_auth_properties: Option<SourceControlAuthInfo>,
+    #[doc = "The value of this property indicates whether the source control commit trigger is enabled or not."]
     #[serde(rename = "isCommitTriggerEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_commit_trigger_enabled: Option<bool>,
 }
@@ -1422,10 +1753,13 @@ impl SourceRepositoryUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of a response to source upload request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceUploadDefinition {
+    #[doc = "The URL where the client can upload the source."]
     #[serde(rename = "uploadUrl", default, skip_serializing_if = "Option::is_none")]
     pub upload_url: Option<String>,
+    #[doc = "The relative path to the source. This is used to submit the subsequent queue build request."]
     #[serde(rename = "relativePath", default, skip_serializing_if = "Option::is_none")]
     pub relative_path: Option<String>,
 }
@@ -1434,12 +1768,16 @@ impl SourceUploadDefinition {
         Self::default()
     }
 }
+#[doc = "The status of an Azure resource at the time the operation was called."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Status {
+    #[doc = "The short label for the status."]
     #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
+    #[doc = "The detailed message for the status, including alerts and error messages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The timestamp when the status was changed to the current value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
 }
@@ -1448,8 +1786,10 @@ impl Status {
         Self::default()
     }
 }
+#[doc = "The properties of a storage account for a container registry. Only applicable to Classic SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountProperties {
+    #[doc = "The resource ID of the storage account."]
     pub id: String,
 }
 impl StorageAccountProperties {
@@ -1457,24 +1797,34 @@ impl StorageAccountProperties {
         Self { id }
     }
 }
+#[doc = "The target of the event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Target {
+    #[doc = "The MIME type of the referenced object."]
     #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
     pub media_type: Option<String>,
+    #[doc = "The number of bytes of the content. Same as Length field."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<i64>,
+    #[doc = "The digest of the content, as defined by the Registry V2 HTTP API Specification."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
+    #[doc = "The number of bytes of the content. Same as Size field."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub length: Option<i64>,
+    #[doc = "The repository name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<String>,
+    #[doc = "The direct URL to the content."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "The tag name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
+    #[doc = "The name of the artifact."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The version of the artifact."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -1483,10 +1833,13 @@ impl Target {
         Self::default()
     }
 }
+#[doc = "An object that represents content trust policy for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrustPolicy {
+    #[doc = "The type of trust policy."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<trust_policy::Type>,
+    #[doc = "The value that indicates whether the policy is enabled or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trust_policy::Status>,
 }
@@ -1497,10 +1850,12 @@ impl TrustPolicy {
 }
 pub mod trust_policy {
     use super::*;
+    #[doc = "The type of trust policy."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Notary,
     }
+    #[doc = "The value that indicates whether the policy is enabled or not."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "enabled")]
@@ -1509,10 +1864,13 @@ pub mod trust_policy {
         Disabled,
     }
 }
+#[doc = "Virtual network rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
+    #[doc = "The action of virtual network rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<virtual_network_rule::Action>,
+    #[doc = "Resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/virtualNetworks/{vnetName}/subnets/{subnetName}."]
     pub id: String,
 }
 impl VirtualNetworkRule {
@@ -1522,6 +1880,7 @@ impl VirtualNetworkRule {
 }
 pub mod virtual_network_rule {
     use super::*;
+    #[doc = "The action of virtual network rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
@@ -1532,10 +1891,12 @@ pub mod virtual_network_rule {
         }
     }
 }
+#[doc = "An object that represents a webhook for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Webhook {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The properties of a webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebhookProperties>,
 }
@@ -1547,11 +1908,15 @@ impl Webhook {
         }
     }
 }
+#[doc = "The parameters for creating a webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookCreateParameters {
+    #[doc = "The tags for the webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The location of the webhook. This cannot be changed after the resource is created."]
     pub location: String,
+    #[doc = "The parameters for creating the properties of a webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebhookPropertiesCreateParameters>,
 }
@@ -1564,10 +1929,13 @@ impl WebhookCreateParameters {
         }
     }
 }
+#[doc = "The result of a request to list webhooks for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookListResult {
+    #[doc = "The list of webhooks. Since this list may be incomplete, the nextLink field should be used to request the next list of webhooks."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Webhook>,
+    #[doc = "The URI that can be used to request the next list of webhooks."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1576,13 +1944,18 @@ impl WebhookListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookProperties {
+    #[doc = "The status of the webhook at the time the operation was called."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<webhook_properties::Status>,
+    #[doc = "The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "The list of actions that trigger the webhook to post notifications."]
     pub actions: Vec<String>,
+    #[doc = "The provisioning state of the webhook at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<webhook_properties::ProvisioningState>,
 }
@@ -1598,6 +1971,7 @@ impl WebhookProperties {
 }
 pub mod webhook_properties {
     use super::*;
+    #[doc = "The status of the webhook at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "enabled")]
@@ -1605,6 +1979,7 @@ pub mod webhook_properties {
         #[serde(rename = "disabled")]
         Disabled,
     }
+    #[doc = "The provisioning state of the webhook at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1615,16 +1990,22 @@ pub mod webhook_properties {
         Canceled,
     }
 }
+#[doc = "The parameters for creating the properties of a webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookPropertiesCreateParameters {
+    #[doc = "The service URI for the webhook to post notifications."]
     #[serde(rename = "serviceUri")]
     pub service_uri: String,
+    #[doc = "Custom headers that will be added to the webhook notifications."]
     #[serde(rename = "customHeaders", default, skip_serializing_if = "Option::is_none")]
     pub custom_headers: Option<serde_json::Value>,
+    #[doc = "The status of the webhook at the time the operation was called."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<webhook_properties_create_parameters::Status>,
+    #[doc = "The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "The list of actions that trigger the webhook to post notifications."]
     pub actions: Vec<String>,
 }
 impl WebhookPropertiesCreateParameters {
@@ -1640,6 +2021,7 @@ impl WebhookPropertiesCreateParameters {
 }
 pub mod webhook_properties_create_parameters {
     use super::*;
+    #[doc = "The status of the webhook at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "enabled")]
@@ -1648,16 +2030,22 @@ pub mod webhook_properties_create_parameters {
         Disabled,
     }
 }
+#[doc = "The parameters for updating the properties of a webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookPropertiesUpdateParameters {
+    #[doc = "The service URI for the webhook to post notifications."]
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
+    #[doc = "Custom headers that will be added to the webhook notifications."]
     #[serde(rename = "customHeaders", default, skip_serializing_if = "Option::is_none")]
     pub custom_headers: Option<serde_json::Value>,
+    #[doc = "The status of the webhook at the time the operation was called."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<webhook_properties_update_parameters::Status>,
+    #[doc = "The scope of repositories where the event can be triggered. For example, 'foo:*' means events for all tags under repository 'foo'. 'foo:bar' means events for 'foo:bar' only. 'foo' is equivalent to 'foo:latest'. Empty means all events."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "The list of actions that trigger the webhook to post notifications."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
 }
@@ -1668,6 +2056,7 @@ impl WebhookPropertiesUpdateParameters {
 }
 pub mod webhook_properties_update_parameters {
     use super::*;
+    #[doc = "The status of the webhook at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "enabled")]
@@ -1676,10 +2065,13 @@ pub mod webhook_properties_update_parameters {
         Disabled,
     }
 }
+#[doc = "The parameters for updating a webhook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebhookUpdateParameters {
+    #[doc = "The tags for the webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The parameters for updating the properties of a webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebhookPropertiesUpdateParameters>,
 }

@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<String>,
 }
@@ -16,16 +20,22 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "availabilityStatus of a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilityStatus {
+    #[doc = "Azure Resource Manager Identity for the availabilityStatuses resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "current."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Microsoft.ResourceHealth/AvailabilityStatuses."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Azure Resource Manager geo location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Properties of availability state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<availability_status::Properties>,
 }
@@ -36,32 +46,46 @@ impl AvailabilityStatus {
 }
 pub mod availability_status {
     use super::*;
+    #[doc = "Properties of availability state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Availability status of the resource."]
         #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
         pub availability_state: Option<properties::AvailabilityState>,
+        #[doc = "Summary description of the availability state."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub summary: Option<String>,
+        #[doc = "Details of the availability status."]
         #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
         pub detailed_status: Option<String>,
+        #[doc = "When the resource's availabilityState is Unavailable, it describes where the health impacting event was originated. Examples are planned, unplanned, user initiated or an outage etc."]
         #[serde(rename = "reasonType", default, skip_serializing_if = "Option::is_none")]
         pub reason_type: Option<String>,
+        #[doc = "When the resource's availabilityState is Unavailable, it provides the Timestamp for when the health impacting event was received."]
         #[serde(rename = "rootCauseAttributionTime", default, skip_serializing_if = "Option::is_none")]
         pub root_cause_attribution_time: Option<String>,
+        #[doc = "When the resource's availabilityState is Unavailable and the reasonType is not User Initiated, it provides the date and time for when the issue is expected to be resolved."]
         #[serde(rename = "resolutionETA", default, skip_serializing_if = "Option::is_none")]
         pub resolution_eta: Option<String>,
+        #[doc = "Timestamp for when last change in health status occurred."]
         #[serde(rename = "occuredTime", default, skip_serializing_if = "Option::is_none")]
         pub occured_time: Option<String>,
+        #[doc = "Chronicity of the availability transition."]
         #[serde(rename = "reasonChronicity", default, skip_serializing_if = "Option::is_none")]
         pub reason_chronicity: Option<properties::ReasonChronicity>,
+        #[doc = "Timestamp for when the health was last checked. "]
         #[serde(rename = "reportedTime", default, skip_serializing_if = "Option::is_none")]
         pub reported_time: Option<String>,
+        #[doc = "flag to show if child resource need detail health. "]
         #[serde(rename = "isArmResource", default, skip_serializing_if = "Option::is_none")]
         pub is_arm_resource: Option<bool>,
+        #[doc = "An annotation describing a change in the availabilityState to Available from Unavailable with a reasonType of type Unplanned"]
         #[serde(rename = "recentlyResolvedState", default, skip_serializing_if = "Option::is_none")]
         pub recently_resolved_state: Option<properties::RecentlyResolvedState>,
+        #[doc = "Lists actions the user can take based on the current availabilityState of the resource."]
         #[serde(rename = "recommendedActions", default, skip_serializing_if = "Vec::is_empty")]
         pub recommended_actions: Vec<RecommendedAction>,
+        #[doc = "Lists the service impacting events that may be affecting the health of the resource."]
         #[serde(rename = "serviceImpactingEvents", default, skip_serializing_if = "Vec::is_empty")]
         pub service_impacting_events: Vec<ServiceImpactingEvent>,
     }
@@ -72,23 +96,29 @@ pub mod availability_status {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Availability status of the resource."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum AvailabilityState {
             Available,
             Unavailable,
             Unknown,
         }
+        #[doc = "Chronicity of the availability transition."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum ReasonChronicity {
             Transient,
             Persistent,
         }
+        #[doc = "An annotation describing a change in the availabilityState to Available from Unavailable with a reasonType of type Unplanned"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct RecentlyResolvedState {
+            #[doc = "Timestamp for when the availabilityState changed to Unavailable"]
             #[serde(rename = "unavailableOccurredTime", default, skip_serializing_if = "Option::is_none")]
             pub unavailable_occurred_time: Option<String>,
+            #[doc = "Timestamp when the availabilityState changes to Available."]
             #[serde(rename = "resolvedTime", default, skip_serializing_if = "Option::is_none")]
             pub resolved_time: Option<String>,
+            #[doc = "Brief description of cause of the resource becoming unavailable."]
             #[serde(rename = "unavailabilitySummary", default, skip_serializing_if = "Option::is_none")]
             pub unavailability_summary: Option<String>,
         }
@@ -99,9 +129,12 @@ pub mod availability_status {
         }
     }
 }
+#[doc = "The List availabilityStatus operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailabilityStatusListResult {
+    #[doc = "The list of availabilityStatuses."]
     pub value: Vec<AvailabilityStatus>,
+    #[doc = "The URI to fetch the next page of availabilityStatuses. Call ListNext() with this URI to fetch the next page of availabilityStatuses."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -110,10 +143,13 @@ impl AvailabilityStatusListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Operation available in the resourcehealth resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -124,14 +160,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Properties of the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Provider name."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource name."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation name."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -141,8 +182,10 @@ pub mod operation {
         }
     }
 }
+#[doc = "Lists the operations response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationListResult {
+    #[doc = "List of operations available in the resourcehealth resource provider."]
     pub value: Vec<Operation>,
 }
 impl OperationListResult {
@@ -150,12 +193,16 @@ impl OperationListResult {
         Self { value }
     }
 }
+#[doc = "Lists actions the user can take based on the current availabilityState of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedAction {
+    #[doc = "Recommended action."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
+    #[doc = "Link to the action"]
     #[serde(rename = "actionUrl", default, skip_serializing_if = "Option::is_none")]
     pub action_url: Option<String>,
+    #[doc = "Substring of action, it describes which text should host the action url."]
     #[serde(rename = "actionUrlText", default, skip_serializing_if = "Option::is_none")]
     pub action_url_text: Option<String>,
 }
@@ -164,16 +211,22 @@ impl RecommendedAction {
         Self::default()
     }
 }
+#[doc = "Lists the service impacting events that may be affecting the health of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceImpactingEvent {
+    #[doc = "Timestamp for when the event started."]
     #[serde(rename = "eventStartTime", default, skip_serializing_if = "Option::is_none")]
     pub event_start_time: Option<String>,
+    #[doc = "Timestamp for when event was submitted/detected."]
     #[serde(rename = "eventStatusLastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub event_status_last_modified_time: Option<String>,
+    #[doc = "Correlation id for the event"]
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
+    #[doc = "Status of the service impacting event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<service_impacting_event::Status>,
+    #[doc = "Properties of the service impacting event."]
     #[serde(rename = "incidentProperties", default, skip_serializing_if = "Option::is_none")]
     pub incident_properties: Option<service_impacting_event::IncidentProperties>,
 }
@@ -184,8 +237,10 @@ impl ServiceImpactingEvent {
 }
 pub mod service_impacting_event {
     use super::*;
+    #[doc = "Status of the service impacting event."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Status {
+        #[doc = "Current status of the event"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
     }
@@ -194,14 +249,19 @@ pub mod service_impacting_event {
             Self::default()
         }
     }
+    #[doc = "Properties of the service impacting event."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct IncidentProperties {
+        #[doc = "Title of the incident."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub title: Option<String>,
+        #[doc = "Service impacted by the event."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub service: Option<String>,
+        #[doc = "Region impacted by the event."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub region: Option<String>,
+        #[doc = "Type of Event."]
         #[serde(rename = "incidentType", default, skip_serializing_if = "Option::is_none")]
         pub incident_type: Option<String>,
     }

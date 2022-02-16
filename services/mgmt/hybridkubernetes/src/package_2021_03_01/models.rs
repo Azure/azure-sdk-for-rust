@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Represents a connected cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedCluster {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Identity for the connected cluster."]
     pub identity: ConnectedClusterIdentity,
+    #[doc = "Properties of the connected cluster."]
     pub properties: ConnectedClusterProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -21,12 +25,16 @@ impl ConnectedCluster {
         }
     }
 }
+#[doc = "Identity for the connected cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterIdentity {
+    #[doc = "The principal id of connected cluster identity. This property will only be provided for a system assigned identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant id associated with the connected cluster. This property will only be provided for a system assigned identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The type of identity used for the connected cluster. The type 'SystemAssigned, includes a system created identity. The type 'None' means no identity is assigned to the connected cluster."]
     #[serde(rename = "type")]
     pub type_: connected_cluster_identity::Type,
 }
@@ -41,6 +49,7 @@ impl ConnectedClusterIdentity {
 }
 pub mod connected_cluster_identity {
     use super::*;
+    #[doc = "The type of identity used for the connected cluster. The type 'SystemAssigned, includes a system created identity. The type 'None' means no identity is assigned to the connected cluster."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         None,
@@ -52,10 +61,13 @@ pub mod connected_cluster_identity {
         }
     }
 }
+#[doc = "The paginated list of connected Clusters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedClusterList {
+    #[doc = "The list of connected clusters"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectedCluster>,
+    #[doc = "The link to fetch the next page of connected cluster"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -64,10 +76,13 @@ impl ConnectedClusterList {
         Self::default()
     }
 }
+#[doc = "Object containing updates for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedClusterPatch {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties which can be patched on the connected cluster resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectedClusterPatchProperties>,
 }
@@ -76,6 +91,7 @@ impl ConnectedClusterPatch {
         Self::default()
     }
 }
+#[doc = "Properties which can be patched on the connected cluster resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedClusterPatchProperties {}
 impl ConnectedClusterPatchProperties {
@@ -83,34 +99,47 @@ impl ConnectedClusterPatchProperties {
         Self::default()
     }
 }
+#[doc = "Properties of the connected cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectedClusterProperties {
+    #[doc = "Base64 encoded public certificate used by the agent to do the initial handshake to the backend services in Azure."]
     #[serde(rename = "agentPublicKeyCertificate")]
     pub agent_public_key_certificate: String,
+    #[doc = "The Kubernetes version of the connected cluster resource"]
     #[serde(rename = "kubernetesVersion", default, skip_serializing_if = "Option::is_none")]
     pub kubernetes_version: Option<String>,
+    #[doc = "Number of nodes present in the connected cluster resource"]
     #[serde(rename = "totalNodeCount", default, skip_serializing_if = "Option::is_none")]
     pub total_node_count: Option<i64>,
+    #[doc = "Number of CPU cores present in the connected cluster resource"]
     #[serde(rename = "totalCoreCount", default, skip_serializing_if = "Option::is_none")]
     pub total_core_count: Option<i32>,
+    #[doc = "Version of the agent running on the connected cluster resource"]
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
+    #[doc = "The current deployment state of connectedClusters."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ConnectedClusterProvisioningState>,
+    #[doc = "The Kubernetes distribution running on this connected cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub distribution: Option<String>,
+    #[doc = "The infrastructure on which the Kubernetes cluster represented by this connected cluster is running on."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub infrastructure: Option<String>,
+    #[doc = "Connected cluster offering"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offering: Option<String>,
+    #[doc = "Expiration time of the managed identity certificate"]
     #[serde(
         rename = "managedIdentityCertificateExpirationTime",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub managed_identity_certificate_expiration_time: Option<String>,
+    #[doc = "Time representing the last instance when heart beat was received from the cluster"]
     #[serde(rename = "lastConnectivityTime", default, skip_serializing_if = "Option::is_none")]
     pub last_connectivity_time: Option<String>,
+    #[doc = "Represents the connectivity status of the connected cluster."]
     #[serde(rename = "connectivityStatus", default, skip_serializing_if = "Option::is_none")]
     pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
 }
@@ -134,6 +163,7 @@ impl ConnectedClusterProperties {
 }
 pub mod connected_cluster_properties {
     use super::*;
+    #[doc = "Represents the connectivity status of the connected cluster."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectivityStatus {
         Connecting,
@@ -142,6 +172,7 @@ pub mod connected_cluster_properties {
         Expired,
     }
 }
+#[doc = "The current deployment state of connectedClusters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConnectedClusterProvisioningState {
     Succeeded,
@@ -152,10 +183,13 @@ pub enum ConnectedClusterProvisioningState {
     Deleting,
     Accepted,
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -164,16 +198,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -182,8 +222,10 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -192,10 +234,13 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The Connected cluster API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {Microsoft.Kubernetes}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -206,14 +251,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.connectedClusters"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Connected Cluster Resource on which the operation is performed"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -223,10 +273,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "The paginated list of connected cluster API operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
+    #[doc = "The list of connected cluster API operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "The link to fetch the next page of connected cluster API operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -235,12 +288,16 @@ impl OperationList {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -249,18 +306,25 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -271,6 +335,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -278,6 +343,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,
@@ -286,12 +352,15 @@ pub mod system_data {
         Key,
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
     pub location: String,
 }
 impl TrackedResource {

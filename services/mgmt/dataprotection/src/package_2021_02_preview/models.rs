@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Delete option with duration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AbsoluteDeleteOption {
     #[serde(flatten)]
@@ -12,10 +13,12 @@ impl AbsoluteDeleteOption {
         Self { delete_option }
     }
 }
+#[doc = "Adhoc backup rules"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdHocBackupRuleOptions {
     #[serde(rename = "ruleName")]
     pub rule_name: String,
+    #[doc = "Adhoc backup trigger option"]
     #[serde(rename = "triggerOption")]
     pub trigger_option: AdhocBackupTriggerOption,
 }
@@ -24,6 +27,7 @@ impl AdHocBackupRuleOptions {
         Self { rule_name, trigger_option }
     }
 }
+#[doc = "Adhoc backup trigger option"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdhocBackupTriggerOption {
     #[serde(rename = "retentionTagOverride", default, skip_serializing_if = "Option::is_none")]
@@ -34,8 +38,10 @@ impl AdhocBackupTriggerOption {
         Self::default()
     }
 }
+#[doc = "Adhoc backup tagging criteria"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdhocBasedTaggingCriteria {
+    #[doc = "Retention tag"]
     #[serde(rename = "tagInfo", default, skip_serializing_if = "Option::is_none")]
     pub tag_info: Option<RetentionTag>,
 }
@@ -44,10 +50,12 @@ impl AdhocBasedTaggingCriteria {
         Self::default()
     }
 }
+#[doc = "Adhoc trigger context"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdhocBasedTriggerContext {
     #[serde(flatten)]
     pub trigger_context: TriggerContext,
+    #[doc = "Adhoc backup tagging criteria"]
     #[serde(rename = "taggingCriteria")]
     pub tagging_criteria: AdhocBasedTaggingCriteria,
 }
@@ -59,6 +67,7 @@ impl AdhocBasedTriggerContext {
         }
     }
 }
+#[doc = "Azure backup discrete RecoveryPoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupDiscreteRecoveryPoint {
     #[serde(flatten)]
@@ -98,12 +107,16 @@ impl AzureBackupDiscreteRecoveryPoint {
         }
     }
 }
+#[doc = "List Restore Ranges Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupFindRestorableTimeRangesRequest {
+    #[doc = "Gets or sets the type of the source data store."]
     #[serde(rename = "sourceDataStoreType")]
     pub source_data_store_type: azure_backup_find_restorable_time_ranges_request::SourceDataStoreType,
+    #[doc = "Start time for the List Restore Ranges request. ISO 8601 format."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "End time for the List Restore Ranges request. ISO 8601 format."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
@@ -118,6 +131,7 @@ impl AzureBackupFindRestorableTimeRangesRequest {
 }
 pub mod azure_backup_find_restorable_time_ranges_request {
     use super::*;
+    #[doc = "Gets or sets the type of the source data store."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceDataStoreType {
         OperationalStore,
@@ -125,10 +139,12 @@ pub mod azure_backup_find_restorable_time_ranges_request {
         ArchiveStore,
     }
 }
+#[doc = "List Restore Ranges Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBackupFindRestorableTimeRangesRequestResource {
     #[serde(flatten)]
     pub dpp_worker_request: DppWorkerRequest,
+    #[doc = "List Restore Ranges Request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<AzureBackupFindRestorableTimeRangesRequest>,
 }
@@ -137,8 +153,10 @@ impl AzureBackupFindRestorableTimeRangesRequestResource {
         Self::default()
     }
 }
+#[doc = "List Restore Ranges Response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBackupFindRestorableTimeRangesResponse {
+    #[doc = "Returns the Restore Ranges available on the Backup Instance."]
     #[serde(rename = "restorableTimeRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub restorable_time_ranges: Vec<RestorableTimeRange>,
     #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
@@ -149,10 +167,12 @@ impl AzureBackupFindRestorableTimeRangesResponse {
         Self::default()
     }
 }
+#[doc = "List Restore Ranges Response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBackupFindRestorableTimeRangesResponseResource {
     #[serde(flatten)]
     pub dpp_resource: DppResource,
+    #[doc = "List Restore Ranges Response"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureBackupFindRestorableTimeRangesResponse>,
 }
@@ -161,58 +181,86 @@ impl AzureBackupFindRestorableTimeRangesResponseResource {
         Self::default()
     }
 }
+#[doc = "AzureBackup Job Class"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupJob {
+    #[doc = "Job Activity Id"]
     #[serde(rename = "activityID")]
     pub activity_id: String,
+    #[doc = "Name of the Backup Instance"]
     #[serde(rename = "backupInstanceFriendlyName")]
     pub backup_instance_friendly_name: String,
+    #[doc = "ARM ID of the Backup Instance"]
     #[serde(rename = "backupInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub backup_instance_id: Option<String>,
+    #[doc = "ARM ID of the DataSource"]
     #[serde(rename = "dataSourceId")]
     pub data_source_id: String,
+    #[doc = "Location of the DataSource"]
     #[serde(rename = "dataSourceLocation")]
     pub data_source_location: String,
+    #[doc = "User Friendly Name of the DataSource"]
     #[serde(rename = "dataSourceName")]
     pub data_source_name: String,
+    #[doc = "Data Source Set Name of the DataSource"]
     #[serde(rename = "dataSourceSetName")]
     pub data_source_set_name: String,
+    #[doc = "Type of DataSource"]
     #[serde(rename = "dataSourceType")]
     pub data_source_type: String,
+    #[doc = "Total run time of the job. ISO 8601 format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
+    #[doc = "EndTime of the job(in UTC)"]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "A List, detailing the errors related to the job"]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub error_details: Vec<UserFacingError>,
+    #[doc = "Extended Information about the job"]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<JobExtendedInfo>,
+    #[doc = "Indicated that whether the job is adhoc(true) or scheduled(false)"]
     #[serde(rename = "isUserTriggered")]
     pub is_user_triggered: bool,
+    #[doc = "It indicates the type of Job i.e. Backup:full/log/diff ;Restore:ALR/OLR; Tiering:Backup/Archive ; Management:ConfigureProtection/UnConfigure"]
     pub operation: String,
+    #[doc = "It indicates the type of Job i.e. Backup/Restore/Tiering/Management"]
     #[serde(rename = "operationCategory")]
     pub operation_category: String,
+    #[doc = "ARM ID of the policy"]
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
+    #[doc = "Name of the policy"]
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
     pub policy_name: Option<String>,
+    #[doc = "Indicated whether progress is enabled for the job"]
     #[serde(rename = "progressEnabled")]
     pub progress_enabled: bool,
+    #[doc = "Url which contains job's progress"]
     #[serde(rename = "progressUrl", default, skip_serializing_if = "Option::is_none")]
     pub progress_url: Option<String>,
+    #[doc = "It indicates the sub type of operation i.e. in case of Restore it can be ALR/OLR"]
     #[serde(rename = "restoreType", default, skip_serializing_if = "Option::is_none")]
     pub restore_type: Option<String>,
+    #[doc = "Resource Group Name of the Datasource"]
     #[serde(rename = "sourceResourceGroup")]
     pub source_resource_group: String,
+    #[doc = "SubscriptionId corresponding to the DataSource"]
     #[serde(rename = "sourceSubscriptionID")]
     pub source_subscription_id: String,
+    #[doc = "StartTime of the job(in UTC)"]
     #[serde(rename = "startTime")]
     pub start_time: String,
+    #[doc = "Status of the job like InProgress/Success/Failed/Cancelled/SuccessWithWarning"]
     pub status: String,
+    #[doc = "Subscription Id of the corresponding backup vault"]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
+    #[doc = "List of supported actions"]
     #[serde(rename = "supportedActions")]
     pub supported_actions: Vec<String>,
+    #[doc = "Name of the vault"]
     #[serde(rename = "vaultName")]
     pub vault_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -277,10 +325,12 @@ impl AzureBackupJob {
         }
     }
 }
+#[doc = "AzureBackup Job Resource Class"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBackupJobResource {
     #[serde(flatten)]
     pub dpp_resource: DppResource,
+    #[doc = "AzureBackup Job Class"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureBackupJob>,
 }
@@ -289,10 +339,12 @@ impl AzureBackupJobResource {
         Self::default()
     }
 }
+#[doc = "List of AzureBackup Job resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBackupJobResourceList {
     #[serde(flatten)]
     pub dpp_resource_list: DppResourceList,
+    #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureBackupJobResource>,
 }
@@ -301,10 +353,12 @@ impl AzureBackupJobResourceList {
         Self::default()
     }
 }
+#[doc = "Azure backup parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupParams {
     #[serde(flatten)]
     pub backup_parameters: BackupParameters,
+    #[doc = "BackupType ; Full/Incremental etc"]
     #[serde(rename = "backupType")]
     pub backup_type: String,
 }
@@ -316,6 +370,7 @@ impl AzureBackupParams {
         }
     }
 }
+#[doc = "Azure backup recoveryPoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupRecoveryPoint {
     #[serde(rename = "objectType")]
@@ -326,6 +381,7 @@ impl AzureBackupRecoveryPoint {
         Self { object_type }
     }
 }
+#[doc = "Azure backup recoveryPoint based restore request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupRecoveryPointBasedRestoreRequest {
     #[serde(flatten)]
@@ -341,10 +397,12 @@ impl AzureBackupRecoveryPointBasedRestoreRequest {
         }
     }
 }
+#[doc = "Azure backup recoveryPoint resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBackupRecoveryPointResource {
     #[serde(flatten)]
     pub dpp_resource: DppResource,
+    #[doc = "Azure backup recoveryPoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureBackupRecoveryPoint>,
 }
@@ -353,10 +411,12 @@ impl AzureBackupRecoveryPointResource {
         Self::default()
     }
 }
+#[doc = "Azure backup recoveryPoint resource list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBackupRecoveryPointResourceList {
     #[serde(flatten)]
     pub dpp_resource_list: DppResourceList,
+    #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureBackupRecoveryPointResource>,
 }
@@ -365,10 +425,12 @@ impl AzureBackupRecoveryPointResourceList {
         Self::default()
     }
 }
+#[doc = "AzureBackup RecoveryPointTime Based Restore Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupRecoveryTimeBasedRestoreRequest {
     #[serde(flatten)]
     pub azure_backup_restore_request: AzureBackupRestoreRequest,
+    #[doc = "The recovery time in ISO 8601 format example - 2020-08-14T17:30:00.0000000Z."]
     #[serde(rename = "recoveryPointTime")]
     pub recovery_point_time: String,
 }
@@ -380,12 +442,16 @@ impl AzureBackupRecoveryTimeBasedRestoreRequest {
         }
     }
 }
+#[doc = "Azure Backup Rehydrate Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupRehydrationRequest {
+    #[doc = "Id of the recovery point to be recovered"]
     #[serde(rename = "recoveryPointId")]
     pub recovery_point_id: String,
+    #[doc = "Priority to be used for rehydration. Values High or Standard"]
     #[serde(rename = "rehydrationPriority", default, skip_serializing_if = "Option::is_none")]
     pub rehydration_priority: Option<RehydrationPriority>,
+    #[doc = "Retention duration in ISO 8601 format i.e P10D ."]
     #[serde(rename = "rehydrationRetentionDuration")]
     pub rehydration_retention_duration: String,
 }
@@ -398,12 +464,15 @@ impl AzureBackupRehydrationRequest {
         }
     }
 }
+#[doc = "Azure backup restore request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupRestoreRequest {
     #[serde(rename = "objectType")]
     pub object_type: String,
+    #[doc = "Base class common to RestoreTargetInfo and RestoreFilesTargetInfo"]
     #[serde(rename = "restoreTargetInfo")]
     pub restore_target_info: RestoreTargetInfoBase,
+    #[doc = "Gets or sets the type of the source data store."]
     #[serde(rename = "sourceDataStoreType")]
     pub source_data_store_type: azure_backup_restore_request::SourceDataStoreType,
 }
@@ -422,6 +491,7 @@ impl AzureBackupRestoreRequest {
 }
 pub mod azure_backup_restore_request {
     use super::*;
+    #[doc = "Gets or sets the type of the source data store."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceDataStoreType {
         ArchiveStore,
@@ -429,12 +499,15 @@ pub mod azure_backup_restore_request {
         VaultStore,
     }
 }
+#[doc = "AzureBackup Restore with Rehydration Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupRestoreWithRehydrationRequest {
     #[serde(flatten)]
     pub azure_backup_recovery_point_based_restore_request: AzureBackupRecoveryPointBasedRestoreRequest,
+    #[doc = "Priority to be used for rehydration. Values High or Standard"]
     #[serde(rename = "rehydrationPriority")]
     pub rehydration_priority: RehydrationPriority,
+    #[doc = "Retention duration in ISO 8601 format i.e P10D ."]
     #[serde(rename = "rehydrationRetentionDuration")]
     pub rehydration_retention_duration: String,
 }
@@ -451,14 +524,18 @@ impl AzureBackupRestoreWithRehydrationRequest {
         }
     }
 }
+#[doc = "Azure backup rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupRule {
     #[serde(flatten)]
     pub base_policy_rule: BasePolicyRule,
+    #[doc = "BackupParameters base"]
     #[serde(rename = "backupParameters", default, skip_serializing_if = "Option::is_none")]
     pub backup_parameters: Option<BackupParameters>,
+    #[doc = "DataStoreInfo base"]
     #[serde(rename = "dataStore")]
     pub data_store: DataStoreInfoBase,
+    #[doc = "Trigger context"]
     pub trigger: TriggerContext,
 }
 impl AzureBackupRule {
@@ -471,10 +548,12 @@ impl AzureBackupRule {
         }
     }
 }
+#[doc = "Parameters for Operational-Tier DataStore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureOperationalStoreParameters {
     #[serde(flatten)]
     pub data_store_parameters: DataStoreParameters,
+    #[doc = "Gets or sets the Snapshot Resource Group Uri."]
     #[serde(rename = "resourceGroupId", default, skip_serializing_if = "Option::is_none")]
     pub resource_group_id: Option<String>,
 }
@@ -486,6 +565,7 @@ impl AzureOperationalStoreParameters {
         }
     }
 }
+#[doc = "Azure retention rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureRetentionRule {
     #[serde(flatten)]
@@ -503,8 +583,10 @@ impl AzureRetentionRule {
         }
     }
 }
+#[doc = "BackupCriteria base class"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupCriteria {
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -513,22 +595,31 @@ impl BackupCriteria {
         Self { object_type }
     }
 }
+#[doc = "Backup Instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupInstance {
+    #[doc = "Gets or sets the Backup Instance friendly name."]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
+    #[doc = "Datasource to be backed up"]
     #[serde(rename = "dataSourceInfo")]
     pub data_source_info: Datasource,
+    #[doc = "DatasourceSet details of datasource to be backed up"]
     #[serde(rename = "dataSourceSetInfo", default, skip_serializing_if = "Option::is_none")]
     pub data_source_set_info: Option<DatasourceSet>,
+    #[doc = "Policy Info in backupInstance"]
     #[serde(rename = "policyInfo")]
     pub policy_info: PolicyInfo,
+    #[doc = "Protection status details"]
     #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub protection_status: Option<ProtectionStatusDetails>,
+    #[doc = "Specifies the current protection state of the resource"]
     #[serde(rename = "currentProtectionState", default, skip_serializing_if = "Option::is_none")]
     pub current_protection_state: Option<backup_instance::CurrentProtectionState>,
+    #[doc = "Error object used by layers that have access to localized content, and propagate that to user"]
     #[serde(rename = "protectionErrorDetails", default, skip_serializing_if = "Option::is_none")]
     pub protection_error_details: Option<UserFacingError>,
+    #[doc = "Specifies the provisioning state of the resource i.e. provisioning/updating/Succeeded/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[serde(rename = "objectType")]
@@ -551,6 +642,7 @@ impl BackupInstance {
 }
 pub mod backup_instance {
     use super::*;
+    #[doc = "Specifies the current protection state of the resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CurrentProtectionState {
         Invalid,
@@ -567,10 +659,12 @@ pub mod backup_instance {
         UpdatingProtection,
     }
 }
+#[doc = "BackupInstance Resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupInstanceResource {
     #[serde(flatten)]
     pub dpp_resource: DppResource,
+    #[doc = "Backup Instance"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackupInstance>,
 }
@@ -579,10 +673,12 @@ impl BackupInstanceResource {
         Self::default()
     }
 }
+#[doc = "BackupInstance Resource list response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupInstanceResourceList {
     #[serde(flatten)]
     pub dpp_resource_list: DppResourceList,
+    #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupInstanceResource>,
 }
@@ -591,8 +687,10 @@ impl BackupInstanceResourceList {
         Self::default()
     }
 }
+#[doc = "BackupParameters base"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupParameters {
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -601,10 +699,12 @@ impl BackupParameters {
         Self { object_type }
     }
 }
+#[doc = "Rule based backup policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicy {
     #[serde(flatten)]
     pub base_backup_policy: BaseBackupPolicy,
+    #[doc = "Policy rule dictionary that contains rules for each backuptype i.e Full/Incremental/Logs etc"]
     #[serde(rename = "policyRules")]
     pub policy_rules: Vec<BasePolicyRule>,
 }
@@ -616,8 +716,10 @@ impl BackupPolicy {
         }
     }
 }
+#[doc = "Schedule for backup"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupSchedule {
+    #[doc = "ISO 8601 repeating time interval format"]
     #[serde(rename = "repeatingTimeIntervals")]
     pub repeating_time_intervals: Vec<String>,
 }
@@ -626,10 +728,13 @@ impl BackupSchedule {
         Self { repeating_time_intervals }
     }
 }
+#[doc = "Backup Vault"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupVault {
+    #[doc = "Provisioning state of the BackupVault resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<backup_vault::ProvisioningState>,
+    #[doc = "Storage Settings"]
     #[serde(rename = "storageSettings")]
     pub storage_settings: Vec<StorageSetting>,
 }
@@ -643,6 +748,7 @@ impl BackupVault {
 }
 pub mod backup_vault {
     use super::*;
+    #[doc = "Provisioning state of the BackupVault resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Failed,
@@ -652,10 +758,12 @@ pub mod backup_vault {
         Updating,
     }
 }
+#[doc = "Backup Vault Resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupVaultResource {
     #[serde(flatten)]
     pub dpp_tracked_resource: DppTrackedResource,
+    #[doc = "Backup Vault"]
     pub properties: BackupVault,
 }
 impl BackupVaultResource {
@@ -666,10 +774,12 @@ impl BackupVaultResource {
         }
     }
 }
+#[doc = "List of BackupVault resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupVaultResourceList {
     #[serde(flatten)]
     pub dpp_resource_list: DppResourceList,
+    #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BackupVaultResource>,
 }
@@ -678,8 +788,10 @@ impl BackupVaultResourceList {
         Self::default()
     }
 }
+#[doc = "BackupPolicy base"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseBackupPolicy {
+    #[doc = "Type of datasource for the backup management"]
     #[serde(rename = "datasourceTypes")]
     pub datasource_types: Vec<String>,
     #[serde(rename = "objectType")]
@@ -693,10 +805,12 @@ impl BaseBackupPolicy {
         }
     }
 }
+#[doc = "BaseBackupPolicy resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaseBackupPolicyResource {
     #[serde(flatten)]
     pub dpp_resource: DppResource,
+    #[doc = "BackupPolicy base"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaseBackupPolicy>,
 }
@@ -705,10 +819,12 @@ impl BaseBackupPolicyResource {
         Self::default()
     }
 }
+#[doc = "List of BaseBackupPolicy resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaseBackupPolicyResourceList {
     #[serde(flatten)]
     pub dpp_resource_list: DppResourceList,
+    #[doc = "List of resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BaseBackupPolicyResource>,
 }
@@ -717,6 +833,7 @@ impl BaseBackupPolicyResourceList {
         Self::default()
     }
 }
+#[doc = "BasePolicy Rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BasePolicyRule {
     pub name: String,
@@ -728,10 +845,13 @@ impl BasePolicyRule {
         Self { name, object_type }
     }
 }
+#[doc = "CheckNameAvailability Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityRequest {
+    #[doc = "Resource name for which availability needs to be checked"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Describes the Resource type: Microsoft.DataProtection/BackupVaults"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -740,12 +860,16 @@ impl CheckNameAvailabilityRequest {
         Self::default()
     }
 }
+#[doc = "CheckNameAvailability Result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
+    #[doc = "Gets or sets the message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Gets or sets a value indicating whether [name available]."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "Gets or sets the reason."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
@@ -754,14 +878,19 @@ impl CheckNameAvailabilityResult {
         Self::default()
     }
 }
+#[doc = "Localized display information of an operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientDiscoveryDisplay {
+    #[doc = "Description of the operation having details of what operation is about."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Operations Name itself."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Name of the provider for display purposes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "ResourceType for which this Operation can be performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
@@ -770,12 +899,16 @@ impl ClientDiscoveryDisplay {
         Self::default()
     }
 }
+#[doc = "Class to represent shoebox log specification in json client discovery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientDiscoveryForLogSpecification {
+    #[doc = "blob duration of shoebox log specification"]
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
+    #[doc = "Localized display name"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Name for shoebox log specification."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -784,8 +917,10 @@ impl ClientDiscoveryForLogSpecification {
         Self::default()
     }
 }
+#[doc = "Class to represent shoebox properties in json client discovery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientDiscoveryForProperties {
+    #[doc = "Class to represent shoebox service specification in json client discovery."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ClientDiscoveryForServiceSpecification>,
 }
@@ -794,8 +929,10 @@ impl ClientDiscoveryForProperties {
         Self::default()
     }
 }
+#[doc = "Class to represent shoebox service specification in json client discovery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientDiscoveryForServiceSpecification {
+    #[doc = "List of log specifications of this operation."]
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<ClientDiscoveryForLogSpecification>,
 }
@@ -804,10 +941,13 @@ impl ClientDiscoveryForServiceSpecification {
         Self::default()
     }
 }
+#[doc = "Operations List response which contains list of available APIs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientDiscoveryResponse {
+    #[doc = "Link to the next chunk of Response."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "List of available operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ClientDiscoveryValueForSingleApi>,
 }
@@ -816,16 +956,22 @@ impl ClientDiscoveryResponse {
         Self::default()
     }
 }
+#[doc = "Available operation details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClientDiscoveryValueForSingleApi {
+    #[doc = "Localized display information of an operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<ClientDiscoveryDisplay>,
+    #[doc = "Name of the Operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "The intended executor of the operation;governs the display of the operation in the RBAC UX and the audit logs UX"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Class to represent shoebox properties in json client discovery."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClientDiscoveryForProperties>,
 }
@@ -834,8 +980,10 @@ impl ClientDiscoveryValueForSingleApi {
         Self::default()
     }
 }
+#[doc = "An error response from Azure Backup."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
@@ -844,6 +992,7 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "Copy on Expiry Option"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopyOnExpiryOption {
     #[serde(flatten)]
@@ -854,8 +1003,10 @@ impl CopyOnExpiryOption {
         Self { copy_option }
     }
 }
+#[doc = "Options to copy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopyOption {
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -864,10 +1015,12 @@ impl CopyOption {
         Self { object_type }
     }
 }
+#[doc = "Duration based custom options to copy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomCopyOption {
     #[serde(flatten)]
     pub copy_option: CopyOption,
+    #[doc = "Data copied after given timespan"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
 }
@@ -879,10 +1032,13 @@ impl CustomCopyOption {
         }
     }
 }
+#[doc = "DataStoreInfo base"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataStoreInfoBase {
+    #[doc = "type of datastore; Operational/Vault/Archive"]
     #[serde(rename = "dataStoreType")]
     pub data_store_type: data_store_info_base::DataStoreType,
+    #[doc = "Type of Datasource object, used to initialize the right inherited type"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -896,6 +1052,7 @@ impl DataStoreInfoBase {
 }
 pub mod data_store_info_base {
     use super::*;
+    #[doc = "type of datastore; Operational/Vault/Archive"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataStoreType {
         OperationalStore,
@@ -903,10 +1060,13 @@ pub mod data_store_info_base {
         ArchiveStore,
     }
 }
+#[doc = "Parameters for DataStore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataStoreParameters {
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
+    #[doc = "type of datastore; Operational/Vault/Archive"]
     #[serde(rename = "dataStoreType")]
     pub data_store_type: data_store_parameters::DataStoreType,
 }
@@ -920,6 +1080,7 @@ impl DataStoreParameters {
 }
 pub mod data_store_parameters {
     use super::*;
+    #[doc = "type of datastore; Operational/Vault/Archive"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataStoreType {
         OperationalStore,
@@ -927,20 +1088,28 @@ pub mod data_store_parameters {
         ArchiveStore,
     }
 }
+#[doc = "Datasource to be backed up"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Datasource {
+    #[doc = "DatasourceType of the resource."]
     #[serde(rename = "datasourceType", default, skip_serializing_if = "Option::is_none")]
     pub datasource_type: Option<String>,
+    #[doc = "Type of Datasource object, used to initialize the right inherited type"]
     #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
     pub object_type: Option<String>,
+    #[doc = "Full ARM ID of the resource. For azure resources, this is ARM ID. For non azure resources, this will be the ID created by backup service via Fabric/Vault."]
     #[serde(rename = "resourceID")]
     pub resource_id: String,
+    #[doc = "Location of datasource."]
     #[serde(rename = "resourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub resource_location: Option<String>,
+    #[doc = "Unique identifier of the resource in the context of parent."]
     #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
+    #[doc = "Resource Type of Datasource."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Uri of the resource."]
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
@@ -957,20 +1126,28 @@ impl Datasource {
         }
     }
 }
+#[doc = "DatasourceSet details of datasource to be backed up"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasourceSet {
+    #[doc = "DatasourceType of the resource."]
     #[serde(rename = "datasourceType", default, skip_serializing_if = "Option::is_none")]
     pub datasource_type: Option<String>,
+    #[doc = "Type of Datasource object, used to initialize the right inherited type"]
     #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
     pub object_type: Option<String>,
+    #[doc = "Full ARM ID of the resource. For azure resources, this is ARM ID. For non azure resources, this will be the ID created by backup service via Fabric/Vault."]
     #[serde(rename = "resourceID")]
     pub resource_id: String,
+    #[doc = "Location of datasource."]
     #[serde(rename = "resourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub resource_location: Option<String>,
+    #[doc = "Unique identifier of the resource in the context of parent."]
     #[serde(rename = "resourceName", default, skip_serializing_if = "Option::is_none")]
     pub resource_name: Option<String>,
+    #[doc = "Resource Type of Datasource."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Uri of the resource."]
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
 }
@@ -987,10 +1164,13 @@ impl DatasourceSet {
         }
     }
 }
+#[doc = "Day of the week"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Day {
+    #[doc = "Date of the month"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub date: Option<i32>,
+    #[doc = "Whether Date is last date of month"]
     #[serde(rename = "isLast", default, skip_serializing_if = "Option::is_none")]
     pub is_last: Option<bool>,
 }
@@ -999,9 +1179,12 @@ impl Day {
         Self::default()
     }
 }
+#[doc = "Delete Option"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeleteOption {
+    #[doc = "Duration of deletion after given timespan"]
     pub duration: String,
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -1010,12 +1193,16 @@ impl DeleteOption {
         Self { duration, object_type }
     }
 }
+#[doc = "Identity details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DppIdentityDetails {
+    #[doc = "The object ID of the service principal object for the managed identity that is used to grant role-based access to an Azure resource."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "A Globally Unique Identifier (GUID) that represents the Azure AD tenant where the resource is now a member."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identityType which can be either SystemAssigned or None"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1024,14 +1211,19 @@ impl DppIdentityDetails {
         Self::default()
     }
 }
+#[doc = "Resource class"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DppResource {
+    #[doc = "Resource Id represents the complete path to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name associated with the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type represents the complete path of the form Namespace/ResourceType/ResourceType/..."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1040,8 +1232,10 @@ impl DppResource {
         Self::default()
     }
 }
+#[doc = "ListResource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DppResourceList {
+    #[doc = "The uri to fetch the next page of resources. Call ListNext() fetches next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1052,20 +1246,28 @@ impl DppResourceList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DppTrackedResource {
+    #[doc = "Optional ETag."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Resource Id represents the complete path to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Identity details"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<DppIdentityDetails>,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource name associated with the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Resource type represents the complete path of the form Namespace/ResourceType/ResourceType/..."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1076,6 +1278,7 @@ impl DppTrackedResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DppTrackedResourceList {
+    #[doc = "The uri to fetch the next page of resources. Call ListNext() fetches next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1106,16 +1309,22 @@ impl DppWorkerRequest {
         Self::default()
     }
 }
+#[doc = "The resource management error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<Error>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -1124,10 +1333,13 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1136,14 +1348,19 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The result for export jobs containing blob details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExportJobsResult {
+    #[doc = "URL of the blob into which the serialized string of list of jobs is exported."]
     #[serde(rename = "blobUrl", default, skip_serializing_if = "Option::is_none")]
     pub blob_url: Option<String>,
+    #[doc = "SAS key to access the blob."]
     #[serde(rename = "blobSasKey", default, skip_serializing_if = "Option::is_none")]
     pub blob_sas_key: Option<String>,
+    #[doc = "URL of the blob into which the ExcelFile is uploaded."]
     #[serde(rename = "excelFileBlobUrl", default, skip_serializing_if = "Option::is_none")]
     pub excel_file_blob_url: Option<String>,
+    #[doc = "SAS key to access the ExcelFile blob."]
     #[serde(rename = "excelFileBlobSasKey", default, skip_serializing_if = "Option::is_none")]
     pub excel_file_blob_sas_key: Option<String>,
 }
@@ -1152,12 +1369,15 @@ impl ExportJobsResult {
         Self::default()
     }
 }
+#[doc = "Base class for feature object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeatureValidationRequest {
     #[serde(flatten)]
     pub feature_validation_request_base: FeatureValidationRequestBase,
+    #[doc = "backup support feature type."]
     #[serde(rename = "featureType", default, skip_serializing_if = "Option::is_none")]
     pub feature_type: Option<feature_validation_request::FeatureType>,
+    #[doc = "backup support feature name."]
     #[serde(rename = "featureName", default, skip_serializing_if = "Option::is_none")]
     pub feature_name: Option<String>,
 }
@@ -1172,14 +1392,17 @@ impl FeatureValidationRequest {
 }
 pub mod feature_validation_request {
     use super::*;
+    #[doc = "backup support feature type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FeatureType {
         Invalid,
         DataSourceType,
     }
 }
+#[doc = "Base class for Backup Feature support"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeatureValidationRequestBase {
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -1188,12 +1411,15 @@ impl FeatureValidationRequestBase {
         Self { object_type }
     }
 }
+#[doc = "Feature Validation Response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeatureValidationResponse {
     #[serde(flatten)]
     pub feature_validation_response_base: FeatureValidationResponseBase,
+    #[doc = "backup support feature type."]
     #[serde(rename = "featureType", default, skip_serializing_if = "Option::is_none")]
     pub feature_type: Option<feature_validation_response::FeatureType>,
+    #[doc = "Response features"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<SupportedFeature>,
 }
@@ -1208,14 +1434,17 @@ impl FeatureValidationResponse {
 }
 pub mod feature_validation_response {
     use super::*;
+    #[doc = "backup support feature type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FeatureType {
         Invalid,
         DataSourceType,
     }
 }
+#[doc = "Base class for Backup Feature support"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeatureValidationResponseBase {
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -1224,6 +1453,7 @@ impl FeatureValidationResponseBase {
         Self { object_type }
     }
 }
+#[doc = "Immediate copy Option"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImmediateCopyOption {
     #[serde(flatten)]
@@ -1234,12 +1464,16 @@ impl ImmediateCopyOption {
         Self { copy_option }
     }
 }
+#[doc = "Inner Error"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
+    #[doc = "Any Key value pairs that can be provided to the client for additional  verbose information."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Option::is_none")]
     pub additional_info: Option<serde_json::Value>,
+    #[doc = "Unique code for this error"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Inner Error"]
     #[serde(rename = "embeddedInnerError", default, skip_serializing_if = "Option::is_none")]
     pub embedded_inner_error: Box<Option<InnerError>>,
 }
@@ -1248,8 +1482,10 @@ impl InnerError {
         Self::default()
     }
 }
+#[doc = "Class to contain criteria for item level restore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItemLevelRestoreCriteria {
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -1258,14 +1494,18 @@ impl ItemLevelRestoreCriteria {
         Self { object_type }
     }
 }
+#[doc = "Restore target info for Item level restore operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItemLevelRestoreTargetInfo {
     #[serde(flatten)]
     pub restore_target_info_base: RestoreTargetInfoBase,
+    #[doc = "Restore Criteria"]
     #[serde(rename = "restoreCriteria")]
     pub restore_criteria: Vec<ItemLevelRestoreCriteria>,
+    #[doc = "Datasource to be backed up"]
     #[serde(rename = "datasourceInfo")]
     pub datasource_info: Datasource,
+    #[doc = "DatasourceSet details of datasource to be backed up"]
     #[serde(rename = "datasourceSetInfo", default, skip_serializing_if = "Option::is_none")]
     pub datasource_set_info: Option<DatasourceSet>,
 }
@@ -1283,18 +1523,24 @@ impl ItemLevelRestoreTargetInfo {
         }
     }
 }
+#[doc = "Extended Information about the job"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobExtendedInfo {
+    #[doc = "Job's Additional Details"]
     #[serde(rename = "additionalDetails", default, skip_serializing_if = "Option::is_none")]
     pub additional_details: Option<serde_json::Value>,
+    #[doc = "State of the Backup Instance"]
     #[serde(rename = "backupInstanceState", default, skip_serializing_if = "Option::is_none")]
     pub backup_instance_state: Option<String>,
+    #[doc = "Number of bytes transferred"]
     #[serde(rename = "dataTransferredInBytes", default, skip_serializing_if = "Option::is_none")]
     pub data_transferred_in_bytes: Option<f64>,
+    #[doc = "Destination where restore is done"]
     #[serde(rename = "recoveryDestination", default, skip_serializing_if = "Option::is_none")]
     pub recovery_destination: Option<String>,
     #[serde(rename = "sourceRecoverPoint", default, skip_serializing_if = "Option::is_none")]
     pub source_recover_point: Option<RestoreJobRecoveryPointDetails>,
+    #[doc = "List of Sub Tasks of the job"]
     #[serde(rename = "subTasks", default, skip_serializing_if = "Vec::is_empty")]
     pub sub_tasks: Vec<JobSubTask>,
     #[serde(rename = "targetRecoverPoint", default, skip_serializing_if = "Option::is_none")]
@@ -1305,16 +1551,22 @@ impl JobExtendedInfo {
         Self::default()
     }
 }
+#[doc = "Details of Job's Sub Task"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSubTask {
+    #[doc = "Additional details of Sub Tasks"]
     #[serde(rename = "additionalDetails", default, skip_serializing_if = "Option::is_none")]
     pub additional_details: Option<serde_json::Value>,
+    #[doc = "Task Id of the Sub Task"]
     #[serde(rename = "taskId")]
     pub task_id: i32,
+    #[doc = "Name of the Sub Task"]
     #[serde(rename = "taskName")]
     pub task_name: String,
+    #[doc = "Progress of the Sub Task"]
     #[serde(rename = "taskProgress", default, skip_serializing_if = "Option::is_none")]
     pub task_progress: Option<String>,
+    #[doc = "Status of the Sub Task"]
     #[serde(rename = "taskStatus")]
     pub task_status: String,
 }
@@ -1329,8 +1581,10 @@ impl JobSubTask {
         }
     }
 }
+#[doc = "Operation Extended Info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationExtendedInfo {
+    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
     #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
     pub object_type: Option<String>,
 }
@@ -1339,10 +1593,12 @@ impl OperationExtendedInfo {
         Self::default()
     }
 }
+#[doc = "Operation Job Extended Info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationJobExtendedInfo {
     #[serde(flatten)]
     pub operation_extended_info: OperationExtendedInfo,
+    #[doc = "Arm Id of the job created for this operation."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
 }
@@ -1351,18 +1607,25 @@ impl OperationJobExtendedInfo {
         Self::default()
     }
 }
+#[doc = "Operation Resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResource {
+    #[doc = "End time of the operation"]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
+    #[doc = "It should match what is used to GET the operation result"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "It must match the last segment of the \"id\" field, and will typically be a GUID / system generated value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Operation Extended Info"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationExtendedInfo>,
+    #[doc = "Start time of the operation"]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1373,10 +1636,13 @@ impl OperationResource {
         Self::default()
     }
 }
+#[doc = "Patch Request content for Microsoft.DataProtection resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchResourceRequestInput {
+    #[doc = "Identity details"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<DppIdentityDetails>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1385,12 +1651,14 @@ impl PatchResourceRequestInput {
         Self::default()
     }
 }
+#[doc = "Policy Info in backupInstance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyInfo {
     #[serde(rename = "policyId")]
     pub policy_id: String,
     #[serde(rename = "policyVersion", default, skip_serializing_if = "Option::is_none")]
     pub policy_version: Option<String>,
+    #[doc = "Parameters in Policy"]
     #[serde(rename = "policyParameters", default, skip_serializing_if = "Option::is_none")]
     pub policy_parameters: Option<PolicyParameters>,
 }
@@ -1403,8 +1671,10 @@ impl PolicyInfo {
         }
     }
 }
+#[doc = "Parameters in Policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyParameters {
+    #[doc = "Gets or sets the DataStore Parameters"]
     #[serde(rename = "dataStoreParametersList", default, skip_serializing_if = "Vec::is_empty")]
     pub data_store_parameters_list: Vec<DataStoreParameters>,
 }
@@ -1413,10 +1683,13 @@ impl PolicyParameters {
         Self::default()
     }
 }
+#[doc = "Protection status details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionStatusDetails {
+    #[doc = "Error object used by layers that have access to localized content, and propagate that to user"]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<UserFacingError>,
+    #[doc = "Specifies the protection status of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<protection_status_details::Status>,
 }
@@ -1427,6 +1700,7 @@ impl ProtectionStatusDetails {
 }
 pub mod protection_status_details {
     use super::*;
+    #[doc = "Specifies the protection status of the resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         ConfiguringProtection,
@@ -1437,12 +1711,15 @@ pub mod protection_status_details {
         SoftDeleting,
     }
 }
+#[doc = "Item Level target info for restore operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RangeBasedItemLevelRestoreCriteria {
     #[serde(flatten)]
     pub item_level_restore_criteria: ItemLevelRestoreCriteria,
+    #[doc = "minimum value for range prefix match"]
     #[serde(rename = "minMatchingValue", default, skip_serializing_if = "Option::is_none")]
     pub min_matching_value: Option<String>,
+    #[doc = "maximum value for range prefix match"]
     #[serde(rename = "maxMatchingValue", default, skip_serializing_if = "Option::is_none")]
     pub max_matching_value: Option<String>,
 }
@@ -1455,6 +1732,7 @@ impl RangeBasedItemLevelRestoreCriteria {
         }
     }
 }
+#[doc = "RecoveryPoint datastore details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoveryPointDataStoreDetails {
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
@@ -1517,6 +1795,7 @@ impl RecoveryPointsFilters {
         Self::default()
     }
 }
+#[doc = "Priority to be used for rehydration. Values High or Standard"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RehydrationPriority {
     Invalid,
@@ -1525,8 +1804,10 @@ pub enum RehydrationPriority {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestorableTimeRange {
+    #[doc = "Start time for the available restore range"]
     #[serde(rename = "startTime")]
     pub start_time: String,
+    #[doc = "End time for the available restore range"]
     #[serde(rename = "endTime")]
     pub end_time: String,
     #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
@@ -1541,10 +1822,12 @@ impl RestorableTimeRange {
         }
     }
 }
+#[doc = "Class encapsulating restore as files target parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestoreFilesTargetInfo {
     #[serde(flatten)]
     pub restore_target_info_base: RestoreTargetInfoBase,
+    #[doc = "Class encapsulating target details, used where the destination is not a datasource"]
     #[serde(rename = "targetDetails")]
     pub target_details: TargetDetails,
 }
@@ -1568,12 +1851,15 @@ impl RestoreJobRecoveryPointDetails {
         Self::default()
     }
 }
+#[doc = "Class encapsulating restore target parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestoreTargetInfo {
     #[serde(flatten)]
     pub restore_target_info_base: RestoreTargetInfoBase,
+    #[doc = "Datasource to be backed up"]
     #[serde(rename = "datasourceInfo")]
     pub datasource_info: Datasource,
+    #[doc = "DatasourceSet details of datasource to be backed up"]
     #[serde(rename = "datasourceSetInfo", default, skip_serializing_if = "Option::is_none")]
     pub datasource_set_info: Option<DatasourceSet>,
 }
@@ -1586,12 +1872,16 @@ impl RestoreTargetInfo {
         }
     }
 }
+#[doc = "Base class common to RestoreTargetInfo and RestoreFilesTargetInfo"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestoreTargetInfoBase {
+    #[doc = "Type of Datasource object, used to initialize the right inherited type"]
     #[serde(rename = "objectType")]
     pub object_type: String,
+    #[doc = "Recovery Option"]
     #[serde(rename = "recoveryOption")]
     pub recovery_option: restore_target_info_base::RecoveryOption,
+    #[doc = "Target Restore region"]
     #[serde(rename = "restoreLocation", default, skip_serializing_if = "Option::is_none")]
     pub restore_location: Option<String>,
 }
@@ -1606,17 +1896,22 @@ impl RestoreTargetInfoBase {
 }
 pub mod restore_target_info_base {
     use super::*;
+    #[doc = "Recovery Option"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecoveryOption {
         FailIfExists,
     }
 }
+#[doc = "Retention tag"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionTag {
+    #[doc = "Retention Tag version."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Retention Tag version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Retention Tag Name to relate it to retention rule."]
     #[serde(rename = "tagName")]
     pub tag_name: String,
 }
@@ -1629,20 +1924,27 @@ impl RetentionTag {
         }
     }
 }
+#[doc = "Schedule based backup criteria"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleBasedBackupCriteria {
     #[serde(flatten)]
     pub backup_criteria: BackupCriteria,
+    #[doc = "it contains absolute values like \"AllBackup\" / \"FirstOfDay\" / \"FirstOfWeek\" / \"FirstOfMonth\"\r\nand should be part of AbsoluteMarker enum"]
     #[serde(rename = "absoluteCriteria", default, skip_serializing_if = "Vec::is_empty")]
     pub absolute_criteria: Vec<String>,
+    #[doc = "This is day of the month from 1 to 28 other wise last of month"]
     #[serde(rename = "daysOfMonth", default, skip_serializing_if = "Vec::is_empty")]
     pub days_of_month: Vec<Day>,
+    #[doc = "It should be Sunday/Monday/T..../Saturday"]
     #[serde(rename = "daysOfTheWeek", default, skip_serializing_if = "Vec::is_empty")]
     pub days_of_the_week: Vec<String>,
+    #[doc = "It should be January/February/....../December"]
     #[serde(rename = "monthsOfYear", default, skip_serializing_if = "Vec::is_empty")]
     pub months_of_year: Vec<String>,
+    #[doc = "List of schedule times for backup"]
     #[serde(rename = "scheduleTimes", default, skip_serializing_if = "Vec::is_empty")]
     pub schedule_times: Vec<String>,
+    #[doc = "It should be First/Second/Third/Fourth/Last"]
     #[serde(rename = "weeksOfTheMonth", default, skip_serializing_if = "Vec::is_empty")]
     pub weeks_of_the_month: Vec<String>,
 }
@@ -1659,11 +1961,14 @@ impl ScheduleBasedBackupCriteria {
         }
     }
 }
+#[doc = "Schedule based trigger context"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleBasedTriggerContext {
     #[serde(flatten)]
     pub trigger_context: TriggerContext,
+    #[doc = "Schedule for backup"]
     pub schedule: BackupSchedule,
+    #[doc = "List of tags that can be applicable for given schedule."]
     #[serde(rename = "taggingCriteria")]
     pub tagging_criteria: Vec<TaggingCriteria>,
 }
@@ -1676,10 +1981,13 @@ impl ScheduleBasedTriggerContext {
         }
     }
 }
+#[doc = "Source LifeCycle"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceLifeCycle {
+    #[doc = "Delete Option"]
     #[serde(rename = "deleteAfter")]
     pub delete_after: DeleteOption,
+    #[doc = "DataStoreInfo base"]
     #[serde(rename = "sourceDataStore")]
     pub source_data_store: DataStoreInfoBase,
     #[serde(rename = "targetDataStoreCopySettings", default, skip_serializing_if = "Vec::is_empty")]
@@ -1694,10 +2002,13 @@ impl SourceLifeCycle {
         }
     }
 }
+#[doc = "Storage setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSetting {
+    #[doc = "Gets or sets the type of the datastore."]
     #[serde(rename = "datastoreType", default, skip_serializing_if = "Option::is_none")]
     pub datastore_type: Option<storage_setting::DatastoreType>,
+    #[doc = "Gets or sets the type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<storage_setting::Type>,
 }
@@ -1708,24 +2019,30 @@ impl StorageSetting {
 }
 pub mod storage_setting {
     use super::*;
+    #[doc = "Gets or sets the type of the datastore."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DatastoreType {
         ArchiveStore,
         SnapshotStore,
         VaultStore,
     }
+    #[doc = "Gets or sets the type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         GeoRedundant,
         LocallyRedundant,
     }
 }
+#[doc = "Elements class for feature request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedFeature {
+    #[doc = "support feature type."]
     #[serde(rename = "featureName", default, skip_serializing_if = "Option::is_none")]
     pub feature_name: Option<String>,
+    #[doc = "feature support status"]
     #[serde(rename = "supportStatus", default, skip_serializing_if = "Option::is_none")]
     pub support_status: Option<supported_feature::SupportStatus>,
+    #[doc = "support feature type."]
     #[serde(rename = "exposureControlledFeatures", default, skip_serializing_if = "Vec::is_empty")]
     pub exposure_controlled_features: Vec<String>,
 }
@@ -1736,6 +2053,7 @@ impl SupportedFeature {
 }
 pub mod supported_feature {
     use super::*;
+    #[doc = "feature support status"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SupportStatus {
         Invalid,
@@ -1746,8 +2064,10 @@ pub mod supported_feature {
         GenerallyAvailable,
     }
 }
+#[doc = "Sync BackupInstance Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncBackupInstanceRequest {
+    #[doc = "Field indicating sync type e.g. to sync only in case of failure or in all cases"]
     #[serde(rename = "syncType", default, skip_serializing_if = "Option::is_none")]
     pub sync_type: Option<sync_backup_instance_request::SyncType>,
 }
@@ -1758,20 +2078,26 @@ impl SyncBackupInstanceRequest {
 }
 pub mod sync_backup_instance_request {
     use super::*;
+    #[doc = "Field indicating sync type e.g. to sync only in case of failure or in all cases"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SyncType {
         Default,
         ForceResync,
     }
 }
+#[doc = "Tagging criteria"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaggingCriteria {
+    #[doc = "Criteria which decides whether the tag can be applied to a triggered backup."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub criteria: Vec<BackupCriteria>,
+    #[doc = "Specifies if tag is default."]
     #[serde(rename = "isDefault")]
     pub is_default: bool,
+    #[doc = "Retention Tag priority."]
     #[serde(rename = "taggingPriority")]
     pub tagging_priority: i64,
+    #[doc = "Retention tag"]
     #[serde(rename = "tagInfo")]
     pub tag_info: RetentionTag,
 }
@@ -1785,10 +2111,13 @@ impl TaggingCriteria {
         }
     }
 }
+#[doc = "Target copy settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetCopySetting {
+    #[doc = "Options to copy"]
     #[serde(rename = "copyAfter")]
     pub copy_after: CopyOption,
+    #[doc = "DataStoreInfo base"]
     #[serde(rename = "dataStore")]
     pub data_store: DataStoreInfoBase,
 }
@@ -1797,12 +2126,16 @@ impl TargetCopySetting {
         Self { copy_after, data_store }
     }
 }
+#[doc = "Class encapsulating target details, used where the destination is not a datasource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TargetDetails {
+    #[doc = "Restore operation may create multiple files inside location pointed by Url\r\nBelow will be the common prefix for all of them"]
     #[serde(rename = "filePrefix")]
     pub file_prefix: String,
+    #[doc = "Denotes the target location where the data will be restored,\r\nstring value for the enum {Microsoft.Internal.AzureBackup.DataProtection.Common.Interface.RestoreTargetLocationType}"]
     #[serde(rename = "restoreTargetLocationType")]
     pub restore_target_location_type: target_details::RestoreTargetLocationType,
+    #[doc = "Url denoting the restore destination. It can point to container / file share etc"]
     pub url: String,
 }
 impl TargetDetails {
@@ -1816,6 +2149,7 @@ impl TargetDetails {
 }
 pub mod target_details {
     use super::*;
+    #[doc = "Denotes the target location where the data will be restored,\r\nstring value for the enum {Microsoft.Internal.AzureBackup.DataProtection.Common.Interface.RestoreTargetLocationType}"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RestoreTargetLocationType {
         Invalid,
@@ -1823,8 +2157,10 @@ pub mod target_details {
         AzureFiles,
     }
 }
+#[doc = "Trigger backup request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerBackupRequest {
+    #[doc = "Adhoc backup rules"]
     #[serde(rename = "backupRuleOptions")]
     pub backup_rule_options: AdHocBackupRuleOptions,
 }
@@ -1833,8 +2169,10 @@ impl TriggerBackupRequest {
         Self { backup_rule_options }
     }
 }
+#[doc = "Trigger context"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerContext {
+    #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
     pub object_type: String,
 }
@@ -1843,24 +2181,33 @@ impl TriggerContext {
         Self { object_type }
     }
 }
+#[doc = "Error object used by layers that have access to localized content, and propagate that to user"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserFacingError {
+    #[doc = "Unique code for this error"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Additional related Errors"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<UserFacingError>,
+    #[doc = "Inner Error"]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<InnerError>,
+    #[doc = "Whether the operation will be retryable or not"]
     #[serde(rename = "isRetryable", default, skip_serializing_if = "Option::is_none")]
     pub is_retryable: Option<bool>,
+    #[doc = "Whether the operation is due to a user error or service error"]
     #[serde(rename = "isUserError", default, skip_serializing_if = "Option::is_none")]
     pub is_user_error: Option<bool>,
+    #[doc = "Any key value pairs that can be injected inside error object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "RecommendedAction � localized."]
     #[serde(rename = "recommendedAction", default, skip_serializing_if = "Vec::is_empty")]
     pub recommended_action: Vec<String>,
+    #[doc = "Target of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -1869,8 +2216,10 @@ impl UserFacingError {
         Self::default()
     }
 }
+#[doc = "Validate for backup request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateForBackupRequest {
+    #[doc = "Backup Instance"]
     #[serde(rename = "backupInstance")]
     pub backup_instance: BackupInstance,
 }
@@ -1879,8 +2228,10 @@ impl ValidateForBackupRequest {
         Self { backup_instance }
     }
 }
+#[doc = "Validate restore request object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateRestoreRequestObject {
+    #[doc = "Azure backup restore request"]
     #[serde(rename = "restoreRequestObject")]
     pub restore_request_object: AzureBackupRestoreRequest,
 }
@@ -1889,18 +2240,25 @@ impl ValidateRestoreRequestObject {
         Self { restore_request_object }
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -1911,6 +2269,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -1918,6 +2277,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

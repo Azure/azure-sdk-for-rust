@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Error Field contract."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorFieldContract {
+    #[doc = "Property level error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Human-readable representation of property-level error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Property name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -16,12 +20,16 @@ impl ErrorFieldContract {
         Self::default()
     }
 }
+#[doc = "Error message body that will indicate why the operation failed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookError {
+    #[doc = "Service-defined error code. This code serves as a sub-status for the HTTP error code specified in the response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Human-readable representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The list of invalid fields send in request, in case of validation error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
@@ -30,10 +38,12 @@ impl WorkbookError {
         Self::default()
     }
 }
+#[doc = "An Application Insights workbook template definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookTemplate {
     #[serde(flatten)]
     pub workbook_template_resource: WorkbookTemplateResource,
+    #[doc = "Properties that contain a workbook template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkbookTemplateProperties>,
 }
@@ -45,16 +55,22 @@ impl WorkbookTemplate {
         }
     }
 }
+#[doc = "Gallery information for a workbook template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookTemplateGallery {
+    #[doc = "Name of the workbook template in the gallery."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Category for the gallery."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "Type of workbook supported by the workbook template."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Order of the template within the gallery."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order: Option<i64>,
+    #[doc = "Azure resource type supported by the gallery."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
 }
@@ -63,10 +79,13 @@ impl WorkbookTemplateGallery {
         Self::default()
     }
 }
+#[doc = "Localized template data and gallery information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookTemplateLocalizedGallery {
+    #[doc = "Valid JSON object containing workbook template payload."]
     #[serde(rename = "templateData", default, skip_serializing_if = "Option::is_none")]
     pub template_data: Option<serde_json::Value>,
+    #[doc = "Workbook galleries supported by the template."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub galleries: Vec<WorkbookTemplateGallery>,
 }
@@ -75,15 +94,21 @@ impl WorkbookTemplateLocalizedGallery {
         Self::default()
     }
 }
+#[doc = "Properties that contain a workbook template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookTemplateProperties {
+    #[doc = "Priority of the template. Determines which template to open when a workbook gallery is opened in viewer mode."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i64>,
+    #[doc = "Information about the author of the workbook template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
+    #[doc = "Valid JSON object containing workbook template payload."]
     #[serde(rename = "templateData")]
     pub template_data: serde_json::Value,
+    #[doc = "Workbook galleries supported by the template."]
     pub galleries: Vec<WorkbookTemplateGallery>,
+    #[doc = "Key value pair of localized gallery. Each key is the locale code of languages supported by the Azure portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub localized: Option<serde_json::Value>,
 }
@@ -98,15 +123,21 @@ impl WorkbookTemplateProperties {
         }
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookTemplateResource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -121,10 +152,13 @@ impl WorkbookTemplateResource {
         }
     }
 }
+#[doc = "The parameters that can be provided when updating workbook template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookTemplateUpdateParameters {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties that contain a workbook template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkbookTemplateProperties>,
 }
@@ -133,8 +167,10 @@ impl WorkbookTemplateUpdateParameters {
         Self::default()
     }
 }
+#[doc = "WorkbookTemplate list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookTemplatesListResult {
+    #[doc = "An array of workbook templates."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WorkbookTemplate>,
 }

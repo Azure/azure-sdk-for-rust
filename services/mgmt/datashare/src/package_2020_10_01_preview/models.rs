@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An ADLS Gen 1 file data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen1FileDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the ADLS Gen1 file data set."]
     pub properties: AdlsGen1FileProperties,
 }
 impl AdlsGen1FileDataSet {
@@ -13,18 +15,25 @@ impl AdlsGen1FileDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "Properties of the ADLS Gen1 file data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen1FileProperties {
+    #[doc = "The ADLS account name."]
     #[serde(rename = "accountName")]
     pub account_name: String,
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "The file name in the ADLS account."]
     #[serde(rename = "fileName")]
     pub file_name: String,
+    #[doc = "The folder path within the ADLS account."]
     #[serde(rename = "folderPath")]
     pub folder_path: String,
+    #[doc = "Resource group of ADLS account."]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Subscription id of ADLS account."]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -40,10 +49,12 @@ impl AdlsGen1FileProperties {
         }
     }
 }
+#[doc = "An ADLS Gen 1 folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen1FolderDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the ADLS Gen1 folder data set."]
     pub properties: AdlsGen1FolderProperties,
 }
 impl AdlsGen1FolderDataSet {
@@ -51,16 +62,22 @@ impl AdlsGen1FolderDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "Properties of the ADLS Gen1 folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen1FolderProperties {
+    #[doc = "The ADLS account name."]
     #[serde(rename = "accountName")]
     pub account_name: String,
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "The folder path within the ADLS account."]
     #[serde(rename = "folderPath")]
     pub folder_path: String,
+    #[doc = "Resource group of ADLS account."]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Subscription id of ADLS account."]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -75,10 +92,12 @@ impl AdlsGen1FolderProperties {
         }
     }
 }
+#[doc = "An ADLS Gen 2 file data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the ADLS Gen2 file data set."]
     pub properties: AdlsGen2FileProperties,
 }
 impl AdlsGen2FileDataSet {
@@ -86,10 +105,12 @@ impl AdlsGen2FileDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "An ADLS Gen2 file data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "ADLS Gen 2 file data set mapping property bag."]
     pub properties: AdlsGen2FileDataSetMappingProperties,
 }
 impl AdlsGen2FileDataSetMapping {
@@ -100,24 +121,34 @@ impl AdlsGen2FileDataSetMapping {
         }
     }
 }
+#[doc = "ADLS Gen 2 file data set mapping property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileDataSetMappingProperties {
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<adls_gen2_file_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "File path within the file system."]
     #[serde(rename = "filePath")]
     pub file_path: String,
+    #[doc = "File system to which the file belongs."]
     #[serde(rename = "fileSystem")]
     pub file_system: String,
+    #[doc = "Type of output file"]
     #[serde(rename = "outputType", default, skip_serializing_if = "Option::is_none")]
     pub output_type: Option<adls_gen2_file_data_set_mapping_properties::OutputType>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<adls_gen2_file_data_set_mapping_properties::ProvisioningState>,
+    #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set."]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account."]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -145,16 +176,19 @@ impl AdlsGen2FileDataSetMappingProperties {
 }
 pub mod adls_gen2_file_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Type of output file"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OutputType {
         Csv,
         Parquet,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -164,18 +198,25 @@ pub mod adls_gen2_file_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the ADLS Gen2 file data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "File path within the file system."]
     #[serde(rename = "filePath")]
     pub file_path: String,
+    #[doc = "File system to which the file belongs."]
     #[serde(rename = "fileSystem")]
     pub file_system: String,
+    #[doc = "Resource group of storage account"]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set"]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account"]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -197,10 +238,12 @@ impl AdlsGen2FileProperties {
         }
     }
 }
+#[doc = "An ADLS Gen 2 file system data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileSystemDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the ADLS Gen2 file system data set."]
     pub properties: AdlsGen2FileSystemProperties,
 }
 impl AdlsGen2FileSystemDataSet {
@@ -208,10 +251,12 @@ impl AdlsGen2FileSystemDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "An ADLS Gen2 file system data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileSystemDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "ADLS Gen 2 file system data set mapping property bag."]
     pub properties: AdlsGen2FileSystemDataSetMappingProperties,
 }
 impl AdlsGen2FileSystemDataSetMapping {
@@ -222,20 +267,28 @@ impl AdlsGen2FileSystemDataSetMapping {
         }
     }
 }
+#[doc = "ADLS Gen 2 file system data set mapping property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileSystemDataSetMappingProperties {
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<adls_gen2_file_system_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "The file system name."]
     #[serde(rename = "fileSystem")]
     pub file_system: String,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<adls_gen2_file_system_data_set_mapping_properties::ProvisioningState>,
+    #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set."]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account."]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -260,11 +313,13 @@ impl AdlsGen2FileSystemDataSetMappingProperties {
 }
 pub mod adls_gen2_file_system_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -274,16 +329,22 @@ pub mod adls_gen2_file_system_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the ADLS Gen2 file system data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileSystemProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "The file system name."]
     #[serde(rename = "fileSystem")]
     pub file_system: String,
+    #[doc = "Resource group of storage account"]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set"]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account"]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -298,10 +359,12 @@ impl AdlsGen2FileSystemProperties {
         }
     }
 }
+#[doc = "An ADLS Gen 2 folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FolderDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the ADLS Gen2 folder data set."]
     pub properties: AdlsGen2FolderProperties,
 }
 impl AdlsGen2FolderDataSet {
@@ -309,10 +372,12 @@ impl AdlsGen2FolderDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "An ADLS Gen2 folder data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FolderDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "ADLS Gen 2 folder data set mapping property bag."]
     pub properties: AdlsGen2FolderDataSetMappingProperties,
 }
 impl AdlsGen2FolderDataSetMapping {
@@ -323,22 +388,31 @@ impl AdlsGen2FolderDataSetMapping {
         }
     }
 }
+#[doc = "ADLS Gen 2 folder data set mapping property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FolderDataSetMappingProperties {
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<adls_gen2_folder_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "File system to which the folder belongs."]
     #[serde(rename = "fileSystem")]
     pub file_system: String,
+    #[doc = "Folder path within the file system."]
     #[serde(rename = "folderPath")]
     pub folder_path: String,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<adls_gen2_folder_data_set_mapping_properties::ProvisioningState>,
+    #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set."]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account."]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -365,11 +439,13 @@ impl AdlsGen2FolderDataSetMappingProperties {
 }
 pub mod adls_gen2_folder_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -379,18 +455,25 @@ pub mod adls_gen2_folder_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the ADLS Gen2 folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FolderProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "File system to which the folder belongs."]
     #[serde(rename = "fileSystem")]
     pub file_system: String,
+    #[doc = "Folder path within the file system."]
     #[serde(rename = "folderPath")]
     pub folder_path: String,
+    #[doc = "Resource group of storage account"]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set"]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account"]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -412,10 +495,12 @@ impl AdlsGen2FolderProperties {
         }
     }
 }
+#[doc = "An ADLSGen2 storage account data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2StorageAccountDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the ADLSGen2 storage account data set."]
     pub properties: AdlsGen2StorageAccountDataSetProperties,
 }
 impl AdlsGen2StorageAccountDataSet {
@@ -423,10 +508,12 @@ impl AdlsGen2StorageAccountDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "ADLSGen2 storage account data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2StorageAccountDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Properties of the ADLSGen2 storage account data set."]
     pub properties: AdlsGen2StorageAccountDataSetMappingProperties,
 }
 impl AdlsGen2StorageAccountDataSetMapping {
@@ -437,21 +524,30 @@ impl AdlsGen2StorageAccountDataSetMapping {
         }
     }
 }
+#[doc = "Properties of the ADLSGen2 storage account data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2StorageAccountDataSetMappingProperties {
+    #[doc = "Gets or sets the container name."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<adls_gen2_storage_account_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "Gets or sets the path to folder within the container."]
     pub folder: String,
+    #[doc = "Location of the sink storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the mount path"]
     #[serde(rename = "mountPath", default, skip_serializing_if = "Option::is_none")]
     pub mount_path: Option<String>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<adls_gen2_storage_account_data_set_mapping_properties::ProvisioningState>,
+    #[doc = "Resource id of the sink storage account"]
     #[serde(rename = "storageAccountResourceId")]
     pub storage_account_resource_id: String,
 }
@@ -471,11 +567,13 @@ impl AdlsGen2StorageAccountDataSetMappingProperties {
 }
 pub mod adls_gen2_storage_account_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -485,13 +583,18 @@ pub mod adls_gen2_storage_account_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the ADLSGen2 storage account data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2StorageAccountDataSetProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Location of the ADLSGen2 storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "A list of ADLSGen2 storage account paths."]
     pub paths: Vec<AdlsGen2StorageAccountPath>,
+    #[doc = "Resource id of the ADLSGen2 storage account."]
     #[serde(rename = "storageAccountResourceId")]
     pub storage_account_resource_id: String,
 }
@@ -505,12 +608,16 @@ impl AdlsGen2StorageAccountDataSetProperties {
         }
     }
 }
+#[doc = "Defines a single ADLS Gen2 storage account path."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2StorageAccountPath {
+    #[doc = "Gets or sets the path on the consumer side where the dataset is to be mapped."]
     #[serde(rename = "consumerPath", default, skip_serializing_if = "Option::is_none")]
     pub consumer_path: Option<String>,
+    #[doc = "Gets or sets the container name to share."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "Gets or sets the path to file/folder within the container."]
     #[serde(rename = "providerPath", default, skip_serializing_if = "Option::is_none")]
     pub provider_path: Option<String>,
 }
@@ -523,11 +630,14 @@ impl AdlsGen2StorageAccountPath {
         }
     }
 }
+#[doc = "An account data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Account {
     #[serde(flatten)]
     pub default_dto: DefaultDto,
+    #[doc = "Identity of resource"]
     pub identity: Identity,
+    #[doc = "Account property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
 }
@@ -540,10 +650,13 @@ impl Account {
         }
     }
 }
+#[doc = "List response for get Accounts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<Account>,
 }
 impl AccountList {
@@ -551,14 +664,19 @@ impl AccountList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Account property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountProperties {
+    #[doc = "Time at which the account was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "Provisioning state of the Account"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
+    #[doc = "Email of the user who created the resource"]
     #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
+    #[doc = "Name of the user who created the resource"]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
@@ -569,6 +687,7 @@ impl AccountProperties {
 }
 pub mod account_properties {
     use super::*;
+    #[doc = "Provisioning state of the Account"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -578,8 +697,10 @@ pub mod account_properties {
         Failed,
     }
 }
+#[doc = "Update parameters for accounts"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountUpdateParameters {
+    #[doc = "Tags on the azure resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -588,10 +709,12 @@ impl AccountUpdateParameters {
         Self::default()
     }
 }
+#[doc = "An Azure storage blob container data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobContainerDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the BLOB container data set."]
     pub properties: BlobContainerProperties,
 }
 impl BlobContainerDataSet {
@@ -599,10 +722,12 @@ impl BlobContainerDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "A Blob container data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobContainerDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Azure storage Blob container data set mapping property bag."]
     pub properties: BlobContainerMappingProperties,
 }
 impl BlobContainerDataSetMapping {
@@ -613,20 +738,28 @@ impl BlobContainerDataSetMapping {
         }
     }
 }
+#[doc = "Azure storage Blob container data set mapping property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobContainerMappingProperties {
+    #[doc = "BLOB Container name."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<blob_container_mapping_properties::DataSetMappingStatus>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blob_container_mapping_properties::ProvisioningState>,
+    #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set."]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account."]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -651,11 +784,13 @@ impl BlobContainerMappingProperties {
 }
 pub mod blob_container_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -665,16 +800,22 @@ pub mod blob_container_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the BLOB container data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobContainerProperties {
+    #[doc = "BLOB Container name."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Resource group of storage account"]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set"]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account"]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -689,10 +830,12 @@ impl BlobContainerProperties {
         }
     }
 }
+#[doc = "An Azure storage blob data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the blob data set."]
     pub properties: BlobProperties,
 }
 impl BlobDataSet {
@@ -700,10 +843,12 @@ impl BlobDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "A Blob data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Azure storage Blob data set mapping property bag."]
     pub properties: BlobMappingProperties,
 }
 impl BlobDataSetMapping {
@@ -714,10 +859,12 @@ impl BlobDataSetMapping {
         }
     }
 }
+#[doc = "An Azure storage blob folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobFolderDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the blob folder data set."]
     pub properties: BlobFolderProperties,
 }
 impl BlobFolderDataSet {
@@ -725,10 +872,12 @@ impl BlobFolderDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "A Blob folder data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobFolderDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Azure storage Blob folder data set mapping property bag."]
     pub properties: BlobFolderMappingProperties,
 }
 impl BlobFolderDataSetMapping {
@@ -739,21 +888,30 @@ impl BlobFolderDataSetMapping {
         }
     }
 }
+#[doc = "Azure storage Blob folder data set mapping property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobFolderMappingProperties {
+    #[doc = "Container that has the file path."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<blob_folder_mapping_properties::DataSetMappingStatus>,
+    #[doc = "Prefix for blob folder"]
     pub prefix: String,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blob_folder_mapping_properties::ProvisioningState>,
+    #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set."]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account."]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -780,11 +938,13 @@ impl BlobFolderMappingProperties {
 }
 pub mod blob_folder_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -794,17 +954,24 @@ pub mod blob_folder_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the blob folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobFolderProperties {
+    #[doc = "Container that has the file path."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Prefix for blob folder"]
     pub prefix: String,
+    #[doc = "Resource group of storage account"]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set"]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account"]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -826,24 +993,34 @@ impl BlobFolderProperties {
         }
     }
 }
+#[doc = "Azure storage Blob data set mapping property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobMappingProperties {
+    #[doc = "Container that has the file path."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<blob_mapping_properties::DataSetMappingStatus>,
+    #[doc = "File path within the source data set"]
     #[serde(rename = "filePath")]
     pub file_path: String,
+    #[doc = "File output type"]
     #[serde(rename = "outputType", default, skip_serializing_if = "Option::is_none")]
     pub output_type: Option<blob_mapping_properties::OutputType>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blob_mapping_properties::ProvisioningState>,
+    #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set."]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account."]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -871,16 +1048,19 @@ impl BlobMappingProperties {
 }
 pub mod blob_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "File output type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OutputType {
         Csv,
         Parquet,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -890,18 +1070,25 @@ pub mod blob_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the blob data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobProperties {
+    #[doc = "Container that has the file path."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "File path within the source data set"]
     #[serde(rename = "filePath")]
     pub file_path: String,
+    #[doc = "Resource group of storage account"]
     #[serde(rename = "resourceGroup")]
     pub resource_group: String,
+    #[doc = "Storage account name of the source data set"]
     #[serde(rename = "storageAccountName")]
     pub storage_account_name: String,
+    #[doc = "Subscription id of storage account"]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
 }
@@ -923,10 +1110,12 @@ impl BlobProperties {
         }
     }
 }
+#[doc = "An Azure blob storage account data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageAccountDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the blob storage account data set."]
     pub properties: BlobStorageAccountDataSetProperties,
 }
 impl BlobStorageAccountDataSet {
@@ -934,10 +1123,12 @@ impl BlobStorageAccountDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "A blob storage account data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageAccountDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Properties of the blob storage account data set."]
     pub properties: BlobStorageAccountDataSetMappingProperties,
 }
 impl BlobStorageAccountDataSetMapping {
@@ -948,21 +1139,30 @@ impl BlobStorageAccountDataSetMapping {
         }
     }
 }
+#[doc = "Properties of the blob storage account data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageAccountDataSetMappingProperties {
+    #[doc = "Gets or sets the container name."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<blob_storage_account_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "Gets or sets the path to folder within the container."]
     pub folder: String,
+    #[doc = "Location of the sink storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Gets or sets the mount path on the consumer side where the dataset is to be mapped."]
     #[serde(rename = "mountPath", default, skip_serializing_if = "Option::is_none")]
     pub mount_path: Option<String>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<blob_storage_account_data_set_mapping_properties::ProvisioningState>,
+    #[doc = "Resource id of the sink storage account"]
     #[serde(rename = "storageAccountResourceId")]
     pub storage_account_resource_id: String,
 }
@@ -982,11 +1182,13 @@ impl BlobStorageAccountDataSetMappingProperties {
 }
 pub mod blob_storage_account_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -996,13 +1198,18 @@ pub mod blob_storage_account_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the blob storage account data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageAccountDataSetProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Location of the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "A list of storage account paths."]
     pub paths: Vec<BlobStorageAccountPath>,
+    #[doc = "Resource id of the storage account."]
     #[serde(rename = "storageAccountResourceId")]
     pub storage_account_resource_id: String,
 }
@@ -1016,12 +1223,16 @@ impl BlobStorageAccountDataSetProperties {
         }
     }
 }
+#[doc = "Defines a single blob storage account path."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageAccountPath {
+    #[doc = "Gets or sets the path on the consumer side where the dataset is to be mapped."]
     #[serde(rename = "consumerPath", default, skip_serializing_if = "Option::is_none")]
     pub consumer_path: Option<String>,
+    #[doc = "Gets or sets the container name to share."]
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "Gets or sets the path to file/folder within the container."]
     #[serde(rename = "providerPath", default, skip_serializing_if = "Option::is_none")]
     pub provider_path: Option<String>,
 }
@@ -1034,10 +1245,12 @@ impl BlobStorageAccountPath {
         }
     }
 }
+#[doc = "A consumer Invitation data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerInvitation {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Properties of consumer invitation"]
     pub properties: ConsumerInvitationProperties,
 }
 impl ConsumerInvitation {
@@ -1048,10 +1261,13 @@ impl ConsumerInvitation {
         }
     }
 }
+#[doc = "List response for get InvitationList"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerInvitationList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ConsumerInvitation>,
 }
 impl ConsumerInvitationList {
@@ -1059,36 +1275,52 @@ impl ConsumerInvitationList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Properties of consumer invitation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerInvitationProperties {
+    #[doc = "Number of data sets in a share"]
     #[serde(rename = "dataSetCount", default, skip_serializing_if = "Option::is_none")]
     pub data_set_count: Option<i32>,
+    #[doc = "Description shared when the invitation was created"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The expiration date for the share subscription created by accepting the invitation."]
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
+    #[doc = "Unique id of the invitation."]
     #[serde(rename = "invitationId")]
     pub invitation_id: String,
+    #[doc = "The status of the invitation."]
     #[serde(rename = "invitationStatus", default, skip_serializing_if = "Option::is_none")]
     pub invitation_status: Option<consumer_invitation_properties::InvitationStatus>,
+    #[doc = "invitation location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Email of the provider who created the resource"]
     #[serde(rename = "providerEmail", default, skip_serializing_if = "Option::is_none")]
     pub provider_email: Option<String>,
+    #[doc = "Name of the provider who created the resource"]
     #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
+    #[doc = "Tenant name of the provider who created the resource"]
     #[serde(rename = "providerTenantName", default, skip_serializing_if = "Option::is_none")]
     pub provider_tenant_name: Option<String>,
+    #[doc = "The time the recipient responded to the invitation."]
     #[serde(rename = "respondedAt", default, skip_serializing_if = "Option::is_none")]
     pub responded_at: Option<String>,
+    #[doc = "Gets the time at which the invitation was sent."]
     #[serde(rename = "sentAt", default, skip_serializing_if = "Option::is_none")]
     pub sent_at: Option<String>,
+    #[doc = "Gets the source share Name."]
     #[serde(rename = "shareName", default, skip_serializing_if = "Option::is_none")]
     pub share_name: Option<String>,
+    #[doc = "Terms of use shared when the invitation was created"]
     #[serde(rename = "termsOfUse", default, skip_serializing_if = "Option::is_none")]
     pub terms_of_use: Option<String>,
+    #[doc = "Email of the user who created the resource"]
     #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
+    #[doc = "Name of the user who created the resource"]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
@@ -1115,6 +1347,7 @@ impl ConsumerInvitationProperties {
 }
 pub mod consumer_invitation_properties {
     use super::*;
+    #[doc = "The status of the invitation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InvitationStatus {
         Pending,
@@ -1123,10 +1356,12 @@ pub mod consumer_invitation_properties {
         Withdrawn,
     }
 }
+#[doc = "A consumer side dataSet data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsumerSourceDataSet {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Properties of consumer source dataSet"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConsumerSourceDataSetProperties>,
 }
@@ -1135,10 +1370,13 @@ impl ConsumerSourceDataSet {
         Self::default()
     }
 }
+#[doc = "A consumer side list of source dataSets"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsumerSourceDataSetList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ConsumerSourceDataSet>,
 }
 impl ConsumerSourceDataSetList {
@@ -1146,16 +1384,22 @@ impl ConsumerSourceDataSetList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Properties of consumer source dataSet"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsumerSourceDataSetProperties {
+    #[doc = "DataSet Id"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Location of the data set."]
     #[serde(rename = "dataSetLocation", default, skip_serializing_if = "Option::is_none")]
     pub data_set_location: Option<String>,
+    #[doc = "DataSet name"]
     #[serde(rename = "dataSetName", default, skip_serializing_if = "Option::is_none")]
     pub data_set_name: Option<String>,
+    #[doc = "DataSet path"]
     #[serde(rename = "dataSetPath", default, skip_serializing_if = "Option::is_none")]
     pub data_set_path: Option<String>,
+    #[doc = "Type of data set"]
     #[serde(rename = "dataSetType", default, skip_serializing_if = "Option::is_none")]
     pub data_set_type: Option<consumer_source_data_set_properties::DataSetType>,
 }
@@ -1166,6 +1410,7 @@ impl ConsumerSourceDataSetProperties {
 }
 pub mod consumer_source_data_set_properties {
     use super::*;
+    #[doc = "Type of data set"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetType {
         Blob,
@@ -1187,10 +1432,12 @@ pub mod consumer_source_data_set_properties {
         BlobStorageAccount,
     }
 }
+#[doc = "A DataSet data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSet {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Kind of data set."]
     pub kind: data_set::Kind,
 }
 impl DataSet {
@@ -1203,6 +1450,7 @@ impl DataSet {
 }
 pub mod data_set {
     use super::*;
+    #[doc = "Kind of data set."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Blob,
@@ -1224,10 +1472,13 @@ pub mod data_set {
         BlobStorageAccount,
     }
 }
+#[doc = "List response for get DataSets"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSetList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<DataSet>,
 }
 impl DataSetList {
@@ -1235,10 +1486,12 @@ impl DataSetList {
         Self { next_link: None, value }
     }
 }
+#[doc = "A data set mapping data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSetMapping {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Kind of data set mapping."]
     pub kind: data_set_mapping::Kind,
 }
 impl DataSetMapping {
@@ -1251,6 +1504,7 @@ impl DataSetMapping {
 }
 pub mod data_set_mapping {
     use super::*;
+    #[doc = "Kind of data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Blob,
@@ -1270,10 +1524,13 @@ pub mod data_set_mapping {
         BlobStorageAccount,
     }
 }
+#[doc = "List response for get DataSetMappings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSetMappingList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<DataSetMapping>,
 }
 impl DataSetMappingList {
@@ -1281,8 +1538,10 @@ impl DataSetMappingList {
         Self { next_link: None, value }
     }
 }
+#[doc = "The data share error model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataShareError {
+    #[doc = "The data share error body model."]
     pub error: DataShareErrorInfo,
 }
 impl DataShareError {
@@ -1290,12 +1549,17 @@ impl DataShareError {
         Self { error }
     }
 }
+#[doc = "The data share error body model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataShareErrorInfo {
+    #[doc = "Code of the error"]
     pub code: String,
+    #[doc = "Nested details of the error model"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<DataShareErrorInfo>,
+    #[doc = "Message of the error"]
     pub message: String,
+    #[doc = "Target of the error"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -1309,12 +1573,15 @@ impl DataShareErrorInfo {
         }
     }
 }
+#[doc = "Base data transfer object implementation for default resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultDto {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Location of the azure resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Tags on the azure resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1323,10 +1590,13 @@ impl DefaultDto {
         Self::default()
     }
 }
+#[doc = "properties for dimension"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DimensionProperties {
+    #[doc = "localized display name of the dimension to customer"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "dimension name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -1335,12 +1605,16 @@ impl DimensionProperties {
         Self::default()
     }
 }
+#[doc = "Identity of resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
+    #[doc = "service principal Id"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "Tenant Id"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Identity Type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
@@ -1351,15 +1625,18 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "Identity Type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "A Invitation data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Invitation {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Invitation property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InvitationProperties>,
 }
@@ -1368,10 +1645,13 @@ impl Invitation {
         Self::default()
     }
 }
+#[doc = "List response for get InvitationList"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InvitationList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<Invitation>,
 }
 impl InvitationList {
@@ -1379,26 +1659,37 @@ impl InvitationList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Invitation property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InvitationProperties {
+    #[doc = "The expiration date for the invitation and share subscription."]
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
+    #[doc = "unique invitation id"]
     #[serde(rename = "invitationId", default, skip_serializing_if = "Option::is_none")]
     pub invitation_id: Option<String>,
+    #[doc = "The status of the invitation."]
     #[serde(rename = "invitationStatus", default, skip_serializing_if = "Option::is_none")]
     pub invitation_status: Option<invitation_properties::InvitationStatus>,
+    #[doc = "The time the recipient responded to the invitation."]
     #[serde(rename = "respondedAt", default, skip_serializing_if = "Option::is_none")]
     pub responded_at: Option<String>,
+    #[doc = "Gets the time at which the invitation was sent."]
     #[serde(rename = "sentAt", default, skip_serializing_if = "Option::is_none")]
     pub sent_at: Option<String>,
+    #[doc = "The target Azure AD Id. Can't be combined with email."]
     #[serde(rename = "targetActiveDirectoryId", default, skip_serializing_if = "Option::is_none")]
     pub target_active_directory_id: Option<String>,
+    #[doc = "The email the invitation is directed to."]
     #[serde(rename = "targetEmail", default, skip_serializing_if = "Option::is_none")]
     pub target_email: Option<String>,
+    #[doc = "The target user or application Id that invitation is being sent to.\r\nMust be specified along TargetActiveDirectoryId. This enables sending\r\ninvitations to specific users or applications in an AD tenant."]
     #[serde(rename = "targetObjectId", default, skip_serializing_if = "Option::is_none")]
     pub target_object_id: Option<String>,
+    #[doc = "Email of the user who created the resource"]
     #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
+    #[doc = "Name of the user who created the resource"]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
@@ -1409,6 +1700,7 @@ impl InvitationProperties {
 }
 pub mod invitation_properties {
     use super::*;
+    #[doc = "The status of the invitation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InvitationStatus {
         Pending,
@@ -1417,10 +1709,12 @@ pub mod invitation_properties {
         Withdrawn,
     }
 }
+#[doc = "A kusto cluster data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the kusto cluster data set."]
     pub properties: KustoClusterDataSetProperties,
 }
 impl KustoClusterDataSet {
@@ -1428,10 +1722,12 @@ impl KustoClusterDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "A Kusto cluster data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Properties of the Kusto cluster data set mapping"]
     pub properties: KustoClusterDataSetMappingProperties,
 }
 impl KustoClusterDataSetMapping {
@@ -1442,16 +1738,22 @@ impl KustoClusterDataSetMapping {
         }
     }
 }
+#[doc = "Properties of the Kusto cluster data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSetMappingProperties {
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<kusto_cluster_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "Resource id of the sink kusto cluster."]
     #[serde(rename = "kustoClusterResourceId")]
     pub kusto_cluster_resource_id: String,
+    #[doc = "Location of the sink kusto cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<kusto_cluster_data_set_mapping_properties::ProvisioningState>,
 }
@@ -1468,11 +1770,13 @@ impl KustoClusterDataSetMappingProperties {
 }
 pub mod kusto_cluster_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -1482,14 +1786,19 @@ pub mod kusto_cluster_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the kusto cluster data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSetProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Resource id of the kusto cluster."]
     #[serde(rename = "kustoClusterResourceId")]
     pub kusto_cluster_resource_id: String,
+    #[doc = "Location of the kusto cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Provisioning state of the kusto cluster data set."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<kusto_cluster_data_set_properties::ProvisioningState>,
 }
@@ -1505,6 +1814,7 @@ impl KustoClusterDataSetProperties {
 }
 pub mod kusto_cluster_data_set_properties {
     use super::*;
+    #[doc = "Provisioning state of the kusto cluster data set."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -1514,10 +1824,12 @@ pub mod kusto_cluster_data_set_properties {
         Failed,
     }
 }
+#[doc = "A kusto database data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoDatabaseDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the kusto database data set."]
     pub properties: KustoDatabaseDataSetProperties,
 }
 impl KustoDatabaseDataSet {
@@ -1525,10 +1837,12 @@ impl KustoDatabaseDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "A Kusto database data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoDatabaseDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Properties of the Kusto database data set mapping"]
     pub properties: KustoDatabaseDataSetMappingProperties,
 }
 impl KustoDatabaseDataSetMapping {
@@ -1539,16 +1853,22 @@ impl KustoDatabaseDataSetMapping {
         }
     }
 }
+#[doc = "Properties of the Kusto database data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoDatabaseDataSetMappingProperties {
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<kusto_database_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "Resource id of the sink kusto cluster."]
     #[serde(rename = "kustoClusterResourceId")]
     pub kusto_cluster_resource_id: String,
+    #[doc = "Location of the sink kusto cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<kusto_database_data_set_mapping_properties::ProvisioningState>,
 }
@@ -1565,11 +1885,13 @@ impl KustoDatabaseDataSetMappingProperties {
 }
 pub mod kusto_database_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -1579,14 +1901,19 @@ pub mod kusto_database_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the kusto database data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoDatabaseDataSetProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Resource id of the kusto database."]
     #[serde(rename = "kustoDatabaseResourceId")]
     pub kusto_database_resource_id: String,
+    #[doc = "Location of the kusto cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Provisioning state of the kusto database data set."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<kusto_database_data_set_properties::ProvisioningState>,
 }
@@ -1602,6 +1929,7 @@ impl KustoDatabaseDataSetProperties {
 }
 pub mod kusto_database_data_set_properties {
     use super::*;
+    #[doc = "Provisioning state of the kusto database data set."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -1611,10 +1939,13 @@ pub mod kusto_database_data_set_properties {
         Failed,
     }
 }
+#[doc = "List response for get operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<OperationModel>,
 }
 impl OperationList {
@@ -1622,12 +1953,16 @@ impl OperationList {
         Self { next_link: None, value }
     }
 }
+#[doc = "log specifications for operation api"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaLogSpecification {
+    #[doc = "blob duration of the log"]
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
+    #[doc = "localized name of the log category"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "name of the log category"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -1636,30 +1971,43 @@ impl OperationMetaLogSpecification {
         Self::default()
     }
 }
+#[doc = "metric specifications for the operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaMetricSpecification {
+    #[doc = "aggregation type of metric"]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "properties for dimension"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<DimensionProperties>,
+    #[doc = "description of the metric"]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "localized name of the metric"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "enable regional mdm account"]
     #[serde(rename = "enableRegionalMdmAccount", default, skip_serializing_if = "Option::is_none")]
     pub enable_regional_mdm_account: Option<String>,
+    #[doc = "fill gap with zero"]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
+    #[doc = "internal metric name"]
     #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
+    #[doc = "name of the metric"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "dimension name use to replace resource id if specified"]
     #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
     pub resource_id_dimension_name_override: Option<String>,
+    #[doc = "supported aggregation types"]
     #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_aggregation_types: Vec<String>,
+    #[doc = "supported time grain types"]
     #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_time_grain_types: Vec<String>,
+    #[doc = "units for the metric"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
 }
@@ -1668,8 +2016,10 @@ impl OperationMetaMetricSpecification {
         Self::default()
     }
 }
+#[doc = "properties on meta info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaPropertyInfo {
+    #[doc = "The operation meta service specification"]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<OperationMetaServiceSpecification>,
 }
@@ -1678,10 +2028,13 @@ impl OperationMetaPropertyInfo {
         Self::default()
     }
 }
+#[doc = "The operation meta service specification"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetaServiceSpecification {
+    #[doc = "log specifications for the operation"]
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<OperationMetaLogSpecification>,
+    #[doc = "metric specifications for the operation"]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<OperationMetaMetricSpecification>,
 }
@@ -1690,14 +2043,19 @@ impl OperationMetaServiceSpecification {
         Self::default()
     }
 }
+#[doc = "The response model for get operations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationModel {
+    #[doc = "Properties on operations"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationModelProperties>,
+    #[doc = "Operation name for display purposes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "properties on meta info"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationMetaPropertyInfo>,
 }
@@ -1706,14 +2064,19 @@ impl OperationModel {
         Self::default()
     }
 }
+#[doc = "Properties on operations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationModelProperties {
+    #[doc = "Description of the operation for display purposes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Name of the operation for display purposes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Name of the provider for display purposes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Name of the resource type for display purposes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
@@ -1722,14 +2085,19 @@ impl OperationModelProperties {
         Self::default()
     }
 }
+#[doc = "Response for long running operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationResponse {
+    #[doc = "start time"]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The data share error body model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<DataShareErrorInfo>,
+    #[doc = "start time"]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Operation state of the long running operation."]
     pub status: operation_response::Status,
 }
 impl OperationResponse {
@@ -1744,6 +2112,7 @@ impl OperationResponse {
 }
 pub mod operation_response {
     use super::*;
+    #[doc = "Operation state of the long running operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Accepted,
@@ -1754,10 +2123,12 @@ pub mod operation_response {
         Canceled,
     }
 }
+#[doc = "A provider side share subscription data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderShareSubscription {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Provider share subscription properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProviderShareSubscriptionProperties>,
 }
@@ -1766,10 +2137,13 @@ impl ProviderShareSubscription {
         Self::default()
     }
 }
+#[doc = "List response for get ShareSubscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProviderShareSubscriptionList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ProviderShareSubscription>,
 }
 impl ProviderShareSubscriptionList {
@@ -1777,26 +2151,37 @@ impl ProviderShareSubscriptionList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Provider share subscription properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderShareSubscriptionProperties {
+    #[doc = "Email of the consumer who created the share subscription"]
     #[serde(rename = "consumerEmail", default, skip_serializing_if = "Option::is_none")]
     pub consumer_email: Option<String>,
+    #[doc = "Name of the consumer who created the share subscription"]
     #[serde(rename = "consumerName", default, skip_serializing_if = "Option::is_none")]
     pub consumer_name: Option<String>,
+    #[doc = "Tenant name of the consumer who created the share subscription"]
     #[serde(rename = "consumerTenantName", default, skip_serializing_if = "Option::is_none")]
     pub consumer_tenant_name: Option<String>,
+    #[doc = "created at"]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "Expiration date of the share subscription in UTC format"]
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
+    #[doc = "Email of the provider who created the share"]
     #[serde(rename = "providerEmail", default, skip_serializing_if = "Option::is_none")]
     pub provider_email: Option<String>,
+    #[doc = "Name of the provider who created the share"]
     #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
+    #[doc = "Shared at"]
     #[serde(rename = "sharedAt", default, skip_serializing_if = "Option::is_none")]
     pub shared_at: Option<String>,
+    #[doc = "share Subscription Object Id"]
     #[serde(rename = "shareSubscriptionObjectId", default, skip_serializing_if = "Option::is_none")]
     pub share_subscription_object_id: Option<String>,
+    #[doc = "Gets the status of share subscription"]
     #[serde(rename = "shareSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub share_subscription_status: Option<provider_share_subscription_properties::ShareSubscriptionStatus>,
 }
@@ -1807,6 +2192,7 @@ impl ProviderShareSubscriptionProperties {
 }
 pub mod provider_share_subscription_properties {
     use super::*;
+    #[doc = "Gets the status of share subscription"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ShareSubscriptionStatus {
         Active,
@@ -1815,14 +2201,19 @@ pub mod provider_share_subscription_properties {
         Revoking,
     }
 }
+#[doc = "Base data transfer object implementation for proxy resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyDto {
+    #[doc = "The resource id of the azure resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the azure resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
+    #[doc = "Type of the azure resource"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1831,10 +2222,13 @@ impl ProxyDto {
         Self::default()
     }
 }
+#[doc = "A Scheduled source synchronization setting data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledSourceShareSynchronizationSettingProperties {
+    #[doc = "Recurrence Interval"]
     #[serde(rename = "recurrenceInterval", default, skip_serializing_if = "Option::is_none")]
     pub recurrence_interval: Option<scheduled_source_share_synchronization_setting_properties::RecurrenceInterval>,
+    #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_time: Option<String>,
 }
@@ -1845,16 +2239,19 @@ impl ScheduledSourceShareSynchronizationSettingProperties {
 }
 pub mod scheduled_source_share_synchronization_setting_properties {
     use super::*;
+    #[doc = "Recurrence Interval"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecurrenceInterval {
         Hour,
         Day,
     }
 }
+#[doc = "A type of synchronization setting based on schedule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledSourceSynchronizationSetting {
     #[serde(flatten)]
     pub source_share_synchronization_setting: SourceShareSynchronizationSetting,
+    #[doc = "A Scheduled source synchronization setting data transfer object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduledSourceShareSynchronizationSettingProperties>,
 }
@@ -1866,10 +2263,12 @@ impl ScheduledSourceSynchronizationSetting {
         }
     }
 }
+#[doc = "A type of synchronization setting based on schedule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledSynchronizationSetting {
     #[serde(flatten)]
     pub synchronization_setting: SynchronizationSetting,
+    #[doc = "A Scheduled synchronization setting data transfer object."]
     pub properties: ScheduledSynchronizationSettingProperties,
 }
 impl ScheduledSynchronizationSetting {
@@ -1880,16 +2279,22 @@ impl ScheduledSynchronizationSetting {
         }
     }
 }
+#[doc = "A Scheduled synchronization setting data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledSynchronizationSettingProperties {
+    #[doc = "Time at which the synchronization setting was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "Gets or sets the provisioning state"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scheduled_synchronization_setting_properties::ProvisioningState>,
+    #[doc = "Recurrence Interval"]
     #[serde(rename = "recurrenceInterval")]
     pub recurrence_interval: scheduled_synchronization_setting_properties::RecurrenceInterval,
+    #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime")]
     pub synchronization_time: String,
+    #[doc = "Name of the user who created the synchronization setting."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
@@ -1909,6 +2314,7 @@ impl ScheduledSynchronizationSettingProperties {
 }
 pub mod scheduled_synchronization_setting_properties {
     use super::*;
+    #[doc = "Gets or sets the provisioning state"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -1917,16 +2323,19 @@ pub mod scheduled_synchronization_setting_properties {
         Moving,
         Failed,
     }
+    #[doc = "Recurrence Interval"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecurrenceInterval {
         Hour,
         Day,
     }
 }
+#[doc = "A type of trigger based on schedule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledTrigger {
     #[serde(flatten)]
     pub trigger: Trigger,
+    #[doc = "A Scheduled trigger data transfer object."]
     pub properties: ScheduledTriggerProperties,
 }
 impl ScheduledTrigger {
@@ -1934,20 +2343,28 @@ impl ScheduledTrigger {
         Self { trigger, properties }
     }
 }
+#[doc = "A Scheduled trigger data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledTriggerProperties {
+    #[doc = "Time at which the trigger was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "Gets the provisioning state"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scheduled_trigger_properties::ProvisioningState>,
+    #[doc = "Recurrence Interval"]
     #[serde(rename = "recurrenceInterval")]
     pub recurrence_interval: scheduled_trigger_properties::RecurrenceInterval,
+    #[doc = "Synchronization mode"]
     #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_mode: Option<scheduled_trigger_properties::SynchronizationMode>,
+    #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime")]
     pub synchronization_time: String,
+    #[doc = "Gets the trigger state"]
     #[serde(rename = "triggerStatus", default, skip_serializing_if = "Option::is_none")]
     pub trigger_status: Option<scheduled_trigger_properties::TriggerStatus>,
+    #[doc = "Name of the user who created the trigger."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
@@ -1966,6 +2383,7 @@ impl ScheduledTriggerProperties {
 }
 pub mod scheduled_trigger_properties {
     use super::*;
+    #[doc = "Gets the provisioning state"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -1974,16 +2392,19 @@ pub mod scheduled_trigger_properties {
         Moving,
         Failed,
     }
+    #[doc = "Recurrence Interval"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecurrenceInterval {
         Hour,
         Day,
     }
+    #[doc = "Synchronization mode"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SynchronizationMode {
         Incremental,
         FullSync,
     }
+    #[doc = "Gets the trigger state"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TriggerStatus {
         Active,
@@ -1991,10 +2412,12 @@ pub mod scheduled_trigger_properties {
         SourceSynchronizationSettingDeleted,
     }
 }
+#[doc = "A share data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Share {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Share property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ShareProperties>,
 }
@@ -2003,10 +2426,13 @@ impl Share {
         Self::default()
     }
 }
+#[doc = "List response for get Shares."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<Share>,
 }
 impl ShareList {
@@ -2014,20 +2440,28 @@ impl ShareList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Share property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareProperties {
+    #[doc = "Time at which the share was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "Share description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets the provisioning state"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<share_properties::ProvisioningState>,
+    #[doc = "Share kind."]
     #[serde(rename = "shareKind", default, skip_serializing_if = "Option::is_none")]
     pub share_kind: Option<share_properties::ShareKind>,
+    #[doc = "Share terms."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub terms: Option<String>,
+    #[doc = "Email of the user who created the resource"]
     #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
+    #[doc = "Name of the user who created the resource"]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
@@ -2038,6 +2472,7 @@ impl ShareProperties {
 }
 pub mod share_properties {
     use super::*;
+    #[doc = "Gets or sets the provisioning state"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -2046,16 +2481,19 @@ pub mod share_properties {
         Moving,
         Failed,
     }
+    #[doc = "Share kind."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ShareKind {
         CopyBased,
         InPlace,
     }
 }
+#[doc = "A share subscription data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscription {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Share subscription property bag."]
     pub properties: ShareSubscriptionProperties,
 }
 impl ShareSubscription {
@@ -2066,10 +2504,13 @@ impl ShareSubscription {
         }
     }
 }
+#[doc = "List response for get ShareSubscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscriptionList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ShareSubscription>,
 }
 impl ShareSubscriptionList {
@@ -2077,36 +2518,52 @@ impl ShareSubscriptionList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Share subscription property bag."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscriptionProperties {
+    #[doc = "Time at which the share subscription was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The expiration date of the share subscription."]
     #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date: Option<String>,
+    #[doc = "The invitation id."]
     #[serde(rename = "invitationId")]
     pub invitation_id: String,
+    #[doc = "Email of the provider who created the resource"]
     #[serde(rename = "providerEmail", default, skip_serializing_if = "Option::is_none")]
     pub provider_email: Option<String>,
+    #[doc = "Name of the provider who created the resource"]
     #[serde(rename = "providerName", default, skip_serializing_if = "Option::is_none")]
     pub provider_name: Option<String>,
+    #[doc = "Tenant name of the provider who created the resource"]
     #[serde(rename = "providerTenantName", default, skip_serializing_if = "Option::is_none")]
     pub provider_tenant_name: Option<String>,
+    #[doc = "Provisioning state of the share subscription"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<share_subscription_properties::ProvisioningState>,
+    #[doc = "Description of share"]
     #[serde(rename = "shareDescription", default, skip_serializing_if = "Option::is_none")]
     pub share_description: Option<String>,
+    #[doc = "Kind of share"]
     #[serde(rename = "shareKind", default, skip_serializing_if = "Option::is_none")]
     pub share_kind: Option<share_subscription_properties::ShareKind>,
+    #[doc = "Name of the share"]
     #[serde(rename = "shareName", default, skip_serializing_if = "Option::is_none")]
     pub share_name: Option<String>,
+    #[doc = "Gets the current status of share subscription."]
     #[serde(rename = "shareSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
     pub share_subscription_status: Option<share_subscription_properties::ShareSubscriptionStatus>,
+    #[doc = "Terms of a share"]
     #[serde(rename = "shareTerms", default, skip_serializing_if = "Option::is_none")]
     pub share_terms: Option<String>,
+    #[doc = "Source share location."]
     #[serde(rename = "sourceShareLocation")]
     pub source_share_location: String,
+    #[doc = "Email of the user who created the resource"]
     #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
     pub user_email: Option<String>,
+    #[doc = "Name of the user who created the resource"]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
 }
@@ -2133,6 +2590,7 @@ impl ShareSubscriptionProperties {
 }
 pub mod share_subscription_properties {
     use super::*;
+    #[doc = "Provisioning state of the share subscription"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -2141,11 +2599,13 @@ pub mod share_subscription_properties {
         Moving,
         Failed,
     }
+    #[doc = "Kind of share"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ShareKind {
         CopyBased,
         InPlace,
     }
+    #[doc = "Gets the current status of share subscription."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ShareSubscriptionStatus {
         Active,
@@ -2154,20 +2614,28 @@ pub mod share_subscription_properties {
         Revoking,
     }
 }
+#[doc = "A ShareSubscriptionSynchronization data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscriptionSynchronization {
+    #[doc = "Synchronization duration"]
     #[serde(rename = "durationMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<i32>,
+    #[doc = "End time of synchronization"]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "message of Synchronization"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "start time of synchronization"]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Raw Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Synchronization id"]
     #[serde(rename = "synchronizationId")]
     pub synchronization_id: String,
+    #[doc = "Synchronization Mode"]
     #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_mode: Option<share_subscription_synchronization::SynchronizationMode>,
 }
@@ -2186,16 +2654,20 @@ impl ShareSubscriptionSynchronization {
 }
 pub mod share_subscription_synchronization {
     use super::*;
+    #[doc = "Synchronization Mode"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SynchronizationMode {
         Incremental,
         FullSync,
     }
 }
+#[doc = "A consumer side list of share subscription synchronizations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSubscriptionSynchronizationList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ShareSubscriptionSynchronization>,
 }
 impl ShareSubscriptionSynchronizationList {
@@ -2203,26 +2675,37 @@ impl ShareSubscriptionSynchronizationList {
         Self { next_link: None, value }
     }
 }
+#[doc = "A ShareSynchronization data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareSynchronization {
+    #[doc = "Email of the user who created the synchronization"]
     #[serde(rename = "consumerEmail", default, skip_serializing_if = "Option::is_none")]
     pub consumer_email: Option<String>,
+    #[doc = "Name of the user who created the synchronization"]
     #[serde(rename = "consumerName", default, skip_serializing_if = "Option::is_none")]
     pub consumer_name: Option<String>,
+    #[doc = "Tenant name of the consumer who created the synchronization"]
     #[serde(rename = "consumerTenantName", default, skip_serializing_if = "Option::is_none")]
     pub consumer_tenant_name: Option<String>,
+    #[doc = "synchronization duration"]
     #[serde(rename = "durationMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<i32>,
+    #[doc = "End time of synchronization"]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "message of synchronization"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "start time of synchronization"]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Raw Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Synchronization id"]
     #[serde(rename = "synchronizationId", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_id: Option<String>,
+    #[doc = "Synchronization mode"]
     #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_mode: Option<share_synchronization::SynchronizationMode>,
 }
@@ -2233,16 +2716,20 @@ impl ShareSynchronization {
 }
 pub mod share_synchronization {
     use super::*;
+    #[doc = "Synchronization mode"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SynchronizationMode {
         Incremental,
         FullSync,
     }
 }
+#[doc = "List response for get ShareSynchronization."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareSynchronizationList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<ShareSynchronization>,
 }
 impl ShareSynchronizationList {
@@ -2250,8 +2737,10 @@ impl ShareSynchronizationList {
         Self { next_link: None, value }
     }
 }
+#[doc = "A view of synchronization setting added by the provider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceShareSynchronizationSetting {
+    #[doc = "Kind of synchronization setting on share."]
     pub kind: source_share_synchronization_setting::Kind,
 }
 impl SourceShareSynchronizationSetting {
@@ -2261,15 +2750,19 @@ impl SourceShareSynchronizationSetting {
 }
 pub mod source_share_synchronization_setting {
     use super::*;
+    #[doc = "Kind of synchronization setting on share."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         ScheduleBased,
     }
 }
+#[doc = "List response for get source share Synchronization settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceShareSynchronizationSettingList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<SourceShareSynchronizationSetting>,
 }
 impl SourceShareSynchronizationSettingList {
@@ -2277,10 +2770,12 @@ impl SourceShareSynchronizationSettingList {
         Self { next_link: None, value }
     }
 }
+#[doc = "A SQL DB table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDbTableDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the SQL DB table data set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SqlDbTableProperties>,
 }
@@ -2292,10 +2787,12 @@ impl SqlDbTableDataSet {
         }
     }
 }
+#[doc = "A SQL DB Table data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDbTableDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Properties of the SQL DB table data set mapping."]
     pub properties: SqlDbTableDataSetMappingProperties,
 }
 impl SqlDbTableDataSetMapping {
@@ -2306,20 +2803,28 @@ impl SqlDbTableDataSetMapping {
         }
     }
 }
+#[doc = "Properties of the SQL DB table data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDbTableDataSetMappingProperties {
+    #[doc = "DatabaseName name of the sink data set"]
     #[serde(rename = "databaseName")]
     pub database_name: String,
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<sql_db_table_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<sql_db_table_data_set_mapping_properties::ProvisioningState>,
+    #[doc = "Schema of the table. Default value is dbo."]
     #[serde(rename = "schemaName")]
     pub schema_name: String,
+    #[doc = "Resource id of SQL server"]
     #[serde(rename = "sqlServerResourceId")]
     pub sql_server_resource_id: String,
+    #[doc = "SQL DB table name."]
     #[serde(rename = "tableName")]
     pub table_name: String,
 }
@@ -2344,11 +2849,13 @@ impl SqlDbTableDataSetMappingProperties {
 }
 pub mod sql_db_table_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -2358,16 +2865,22 @@ pub mod sql_db_table_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the SQL DB table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDbTableProperties {
+    #[doc = "Database name of the source data set"]
     #[serde(rename = "databaseName")]
     pub database_name: String,
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Schema of the table. Default value is dbo."]
     #[serde(rename = "schemaName")]
     pub schema_name: String,
+    #[doc = "Resource id of SQL server"]
     #[serde(rename = "sqlServerResourceId")]
     pub sql_server_resource_id: String,
+    #[doc = "SQL DB table name."]
     #[serde(rename = "tableName")]
     pub table_name: String,
 }
@@ -2382,10 +2895,12 @@ impl SqlDbTableProperties {
         }
     }
 }
+#[doc = "A SQL DW table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDwTableDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the SQL DW table data set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SqlDwTableProperties>,
 }
@@ -2397,10 +2912,12 @@ impl SqlDwTableDataSet {
         }
     }
 }
+#[doc = "A SQL DW Table data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDwTableDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Properties of the SQL DW table data set mapping."]
     pub properties: SqlDwTableDataSetMappingProperties,
 }
 impl SqlDwTableDataSetMapping {
@@ -2411,20 +2928,28 @@ impl SqlDwTableDataSetMapping {
         }
     }
 }
+#[doc = "Properties of the SQL DW table data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDwTableDataSetMappingProperties {
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<sql_dw_table_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "DataWarehouse name of the source data set"]
     #[serde(rename = "dataWarehouseName")]
     pub data_warehouse_name: String,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<sql_dw_table_data_set_mapping_properties::ProvisioningState>,
+    #[doc = "Schema of the table. Default value is dbo."]
     #[serde(rename = "schemaName")]
     pub schema_name: String,
+    #[doc = "Resource id of SQL server"]
     #[serde(rename = "sqlServerResourceId")]
     pub sql_server_resource_id: String,
+    #[doc = "SQL DW table name."]
     #[serde(rename = "tableName")]
     pub table_name: String,
 }
@@ -2449,11 +2974,13 @@ impl SqlDwTableDataSetMappingProperties {
 }
 pub mod sql_dw_table_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -2463,16 +2990,22 @@ pub mod sql_dw_table_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the SQL DW table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDwTableProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "DataWarehouse name of the source data set"]
     #[serde(rename = "dataWarehouseName")]
     pub data_warehouse_name: String,
+    #[doc = "Schema of the table. Default value is dbo."]
     #[serde(rename = "schemaName")]
     pub schema_name: String,
+    #[doc = "Resource id of SQL server"]
     #[serde(rename = "sqlServerResourceId")]
     pub sql_server_resource_id: String,
+    #[doc = "SQL DW table name."]
     #[serde(rename = "tableName")]
     pub table_name: String,
 }
@@ -2487,10 +3020,12 @@ impl SqlDwTableProperties {
         }
     }
 }
+#[doc = "A Synapse Workspace Sql Pool Table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseWorkspaceSqlPoolTableDataSet {
     #[serde(flatten)]
     pub data_set: DataSet,
+    #[doc = "Properties of the Synapse Workspace SQL Pool Table data set."]
     pub properties: SynapseWorkspaceSqlPoolTableDataSetProperties,
 }
 impl SynapseWorkspaceSqlPoolTableDataSet {
@@ -2498,10 +3033,12 @@ impl SynapseWorkspaceSqlPoolTableDataSet {
         Self { data_set, properties }
     }
 }
+#[doc = "A Synapse Workspace Sql Pool Table data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseWorkspaceSqlPoolTableDataSetMapping {
     #[serde(flatten)]
     pub data_set_mapping: DataSetMapping,
+    #[doc = "Properties of the Synapse Workspace SQL Pool Table data set mapping"]
     pub properties: SynapseWorkspaceSqlPoolTableDataSetMappingProperties,
 }
 impl SynapseWorkspaceSqlPoolTableDataSetMapping {
@@ -2512,14 +3049,19 @@ impl SynapseWorkspaceSqlPoolTableDataSetMapping {
         }
     }
 }
+#[doc = "Properties of the Synapse Workspace SQL Pool Table data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseWorkspaceSqlPoolTableDataSetMappingProperties {
+    #[doc = "The id of the source data set."]
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
+    #[doc = "Gets the status of the data set mapping."]
     #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
     pub data_set_mapping_status: Option<synapse_workspace_sql_pool_table_data_set_mapping_properties::DataSetMappingStatus>,
+    #[doc = "Provisioning state of the data set mapping."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<synapse_workspace_sql_pool_table_data_set_mapping_properties::ProvisioningState>,
+    #[doc = "Resource id of the Synapse Workspace SQL Pool Table"]
     #[serde(rename = "synapseWorkspaceSqlPoolTableResourceId")]
     pub synapse_workspace_sql_pool_table_resource_id: String,
 }
@@ -2535,11 +3077,13 @@ impl SynapseWorkspaceSqlPoolTableDataSetMappingProperties {
 }
 pub mod synapse_workspace_sql_pool_table_data_set_mapping_properties {
     use super::*;
+    #[doc = "Gets the status of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetMappingStatus {
         Ok,
         Broken,
     }
+    #[doc = "Provisioning state of the data set mapping."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -2549,10 +3093,13 @@ pub mod synapse_workspace_sql_pool_table_data_set_mapping_properties {
         Failed,
     }
 }
+#[doc = "Properties of the Synapse Workspace SQL Pool Table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseWorkspaceSqlPoolTableDataSetProperties {
+    #[doc = "Unique id for identifying a data set resource"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Resource id of the Synapse Workspace SQL Pool Table"]
     #[serde(rename = "synapseWorkspaceSqlPoolTableResourceId")]
     pub synapse_workspace_sql_pool_table_resource_id: String,
 }
@@ -2564,36 +3111,52 @@ impl SynapseWorkspaceSqlPoolTableDataSetProperties {
         }
     }
 }
+#[doc = "Synchronization details at data set level"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SynchronizationDetails {
+    #[doc = "Id of data set"]
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
+    #[doc = "Type of the data set"]
     #[serde(rename = "dataSetType", default, skip_serializing_if = "Option::is_none")]
     pub data_set_type: Option<synchronization_details::DataSetType>,
+    #[doc = "Duration of data set level copy"]
     #[serde(rename = "durationMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<i32>,
+    #[doc = "End time of data set level copy"]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The number of files read from the source data set"]
     #[serde(rename = "filesRead", default, skip_serializing_if = "Option::is_none")]
     pub files_read: Option<i64>,
+    #[doc = "The number of files written into the sink data set"]
     #[serde(rename = "filesWritten", default, skip_serializing_if = "Option::is_none")]
     pub files_written: Option<i64>,
+    #[doc = "Error message if any"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Name of the data set"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The number of files copied into the sink data set"]
     #[serde(rename = "rowsCopied", default, skip_serializing_if = "Option::is_none")]
     pub rows_copied: Option<i64>,
+    #[doc = "The number of rows read from the source data set."]
     #[serde(rename = "rowsRead", default, skip_serializing_if = "Option::is_none")]
     pub rows_read: Option<i64>,
+    #[doc = "The size of the data read from the source data set in bytes"]
     #[serde(rename = "sizeRead", default, skip_serializing_if = "Option::is_none")]
     pub size_read: Option<i64>,
+    #[doc = "The size of the data written into the sink data set in bytes"]
     #[serde(rename = "sizeWritten", default, skip_serializing_if = "Option::is_none")]
     pub size_written: Option<i64>,
+    #[doc = "Start time of data set level copy"]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "Raw Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The vCore units consumed for the data set synchronization"]
     #[serde(rename = "vCore", default, skip_serializing_if = "Option::is_none")]
     pub v_core: Option<i64>,
 }
@@ -2604,6 +3167,7 @@ impl SynchronizationDetails {
 }
 pub mod synchronization_details {
     use super::*;
+    #[doc = "Type of the data set"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DataSetType {
         Blob,
@@ -2625,10 +3189,13 @@ pub mod synchronization_details {
         BlobStorageAccount,
     }
 }
+#[doc = "details of synchronization"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynchronizationDetailsList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<SynchronizationDetails>,
 }
 impl SynchronizationDetailsList {
@@ -2636,10 +3203,12 @@ impl SynchronizationDetailsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "A Synchronization Setting data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynchronizationSetting {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Kind of synchronization setting."]
     pub kind: synchronization_setting::Kind,
 }
 impl SynchronizationSetting {
@@ -2652,15 +3221,19 @@ impl SynchronizationSetting {
 }
 pub mod synchronization_setting {
     use super::*;
+    #[doc = "Kind of synchronization setting."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         ScheduleBased,
     }
 }
+#[doc = "List response for get Synchronization settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynchronizationSettingList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<SynchronizationSetting>,
 }
 impl SynchronizationSettingList {
@@ -2668,8 +3241,10 @@ impl SynchronizationSettingList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Payload for the synchronizing the data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Synchronize {
+    #[doc = "Mode of synchronization used in triggers and snapshot sync. Incremental by default"]
     #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_mode: Option<synchronize::SynchronizationMode>,
 }
@@ -2680,24 +3255,32 @@ impl Synchronize {
 }
 pub mod synchronize {
     use super::*;
+    #[doc = "Mode of synchronization used in triggers and snapshot sync. Incremental by default"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SynchronizationMode {
         Incremental,
         FullSync,
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
 }
@@ -2708,6 +3291,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -2715,6 +3299,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,
@@ -2723,10 +3308,12 @@ pub mod system_data {
         Key,
     }
 }
+#[doc = "A Trigger data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
+    #[doc = "Kind of synchronization on trigger."]
     pub kind: trigger::Kind,
 }
 impl Trigger {
@@ -2739,15 +3326,19 @@ impl Trigger {
 }
 pub mod trigger {
     use super::*;
+    #[doc = "Kind of synchronization on trigger."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         ScheduleBased,
     }
 }
+#[doc = "List response for get triggers"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerList {
+    #[doc = "The Url of next result page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Collection of items of type DataTransferObjects."]
     pub value: Vec<Trigger>,
 }
 impl TriggerList {

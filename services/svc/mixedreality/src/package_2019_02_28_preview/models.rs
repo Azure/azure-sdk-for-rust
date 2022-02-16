@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Represents a token response message from the STS service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StsTokenResponseMessage {
+    #[doc = "An access token for the account."]
     #[serde(rename = "AccessToken")]
     pub access_token: String,
 }

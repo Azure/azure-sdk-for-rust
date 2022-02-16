@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The agentpool that has the ARM resource and properties. \r\nThe agentpool will have all information to create an agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPool {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The properties of agent pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AgentPoolProperties>,
 }
@@ -17,10 +19,13 @@ impl AgentPool {
         }
     }
 }
+#[doc = "The collection of agent pools."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AgentPool>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -29,16 +34,22 @@ impl AgentPoolListResult {
         Self::default()
     }
 }
+#[doc = "The properties of agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolProperties {
+    #[doc = "The count of agent machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
+    #[doc = "The Tier of agent machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "The OS of agent machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub os: Option<agent_pool_properties::Os>,
+    #[doc = "The Virtual Network Subnet Resource Id of the agent machine"]
     #[serde(rename = "virtualNetworkSubnetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_subnet_resource_id: Option<String>,
+    #[doc = "The provisioning state of this agent pool"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<agent_pool_properties::ProvisioningState>,
 }
@@ -49,11 +60,13 @@ impl AgentPoolProperties {
 }
 pub mod agent_pool_properties {
     use super::*;
+    #[doc = "The OS of agent machine"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Os {
         Windows,
         Linux,
     }
+    #[doc = "The provisioning state of this agent pool"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -66,6 +79,7 @@ pub mod agent_pool_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolPropertiesUpdateParameters {
+    #[doc = "The count of agent machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
 }
@@ -74,8 +88,10 @@ impl AgentPoolPropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The QueueStatus of Agent Pool"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolQueueStatus {
+    #[doc = "The number of pending runs in the queue"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
 }
@@ -84,10 +100,12 @@ impl AgentPoolQueueStatus {
         Self::default()
     }
 }
+#[doc = "The parameters for updating an agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AgentPoolPropertiesUpdateParameters>,
+    #[doc = "The ARM resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -96,8 +114,10 @@ impl AgentPoolUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties that determine the run agent configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentProperties {
+    #[doc = "The CPU configuration in terms of number of cores required for the run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cpu: Option<i32>,
 }
@@ -106,10 +126,14 @@ impl AgentProperties {
         Self::default()
     }
 }
+#[doc = "The properties of a run argument."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Argument {
+    #[doc = "The name of the argument."]
     pub name: String,
+    #[doc = "The value of the argument."]
     pub value: String,
+    #[doc = "Flag to indicate whether the argument represents a secret and want to be removed from build logs."]
     #[serde(rename = "isSecret", default, skip_serializing_if = "Option::is_none")]
     pub is_secret: Option<bool>,
 }
@@ -122,15 +146,21 @@ impl Argument {
         }
     }
 }
+#[doc = "The authorization properties for accessing the source code repository."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthInfo {
+    #[doc = "The type of Auth token."]
     #[serde(rename = "tokenType")]
     pub token_type: auth_info::TokenType,
+    #[doc = "The access token used to access the source control provider."]
     pub token: String,
+    #[doc = "The refresh token used to refresh the access token."]
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<String>,
+    #[doc = "The scope of the access token."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "Time in seconds that the token remains valid"]
     #[serde(rename = "expiresIn", default, skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<i32>,
 }
@@ -147,6 +177,7 @@ impl AuthInfo {
 }
 pub mod auth_info {
     use super::*;
+    #[doc = "The type of Auth token."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TokenType {
         #[serde(rename = "PAT")]
@@ -154,16 +185,22 @@ pub mod auth_info {
         OAuth,
     }
 }
+#[doc = "The authorization properties for accessing the source code repository."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthInfoUpdateParameters {
+    #[doc = "The type of Auth token."]
     #[serde(rename = "tokenType", default, skip_serializing_if = "Option::is_none")]
     pub token_type: Option<auth_info_update_parameters::TokenType>,
+    #[doc = "The access token used to access the source control provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
+    #[doc = "The refresh token used to refresh the access token."]
     #[serde(rename = "refreshToken", default, skip_serializing_if = "Option::is_none")]
     pub refresh_token: Option<String>,
+    #[doc = "The scope of the access token."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "Time in seconds that the token remains valid"]
     #[serde(rename = "expiresIn", default, skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<i32>,
 }
@@ -174,6 +211,7 @@ impl AuthInfoUpdateParameters {
 }
 pub mod auth_info_update_parameters {
     use super::*;
+    #[doc = "The type of Auth token."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TokenType {
         #[serde(rename = "PAT")]
@@ -181,16 +219,22 @@ pub mod auth_info_update_parameters {
         OAuth,
     }
 }
+#[doc = "Properties that describe a base image dependency."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BaseImageDependency {
+    #[doc = "The type of the base image dependency."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<base_image_dependency::Type>,
+    #[doc = "The registry login server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
+    #[doc = "The repository name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<String>,
+    #[doc = "The tag name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
+    #[doc = "The sha256-based digest of the image manifest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
 }
@@ -201,22 +245,29 @@ impl BaseImageDependency {
 }
 pub mod base_image_dependency {
     use super::*;
+    #[doc = "The type of the base image dependency."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         BuildTime,
         RunTime,
     }
 }
+#[doc = "The trigger based on base image dependency."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseImageTrigger {
+    #[doc = "The type of the auto trigger for base image dependency updates."]
     #[serde(rename = "baseImageTriggerType")]
     pub base_image_trigger_type: base_image_trigger::BaseImageTriggerType,
+    #[doc = "The endpoint URL for receiving update triggers."]
     #[serde(rename = "updateTriggerEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_endpoint: Option<String>,
+    #[doc = "Type of Payload body for Base image update triggers."]
     #[serde(rename = "updateTriggerPayloadType", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_payload_type: Option<base_image_trigger::UpdateTriggerPayloadType>,
+    #[doc = "The current status of trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<base_image_trigger::Status>,
+    #[doc = "The name of the trigger."]
     pub name: String,
 }
 impl BaseImageTrigger {
@@ -232,16 +283,19 @@ impl BaseImageTrigger {
 }
 pub mod base_image_trigger {
     use super::*;
+    #[doc = "The type of the auto trigger for base image dependency updates."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BaseImageTriggerType {
         All,
         Runtime,
     }
+    #[doc = "Type of Payload body for Base image update triggers."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateTriggerPayloadType {
         Default,
         Token,
     }
+    #[doc = "The current status of trigger."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
@@ -253,16 +307,22 @@ pub mod base_image_trigger {
         }
     }
 }
+#[doc = "The properties for updating base image dependency trigger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseImageTriggerUpdateParameters {
+    #[doc = "The type of the auto trigger for base image dependency updates."]
     #[serde(rename = "baseImageTriggerType", default, skip_serializing_if = "Option::is_none")]
     pub base_image_trigger_type: Option<base_image_trigger_update_parameters::BaseImageTriggerType>,
+    #[doc = "The endpoint URL for receiving update triggers."]
     #[serde(rename = "updateTriggerEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_endpoint: Option<String>,
+    #[doc = "Type of Payload body for Base image update triggers."]
     #[serde(rename = "updateTriggerPayloadType", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_payload_type: Option<base_image_trigger_update_parameters::UpdateTriggerPayloadType>,
+    #[doc = "The current status of trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<base_image_trigger_update_parameters::Status>,
+    #[doc = "The name of the trigger."]
     pub name: String,
 }
 impl BaseImageTriggerUpdateParameters {
@@ -278,16 +338,19 @@ impl BaseImageTriggerUpdateParameters {
 }
 pub mod base_image_trigger_update_parameters {
     use super::*;
+    #[doc = "The type of the auto trigger for base image dependency updates."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum BaseImageTriggerType {
         All,
         Runtime,
     }
+    #[doc = "Type of Payload body for Base image update triggers."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateTriggerPayloadType {
         Default,
         Token,
     }
+    #[doc = "The current status of trigger."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
@@ -299,10 +362,13 @@ pub mod base_image_trigger_update_parameters {
         }
     }
 }
+#[doc = "The parameters that describes a set of credentials that will be used when a run is invoked."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Credentials {
+    #[doc = "Describes the credential parameters for accessing the source registry."]
     #[serde(rename = "sourceRegistry", default, skip_serializing_if = "Option::is_none")]
     pub source_registry: Option<SourceRegistryCredentials>,
+    #[doc = "Describes the credential parameters for accessing other custom registries. The key\r\nfor the dictionary item will be the registry login server (myregistry.azurecr.io) and\r\nthe value of the item will be the registry credentials for accessing the registry."]
     #[serde(rename = "customRegistries", default, skip_serializing_if = "Option::is_none")]
     pub custom_registries: Option<serde_json::Value>,
 }
@@ -311,12 +377,16 @@ impl Credentials {
         Self::default()
     }
 }
+#[doc = "Describes the credentials that will be used to access a custom registry during a run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomRegistryCredentials {
+    #[doc = "Describes the properties of a secret object value."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<SecretObject>,
+    #[doc = "Describes the properties of a secret object value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<SecretObject>,
+    #[doc = "Indicates the managed identity assigned to the custom credential. If a user-assigned identity\r\nthis value is the Client ID. If a system-assigned identity, the value will be `system`. In\r\nthe case of a system-assigned identity, the Client ID will be determined by the runner. This\r\nidentity may be used to authenticate to key vault to retrieve credentials or it may be the only \r\nsource of authentication used for accessing the registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<String>,
 }
@@ -325,29 +395,41 @@ impl CustomRegistryCredentials {
         Self::default()
     }
 }
+#[doc = "The parameters for a docker quick build."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildRequest {
     #[serde(flatten)]
     pub run_request: RunRequest,
+    #[doc = "The fully qualified image names including the repository and tag."]
     #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
     pub image_names: Vec<String>,
+    #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_push_enabled: Option<bool>,
+    #[doc = "The value of this property indicates whether the image cache is enabled or not."]
     #[serde(rename = "noCache", default, skip_serializing_if = "Option::is_none")]
     pub no_cache: Option<bool>,
+    #[doc = "The Docker file path relative to the source location."]
     #[serde(rename = "dockerFilePath")]
     pub docker_file_path: String,
+    #[doc = "The name of the target build stage for the docker build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The collection of override arguments to be used when executing the run."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arguments: Vec<Argument>,
+    #[doc = "Run timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
+    #[doc = "The platform properties against which the run has to happen."]
     pub platform: PlatformProperties,
+    #[doc = "The properties that determine the run agent configuration."]
     #[serde(rename = "agentConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub agent_configuration: Option<AgentProperties>,
+    #[doc = "The URL(absolute or relative) of the source context. It can be an URL to a tar or git repository.\r\nIf it is relative URL, the relative path should be obtained from calling listBuildSourceUploadUrl API."]
     #[serde(rename = "sourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub source_location: Option<String>,
+    #[doc = "The parameters that describes a set of credentials that will be used when a run is invoked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
@@ -369,20 +451,27 @@ impl DockerBuildRequest {
         }
     }
 }
+#[doc = "The Docker build step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildStep {
     #[serde(flatten)]
     pub task_step_properties: TaskStepProperties,
+    #[doc = "The fully qualified image names including the repository and tag."]
     #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
     pub image_names: Vec<String>,
+    #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_push_enabled: Option<bool>,
+    #[doc = "The value of this property indicates whether the image cache is enabled or not."]
     #[serde(rename = "noCache", default, skip_serializing_if = "Option::is_none")]
     pub no_cache: Option<bool>,
+    #[doc = "The Docker file path relative to the source context."]
     #[serde(rename = "dockerFilePath")]
     pub docker_file_path: String,
+    #[doc = "The name of the target build stage for the docker build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The collection of override arguments to be used when executing this build step."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arguments: Vec<Argument>,
 }
@@ -399,20 +488,27 @@ impl DockerBuildStep {
         }
     }
 }
+#[doc = "The properties for updating a docker build step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DockerBuildStepUpdateParameters {
     #[serde(flatten)]
     pub task_step_update_parameters: TaskStepUpdateParameters,
+    #[doc = "The fully qualified image names including the repository and tag."]
     #[serde(rename = "imageNames", default, skip_serializing_if = "Vec::is_empty")]
     pub image_names: Vec<String>,
+    #[doc = "The value of this property indicates whether the image built should be pushed to the registry or not."]
     #[serde(rename = "isPushEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_push_enabled: Option<bool>,
+    #[doc = "The value of this property indicates whether the image cache is enabled or not."]
     #[serde(rename = "noCache", default, skip_serializing_if = "Option::is_none")]
     pub no_cache: Option<bool>,
+    #[doc = "The Docker file path relative to the source context."]
     #[serde(rename = "dockerFilePath", default, skip_serializing_if = "Option::is_none")]
     pub docker_file_path: Option<String>,
+    #[doc = "The collection of override arguments to be used when executing this build step."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arguments: Vec<Argument>,
+    #[doc = "The name of the target build stage for the docker build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -429,23 +525,32 @@ impl DockerBuildStepUpdateParameters {
         }
     }
 }
+#[doc = "The parameters for a quick task run request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncodedTaskRunRequest {
     #[serde(flatten)]
     pub run_request: RunRequest,
+    #[doc = "Base64 encoded value of the template/definition file content."]
     #[serde(rename = "encodedTaskContent")]
     pub encoded_task_content: String,
+    #[doc = "Base64 encoded value of the parameters/values file content."]
     #[serde(rename = "encodedValuesContent", default, skip_serializing_if = "Option::is_none")]
     pub encoded_values_content: Option<String>,
+    #[doc = "The collection of overridable values that can be passed when running a task."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
+    #[doc = "Run timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
+    #[doc = "The platform properties against which the run has to happen."]
     pub platform: PlatformProperties,
+    #[doc = "The properties that determine the run agent configuration."]
     #[serde(rename = "agentConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub agent_configuration: Option<AgentProperties>,
+    #[doc = "The URL(absolute or relative) of the source context. It can be an URL to a tar or git repository.\r\nIf it is relative URL, the relative path should be obtained from calling listBuildSourceUploadUrl API."]
     #[serde(rename = "sourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub source_location: Option<String>,
+    #[doc = "The parameters that describes a set of credentials that will be used when a run is invoked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
@@ -464,14 +569,18 @@ impl EncodedTaskRunRequest {
         }
     }
 }
+#[doc = "The properties of a encoded task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncodedTaskStep {
     #[serde(flatten)]
     pub task_step_properties: TaskStepProperties,
+    #[doc = "Base64 encoded value of the template/definition file content."]
     #[serde(rename = "encodedTaskContent")]
     pub encoded_task_content: String,
+    #[doc = "Base64 encoded value of the parameters/values file content."]
     #[serde(rename = "encodedValuesContent", default, skip_serializing_if = "Option::is_none")]
     pub encoded_values_content: Option<String>,
+    #[doc = "The collection of overridable values that can be passed when running a task."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
 }
@@ -485,14 +594,18 @@ impl EncodedTaskStep {
         }
     }
 }
+#[doc = "The properties for updating encoded task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncodedTaskStepUpdateParameters {
     #[serde(flatten)]
     pub task_step_update_parameters: TaskStepUpdateParameters,
+    #[doc = "Base64 encoded value of the template/definition file content."]
     #[serde(rename = "encodedTaskContent", default, skip_serializing_if = "Option::is_none")]
     pub encoded_task_content: Option<String>,
+    #[doc = "Base64 encoded value of the parameters/values file content."]
     #[serde(rename = "encodedValuesContent", default, skip_serializing_if = "Option::is_none")]
     pub encoded_values_content: Option<String>,
+    #[doc = "The collection of overridable values that can be passed when running a task."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
 }
@@ -506,8 +619,10 @@ impl EncodedTaskStepUpdateParameters {
         }
     }
 }
+#[doc = "An error response from the Azure Container Registry service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "An error response from the Azure Container Registry service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
 }
@@ -516,12 +631,17 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "An error response from the Azure Container Registry service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponseBody {
+    #[doc = "error code."]
     pub code: String,
+    #[doc = "error message."]
     pub message: String,
+    #[doc = "target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "an array of additional nested error response info objects, as described by this contract."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<InnerErrorDescription>,
 }
@@ -535,23 +655,32 @@ impl ErrorResponseBody {
         }
     }
 }
+#[doc = "The request parameters for a scheduling run against a task file."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileTaskRunRequest {
     #[serde(flatten)]
     pub run_request: RunRequest,
+    #[doc = "The template/definition file path relative to the source."]
     #[serde(rename = "taskFilePath")]
     pub task_file_path: String,
+    #[doc = "The values/parameters file path relative to the source."]
     #[serde(rename = "valuesFilePath", default, skip_serializing_if = "Option::is_none")]
     pub values_file_path: Option<String>,
+    #[doc = "The collection of overridable values that can be passed when running a task."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
+    #[doc = "Run timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
+    #[doc = "The platform properties against which the run has to happen."]
     pub platform: PlatformProperties,
+    #[doc = "The properties that determine the run agent configuration."]
     #[serde(rename = "agentConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub agent_configuration: Option<AgentProperties>,
+    #[doc = "The URL(absolute or relative) of the source context. It can be an URL to a tar or git repository.\r\nIf it is relative URL, the relative path should be obtained from calling listBuildSourceUploadUrl API."]
     #[serde(rename = "sourceLocation", default, skip_serializing_if = "Option::is_none")]
     pub source_location: Option<String>,
+    #[doc = "The parameters that describes a set of credentials that will be used when a run is invoked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
 }
@@ -570,14 +699,18 @@ impl FileTaskRunRequest {
         }
     }
 }
+#[doc = "The properties of a task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileTaskStep {
     #[serde(flatten)]
     pub task_step_properties: TaskStepProperties,
+    #[doc = "The task template/definition file path relative to the source context."]
     #[serde(rename = "taskFilePath")]
     pub task_file_path: String,
+    #[doc = "The task values/parameters file path relative to the source context."]
     #[serde(rename = "valuesFilePath", default, skip_serializing_if = "Option::is_none")]
     pub values_file_path: Option<String>,
+    #[doc = "The collection of overridable values that can be passed when running a task."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
 }
@@ -591,14 +724,18 @@ impl FileTaskStep {
         }
     }
 }
+#[doc = "The properties of updating a task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileTaskStepUpdateParameters {
     #[serde(flatten)]
     pub task_step_update_parameters: TaskStepUpdateParameters,
+    #[doc = "The task template/definition file path relative to the source context."]
     #[serde(rename = "taskFilePath", default, skip_serializing_if = "Option::is_none")]
     pub task_file_path: Option<String>,
+    #[doc = "The values/parameters file path relative to the source context."]
     #[serde(rename = "valuesFilePath", default, skip_serializing_if = "Option::is_none")]
     pub values_file_path: Option<String>,
+    #[doc = "The collection of overridable values that can be passed when running a task."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
 }
@@ -612,14 +749,19 @@ impl FileTaskStepUpdateParameters {
         }
     }
 }
+#[doc = "Managed identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProperties {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity_properties::Type>,
+    #[doc = "The list of user identities associated with the resource. The user identity \r\ndictionary key references will be ARM resource ids in the form: \r\n'/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/\r\n    providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
 }
@@ -630,6 +772,7 @@ impl IdentityProperties {
 }
 pub mod identity_properties {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
@@ -639,14 +782,19 @@ pub mod identity_properties {
         None,
     }
 }
+#[doc = "Properties for a registry image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageDescriptor {
+    #[doc = "The registry login server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
+    #[doc = "The repository name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repository: Option<String>,
+    #[doc = "The tag name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
+    #[doc = "The sha256-based digest of the image manifest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub digest: Option<String>,
 }
@@ -655,12 +803,16 @@ impl ImageDescriptor {
         Self::default()
     }
 }
+#[doc = "The image update trigger that caused a build."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageUpdateTrigger {
+    #[doc = "The unique ID of the trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The timestamp when the image update happened."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
+    #[doc = "The list of image updates that caused the build."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub images: Vec<ImageDescriptor>,
 }
@@ -669,10 +821,14 @@ impl ImageUpdateTrigger {
         Self::default()
     }
 }
+#[doc = "inner error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InnerErrorDescription {
+    #[doc = "error code."]
     pub code: String,
+    #[doc = "error message."]
     pub message: String,
+    #[doc = "target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -687,16 +843,22 @@ impl InnerErrorDescription {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OverrideTaskStepProperties {
+    #[doc = "The source context against which run has to be queued."]
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
     pub context_path: Option<String>,
+    #[doc = "The file against which run has to be queued."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file: Option<String>,
+    #[doc = "Gets or sets the collection of override arguments to be used when\r\nexecuting a build step."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub arguments: Vec<Argument>,
+    #[doc = "The name of the target build stage for the docker build."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The collection of overridable values that can be passed when running a Task."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<SetValue>,
+    #[doc = "Base64 encoded update trigger token that will be attached with the base image trigger webhook."]
     #[serde(rename = "updateTriggerToken", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_token: Option<String>,
 }
@@ -705,11 +867,15 @@ impl OverrideTaskStepProperties {
         Self::default()
     }
 }
+#[doc = "The platform properties against which the run has to happen."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlatformProperties {
+    #[doc = "The operating system type required for the run."]
     pub os: platform_properties::Os,
+    #[doc = "The OS architecture."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub architecture: Option<platform_properties::Architecture>,
+    #[doc = "Variant of the CPU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variant: Option<platform_properties::Variant>,
 }
@@ -724,11 +890,13 @@ impl PlatformProperties {
 }
 pub mod platform_properties {
     use super::*;
+    #[doc = "The operating system type required for the run."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Os {
         Windows,
         Linux,
     }
+    #[doc = "The OS architecture."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Architecture {
         #[serde(rename = "amd64")]
@@ -742,6 +910,7 @@ pub mod platform_properties {
         #[serde(rename = "arm64")]
         Arm64,
     }
+    #[doc = "Variant of the CPU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Variant {
         #[serde(rename = "v6")]
@@ -752,12 +921,16 @@ pub mod platform_properties {
         V8,
     }
 }
+#[doc = "The properties for updating the platform configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlatformUpdateParameters {
+    #[doc = "The operating system type required for the run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub os: Option<platform_update_parameters::Os>,
+    #[doc = "The OS architecture."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub architecture: Option<platform_update_parameters::Architecture>,
+    #[doc = "Variant of the CPU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variant: Option<platform_update_parameters::Variant>,
 }
@@ -768,11 +941,13 @@ impl PlatformUpdateParameters {
 }
 pub mod platform_update_parameters {
     use super::*;
+    #[doc = "The operating system type required for the run."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Os {
         Windows,
         Linux,
     }
+    #[doc = "The OS architecture."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Architecture {
         #[serde(rename = "amd64")]
@@ -786,6 +961,7 @@ pub mod platform_update_parameters {
         #[serde(rename = "arm64")]
         Arm64,
     }
+    #[doc = "Variant of the CPU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Variant {
         #[serde(rename = "v6")]
@@ -796,14 +972,19 @@ pub mod platform_update_parameters {
         V8,
     }
 }
+#[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
+    #[doc = "The resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -812,17 +993,24 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "The resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The location of the resource. This cannot be changed after the resource is created."]
     pub location: String,
+    #[doc = "The tags of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -838,10 +1026,12 @@ impl Resource {
         }
     }
 }
+#[doc = "Run resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Run {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties for a run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunProperties>,
 }
@@ -850,24 +1040,34 @@ impl Run {
         Self::default()
     }
 }
+#[doc = "Properties that are enabled for Odata querying on runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunFilter {
+    #[doc = "The unique identifier for the run."]
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
+    #[doc = "The type of run."]
     #[serde(rename = "runType", default, skip_serializing_if = "Option::is_none")]
     pub run_type: Option<run_filter::RunType>,
+    #[doc = "The current status of the run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<run_filter::Status>,
+    #[doc = "The create time for a run."]
     #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
     pub create_time: Option<String>,
+    #[doc = "The time the run finished."]
     #[serde(rename = "finishTime", default, skip_serializing_if = "Option::is_none")]
     pub finish_time: Option<String>,
+    #[doc = "The list of comma-separated image manifests that were generated from the run. This is applicable if the run is of\r\nbuild type."]
     #[serde(rename = "outputImageManifests", default, skip_serializing_if = "Option::is_none")]
     pub output_image_manifests: Option<String>,
+    #[doc = "The value that indicates whether archiving is enabled or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
+    #[doc = "The name of the task that the run corresponds to."]
     #[serde(rename = "taskName", default, skip_serializing_if = "Option::is_none")]
     pub task_name: Option<String>,
+    #[doc = "The name of the agent pool that the run corresponds to."]
     #[serde(rename = "agentPoolName", default, skip_serializing_if = "Option::is_none")]
     pub agent_pool_name: Option<String>,
 }
@@ -878,6 +1078,7 @@ impl RunFilter {
 }
 pub mod run_filter {
     use super::*;
+    #[doc = "The type of run."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RunType {
         QuickBuild,
@@ -885,6 +1086,7 @@ pub mod run_filter {
         AutoBuild,
         AutoRun,
     }
+    #[doc = "The current status of the run."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Queued,
@@ -897,10 +1099,13 @@ pub mod run_filter {
         Timeout,
     }
 }
+#[doc = "The result of get log link operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunGetLogResult {
+    #[doc = "The link to logs for a run on a azure container registry."]
     #[serde(rename = "logLink", default, skip_serializing_if = "Option::is_none")]
     pub log_link: Option<String>,
+    #[doc = "The link to logs in registry for a run on a azure container registry."]
     #[serde(rename = "logArtifactLink", default, skip_serializing_if = "Option::is_none")]
     pub log_artifact_link: Option<String>,
 }
@@ -909,10 +1114,13 @@ impl RunGetLogResult {
         Self::default()
     }
 }
+#[doc = "Collection of runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Run>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -921,50 +1129,72 @@ impl RunListResult {
         Self::default()
     }
 }
+#[doc = "The properties for a run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunProperties {
+    #[doc = "The unique identifier for the run."]
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
+    #[doc = "The current status of the run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<run_properties::Status>,
+    #[doc = "The last updated time for the run."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "The type of run."]
     #[serde(rename = "runType", default, skip_serializing_if = "Option::is_none")]
     pub run_type: Option<run_properties::RunType>,
+    #[doc = "The dedicated agent pool for the run."]
     #[serde(rename = "agentPoolName", default, skip_serializing_if = "Option::is_none")]
     pub agent_pool_name: Option<String>,
+    #[doc = "The time the run was scheduled."]
     #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
     pub create_time: Option<String>,
+    #[doc = "The time the run started."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The time the run finished."]
     #[serde(rename = "finishTime", default, skip_serializing_if = "Option::is_none")]
     pub finish_time: Option<String>,
+    #[doc = "The list of all images that were generated from the run. This is applicable if the run generates base image dependencies."]
     #[serde(rename = "outputImages", default, skip_serializing_if = "Vec::is_empty")]
     pub output_images: Vec<ImageDescriptor>,
+    #[doc = "The task against which run was scheduled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub task: Option<String>,
+    #[doc = "The image update trigger that caused a build."]
     #[serde(rename = "imageUpdateTrigger", default, skip_serializing_if = "Option::is_none")]
     pub image_update_trigger: Option<ImageUpdateTrigger>,
+    #[doc = "The source trigger that caused a run."]
     #[serde(rename = "sourceTrigger", default, skip_serializing_if = "Option::is_none")]
     pub source_trigger: Option<SourceTriggerDescriptor>,
     #[serde(rename = "timerTrigger", default, skip_serializing_if = "Option::is_none")]
     pub timer_trigger: Option<TimerTriggerDescriptor>,
+    #[doc = "The platform properties against which the run has to happen."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<PlatformProperties>,
+    #[doc = "The properties that determine the run agent configuration."]
     #[serde(rename = "agentConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub agent_configuration: Option<AgentProperties>,
+    #[doc = "The scope of the credentials that were used to login to the source registry during this run."]
     #[serde(rename = "sourceRegistryAuth", default, skip_serializing_if = "Option::is_none")]
     pub source_registry_auth: Option<String>,
+    #[doc = "The list of custom registries that were logged in during this run."]
     #[serde(rename = "customRegistries", default, skip_serializing_if = "Vec::is_empty")]
     pub custom_registries: Vec<String>,
+    #[doc = "The error message received from backend systems after the run is scheduled."]
     #[serde(rename = "runErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub run_error_message: Option<String>,
+    #[doc = "The update trigger token passed for the Run."]
     #[serde(rename = "updateTriggerToken", default, skip_serializing_if = "Option::is_none")]
     pub update_trigger_token: Option<String>,
+    #[doc = "Properties for a registry image."]
     #[serde(rename = "logArtifact", default, skip_serializing_if = "Option::is_none")]
     pub log_artifact: Option<ImageDescriptor>,
+    #[doc = "The provisioning state of a run."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<run_properties::ProvisioningState>,
+    #[doc = "The value that indicates whether archiving is enabled or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
 }
@@ -975,6 +1205,7 @@ impl RunProperties {
 }
 pub mod run_properties {
     use super::*;
+    #[doc = "The current status of the run."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Queued,
@@ -986,6 +1217,7 @@ pub mod run_properties {
         Error,
         Timeout,
     }
+    #[doc = "The type of run."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RunType {
         QuickBuild,
@@ -993,6 +1225,7 @@ pub mod run_properties {
         AutoBuild,
         AutoRun,
     }
+    #[doc = "The provisioning state of a run."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1003,14 +1236,19 @@ pub mod run_properties {
         Canceled,
     }
 }
+#[doc = "The request parameters for scheduling a run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunRequest {
+    #[doc = "The type of the run request."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "The value that indicates whether archiving is enabled for the run or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
+    #[doc = "The dedicated agent pool for the run."]
     #[serde(rename = "agentPoolName", default, skip_serializing_if = "Option::is_none")]
     pub agent_pool_name: Option<String>,
+    #[doc = "The template that describes the repository and tag information for run log artifact."]
     #[serde(rename = "logTemplate", default, skip_serializing_if = "Option::is_none")]
     pub log_template: Option<String>,
 }
@@ -1024,8 +1262,10 @@ impl RunRequest {
         }
     }
 }
+#[doc = "The set of run properties that can be updated."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunUpdateParameters {
+    #[doc = "The value that indicates whether archiving is enabled or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
 }
@@ -1034,10 +1274,13 @@ impl RunUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a secret object value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretObject {
+    #[doc = "The value of the secret. The format of this value will be determined\r\nbased on the type of the secret object. If the type is Opaque, the value will be\r\nused as is without any modification."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The type of the secret object which determines how the value of the secret object has to be\r\ninterpreted."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<secret_object::Type>,
 }
@@ -1048,16 +1291,21 @@ impl SecretObject {
 }
 pub mod secret_object {
     use super::*;
+    #[doc = "The type of the secret object which determines how the value of the secret object has to be\r\ninterpreted."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Opaque,
         Vaultsecret,
     }
 }
+#[doc = "The properties of a overridable value that can be passed to a task template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SetValue {
+    #[doc = "The name of the overridable value."]
     pub name: String,
+    #[doc = "The overridable value."]
     pub value: String,
+    #[doc = "Flag to indicate whether the value represents a secret or not."]
     #[serde(rename = "isSecret", default, skip_serializing_if = "Option::is_none")]
     pub is_secret: Option<bool>,
 }
@@ -1070,14 +1318,19 @@ impl SetValue {
         }
     }
 }
+#[doc = "The properties of the source code repository."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceProperties {
+    #[doc = "The type of source control service."]
     #[serde(rename = "sourceControlType")]
     pub source_control_type: source_properties::SourceControlType,
+    #[doc = "The full URL to the source code repository"]
     #[serde(rename = "repositoryUrl")]
     pub repository_url: String,
+    #[doc = "The branch name of the source code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    #[doc = "The authorization properties for accessing the source code repository."]
     #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
     pub source_control_auth_properties: Option<AuthInfo>,
 }
@@ -1093,14 +1346,17 @@ impl SourceProperties {
 }
 pub mod source_properties {
     use super::*;
+    #[doc = "The type of source control service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceControlType {
         Github,
         VisualStudioTeamService,
     }
 }
+#[doc = "Describes the credential parameters for accessing the source registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceRegistryCredentials {
+    #[doc = "The authentication mode which determines the source registry login scope. The credentials for the source registry\r\nwill be generated using the given scope. These credentials will be used to login to\r\nthe source registry during the run."]
     #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
     pub login_mode: Option<source_registry_credentials::LoginMode>,
 }
@@ -1111,20 +1367,26 @@ impl SourceRegistryCredentials {
 }
 pub mod source_registry_credentials {
     use super::*;
+    #[doc = "The authentication mode which determines the source registry login scope. The credentials for the source registry\r\nwill be generated using the given scope. These credentials will be used to login to\r\nthe source registry during the run."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LoginMode {
         None,
         Default,
     }
 }
+#[doc = "The properties of a source based trigger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceTrigger {
+    #[doc = "The properties of the source code repository."]
     #[serde(rename = "sourceRepository")]
     pub source_repository: SourceProperties,
+    #[doc = "The source event corresponding to the trigger."]
     #[serde(rename = "sourceTriggerEvents")]
     pub source_trigger_events: Vec<String>,
+    #[doc = "The current status of trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<source_trigger::Status>,
+    #[doc = "The name of the trigger."]
     pub name: String,
 }
 impl SourceTrigger {
@@ -1139,6 +1401,7 @@ impl SourceTrigger {
 }
 pub mod source_trigger {
     use super::*;
+    #[doc = "The current status of trigger."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
@@ -1150,20 +1413,28 @@ pub mod source_trigger {
         }
     }
 }
+#[doc = "The source trigger that caused a run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceTriggerDescriptor {
+    #[doc = "The unique ID of the trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The event type of the trigger."]
     #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<String>,
+    #[doc = "The unique ID that identifies a commit."]
     #[serde(rename = "commitId", default, skip_serializing_if = "Option::is_none")]
     pub commit_id: Option<String>,
+    #[doc = "The unique ID that identifies pull request."]
     #[serde(rename = "pullRequestId", default, skip_serializing_if = "Option::is_none")]
     pub pull_request_id: Option<String>,
+    #[doc = "The repository URL."]
     #[serde(rename = "repositoryUrl", default, skip_serializing_if = "Option::is_none")]
     pub repository_url: Option<String>,
+    #[doc = "The branch name in the repository."]
     #[serde(rename = "branchName", default, skip_serializing_if = "Option::is_none")]
     pub branch_name: Option<String>,
+    #[doc = "The source control provider type."]
     #[serde(rename = "providerType", default, skip_serializing_if = "Option::is_none")]
     pub provider_type: Option<String>,
 }
@@ -1172,14 +1443,19 @@ impl SourceTriggerDescriptor {
         Self::default()
     }
 }
+#[doc = "The properties for updating a source based trigger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceTriggerUpdateParameters {
+    #[doc = "The properties for updating the source code repository."]
     #[serde(rename = "sourceRepository", default, skip_serializing_if = "Option::is_none")]
     pub source_repository: Option<SourceUpdateParameters>,
+    #[doc = "The source event corresponding to the trigger."]
     #[serde(rename = "sourceTriggerEvents", default, skip_serializing_if = "Vec::is_empty")]
     pub source_trigger_events: Vec<String>,
+    #[doc = "The current status of trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<source_trigger_update_parameters::Status>,
+    #[doc = "The name of the trigger."]
     pub name: String,
 }
 impl SourceTriggerUpdateParameters {
@@ -1194,6 +1470,7 @@ impl SourceTriggerUpdateParameters {
 }
 pub mod source_trigger_update_parameters {
     use super::*;
+    #[doc = "The current status of trigger."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
@@ -1205,14 +1482,19 @@ pub mod source_trigger_update_parameters {
         }
     }
 }
+#[doc = "The properties for updating the source code repository."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceUpdateParameters {
+    #[doc = "The type of source control service."]
     #[serde(rename = "sourceControlType", default, skip_serializing_if = "Option::is_none")]
     pub source_control_type: Option<source_update_parameters::SourceControlType>,
+    #[doc = "The full URL to the source code repository"]
     #[serde(rename = "repositoryUrl", default, skip_serializing_if = "Option::is_none")]
     pub repository_url: Option<String>,
+    #[doc = "The branch name of the source code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    #[doc = "The authorization properties for accessing the source code repository."]
     #[serde(rename = "sourceControlAuthProperties", default, skip_serializing_if = "Option::is_none")]
     pub source_control_auth_properties: Option<AuthInfoUpdateParameters>,
 }
@@ -1223,16 +1505,20 @@ impl SourceUpdateParameters {
 }
 pub mod source_update_parameters {
     use super::*;
+    #[doc = "The type of source control service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SourceControlType {
         Github,
         VisualStudioTeamService,
     }
 }
+#[doc = "The properties of a response to source upload request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceUploadDefinition {
+    #[doc = "The URL where the client can upload the source."]
     #[serde(rename = "uploadUrl", default, skip_serializing_if = "Option::is_none")]
     pub upload_url: Option<String>,
+    #[doc = "The relative path to the source. This is used to submit the subsequent queue build request."]
     #[serde(rename = "relativePath", default, skip_serializing_if = "Option::is_none")]
     pub relative_path: Option<String>,
 }
@@ -1241,18 +1527,25 @@ impl SourceUploadDefinition {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -1263,6 +1556,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -1270,6 +1564,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,
@@ -1278,12 +1573,15 @@ pub mod system_data {
         Key,
     }
 }
+#[doc = "The task that has the ARM resource and task properties. \r\nThe task will have all information to schedule a run against it."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Task {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Managed identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityProperties>,
+    #[doc = "The properties of a task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TaskProperties>,
 }
@@ -1296,10 +1594,13 @@ impl Task {
         }
     }
 }
+#[doc = "The collection of tasks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Task>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1308,30 +1609,43 @@ impl TaskListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskProperties {
+    #[doc = "The provisioning state of the task."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<task_properties::ProvisioningState>,
+    #[doc = "The creation date of task."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The current status of task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<task_properties::Status>,
+    #[doc = "The platform properties against which the run has to happen."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<PlatformProperties>,
+    #[doc = "The properties that determine the run agent configuration."]
     #[serde(rename = "agentConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub agent_configuration: Option<AgentProperties>,
+    #[doc = "The dedicated agent pool for the task."]
     #[serde(rename = "agentPoolName", default, skip_serializing_if = "Option::is_none")]
     pub agent_pool_name: Option<String>,
+    #[doc = "Run timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
+    #[doc = "Base properties for any task step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub step: Option<TaskStepProperties>,
+    #[doc = "The properties of a trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trigger: Option<TriggerProperties>,
+    #[doc = "The parameters that describes a set of credentials that will be used when a run is invoked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
+    #[doc = "The template that describes the repository and tag information for run log artifact."]
     #[serde(rename = "logTemplate", default, skip_serializing_if = "Option::is_none")]
     pub log_template: Option<String>,
+    #[doc = "The value of this property indicates whether the task resource is system task or not."]
     #[serde(rename = "isSystemTask", default, skip_serializing_if = "Option::is_none")]
     pub is_system_task: Option<bool>,
 }
@@ -1342,6 +1656,7 @@ impl TaskProperties {
 }
 pub mod task_properties {
     use super::*;
+    #[doc = "The provisioning state of the task."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1351,30 +1666,41 @@ pub mod task_properties {
         Failed,
         Canceled,
     }
+    #[doc = "The current status of task."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
         Enabled,
     }
 }
+#[doc = "The properties for updating a task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskPropertiesUpdateParameters {
+    #[doc = "The current status of task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<task_properties_update_parameters::Status>,
+    #[doc = "The properties for updating the platform configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub platform: Option<PlatformUpdateParameters>,
+    #[doc = "The properties that determine the run agent configuration."]
     #[serde(rename = "agentConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub agent_configuration: Option<AgentProperties>,
+    #[doc = "The dedicated agent pool for the task."]
     #[serde(rename = "agentPoolName", default, skip_serializing_if = "Option::is_none")]
     pub agent_pool_name: Option<String>,
+    #[doc = "Run timeout in seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
+    #[doc = "Base properties for updating any task step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub step: Option<TaskStepUpdateParameters>,
+    #[doc = "The properties for updating triggers."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trigger: Option<TriggerUpdateParameters>,
+    #[doc = "The parameters that describes a set of credentials that will be used when a run is invoked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<Credentials>,
+    #[doc = "The template that describes the repository and tag information for run log artifact."]
     #[serde(rename = "logTemplate", default, skip_serializing_if = "Option::is_none")]
     pub log_template: Option<String>,
 }
@@ -1385,20 +1711,25 @@ impl TaskPropertiesUpdateParameters {
 }
 pub mod task_properties_update_parameters {
     use super::*;
+    #[doc = "The current status of task."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
         Enabled,
     }
 }
+#[doc = "The task run that has the ARM resource and properties. \r\nThe task run will have the information of request and result of a run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskRun {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Managed identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityProperties>,
+    #[doc = "The properties of task run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TaskRunProperties>,
+    #[doc = "The location of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -1407,10 +1738,13 @@ impl TaskRun {
         Self::default()
     }
 }
+#[doc = "The collection of task runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskRunListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TaskRun>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1419,14 +1753,19 @@ impl TaskRunListResult {
         Self::default()
     }
 }
+#[doc = "The properties of task run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskRunProperties {
+    #[doc = "The provisioning state of this task run"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<task_run_properties::ProvisioningState>,
+    #[doc = "The request parameters for scheduling a run."]
     #[serde(rename = "runRequest", default, skip_serializing_if = "Option::is_none")]
     pub run_request: Option<RunRequest>,
+    #[doc = "Run resource properties"]
     #[serde(rename = "runResult", default, skip_serializing_if = "Option::is_none")]
     pub run_result: Option<Run>,
+    #[doc = "How the run should be forced to rerun even if the run request configuration has not changed"]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
 }
@@ -1437,6 +1776,7 @@ impl TaskRunProperties {
 }
 pub mod task_run_properties {
     use super::*;
+    #[doc = "The provisioning state of this task run"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -1447,10 +1787,13 @@ pub mod task_run_properties {
         Canceled,
     }
 }
+#[doc = "The properties of a task run update parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskRunPropertiesUpdateParameters {
+    #[doc = "The request parameters for scheduling a run."]
     #[serde(rename = "runRequest", default, skip_serializing_if = "Option::is_none")]
     pub run_request: Option<RunRequest>,
+    #[doc = "How the run should be forced to rerun even if the run request configuration has not changed"]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
 }
@@ -1459,10 +1802,12 @@ impl TaskRunPropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters for a task run request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskRunRequest {
     #[serde(flatten)]
     pub run_request: RunRequest,
+    #[doc = "The resource ID of task against which run has to be queued."]
     #[serde(rename = "taskId")]
     pub task_id: String,
     #[serde(rename = "overrideTaskStepProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1477,14 +1822,19 @@ impl TaskRunRequest {
         }
     }
 }
+#[doc = "The parameters for updating a task run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskRunUpdateParameters {
+    #[doc = "Managed identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityProperties>,
+    #[doc = "The properties of a task run update parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TaskRunPropertiesUpdateParameters>,
+    #[doc = "The location of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The ARM resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1493,14 +1843,19 @@ impl TaskRunUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Base properties for any task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepProperties {
+    #[doc = "The type of the step."]
     #[serde(rename = "type")]
     pub type_: task_step_properties::Type,
+    #[doc = "List of base image dependencies for a step."]
     #[serde(rename = "baseImageDependencies", default, skip_serializing_if = "Vec::is_empty")]
     pub base_image_dependencies: Vec<BaseImageDependency>,
+    #[doc = "The URL(absolute or relative) of the source context for the task step."]
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
     pub context_path: Option<String>,
+    #[doc = "The token (git PAT or SAS token of storage account blob) associated with the context for a step."]
     #[serde(rename = "contextAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub context_access_token: Option<String>,
 }
@@ -1516,6 +1871,7 @@ impl TaskStepProperties {
 }
 pub mod task_step_properties {
     use super::*;
+    #[doc = "The type of the step."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Docker,
@@ -1523,12 +1879,16 @@ pub mod task_step_properties {
         EncodedTask,
     }
 }
+#[doc = "Base properties for updating any task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepUpdateParameters {
+    #[doc = "The type of the step."]
     #[serde(rename = "type")]
     pub type_: task_step_update_parameters::Type,
+    #[doc = "The URL(absolute or relative) of the source context for the task step."]
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
     pub context_path: Option<String>,
+    #[doc = "The token (git PAT or SAS token of storage account blob) associated with the context for a step."]
     #[serde(rename = "contextAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub context_access_token: Option<String>,
 }
@@ -1543,6 +1903,7 @@ impl TaskStepUpdateParameters {
 }
 pub mod task_step_update_parameters {
     use super::*;
+    #[doc = "The type of the step."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Docker,
@@ -1550,12 +1911,16 @@ pub mod task_step_update_parameters {
         EncodedTask,
     }
 }
+#[doc = "The parameters for updating a task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskUpdateParameters {
+    #[doc = "Managed identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityProperties>,
+    #[doc = "The properties for updating a task."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TaskPropertiesUpdateParameters>,
+    #[doc = "The ARM resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1564,11 +1929,15 @@ impl TaskUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of a timer trigger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimerTrigger {
+    #[doc = "The CRON expression for the task schedule"]
     pub schedule: String,
+    #[doc = "The current status of trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<timer_trigger::Status>,
+    #[doc = "The name of the trigger."]
     pub name: String,
 }
 impl TimerTrigger {
@@ -1582,6 +1951,7 @@ impl TimerTrigger {
 }
 pub mod timer_trigger {
     use super::*;
+    #[doc = "The current status of trigger."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
@@ -1595,8 +1965,10 @@ pub mod timer_trigger {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimerTriggerDescriptor {
+    #[doc = "The timer trigger name that caused the run."]
     #[serde(rename = "timerTriggerName", default, skip_serializing_if = "Option::is_none")]
     pub timer_trigger_name: Option<String>,
+    #[doc = "The occurrence that triggered the run."]
     #[serde(rename = "scheduleOccurrence", default, skip_serializing_if = "Option::is_none")]
     pub schedule_occurrence: Option<String>,
 }
@@ -1605,12 +1977,16 @@ impl TimerTriggerDescriptor {
         Self::default()
     }
 }
+#[doc = "The properties for updating a timer trigger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimerTriggerUpdateParameters {
+    #[doc = "The CRON expression for the task schedule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<String>,
+    #[doc = "The current status of trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<timer_trigger_update_parameters::Status>,
+    #[doc = "The name of the trigger."]
     pub name: String,
 }
 impl TimerTriggerUpdateParameters {
@@ -1624,6 +2000,7 @@ impl TimerTriggerUpdateParameters {
 }
 pub mod timer_trigger_update_parameters {
     use super::*;
+    #[doc = "The current status of trigger."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Disabled,
@@ -1635,12 +2012,16 @@ pub mod timer_trigger_update_parameters {
         }
     }
 }
+#[doc = "The properties of a trigger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerProperties {
+    #[doc = "The collection of timer triggers."]
     #[serde(rename = "timerTriggers", default, skip_serializing_if = "Vec::is_empty")]
     pub timer_triggers: Vec<TimerTrigger>,
+    #[doc = "The collection of triggers based on source code repository."]
     #[serde(rename = "sourceTriggers", default, skip_serializing_if = "Vec::is_empty")]
     pub source_triggers: Vec<SourceTrigger>,
+    #[doc = "The trigger based on base image dependency."]
     #[serde(rename = "baseImageTrigger", default, skip_serializing_if = "Option::is_none")]
     pub base_image_trigger: Option<BaseImageTrigger>,
 }
@@ -1649,12 +2030,16 @@ impl TriggerProperties {
         Self::default()
     }
 }
+#[doc = "The properties for updating triggers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerUpdateParameters {
+    #[doc = "The collection of timer triggers."]
     #[serde(rename = "timerTriggers", default, skip_serializing_if = "Vec::is_empty")]
     pub timer_triggers: Vec<TimerTriggerUpdateParameters>,
+    #[doc = "The collection of triggers based on source code repository."]
     #[serde(rename = "sourceTriggers", default, skip_serializing_if = "Vec::is_empty")]
     pub source_triggers: Vec<SourceTriggerUpdateParameters>,
+    #[doc = "The properties for updating base image dependency trigger."]
     #[serde(rename = "baseImageTrigger", default, skip_serializing_if = "Option::is_none")]
     pub base_image_trigger: Option<BaseImageTriggerUpdateParameters>,
 }
@@ -1665,8 +2050,10 @@ impl TriggerUpdateParameters {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentityProperties {
+    #[doc = "The principal id of user assigned identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The client id of user assigned identity."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }

@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -12,16 +14,22 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -30,10 +38,13 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -42,12 +53,16 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Describes an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -56,10 +71,12 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Represents a software data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Software {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Software Inventory resource properties"]
     pub properties: SoftwareProperties,
 }
 impl Software {
@@ -70,24 +87,34 @@ impl Software {
         }
     }
 }
+#[doc = "Software Inventory resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SoftwareProperties {
+    #[doc = "Unique identifier for the virtual machine in the service."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
+    #[doc = "Platform of the operating system running on the device."]
     #[serde(rename = "osPlatform", default, skip_serializing_if = "Option::is_none")]
     pub os_platform: Option<String>,
+    #[doc = "Name of the software vendor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vendor: Option<String>,
+    #[doc = "Name of the software product."]
     #[serde(rename = "softwareName", default, skip_serializing_if = "Option::is_none")]
     pub software_name: Option<String>,
+    #[doc = "Version number of the software product."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "End of support status."]
     #[serde(rename = "endOfSupportStatus", default, skip_serializing_if = "Option::is_none")]
     pub end_of_support_status: Option<software_properties::EndOfSupportStatus>,
+    #[doc = "The end of support date in case the product is upcoming end of support."]
     #[serde(rename = "endOfSupportDate", default, skip_serializing_if = "Option::is_none")]
     pub end_of_support_date: Option<String>,
+    #[doc = "Number of weaknesses."]
     #[serde(rename = "numberOfKnownVulnerabilities", default, skip_serializing_if = "Option::is_none")]
     pub number_of_known_vulnerabilities: Option<i32>,
+    #[doc = "First time that the software was seen in the device."]
     #[serde(rename = "firstSeenAt", default, skip_serializing_if = "Option::is_none")]
     pub first_seen_at: Option<String>,
 }
@@ -98,6 +125,7 @@ impl SoftwareProperties {
 }
 pub mod software_properties {
     use super::*;
+    #[doc = "End of support status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EndOfSupportStatus {
         None,
@@ -111,10 +139,12 @@ pub mod software_properties {
         UpcomingVersionNoLongerSupported,
     }
 }
+#[doc = "Represents the software inventory of the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SoftwaresList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Software>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

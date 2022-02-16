@@ -2,9 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "A request to check whether the specified name for a resource is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityRequest {
+    #[doc = "The name whose availability is to be checked."]
     pub name: String,
+    #[doc = "The type of resource that is used as the scope of the availability check."]
     #[serde(rename = "type")]
     pub type_: check_name_availability_request::Type,
 }
@@ -15,20 +18,26 @@ impl CheckNameAvailabilityRequest {
 }
 pub mod check_name_availability_request {
     use super::*;
+    #[doc = "The type of resource that is used as the scope of the availability check."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Sql/servers")]
         MicrosoftSqlServers,
     }
 }
+#[doc = "A response indicating whether the specified name for a resource is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResponse {
+    #[doc = "True if the name is available, otherwise false."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
+    #[doc = "A message explaining why the name is unavailable. Will be null if the name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The name whose availability was checked."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The reason code explaining why the name is unavailable. Will be null if the name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_response::Reason>,
 }
@@ -39,18 +48,22 @@ impl CheckNameAvailabilityResponse {
 }
 pub mod check_name_availability_response {
     use super::*;
+    #[doc = "The reason code explaining why the name is unavailable. Will be null if the name is available."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
         Invalid,
         AlreadyExists,
     }
 }
+#[doc = "Represents a database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Database {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Kind of database.  This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Represents the properties of a database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
 }
@@ -63,8 +76,10 @@ impl Database {
         }
     }
 }
+#[doc = "Represents the response to a list database request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseListResult {
+    #[doc = "The list of databases housed in the server."]
     pub value: Vec<Database>,
 }
 impl DatabaseListResult {
@@ -72,62 +87,89 @@ impl DatabaseListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of a database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseProperties {
+    #[doc = "The collation of the database. If createMode is not Default, this value is ignored."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collation: Option<String>,
+    #[doc = "The creation date of the database (ISO8601 format)."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The containment state of the database."]
     #[serde(rename = "containmentState", default, skip_serializing_if = "Option::is_none")]
     pub containment_state: Option<i64>,
+    #[doc = "The current service level objective ID of the database. This is the ID of the service level objective that is currently active."]
     #[serde(rename = "currentServiceObjectiveId", default, skip_serializing_if = "Option::is_none")]
     pub current_service_objective_id: Option<String>,
+    #[doc = "The ID of the database."]
     #[serde(rename = "databaseId", default, skip_serializing_if = "Option::is_none")]
     pub database_id: Option<String>,
+    #[doc = "This records the earliest start date and time that restore is available for this database (ISO8601 format)."]
     #[serde(rename = "earliestRestoreDate", default, skip_serializing_if = "Option::is_none")]
     pub earliest_restore_date: Option<String>,
+    #[doc = "Specifies the mode of database creation.\n\nDefault: regular database creation.\n\nCopy: creates a database as a copy of an existing database. sourceDatabaseId must be specified as the resource ID of the source database.\n\nOnlineSecondary/NonReadableSecondary: creates a database as a (readable or nonreadable) secondary replica of an existing database. sourceDatabaseId must be specified as the resource ID of the existing primary database.\n\nPointInTimeRestore: Creates a database by restoring a point in time backup of an existing database. sourceDatabaseId must be specified as the resource ID of the existing database, and restorePointInTime must be specified.\n\nRecovery: Creates a database by restoring a geo-replicated backup. sourceDatabaseId must be specified as the recoverable database resource ID to restore.\n\nRestore: Creates a database by restoring a backup of a deleted database. sourceDatabaseId must be specified. If sourceDatabaseId is the database's original resource ID, then sourceDatabaseDeletionDate must be specified. Otherwise sourceDatabaseId must be the restorable dropped database resource ID and sourceDatabaseDeletionDate is ignored. restorePointInTime may also be specified to restore from an earlier point in time.\n\nRestoreLongTermRetentionBackup: Creates a database by restoring from a long term retention vault. recoveryServicesRecoveryPointResourceId must be specified as the recovery point resource ID.\n\nCopy, NonReadableSecondary, OnlineSecondary and RestoreLongTermRetentionBackup are not supported for DataWarehouse edition."]
     #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
     pub create_mode: Option<database_properties::CreateMode>,
+    #[doc = "Conditional. If createMode is Copy, NonReadableSecondary, OnlineSecondary, PointInTimeRestore, Recovery, or Restore, then this value is required. Specifies the resource ID of the source database. If createMode is NonReadableSecondary or OnlineSecondary, the name of the source database must be the same as the new database being created."]
     #[serde(rename = "sourceDatabaseId", default, skip_serializing_if = "Option::is_none")]
     pub source_database_id: Option<String>,
+    #[doc = "Conditional. If createMode is Restore and sourceDatabaseId is the deleted database's original resource id when it existed (as opposed to its current restorable dropped database id), then this value is required. Specifies the time that the database was deleted."]
     #[serde(rename = "sourceDatabaseDeletionDate", default, skip_serializing_if = "Option::is_none")]
     pub source_database_deletion_date: Option<String>,
+    #[doc = "Conditional. If createMode is PointInTimeRestore, this value is required. If createMode is Restore, this value is optional. Specifies the point in time (ISO8601 format) of the source database that will be restored to create the new database. Must be greater than or equal to the source database's earliestRestoreDate value."]
     #[serde(rename = "restorePointInTime", default, skip_serializing_if = "Option::is_none")]
     pub restore_point_in_time: Option<String>,
+    #[doc = "Conditional. If createMode is RestoreLongTermRetentionBackup, then this value is required. Specifies the resource ID of the recovery point to restore from."]
     #[serde(
         rename = "recoveryServicesRecoveryPointResourceId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub recovery_services_recovery_point_resource_id: Option<String>,
+    #[doc = "The edition of the database. The DatabaseEditions enumeration contains all the valid editions. If createMode is NonReadableSecondary or OnlineSecondary, this value is ignored.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<database_properties::Edition>,
+    #[doc = "The max size of the database expressed in bytes. If createMode is not Default, this value is ignored. To see possible values, query the capabilities API (/subscriptions/{subscriptionId}/providers/Microsoft.Sql/locations/{locationID}/capabilities) referred to by operationId: \"Capabilities_ListByLocation.\""]
     #[serde(rename = "maxSizeBytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_bytes: Option<String>,
+    #[doc = "The configured service level objective ID of the database. This is the service level objective that is in the process of being applied to the database. Once successfully updated, it will match the value of currentServiceObjectiveId property. If requestedServiceObjectiveId and requestedServiceObjectiveName are both updated, the value of requestedServiceObjectiveId overrides the value of requestedServiceObjectiveName.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the service objective ids that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API."]
     #[serde(rename = "requestedServiceObjectiveId", default, skip_serializing_if = "Option::is_none")]
     pub requested_service_objective_id: Option<String>,
+    #[doc = "The name of the configured service level objective of the database. This is the service level objective that is in the process of being applied to the database. Once successfully updated, it will match the value of serviceLevelObjective property. \r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[serde(rename = "requestedServiceObjectiveName", default, skip_serializing_if = "Option::is_none")]
     pub requested_service_objective_name: Option<database_properties::RequestedServiceObjectiveName>,
+    #[doc = "The current service level objective of the database."]
     #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective: Option<database_properties::ServiceLevelObjective>,
+    #[doc = "The status of the database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The name of the elastic pool the database is in. If elasticPoolName and requestedServiceObjectiveName are both updated, the value of requestedServiceObjectiveName is ignored. Not supported for DataWarehouse edition."]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
+    #[doc = "The default secondary region for this database."]
     #[serde(rename = "defaultSecondaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub default_secondary_location: Option<String>,
+    #[doc = "The list of service tier advisors for this database. Expanded property"]
     #[serde(rename = "serviceTierAdvisors", default, skip_serializing_if = "Vec::is_empty")]
     pub service_tier_advisors: Vec<ServiceTierAdvisor>,
+    #[doc = "The transparent data encryption info for this database."]
     #[serde(rename = "transparentDataEncryption", default, skip_serializing_if = "Vec::is_empty")]
     pub transparent_data_encryption: Vec<TransparentDataEncryption>,
+    #[doc = "The recommended indices for this database."]
     #[serde(rename = "recommendedIndex", default, skip_serializing_if = "Vec::is_empty")]
     pub recommended_index: Vec<RecommendedIndex>,
+    #[doc = "The resource identifier of the failover group containing this database."]
     #[serde(rename = "failoverGroupId", default, skip_serializing_if = "Option::is_none")]
     pub failover_group_id: Option<String>,
+    #[doc = "Conditional. If the database is a geo-secondary, readScale indicates whether read-only connections are allowed to this database or not. Not supported for DataWarehouse edition."]
     #[serde(rename = "readScale", default, skip_serializing_if = "Option::is_none")]
     pub read_scale: Option<database_properties::ReadScale>,
+    #[doc = "Indicates the name of the sample schema to apply when creating this database. If createMode is not Default, this value is ignored. Not supported for DataWarehouse edition."]
     #[serde(rename = "sampleName", default, skip_serializing_if = "Option::is_none")]
     pub sample_name: Option<database_properties::SampleName>,
+    #[doc = "Whether or not this database is zone redundant, which means the replicas of this database will be spread across multiple availability zones."]
     #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<bool>,
 }
@@ -138,6 +180,7 @@ impl DatabaseProperties {
 }
 pub mod database_properties {
     use super::*;
+    #[doc = "Specifies the mode of database creation.\n\nDefault: regular database creation.\n\nCopy: creates a database as a copy of an existing database. sourceDatabaseId must be specified as the resource ID of the source database.\n\nOnlineSecondary/NonReadableSecondary: creates a database as a (readable or nonreadable) secondary replica of an existing database. sourceDatabaseId must be specified as the resource ID of the existing primary database.\n\nPointInTimeRestore: Creates a database by restoring a point in time backup of an existing database. sourceDatabaseId must be specified as the resource ID of the existing database, and restorePointInTime must be specified.\n\nRecovery: Creates a database by restoring a geo-replicated backup. sourceDatabaseId must be specified as the recoverable database resource ID to restore.\n\nRestore: Creates a database by restoring a backup of a deleted database. sourceDatabaseId must be specified. If sourceDatabaseId is the database's original resource ID, then sourceDatabaseDeletionDate must be specified. Otherwise sourceDatabaseId must be the restorable dropped database resource ID and sourceDatabaseDeletionDate is ignored. restorePointInTime may also be specified to restore from an earlier point in time.\n\nRestoreLongTermRetentionBackup: Creates a database by restoring from a long term retention vault. recoveryServicesRecoveryPointResourceId must be specified as the recovery point resource ID.\n\nCopy, NonReadableSecondary, OnlineSecondary and RestoreLongTermRetentionBackup are not supported for DataWarehouse edition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateMode {
         Copy,
@@ -149,6 +192,7 @@ pub mod database_properties {
         Restore,
         RestoreLongTermRetentionBackup,
     }
+    #[doc = "The edition of the database. The DatabaseEditions enumeration contains all the valid editions. If createMode is NonReadableSecondary or OnlineSecondary, this value is ignored.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Edition {
         Web,
@@ -167,6 +211,7 @@ pub mod database_properties {
         BusinessCritical,
         Hyperscale,
     }
+    #[doc = "The name of the configured service level objective of the database. This is the service level objective that is in the process of being applied to the database. Once successfully updated, it will match the value of serviceLevelObjective property. \r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RequestedServiceObjectiveName {
         System,
@@ -272,6 +317,7 @@ pub mod database_properties {
         Ds2000,
         ElasticPool,
     }
+    #[doc = "The current service level objective of the database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceLevelObjective {
         System,
@@ -377,25 +423,31 @@ pub mod database_properties {
         Ds2000,
         ElasticPool,
     }
+    #[doc = "Conditional. If the database is a geo-secondary, readScale indicates whether read-only connections are allowed to this database or not. Not supported for DataWarehouse edition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReadScale {
         Enabled,
         Disabled,
     }
+    #[doc = "Indicates the name of the sample schema to apply when creating this database. If createMode is not Default, this value is ignored. Not supported for DataWarehouse edition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SampleName {
         #[serde(rename = "AdventureWorksLT")]
         AdventureWorksLt,
     }
 }
+#[doc = "Contains information about a database Threat Detection policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseSecurityAlertPolicy {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Properties for a database Threat Detection policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseSecurityAlertPolicyProperties>,
 }
@@ -404,21 +456,30 @@ impl DatabaseSecurityAlertPolicy {
         Self::default()
     }
 }
+#[doc = "Properties for a database Threat Detection policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseSecurityAlertPolicyProperties {
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint and storageAccountAccessKey are required."]
     pub state: database_security_alert_policy_properties::State,
+    #[doc = "Specifies the semicolon-separated list of alerts that are disabled, or empty string to disable no alerts. Possible values: Sql_Injection; Sql_Injection_Vulnerability; Access_Anomaly; Data_Exfiltration; Unsafe_Action."]
     #[serde(rename = "disabledAlerts", default, skip_serializing_if = "Option::is_none")]
     pub disabled_alerts: Option<String>,
+    #[doc = "Specifies the semicolon-separated list of e-mail addresses to which the alert is sent."]
     #[serde(rename = "emailAddresses", default, skip_serializing_if = "Option::is_none")]
     pub email_addresses: Option<String>,
+    #[doc = "Specifies that the alert is sent to the account administrators."]
     #[serde(rename = "emailAccountAdmins", default, skip_serializing_if = "Option::is_none")]
     pub email_account_admins: Option<database_security_alert_policy_properties::EmailAccountAdmins>,
+    #[doc = "Specifies the blob storage endpoint (e.g. https://MyAccount.blob.core.windows.net). This blob storage will hold all Threat Detection audit logs. If state is Enabled, storageEndpoint is required."]
     #[serde(rename = "storageEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub storage_endpoint: Option<String>,
+    #[doc = "Specifies the identifier key of the Threat Detection audit storage account. If state is Enabled, storageAccountAccessKey is required."]
     #[serde(rename = "storageAccountAccessKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_access_key: Option<String>,
+    #[doc = "Specifies the number of days to keep in the Threat Detection audit logs."]
     #[serde(rename = "retentionDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_days: Option<i32>,
+    #[doc = "Specifies whether to use the default server policy."]
     #[serde(rename = "useServerDefault", default, skip_serializing_if = "Option::is_none")]
     pub use_server_default: Option<database_security_alert_policy_properties::UseServerDefault>,
 }
@@ -438,29 +499,35 @@ impl DatabaseSecurityAlertPolicyProperties {
 }
 pub mod database_security_alert_policy_properties {
     use super::*;
+    #[doc = "Specifies the state of the policy. If state is Enabled, storageEndpoint and storageAccountAccessKey are required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         New,
         Enabled,
         Disabled,
     }
+    #[doc = "Specifies that the alert is sent to the account administrators."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EmailAccountAdmins {
         Enabled,
         Disabled,
     }
+    #[doc = "Specifies whether to use the default server policy."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UseServerDefault {
         Enabled,
         Disabled,
     }
 }
+#[doc = "Represents a database update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseUpdate {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Represents the properties of a database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
 }
@@ -469,12 +536,15 @@ impl DatabaseUpdate {
         Self::default()
     }
 }
+#[doc = "Represents a database elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPool {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Represents the properties of an elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolProperties>,
+    #[doc = "Kind of elastic pool.  This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -487,12 +557,15 @@ impl ElasticPool {
         }
     }
 }
+#[doc = "Represents the activity on an elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolActivity {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Represents the properties of an elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolActivityProperties>,
 }
@@ -501,8 +574,10 @@ impl ElasticPoolActivity {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list elastic pool activity request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolActivityListResult {
+    #[doc = "The list of elastic pool activities."]
     pub value: Vec<ElasticPoolActivity>,
 }
 impl ElasticPoolActivityListResult {
@@ -510,46 +585,67 @@ impl ElasticPoolActivityListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of an elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolActivityProperties {
+    #[doc = "The time the operation finished (ISO8601 format)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The error code if available."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
+    #[doc = "The error message if available."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "The error severity if available."]
     #[serde(rename = "errorSeverity", default, skip_serializing_if = "Option::is_none")]
     pub error_severity: Option<i32>,
+    #[doc = "The operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The unique operation ID."]
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
+    #[doc = "The percentage complete if available."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
+    #[doc = "The requested max DTU per database if available."]
     #[serde(rename = "requestedDatabaseDtuMax", default, skip_serializing_if = "Option::is_none")]
     pub requested_database_dtu_max: Option<i32>,
+    #[doc = "The requested min DTU per database if available."]
     #[serde(rename = "requestedDatabaseDtuMin", default, skip_serializing_if = "Option::is_none")]
     pub requested_database_dtu_min: Option<i32>,
+    #[doc = "The requested DTU for the pool if available."]
     #[serde(rename = "requestedDtu", default, skip_serializing_if = "Option::is_none")]
     pub requested_dtu: Option<i32>,
+    #[doc = "The requested name for the elastic pool if available."]
     #[serde(rename = "requestedElasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub requested_elastic_pool_name: Option<String>,
+    #[doc = "The requested storage limit for the pool in GB if available."]
     #[serde(rename = "requestedStorageLimitInGB", default, skip_serializing_if = "Option::is_none")]
     pub requested_storage_limit_in_gb: Option<i64>,
+    #[doc = "The name of the elastic pool."]
     #[serde(rename = "elasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub elastic_pool_name: Option<String>,
+    #[doc = "The name of the server the elastic pool is in."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The time the operation started (ISO8601 format)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The current state of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "The requested storage limit in MB."]
     #[serde(rename = "requestedStorageLimitInMB", default, skip_serializing_if = "Option::is_none")]
     pub requested_storage_limit_in_mb: Option<i32>,
+    #[doc = "The requested per database DTU guarantee."]
     #[serde(rename = "requestedDatabaseDtuGuarantee", default, skip_serializing_if = "Option::is_none")]
     pub requested_database_dtu_guarantee: Option<i32>,
+    #[doc = "The requested per database DTU cap."]
     #[serde(rename = "requestedDatabaseDtuCap", default, skip_serializing_if = "Option::is_none")]
     pub requested_database_dtu_cap: Option<i32>,
+    #[doc = "The requested DTU guarantee."]
     #[serde(rename = "requestedDtuGuarantee", default, skip_serializing_if = "Option::is_none")]
     pub requested_dtu_guarantee: Option<i32>,
 }
@@ -558,12 +654,15 @@ impl ElasticPoolActivityProperties {
         Self::default()
     }
 }
+#[doc = "Represents the activity on an elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolDatabaseActivity {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The geo-location where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Represents the properties of an elastic pool database activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolDatabaseActivityProperties>,
 }
@@ -572,8 +671,10 @@ impl ElasticPoolDatabaseActivity {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list elastic pool database activity request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolDatabaseActivityListResult {
+    #[doc = "The list of elastic pool database activities."]
     pub value: Vec<ElasticPoolDatabaseActivity>,
 }
 impl ElasticPoolDatabaseActivityListResult {
@@ -581,36 +682,52 @@ impl ElasticPoolDatabaseActivityListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of an elastic pool database activity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolDatabaseActivityProperties {
+    #[doc = "The database name."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The time the operation finished (ISO8601 format)."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The error code if available."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
+    #[doc = "The error message if available."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "The error severity if available."]
     #[serde(rename = "errorSeverity", default, skip_serializing_if = "Option::is_none")]
     pub error_severity: Option<i32>,
+    #[doc = "The operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The unique operation ID."]
     #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
     pub operation_id: Option<String>,
+    #[doc = "The percentage complete if available."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
+    #[doc = "The name for the elastic pool the database is moving into if available."]
     #[serde(rename = "requestedElasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub requested_elastic_pool_name: Option<String>,
+    #[doc = "The name of the current elastic pool the database is in if available."]
     #[serde(rename = "currentElasticPoolName", default, skip_serializing_if = "Option::is_none")]
     pub current_elastic_pool_name: Option<String>,
+    #[doc = "The name of the current service objective if available."]
     #[serde(rename = "currentServiceObjective", default, skip_serializing_if = "Option::is_none")]
     pub current_service_objective: Option<String>,
+    #[doc = "The name of the requested service objective if available."]
     #[serde(rename = "requestedServiceObjective", default, skip_serializing_if = "Option::is_none")]
     pub requested_service_objective: Option<String>,
+    #[doc = "The name of the server the elastic pool is in."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The time the operation started (ISO8601 format)."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The current state of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
 }
@@ -619,8 +736,10 @@ impl ElasticPoolDatabaseActivityProperties {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list elastic pool request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticPoolListResult {
+    #[doc = "The list of elastic pools hosted in the server."]
     pub value: Vec<ElasticPool>,
 }
 impl ElasticPoolListResult {
@@ -628,22 +747,31 @@ impl ElasticPoolListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of an elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolProperties {
+    #[doc = "The creation date of the elastic pool (ISO8601 format)."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The state of the elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<elastic_pool_properties::State>,
+    #[doc = "The edition of the elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub edition: Option<elastic_pool_properties::Edition>,
+    #[doc = "The total shared DTU for the database elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dtu: Option<i32>,
+    #[doc = "The maximum DTU any one database can consume."]
     #[serde(rename = "databaseDtuMax", default, skip_serializing_if = "Option::is_none")]
     pub database_dtu_max: Option<i32>,
+    #[doc = "The minimum DTU all databases are guaranteed."]
     #[serde(rename = "databaseDtuMin", default, skip_serializing_if = "Option::is_none")]
     pub database_dtu_min: Option<i32>,
+    #[doc = "Gets storage limit for the database elastic pool in MB."]
     #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
     pub storage_mb: Option<i32>,
+    #[doc = "Whether or not this database elastic pool is zone redundant, which means the replicas of this database will be spread across multiple availability zones."]
     #[serde(rename = "zoneRedundant", default, skip_serializing_if = "Option::is_none")]
     pub zone_redundant: Option<bool>,
 }
@@ -654,12 +782,14 @@ impl ElasticPoolProperties {
 }
 pub mod elastic_pool_properties {
     use super::*;
+    #[doc = "The state of the elastic pool."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Creating,
         Ready,
         Disabled,
     }
+    #[doc = "The edition of the elastic pool."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Edition {
         Basic,
@@ -669,12 +799,15 @@ pub mod elastic_pool_properties {
         BusinessCritical,
     }
 }
+#[doc = "Represents an elastic pool update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolUpdate {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Represents the properties of an elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolProperties>,
 }
@@ -683,18 +816,25 @@ impl ElasticPoolUpdate {
         Self::default()
     }
 }
+#[doc = "Export database parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportRequest {
+    #[doc = "The type of the storage key to use."]
     #[serde(rename = "storageKeyType")]
     pub storage_key_type: export_request::StorageKeyType,
+    #[doc = "The storage key to use.  If storage key type is SharedAccessKey, it must be preceded with a \"?.\""]
     #[serde(rename = "storageKey")]
     pub storage_key: String,
+    #[doc = "The storage uri to use."]
     #[serde(rename = "storageUri")]
     pub storage_uri: String,
+    #[doc = "The name of the SQL administrator."]
     #[serde(rename = "administratorLogin")]
     pub administrator_login: String,
+    #[doc = "The password of the SQL administrator."]
     #[serde(rename = "administratorLoginPassword")]
     pub administrator_login_password: String,
+    #[doc = "The authentication type."]
     #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
     pub authentication_type: Option<export_request::AuthenticationType>,
 }
@@ -718,11 +858,13 @@ impl ExportRequest {
 }
 pub mod export_request {
     use super::*;
+    #[doc = "The type of the storage key to use."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StorageKeyType {
         StorageAccessKey,
         SharedAccessKey,
     }
+    #[doc = "The authentication type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthenticationType {
         #[serde(rename = "SQL")]
@@ -736,16 +878,21 @@ pub mod export_request {
         }
     }
 }
+#[doc = "Represents a server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRule {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Kind of server that contains this firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Location of the server that contains this firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Type of resource this is."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Represents the properties of a server firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FirewallRuleProperties>,
 }
@@ -754,8 +901,10 @@ impl FirewallRule {
         Self::default()
     }
 }
+#[doc = "Represents the response to a List Firewall Rules request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRuleListResult {
+    #[doc = "The list of server firewall rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<FirewallRule>,
 }
@@ -764,10 +913,13 @@ impl FirewallRuleListResult {
         Self::default()
     }
 }
+#[doc = "Represents the properties of a server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRuleProperties {
+    #[doc = "The start IP address of the firewall rule. Must be IPv4 format. Use value '0.0.0.0' to represent all Azure-internal IP addresses."]
     #[serde(rename = "startIpAddress")]
     pub start_ip_address: String,
+    #[doc = "The end IP address of the firewall rule. Must be IPv4 format. Must be greater than or equal to startIpAddress. Use value '0.0.0.0' to represent all Azure-internal IP addresses."]
     #[serde(rename = "endIpAddress")]
     pub end_ip_address: String,
 }
@@ -779,10 +931,12 @@ impl FirewallRuleProperties {
         }
     }
 }
+#[doc = "Response for Import/Export Get operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportExportResponse {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Response for Import/Export Status operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImportExportResponseProperties>,
 }
@@ -791,24 +945,34 @@ impl ImportExportResponse {
         Self::default()
     }
 }
+#[doc = "Response for Import/Export Status operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportExportResponseProperties {
+    #[doc = "The request type of the operation."]
     #[serde(rename = "requestType", default, skip_serializing_if = "Option::is_none")]
     pub request_type: Option<String>,
+    #[doc = "The request type of the operation."]
     #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
+    #[doc = "The name of the server."]
     #[serde(rename = "serverName", default, skip_serializing_if = "Option::is_none")]
     pub server_name: Option<String>,
+    #[doc = "The name of the database."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "The status message returned from the server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The operation status last modified time."]
     #[serde(rename = "lastModifiedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_time: Option<String>,
+    #[doc = "The operation queued time."]
     #[serde(rename = "queuedTime", default, skip_serializing_if = "Option::is_none")]
     pub queued_time: Option<String>,
+    #[doc = "The blob uri."]
     #[serde(rename = "blobUri", default, skip_serializing_if = "Option::is_none")]
     pub blob_uri: Option<String>,
+    #[doc = "The error message returned from the server."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
@@ -817,10 +981,12 @@ impl ImportExportResponseProperties {
         Self::default()
     }
 }
+#[doc = "Represents the properties for an import operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportExtensionProperties {
     #[serde(flatten)]
     pub export_request: ExportRequest,
+    #[doc = "The type of import operation being performed. This is always Import."]
     #[serde(rename = "operationMode")]
     pub operation_mode: import_extension_properties::OperationMode,
 }
@@ -834,17 +1000,22 @@ impl ImportExtensionProperties {
 }
 pub mod import_extension_properties {
     use super::*;
+    #[doc = "The type of import operation being performed. This is always Import."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationMode {
         Import,
     }
 }
+#[doc = "Import database parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportExtensionRequest {
+    #[doc = "The name of the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the extension."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Represents the properties for an import operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImportExtensionProperties>,
 }
@@ -853,15 +1024,20 @@ impl ImportExtensionRequest {
         Self::default()
     }
 }
+#[doc = "Import database parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImportRequest {
     #[serde(flatten)]
     pub export_request: ExportRequest,
+    #[doc = "The name of the database to import."]
     #[serde(rename = "databaseName")]
     pub database_name: String,
+    #[doc = "The edition for the database being created.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     pub edition: import_request::Edition,
+    #[doc = "The name of the service objective to assign to the database."]
     #[serde(rename = "serviceObjectiveName")]
     pub service_objective_name: import_request::ServiceObjectiveName,
+    #[doc = "The maximum size for the newly imported database."]
     #[serde(rename = "maxSizeBytes")]
     pub max_size_bytes: String,
 }
@@ -884,6 +1060,7 @@ impl ImportRequest {
 }
 pub mod import_request {
     use super::*;
+    #[doc = "The edition for the database being created.\r\n\r\nThe list of SKUs may vary by region and support offer. To determine the SKUs (including the SKU name, tier/edition, family, and capacity) that are available to your subscription in an Azure region, use the `Capabilities_ListByLocation` REST API or one of the following commands:\r\n\r\n```azurecli\r\naz sql db list-editions -l <location> -o table\r\n````\r\n\r\n```powershell\r\nGet-AzSqlServerServiceObjective -Location <location>\r\n````\r\n"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Edition {
         Web,
@@ -902,6 +1079,7 @@ pub mod import_request {
         BusinessCritical,
         Hyperscale,
     }
+    #[doc = "The name of the service objective to assign to the database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceObjectiveName {
         System,
@@ -1008,14 +1186,19 @@ pub mod import_request {
         ElasticPool,
     }
 }
+#[doc = "The impact of an operation, both in absolute and relative terms."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationImpact {
+    #[doc = "The name of the impact dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The unit in which estimated impact to dimension is measured."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "The absolute impact to dimension."]
     #[serde(rename = "changeValueAbsolute", default, skip_serializing_if = "Option::is_none")]
     pub change_value_absolute: Option<f64>,
+    #[doc = "The relative impact to dimension (null if not applicable)"]
     #[serde(rename = "changeValueRelative", default, skip_serializing_if = "Option::is_none")]
     pub change_value_relative: Option<f64>,
 }
@@ -1024,6 +1207,7 @@ impl OperationImpact {
         Self::default()
     }
 }
+#[doc = "ARM proxy resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -1034,10 +1218,12 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Represents a recommended elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedElasticPool {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Represents the properties of a recommended elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecommendedElasticPoolProperties>,
 }
@@ -1046,8 +1232,10 @@ impl RecommendedElasticPool {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list recommended elastic pool metrics request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendedElasticPoolListMetricsResult {
+    #[doc = "The list of recommended elastic pools metrics."]
     pub value: Vec<RecommendedElasticPoolMetric>,
 }
 impl RecommendedElasticPoolListMetricsResult {
@@ -1055,8 +1243,10 @@ impl RecommendedElasticPoolListMetricsResult {
         Self { value }
     }
 }
+#[doc = "Represents the response to a list recommended elastic pool request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendedElasticPoolListResult {
+    #[doc = "The list of recommended elastic pools hosted in the server."]
     pub value: Vec<RecommendedElasticPool>,
 }
 impl RecommendedElasticPoolListResult {
@@ -1064,12 +1254,16 @@ impl RecommendedElasticPoolListResult {
         Self { value }
     }
 }
+#[doc = "Represents recommended elastic pool metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedElasticPoolMetric {
+    #[doc = "The time of metric (ISO8601 format)."]
     #[serde(rename = "dateTime", default, skip_serializing_if = "Option::is_none")]
     pub date_time: Option<String>,
+    #[doc = "Gets or sets the DTUs (Database Transaction Units). See https://azure.microsoft.com/documentation/articles/sql-database-what-is-a-dtu/"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dtu: Option<f64>,
+    #[doc = "Gets or sets size in gigabytes."]
     #[serde(rename = "sizeGB", default, skip_serializing_if = "Option::is_none")]
     pub size_gb: Option<f64>,
 }
@@ -1078,28 +1272,40 @@ impl RecommendedElasticPoolMetric {
         Self::default()
     }
 }
+#[doc = "Represents the properties of a recommended elastic pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedElasticPoolProperties {
+    #[doc = "The edition of the recommended elastic pool. The ElasticPoolEdition enumeration contains all the valid editions."]
     #[serde(rename = "databaseEdition", default, skip_serializing_if = "Option::is_none")]
     pub database_edition: Option<recommended_elastic_pool_properties::DatabaseEdition>,
+    #[doc = "The DTU for the recommended elastic pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dtu: Option<f64>,
+    #[doc = "The minimum DTU for the database."]
     #[serde(rename = "databaseDtuMin", default, skip_serializing_if = "Option::is_none")]
     pub database_dtu_min: Option<f64>,
+    #[doc = "The maximum DTU for the database."]
     #[serde(rename = "databaseDtuMax", default, skip_serializing_if = "Option::is_none")]
     pub database_dtu_max: Option<f64>,
+    #[doc = "Gets storage size in megabytes."]
     #[serde(rename = "storageMB", default, skip_serializing_if = "Option::is_none")]
     pub storage_mb: Option<f64>,
+    #[doc = "The observation period start (ISO8601 format)."]
     #[serde(rename = "observationPeriodStart", default, skip_serializing_if = "Option::is_none")]
     pub observation_period_start: Option<String>,
+    #[doc = "The observation period start (ISO8601 format)."]
     #[serde(rename = "observationPeriodEnd", default, skip_serializing_if = "Option::is_none")]
     pub observation_period_end: Option<String>,
+    #[doc = "Gets maximum observed DTU."]
     #[serde(rename = "maxObservedDtu", default, skip_serializing_if = "Option::is_none")]
     pub max_observed_dtu: Option<f64>,
+    #[doc = "Gets maximum observed storage in megabytes."]
     #[serde(rename = "maxObservedStorageMB", default, skip_serializing_if = "Option::is_none")]
     pub max_observed_storage_mb: Option<f64>,
+    #[doc = "The list of databases in this pool. Expanded property"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub databases: Vec<Database>,
+    #[doc = "The list of databases housed in the server. Expanded property"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metrics: Vec<RecommendedElasticPoolMetric>,
 }
@@ -1110,6 +1316,7 @@ impl RecommendedElasticPoolProperties {
 }
 pub mod recommended_elastic_pool_properties {
     use super::*;
+    #[doc = "The edition of the recommended elastic pool. The ElasticPoolEdition enumeration contains all the valid editions."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DatabaseEdition {
         Basic,
@@ -1119,10 +1326,12 @@ pub mod recommended_elastic_pool_properties {
         BusinessCritical,
     }
 }
+#[doc = "Represents a database recommended index."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedIndex {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Represents the properties of a database recommended index."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecommendedIndexProperties>,
 }
@@ -1131,30 +1340,43 @@ impl RecommendedIndex {
         Self::default()
     }
 }
+#[doc = "Represents the properties of a database recommended index."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedIndexProperties {
+    #[doc = "The proposed index action. You can create a missing index, drop an unused index, or rebuild an existing index to improve its performance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<recommended_index_properties::Action>,
+    #[doc = "The current recommendation state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<recommended_index_properties::State>,
+    #[doc = "The UTC datetime showing when this resource was created (ISO8601 format)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<String>,
+    #[doc = "The UTC datetime of when was this resource last changed (ISO8601 format)."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
+    #[doc = "The type of index (CLUSTERED, NONCLUSTERED, COLUMNSTORE, CLUSTERED COLUMNSTORE)"]
     #[serde(rename = "indexType", default, skip_serializing_if = "Option::is_none")]
     pub index_type: Option<recommended_index_properties::IndexType>,
+    #[doc = "The schema where table to build index over resides"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema: Option<String>,
+    #[doc = "The table on which to build index."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<String>,
+    #[doc = "Columns over which to build index"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<String>,
+    #[doc = "The list of column names to be included in the index"]
     #[serde(rename = "includedColumns", default, skip_serializing_if = "Vec::is_empty")]
     pub included_columns: Vec<String>,
+    #[doc = "The full build index script"]
     #[serde(rename = "indexScript", default, skip_serializing_if = "Option::is_none")]
     pub index_script: Option<String>,
+    #[doc = "The estimated impact of doing recommended index action."]
     #[serde(rename = "estimatedImpact", default, skip_serializing_if = "Vec::is_empty")]
     pub estimated_impact: Vec<OperationImpact>,
+    #[doc = "The values reported after index action is complete."]
     #[serde(rename = "reportedImpact", default, skip_serializing_if = "Vec::is_empty")]
     pub reported_impact: Vec<OperationImpact>,
 }
@@ -1165,12 +1387,14 @@ impl RecommendedIndexProperties {
 }
 pub mod recommended_index_properties {
     use super::*;
+    #[doc = "The proposed index action. You can create a missing index, drop an unused index, or rebuild an existing index to improve its performance."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Create,
         Drop,
         Rebuild,
     }
+    #[doc = "The current recommendation state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Active,
@@ -1186,6 +1410,7 @@ pub mod recommended_index_properties {
         Blocked,
         Success,
     }
+    #[doc = "The type of index (CLUSTERED, NONCLUSTERED, COLUMNSTORE, CLUSTERED COLUMNSTORE)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IndexType {
         #[serde(rename = "CLUSTERED")]
@@ -1198,14 +1423,18 @@ pub mod recommended_index_properties {
         ClusteredColumnstore,
     }
 }
+#[doc = "Represents a database replication link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLink {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Location of the server that contains this firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Type of resource this is."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Represents the properties of a database replication link."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReplicationLinkProperties>,
 }
@@ -1214,8 +1443,10 @@ impl ReplicationLink {
         Self::default()
     }
 }
+#[doc = "Represents the response to a List database replication link request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLinkListResult {
+    #[doc = "The list of database replication links housed in the database."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReplicationLink>,
 }
@@ -1224,26 +1455,37 @@ impl ReplicationLinkListResult {
         Self::default()
     }
 }
+#[doc = "Represents the properties of a database replication link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLinkProperties {
+    #[doc = "Legacy value indicating whether termination is allowed.  Currently always returns true."]
     #[serde(rename = "isTerminationAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_termination_allowed: Option<bool>,
+    #[doc = "Replication mode of this replication link."]
     #[serde(rename = "replicationMode", default, skip_serializing_if = "Option::is_none")]
     pub replication_mode: Option<String>,
+    #[doc = "The name of the server hosting the partner database."]
     #[serde(rename = "partnerServer", default, skip_serializing_if = "Option::is_none")]
     pub partner_server: Option<String>,
+    #[doc = "The name of the partner database."]
     #[serde(rename = "partnerDatabase", default, skip_serializing_if = "Option::is_none")]
     pub partner_database: Option<String>,
+    #[doc = "The Azure Region of the partner database."]
     #[serde(rename = "partnerLocation", default, skip_serializing_if = "Option::is_none")]
     pub partner_location: Option<String>,
+    #[doc = "The role of the database in the replication link."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<replication_link_properties::Role>,
+    #[doc = "The role of the partner database in the replication link."]
     #[serde(rename = "partnerRole", default, skip_serializing_if = "Option::is_none")]
     pub partner_role: Option<replication_link_properties::PartnerRole>,
+    #[doc = "The start time for the replication link."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The percentage of seeding complete for the replication link."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<i32>,
+    #[doc = "The replication state for the replication link."]
     #[serde(rename = "replicationState", default, skip_serializing_if = "Option::is_none")]
     pub replication_state: Option<replication_link_properties::ReplicationState>,
 }
@@ -1254,6 +1496,7 @@ impl ReplicationLinkProperties {
 }
 pub mod replication_link_properties {
     use super::*;
+    #[doc = "The role of the database in the replication link."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Role {
         Primary,
@@ -1262,6 +1505,7 @@ pub mod replication_link_properties {
         Source,
         Copy,
     }
+    #[doc = "The role of the partner database in the replication link."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PartnerRole {
         Primary,
@@ -1270,6 +1514,7 @@ pub mod replication_link_properties {
         Source,
         Copy,
     }
+    #[doc = "The replication state for the replication link."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReplicationState {
         #[serde(rename = "PENDING")]
@@ -1282,12 +1527,16 @@ pub mod replication_link_properties {
         Suspended,
     }
 }
+#[doc = "ARM resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1296,10 +1545,12 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Represents a Service Tier Advisor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTierAdvisor {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Represents the properties of a Service Tier Advisor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceTierAdvisorProperties>,
 }
@@ -1308,8 +1559,10 @@ impl ServiceTierAdvisor {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list service tier advisor request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceTierAdvisorListResult {
+    #[doc = "The list of service tier advisors for specified database."]
     pub value: Vec<ServiceTierAdvisor>,
 }
 impl ServiceTierAdvisorListResult {
@@ -1317,76 +1570,96 @@ impl ServiceTierAdvisorListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of a Service Tier Advisor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTierAdvisorProperties {
+    #[doc = "The observation period start (ISO8601 format)."]
     #[serde(rename = "observationPeriodStart", default, skip_serializing_if = "Option::is_none")]
     pub observation_period_start: Option<String>,
+    #[doc = "The observation period start (ISO8601 format)."]
     #[serde(rename = "observationPeriodEnd", default, skip_serializing_if = "Option::is_none")]
     pub observation_period_end: Option<String>,
+    #[doc = "The activeTimeRatio for service tier advisor."]
     #[serde(rename = "activeTimeRatio", default, skip_serializing_if = "Option::is_none")]
     pub active_time_ratio: Option<f64>,
+    #[doc = "Gets or sets minDtu for service tier advisor."]
     #[serde(rename = "minDtu", default, skip_serializing_if = "Option::is_none")]
     pub min_dtu: Option<f64>,
+    #[doc = "Gets or sets avgDtu for service tier advisor."]
     #[serde(rename = "avgDtu", default, skip_serializing_if = "Option::is_none")]
     pub avg_dtu: Option<f64>,
+    #[doc = "Gets or sets maxDtu for service tier advisor."]
     #[serde(rename = "maxDtu", default, skip_serializing_if = "Option::is_none")]
     pub max_dtu: Option<f64>,
+    #[doc = "Gets or sets maxSizeInGB for service tier advisor."]
     #[serde(rename = "maxSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_gb: Option<f64>,
+    #[doc = "Gets or sets serviceLevelObjectiveUsageMetrics for the service tier advisor."]
     #[serde(rename = "serviceLevelObjectiveUsageMetrics", default, skip_serializing_if = "Vec::is_empty")]
     pub service_level_objective_usage_metrics: Vec<SloUsageMetric>,
+    #[doc = "Gets or sets currentServiceLevelObjective for service tier advisor."]
     #[serde(rename = "currentServiceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub current_service_level_objective: Option<String>,
+    #[doc = "Gets or sets currentServiceLevelObjectiveId for service tier advisor."]
     #[serde(rename = "currentServiceLevelObjectiveId", default, skip_serializing_if = "Option::is_none")]
     pub current_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets usageBasedRecommendationServiceLevelObjective for service tier advisor."]
     #[serde(
         rename = "usageBasedRecommendationServiceLevelObjective",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub usage_based_recommendation_service_level_objective: Option<String>,
+    #[doc = "Gets or sets usageBasedRecommendationServiceLevelObjectiveId for service tier advisor."]
     #[serde(
         rename = "usageBasedRecommendationServiceLevelObjectiveId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub usage_based_recommendation_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets databaseSizeBasedRecommendationServiceLevelObjective for service tier advisor."]
     #[serde(
         rename = "databaseSizeBasedRecommendationServiceLevelObjective",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub database_size_based_recommendation_service_level_objective: Option<String>,
+    #[doc = "Gets or sets databaseSizeBasedRecommendationServiceLevelObjectiveId for service tier advisor."]
     #[serde(
         rename = "databaseSizeBasedRecommendationServiceLevelObjectiveId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub database_size_based_recommendation_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets disasterPlanBasedRecommendationServiceLevelObjective for service tier advisor."]
     #[serde(
         rename = "disasterPlanBasedRecommendationServiceLevelObjective",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub disaster_plan_based_recommendation_service_level_objective: Option<String>,
+    #[doc = "Gets or sets disasterPlanBasedRecommendationServiceLevelObjectiveId for service tier advisor."]
     #[serde(
         rename = "disasterPlanBasedRecommendationServiceLevelObjectiveId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub disaster_plan_based_recommendation_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets overallRecommendationServiceLevelObjective for service tier advisor."]
     #[serde(
         rename = "overallRecommendationServiceLevelObjective",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub overall_recommendation_service_level_objective: Option<String>,
+    #[doc = "Gets or sets overallRecommendationServiceLevelObjectiveId for service tier advisor."]
     #[serde(
         rename = "overallRecommendationServiceLevelObjectiveId",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub overall_recommendation_service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets confidence for service tier advisor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
 }
@@ -1395,12 +1668,16 @@ impl ServiceTierAdvisorProperties {
         Self::default()
     }
 }
+#[doc = "A Slo Usage Metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SloUsageMetric {
+    #[doc = "The serviceLevelObjective for SLO usage metric."]
     #[serde(rename = "serviceLevelObjective", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective: Option<slo_usage_metric::ServiceLevelObjective>,
+    #[doc = "The serviceLevelObjectiveId for SLO usage metric."]
     #[serde(rename = "serviceLevelObjectiveId", default, skip_serializing_if = "Option::is_none")]
     pub service_level_objective_id: Option<String>,
+    #[doc = "Gets or sets inRangeTimeRatio for SLO usage metric."]
     #[serde(rename = "inRangeTimeRatio", default, skip_serializing_if = "Option::is_none")]
     pub in_range_time_ratio: Option<f64>,
 }
@@ -1411,6 +1688,7 @@ impl SloUsageMetric {
 }
 pub mod slo_usage_metric {
     use super::*;
+    #[doc = "The serviceLevelObjective for SLO usage metric."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceLevelObjective {
         System,
@@ -1517,11 +1795,14 @@ pub mod slo_usage_metric {
         ElasticPool,
     }
 }
+#[doc = "ARM tracked top level resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource location."]
     pub location: String,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1534,12 +1815,15 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "Represents a database transparent data encryption configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryption {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Represents the properties of a database transparent data encryption."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TransparentDataEncryptionProperties>,
 }
@@ -1548,12 +1832,15 @@ impl TransparentDataEncryption {
         Self::default()
     }
 }
+#[doc = "Represents a database transparent data encryption Scan."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryptionActivity {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Represents the properties of a database transparent data encryption Scan."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TransparentDataEncryptionActivityProperties>,
 }
@@ -1562,8 +1849,10 @@ impl TransparentDataEncryptionActivity {
         Self::default()
     }
 }
+#[doc = "Represents the response to a list database transparent data encryption activity request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransparentDataEncryptionActivityListResult {
+    #[doc = "The list of database transparent data encryption activities."]
     pub value: Vec<TransparentDataEncryptionActivity>,
 }
 impl TransparentDataEncryptionActivityListResult {
@@ -1571,10 +1860,13 @@ impl TransparentDataEncryptionActivityListResult {
         Self { value }
     }
 }
+#[doc = "Represents the properties of a database transparent data encryption Scan."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryptionActivityProperties {
+    #[doc = "The status of the database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<transparent_data_encryption_activity_properties::Status>,
+    #[doc = "The percent complete of the transparent data encryption scan for a database."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f32>,
 }
@@ -1585,14 +1877,17 @@ impl TransparentDataEncryptionActivityProperties {
 }
 pub mod transparent_data_encryption_activity_properties {
     use super::*;
+    #[doc = "The status of the database."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Encrypting,
         Decrypting,
     }
 }
+#[doc = "Represents the properties of a database transparent data encryption."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransparentDataEncryptionProperties {
+    #[doc = "The status of the database transparent data encryption."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<transparent_data_encryption_properties::Status>,
 }
@@ -1603,14 +1898,17 @@ impl TransparentDataEncryptionProperties {
 }
 pub mod transparent_data_encryption_properties {
     use super::*;
+    #[doc = "The status of the database transparent data encryption."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Enabled,
         Disabled,
     }
 }
+#[doc = "Represents the parameters for Unlink Replication Link request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UnlinkParameters {
+    #[doc = "Determines whether link will be terminated in a forced or a friendly way."]
     #[serde(rename = "forcedTermination", default, skip_serializing_if = "Option::is_none")]
     pub forced_termination: Option<bool>,
 }

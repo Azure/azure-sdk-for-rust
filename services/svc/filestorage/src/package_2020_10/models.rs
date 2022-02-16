@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Access policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
+    #[doc = "The date-time the policy is active."]
     #[serde(rename = "Start", default, skip_serializing_if = "Option::is_none")]
     pub start: Option<String>,
+    #[doc = "The date-time the policy expires."]
     #[serde(rename = "Expiry", default, skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
+    #[doc = "The permissions for the ACL policy."]
     #[serde(rename = "Permission", default, skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 }
@@ -28,16 +32,22 @@ impl ClearRange {
         Self { start, end }
     }
 }
+#[doc = "CORS is an HTTP feature that enables a web application running under one domain to access resources in another domain. Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
+    #[doc = "The origin domains that are permitted to make a request against the storage service via CORS. The origin domain is the domain from which the request originates. Note that the origin must be an exact case-sensitive match with the origin that the user age sends to the service. You can also use the wildcard character '*' to allow all origin domains to make requests via CORS."]
     #[serde(rename = "AllowedOrigins")]
     pub allowed_origins: String,
+    #[doc = "The methods (HTTP request verbs) that the origin domain may use for a CORS request. (comma separated)"]
     #[serde(rename = "AllowedMethods")]
     pub allowed_methods: String,
+    #[doc = "The request headers that the origin domain may specify on the CORS request."]
     #[serde(rename = "AllowedHeaders")]
     pub allowed_headers: String,
+    #[doc = "The response headers that may be sent in the response to the CORS request and exposed by the browser to the request issuer."]
     #[serde(rename = "ExposedHeaders")]
     pub exposed_headers: String,
+    #[doc = "The maximum amount time that a browser should cache the preflight OPTIONS request."]
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
 }
@@ -58,12 +68,14 @@ impl CorsRule {
         }
     }
 }
+#[doc = "A listed directory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectoryItem {
     #[serde(rename = "Name")]
     pub name: String,
     #[serde(rename = "FileId", default, skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
+    #[doc = "File properties."]
     #[serde(rename = "Properties", default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileProperty>,
     #[serde(rename = "Attributes", default, skip_serializing_if = "Option::is_none")]
@@ -82,6 +94,7 @@ impl DirectoryItem {
         }
     }
 }
+#[doc = "Error codes returned by the service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorCode {
     AccountAlreadyExists,
@@ -152,12 +165,14 @@ pub enum ErrorCode {
     AuthorizationResourceTypeMismatch,
     FeatureVersionMismatch,
 }
+#[doc = "A listed file item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileItem {
     #[serde(rename = "Name")]
     pub name: String,
     #[serde(rename = "FileId", default, skip_serializing_if = "Option::is_none")]
     pub file_id: Option<String>,
+    #[doc = "File properties."]
     #[serde(rename = "Properties")]
     pub properties: FileProperty,
     #[serde(rename = "Attributes", default, skip_serializing_if = "Option::is_none")]
@@ -176,8 +191,10 @@ impl FileItem {
         }
     }
 }
+#[doc = "File properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileProperty {
+    #[doc = "Content length of the file. This value may not be up-to-date since an SMB client may have modified the file locally. The value of Content-Length may not reflect that fact until the handle is closed or the op-lock is broken. To retrieve current property values, call Get File Properties."]
     #[serde(rename = "Content-Length")]
     pub content_length: i64,
     #[serde(rename = "CreationTime", default, skip_serializing_if = "Option::is_none")]
@@ -206,10 +223,13 @@ impl FileProperty {
         }
     }
 }
+#[doc = "An Azure Storage file range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileRange {
+    #[doc = "Start of the range."]
     #[serde(rename = "Start")]
     pub start: i64,
+    #[doc = "End of the range."]
     #[serde(rename = "End")]
     pub end: i64,
 }
@@ -218,6 +238,7 @@ impl FileRange {
         Self { start, end }
     }
 }
+#[doc = "Abstract for entries that can be listed from Directory."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilesAndDirectoriesListSegment {
     #[serde(rename = "DirectoryItems")]
@@ -233,22 +254,31 @@ impl FilesAndDirectoriesListSegment {
         }
     }
 }
+#[doc = "A listed Azure Storage handle item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HandleItem {
+    #[doc = "XSMB service handle ID"]
     #[serde(rename = "HandleId")]
     pub handle_id: String,
+    #[doc = "File or directory name including full path starting from share root"]
     #[serde(rename = "Path")]
     pub path: String,
+    #[doc = "FileId uniquely identifies the file or directory."]
     #[serde(rename = "FileId")]
     pub file_id: String,
+    #[doc = "ParentId uniquely identifies the parent directory of the object."]
     #[serde(rename = "ParentId", default, skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
+    #[doc = "SMB session ID in context of which the file handle was opened"]
     #[serde(rename = "SessionId")]
     pub session_id: String,
+    #[doc = "Client IP that opened the handle"]
     #[serde(rename = "ClientIp")]
     pub client_ip: String,
+    #[doc = "Time when the session that previously opened the handle has last been reconnected. (UTC)"]
     #[serde(rename = "OpenTime")]
     pub open_time: String,
+    #[doc = "Time handle was last connected to (UTC)"]
     #[serde(rename = "LastReconnectTime", default, skip_serializing_if = "Option::is_none")]
     pub last_reconnect_time: Option<String>,
 }
@@ -266,6 +296,7 @@ impl HandleItem {
         }
     }
 }
+#[doc = "When a share is leased, specifies whether the lease is of infinite or fixed duration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LeaseDuration {
     #[serde(rename = "infinite")]
@@ -273,6 +304,7 @@ pub enum LeaseDuration {
     #[serde(rename = "fixed")]
     Fixed,
 }
+#[doc = "Lease state of the share."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LeaseState {
     #[serde(rename = "available")]
@@ -286,6 +318,7 @@ pub enum LeaseState {
     #[serde(rename = "broken")]
     Broken,
 }
+#[doc = "The current lease status of the share."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum LeaseStatus {
     #[serde(rename = "locked")]
@@ -293,6 +326,7 @@ pub enum LeaseStatus {
     #[serde(rename = "unlocked")]
     Unlocked,
 }
+#[doc = "An enumeration of directories and files."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListFilesAndDirectoriesSegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -309,6 +343,7 @@ pub struct ListFilesAndDirectoriesSegmentResponse {
     pub marker: Option<String>,
     #[serde(rename = "MaxResults", default, skip_serializing_if = "Option::is_none")]
     pub max_results: Option<i64>,
+    #[doc = "Abstract for entries that can be listed from Directory."]
     #[serde(rename = "Segment")]
     pub segment: FilesAndDirectoriesListSegment,
     #[serde(rename = "NextMarker")]
@@ -339,6 +374,7 @@ impl ListFilesAndDirectoriesSegmentResponse {
         }
     }
 }
+#[doc = "An enumeration of handles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListHandlesResponse {
     #[serde(rename = "HandleList", default, skip_serializing_if = "Vec::is_empty")]
@@ -354,6 +390,7 @@ impl ListHandlesResponse {
         }
     }
 }
+#[doc = "An enumeration of shares."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListSharesResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -388,14 +425,19 @@ impl Metadata {
         Self::default()
     }
 }
+#[doc = "Storage Analytics metrics for file service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
+    #[doc = "The version of Storage Analytics to configure."]
     #[serde(rename = "Version")]
     pub version: String,
+    #[doc = "Indicates whether metrics are enabled for the File service."]
     #[serde(rename = "Enabled")]
     pub enabled: bool,
+    #[doc = "Indicates whether metrics should generate summary statistics for called API operations."]
     #[serde(rename = "IncludeAPIs", default, skip_serializing_if = "Option::is_none")]
     pub include_ap_is: Option<bool>,
+    #[doc = "The retention policy."]
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
@@ -409,10 +451,13 @@ impl Metrics {
         }
     }
 }
+#[doc = "The retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
+    #[doc = "Indicates whether a retention policy is enabled for the File service. If false, metrics data is retained, and the user is responsible for deleting it."]
     #[serde(rename = "Enabled")]
     pub enabled: bool,
+    #[doc = "Indicates the number of days that metrics data should be retained. All data older than this value will be deleted. Metrics data is deleted on a best-effort basis after the retention period expires."]
     #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i64>,
 }
@@ -422,6 +467,7 @@ impl RetentionPolicy {
     }
 }
 pub type ShareEnabledProtocols = String;
+#[doc = "The list of file ranges"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareFileRangeList {
     #[serde(rename = "Ranges", default, skip_serializing_if = "Vec::is_empty")]
@@ -434,6 +480,7 @@ impl ShareFileRangeList {
         Self::default()
     }
 }
+#[doc = "A listed Azure Storage share item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareItemInternal {
     #[serde(rename = "Name")]
@@ -444,6 +491,7 @@ pub struct ShareItemInternal {
     pub deleted: Option<bool>,
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Properties of a share."]
     #[serde(rename = "Properties")]
     pub properties: SharePropertiesInternal,
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
@@ -461,8 +509,10 @@ impl ShareItemInternal {
         }
     }
 }
+#[doc = "A permission (a security descriptor) at the share level."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharePermission {
+    #[doc = "The permission in the Security Descriptor Definition Language (SDDL)."]
     pub permission: String,
 }
 impl SharePermission {
@@ -470,6 +520,7 @@ impl SharePermission {
         Self { permission }
     }
 }
+#[doc = "Properties of a share."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharePropertiesInternal {
     #[serde(rename = "Last-Modified")]
@@ -496,10 +547,13 @@ pub struct SharePropertiesInternal {
     pub access_tier_change_time: Option<String>,
     #[serde(rename = "AccessTierTransitionState", default, skip_serializing_if = "Option::is_none")]
     pub access_tier_transition_state: Option<String>,
+    #[doc = "The current lease status of the share."]
     #[serde(rename = "LeaseStatus", default, skip_serializing_if = "Option::is_none")]
     pub lease_status: Option<LeaseStatus>,
+    #[doc = "Lease state of the share."]
     #[serde(rename = "LeaseState", default, skip_serializing_if = "Option::is_none")]
     pub lease_state: Option<LeaseState>,
+    #[doc = "When a share is leased, specifies whether the lease is of infinite or fixed duration."]
     #[serde(rename = "LeaseDuration", default, skip_serializing_if = "Option::is_none")]
     pub lease_duration: Option<LeaseDuration>,
     #[serde(rename = "EnabledProtocols", default, skip_serializing_if = "Option::is_none")]
@@ -530,8 +584,10 @@ impl SharePropertiesInternal {
         }
     }
 }
+#[doc = "Protocol settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareProtocolSettings {
+    #[doc = "Settings for SMB protocol."]
     #[serde(rename = "Smb", default, skip_serializing_if = "Option::is_none")]
     pub smb: Option<ShareSmbSettings>,
 }
@@ -546,8 +602,10 @@ pub enum ShareRootSquash {
     RootSquash,
     AllSquash,
 }
+#[doc = "Settings for SMB protocol."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareSmbSettings {
+    #[doc = "Settings for SMB multichannel"]
     #[serde(rename = "Multichannel", default, skip_serializing_if = "Option::is_none")]
     pub multichannel: Option<SmbMultichannel>,
 }
@@ -556,8 +614,10 @@ impl ShareSmbSettings {
         Self::default()
     }
 }
+#[doc = "Stats for the share."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ShareStats {
+    #[doc = "The approximate size of the data stored in bytes. Note that this value may not include all recently created or recently resized files."]
     #[serde(rename = "ShareUsageBytes")]
     pub share_usage_bytes: i64,
 }
@@ -566,10 +626,13 @@ impl ShareStats {
         Self { share_usage_bytes }
     }
 }
+#[doc = "Signed identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {
+    #[doc = "A unique id."]
     #[serde(rename = "Id")]
     pub id: String,
+    #[doc = "An Access policy."]
     #[serde(rename = "AccessPolicy", default, skip_serializing_if = "Option::is_none")]
     pub access_policy: Option<AccessPolicy>,
 }
@@ -579,8 +642,10 @@ impl SignedIdentifier {
     }
 }
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
+#[doc = "Settings for SMB multichannel"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmbMultichannel {
+    #[doc = "If SMB multichannel is enabled."]
     #[serde(rename = "Enabled", default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -599,14 +664,19 @@ impl StorageError {
         Self::default()
     }
 }
+#[doc = "Storage service properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceProperties {
+    #[doc = "Storage Analytics metrics for file service."]
     #[serde(rename = "HourMetrics", default, skip_serializing_if = "Option::is_none")]
     pub hour_metrics: Option<Metrics>,
+    #[doc = "Storage Analytics metrics for file service."]
     #[serde(rename = "MinuteMetrics", default, skip_serializing_if = "Option::is_none")]
     pub minute_metrics: Option<Metrics>,
+    #[doc = "The set of CORS rules."]
     #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
     pub cors: Vec<CorsRule>,
+    #[doc = "Protocol settings"]
     #[serde(rename = "Protocol", default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ShareProtocolSettings>,
 }

@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Contains information about orchestrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorProfile {
+    #[doc = "Orchestrator type."]
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: String,
+    #[doc = "Orchestrator version (major, minor, patch)."]
     #[serde(rename = "orchestratorVersion")]
     pub orchestrator_version: String,
 }
@@ -17,13 +20,18 @@ impl OrchestratorProfile {
         }
     }
 }
+#[doc = "The profile of an orchestrator and its available versions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfile {
+    #[doc = "Orchestrator type."]
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: String,
+    #[doc = "Orchestrator version (major, minor, patch)."]
     #[serde(rename = "orchestratorVersion")]
     pub orchestrator_version: String,
+    #[doc = "Installed by default if version is not specified."]
     pub default: bool,
+    #[doc = "The list of available upgrade versions."]
     pub upgrades: Vec<OrchestratorProfile>,
 }
 impl OrchestratorVersionProfile {
@@ -36,14 +44,19 @@ impl OrchestratorVersionProfile {
         }
     }
 }
+#[doc = "The list of versions for supported orchestrators."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileListResult {
+    #[doc = "Id of the orchestrator version profile list result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the orchestrator version profile list result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the orchestrator version profile list result."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The properties of an orchestrator version profile."]
     pub properties: OrchestratorVersionProfileProperties,
 }
 impl OrchestratorVersionProfileListResult {
@@ -56,8 +69,10 @@ impl OrchestratorVersionProfileListResult {
         }
     }
 }
+#[doc = "The properties of an orchestrator version profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileProperties {
+    #[doc = "List of orchestrator version profiles."]
     pub orchestrators: Vec<OrchestratorVersionProfile>,
 }
 impl OrchestratorVersionProfileProperties {

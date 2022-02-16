@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Data source object contains configuration to collect telemetry and one or more sinks to send that telemetry data to"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSource {
+    #[doc = "Datasource kind"]
     pub kind: data_source::Kind,
     pub configuration: DataSourceConfiguration,
     pub sinks: Vec<SinkConfiguration>,
@@ -19,6 +21,7 @@ impl DataSource {
 }
 pub mod data_source {
     use super::*;
+    #[doc = "Datasource kind"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         PerformanceCounter,
@@ -29,10 +32,13 @@ pub mod data_source {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataSourceConfiguration {
+    #[doc = "ETW providers configuration"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub providers: Vec<EtwProviderConfiguration>,
+    #[doc = "Performance counter configuration"]
     #[serde(rename = "perfCounters", default, skip_serializing_if = "Vec::is_empty")]
     pub perf_counters: Vec<PerformanceCounterConfiguration>,
+    #[doc = "Windows event logs configuration."]
     #[serde(rename = "eventLogs", default, skip_serializing_if = "Vec::is_empty")]
     pub event_logs: Vec<EventLogConfiguration>,
 }
@@ -41,10 +47,13 @@ impl DataSourceConfiguration {
         Self::default()
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -87,10 +96,13 @@ impl EventLogConfiguration {
         Self { log_name, filter: None }
     }
 }
+#[doc = "Virtual machine diagnostic settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettings {
+    #[doc = "Operating system type for the configuration"]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<guest_diagnostic_settings::OsType>,
+    #[doc = "the array of data source object which are configured to collect and send data"]
     #[serde(rename = "dataSources", default, skip_serializing_if = "Vec::is_empty")]
     pub data_sources: Vec<DataSource>,
     #[serde(rename = "proxySetting", default, skip_serializing_if = "Option::is_none")]
@@ -103,14 +115,17 @@ impl GuestDiagnosticSettings {
 }
 pub mod guest_diagnostic_settings {
     use super::*;
+    #[doc = "Operating system type for the configuration"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
 }
+#[doc = "A guest diagnostic settings association."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestDiagnosticSettingsAssociation {
+    #[doc = "The guest diagnostic settings name."]
     #[serde(rename = "guestDiagnosticSettingsName")]
     pub guest_diagnostic_settings_name: String,
 }
@@ -121,10 +136,13 @@ impl GuestDiagnosticSettingsAssociation {
         }
     }
 }
+#[doc = "A list of guest diagnostic settings association."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsAssociationList {
+    #[doc = "The list of guest diagnostic settings association."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GuestDiagnosticSettingsAssociationResource>,
+    #[doc = "Provides the link to retrieve the next set of elements."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -133,10 +151,12 @@ impl GuestDiagnosticSettingsAssociationList {
         Self::default()
     }
 }
+#[doc = "Virtual machine guest diagnostic settings resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestDiagnosticSettingsAssociationResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "A guest diagnostic settings association."]
     pub properties: GuestDiagnosticSettingsAssociation,
 }
 impl GuestDiagnosticSettingsAssociationResource {
@@ -144,10 +164,13 @@ impl GuestDiagnosticSettingsAssociationResource {
         Self { resource, properties }
     }
 }
+#[doc = "Guest diagnostic setting resource for patch operations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsAssociationResourcePatch {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "A guest diagnostic settings association."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GuestDiagnosticSettingsAssociation>,
 }
@@ -156,10 +179,13 @@ impl GuestDiagnosticSettingsAssociationResourcePatch {
         Self::default()
     }
 }
+#[doc = "A list of guest diagnostic settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsList {
+    #[doc = "The list of guest diagnostic settings."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GuestDiagnosticSettingsResource>,
+    #[doc = "Provides the link to retrieve the next set of elements."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -168,10 +194,13 @@ impl GuestDiagnosticSettingsList {
         Self::default()
     }
 }
+#[doc = "An diagnostic settings object for the body of patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestDiagnosticSettingsPatchResource {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Virtual machine diagnostic settings"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GuestDiagnosticSettings>,
 }
@@ -180,10 +209,12 @@ impl GuestDiagnosticSettingsPatchResource {
         Self::default()
     }
 }
+#[doc = "Virtual machine guest diagnostics settings resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestDiagnosticSettingsResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Virtual machine diagnostic settings"]
     pub properties: GuestDiagnosticSettings,
 }
 impl GuestDiagnosticSettingsResource {
@@ -208,15 +239,21 @@ impl PerformanceCounterConfiguration {
         }
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

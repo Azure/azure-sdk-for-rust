@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Parameters for an activating an application package."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivateApplicationPackageParameters {
+    #[doc = "The format of the application package binary file."]
     pub format: String,
 }
 impl ActivateApplicationPackageParameters {
@@ -11,10 +13,12 @@ impl ActivateApplicationPackageParameters {
         Self { format }
     }
 }
+#[doc = "Contains information about an application in a Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Application {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties associated with the Application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationProperties>,
 }
@@ -23,10 +27,12 @@ impl Application {
         Self::default()
     }
 }
+#[doc = "An application package which represents a particular version of an application."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationPackage {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of an application package"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationPackageProperties>,
 }
@@ -35,16 +41,22 @@ impl ApplicationPackage {
         Self::default()
     }
 }
+#[doc = "Properties of an application package"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationPackageProperties {
+    #[doc = "The current state of the application package."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<application_package_properties::State>,
+    #[doc = "The format of the application package, if the package is active."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
+    #[doc = "The URL for the application package in Azure Storage."]
     #[serde(rename = "storageUrl", default, skip_serializing_if = "Option::is_none")]
     pub storage_url: Option<String>,
+    #[doc = "The UTC time at which the Azure Storage URL will expire."]
     #[serde(rename = "storageUrlExpiry", default, skip_serializing_if = "Option::is_none")]
     pub storage_url_expiry: Option<String>,
+    #[doc = "The time at which the package was last activated, if the package is active."]
     #[serde(rename = "lastActivationTime", default, skip_serializing_if = "Option::is_none")]
     pub last_activation_time: Option<String>,
 }
@@ -55,6 +67,7 @@ impl ApplicationPackageProperties {
 }
 pub mod application_package_properties {
     use super::*;
+    #[doc = "The current state of the application package."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Pending,
@@ -64,6 +77,7 @@ pub mod application_package_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationPackageReference {
     pub id: String,
+    #[doc = "If this is omitted, and no default version is specified for this application, the request fails with the error code InvalidApplicationPackageReferences. If you are calling the REST API directly, the HTTP status code is 409."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -72,12 +86,16 @@ impl ApplicationPackageReference {
         Self { id, version: None }
     }
 }
+#[doc = "The properties associated with the Application."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationProperties {
+    #[doc = "The display name for the application."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A value indicating whether packages within the application may be overwritten using the same version string."]
     #[serde(rename = "allowUpdates", default, skip_serializing_if = "Option::is_none")]
     pub allow_updates: Option<bool>,
+    #[doc = "The package to use if a client requests the application but does not specify a version. This property can only be set to the name of an existing package."]
     #[serde(rename = "defaultVersion", default, skip_serializing_if = "Option::is_none")]
     pub default_version: Option<String>,
 }
@@ -90,6 +108,7 @@ impl ApplicationProperties {
 pub struct AutoScaleRun {
     #[serde(rename = "evaluationTime")]
     pub evaluation_time: String,
+    #[doc = "Each variable value is returned in the form $variable=value, and variables are separated by semicolons."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -106,7 +125,9 @@ impl AutoScaleRun {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScaleRunError {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     pub code: String,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     pub message: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<AutoScaleRunError>,
@@ -123,6 +144,7 @@ impl AutoScaleRunError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScaleSettings {
     pub formula: String,
+    #[doc = "If omitted, the default value is 15 minutes (PT15M)."]
     #[serde(rename = "evaluationInterval", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_interval: Option<String>,
 }
@@ -134,8 +156,10 @@ impl AutoScaleSettings {
         }
     }
 }
+#[doc = "The properties related to the auto-storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoStorageBaseProperties {
+    #[doc = "The resource ID of the storage account to be used for auto-storage account."]
     #[serde(rename = "storageAccountId")]
     pub storage_account_id: String,
 }
@@ -144,10 +168,12 @@ impl AutoStorageBaseProperties {
         Self { storage_account_id }
     }
 }
+#[doc = "Contains information about the auto-storage account associated with a Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoStorageProperties {
     #[serde(flatten)]
     pub auto_storage_base_properties: AutoStorageBaseProperties,
+    #[doc = "The UTC time at which storage keys were last synchronized with the Batch account."]
     #[serde(rename = "lastKeySync")]
     pub last_key_sync: String,
 }
@@ -161,6 +187,7 @@ impl AutoStorageProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoUserSpecification {
+    #[doc = "The default value is Pool. If the pool is running Windows a value of Task should be specified if stricter isolation between tasks is required. For example, if the task mutates the registry in a way which could impact other tasks, or if certificates have been specified on the pool which should not be accessible by normal tasks but should be accessible by start tasks."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<auto_user_specification::Scope>,
     #[serde(rename = "elevationLevel", default, skip_serializing_if = "Option::is_none")]
@@ -173,6 +200,7 @@ impl AutoUserSpecification {
 }
 pub mod auto_user_specification {
     use super::*;
+    #[doc = "The default value is Pool. If the pool is running Windows a value of Task should be specified if stricter isolation between tasks is required. For example, if the task mutates the registry in a way which could impact other tasks, or if certificates have been specified on the pool which should not be accessible by normal tasks but should be accessible by start tasks."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Scope {
         Task,
@@ -185,12 +213,16 @@ pub struct AzureBlobFileSystemConfiguration {
     pub account_name: String,
     #[serde(rename = "containerName")]
     pub container_name: String,
+    #[doc = "This property is mutually exclusive with sasKey and one must be specified."]
     #[serde(rename = "accountKey", default, skip_serializing_if = "Option::is_none")]
     pub account_key: Option<String>,
+    #[doc = "This property is mutually exclusive with accountKey and one must be specified."]
     #[serde(rename = "sasKey", default, skip_serializing_if = "Option::is_none")]
     pub sas_key: Option<String>,
+    #[doc = "These are 'net use' options in Windows and 'mount' options in Linux."]
     #[serde(rename = "blobfuseOptions", default, skip_serializing_if = "Option::is_none")]
     pub blobfuse_options: Option<String>,
+    #[doc = "All file systems are mounted relative to the Batch mounts directory, accessible via the AZ_BATCH_NODE_MOUNTS_DIR environment variable."]
     #[serde(rename = "relativeMountPath")]
     pub relative_mount_path: String,
 }
@@ -210,12 +242,15 @@ impl AzureBlobFileSystemConfiguration {
 pub struct AzureFileShareConfiguration {
     #[serde(rename = "accountName")]
     pub account_name: String,
+    #[doc = "This is of the form 'https://{account}.file.core.windows.net/'."]
     #[serde(rename = "azureFileUrl")]
     pub azure_file_url: String,
     #[serde(rename = "accountKey")]
     pub account_key: String,
+    #[doc = "All file systems are mounted relative to the Batch mounts directory, accessible via the AZ_BATCH_NODE_MOUNTS_DIR environment variable."]
     #[serde(rename = "relativeMountPath")]
     pub relative_mount_path: String,
+    #[doc = "These are 'net use' options in Windows and 'mount' options in Linux."]
     #[serde(rename = "mountOptions", default, skip_serializing_if = "Option::is_none")]
     pub mount_options: Option<String>,
 }
@@ -230,10 +265,12 @@ impl AzureFileShareConfiguration {
         }
     }
 }
+#[doc = "Contains information about an Azure Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccount {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Account specific properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BatchAccountProperties>,
 }
@@ -242,11 +279,15 @@ impl BatchAccount {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchAccountCreateParameters {
+    #[doc = "The region in which to create the account."]
     pub location: String,
+    #[doc = "The user-specified tags associated with the account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The properties of a Batch account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BatchAccountCreateProperties>,
 }
@@ -259,12 +300,16 @@ impl BatchAccountCreateParameters {
         }
     }
 }
+#[doc = "The properties of a Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountCreateProperties {
+    #[doc = "The properties related to the auto-storage account."]
     #[serde(rename = "autoStorage", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage: Option<AutoStorageBaseProperties>,
+    #[doc = "The allocation mode for creating pools in the Batch account."]
     #[serde(rename = "poolAllocationMode", default, skip_serializing_if = "Option::is_none")]
     pub pool_allocation_mode: Option<PoolAllocationMode>,
+    #[doc = "Identifies the Azure key vault associated with a Batch account."]
     #[serde(rename = "keyVaultReference", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_reference: Option<KeyVaultReference>,
 }
@@ -273,12 +318,16 @@ impl BatchAccountCreateProperties {
         Self::default()
     }
 }
+#[doc = "A set of Azure Batch account keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountKeys {
+    #[doc = "The Batch account name."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
+    #[doc = "The primary key associated with the account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<String>,
+    #[doc = "The secondary key associated with the account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<String>,
 }
@@ -287,10 +336,13 @@ impl BatchAccountKeys {
         Self::default()
     }
 }
+#[doc = "Values returned by the List operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountListResult {
+    #[doc = "The collection of Batch accounts returned by the listing operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BatchAccount>,
+    #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -299,24 +351,34 @@ impl BatchAccountListResult {
         Self::default()
     }
 }
+#[doc = "Account specific properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountProperties {
+    #[doc = "The account endpoint used to interact with the Batch service."]
     #[serde(rename = "accountEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub account_endpoint: Option<String>,
+    #[doc = "The provisioned state of the resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<batch_account_properties::ProvisioningState>,
+    #[doc = "The allocation mode for creating pools in the Batch account."]
     #[serde(rename = "poolAllocationMode", default, skip_serializing_if = "Option::is_none")]
     pub pool_allocation_mode: Option<PoolAllocationMode>,
+    #[doc = "Identifies the Azure key vault associated with a Batch account."]
     #[serde(rename = "keyVaultReference", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_reference: Option<KeyVaultReference>,
+    #[doc = "Contains information about the auto-storage account associated with a Batch account."]
     #[serde(rename = "autoStorage", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage: Option<AutoStorageProperties>,
+    #[doc = "For accounts with PoolAllocationMode set to UserSubscription, quota is managed on the subscription so this value is not returned."]
     #[serde(rename = "dedicatedCoreQuota", default, skip_serializing_if = "Option::is_none")]
     pub dedicated_core_quota: Option<i32>,
+    #[doc = "For accounts with PoolAllocationMode set to UserSubscription, quota is managed on the subscription so this value is not returned."]
     #[serde(rename = "lowPriorityCoreQuota", default, skip_serializing_if = "Option::is_none")]
     pub low_priority_core_quota: Option<i32>,
+    #[doc = "A list of the dedicated core quota per Virtual Machine family for the Batch account. For accounts with PoolAllocationMode set to UserSubscription, quota is managed on the subscription so this value is not returned."]
     #[serde(rename = "dedicatedCoreQuotaPerVMFamily", default, skip_serializing_if = "Vec::is_empty")]
     pub dedicated_core_quota_per_vm_family: Vec<VirtualMachineFamilyCoreQuota>,
+    #[doc = "Batch is transitioning its core quota system for dedicated cores to be enforced per Virtual Machine family. During this transitional phase, the dedicated core quota per Virtual Machine family may not yet be enforced. If this flag is false, dedicated core quota is enforced via the old dedicatedCoreQuota property on the account and does not consider Virtual Machine family. If this flag is true, dedicated core quota is enforced via the dedicatedCoreQuotaPerVMFamily property on the account, and the old dedicatedCoreQuota does not apply."]
     #[serde(rename = "dedicatedCoreQuotaPerVMFamilyEnforced", default, skip_serializing_if = "Option::is_none")]
     pub dedicated_core_quota_per_vm_family_enforced: Option<bool>,
     #[serde(rename = "poolQuota", default, skip_serializing_if = "Option::is_none")]
@@ -331,6 +393,7 @@ impl BatchAccountProperties {
 }
 pub mod batch_account_properties {
     use super::*;
+    #[doc = "The provisioned state of the resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Invalid,
@@ -341,8 +404,10 @@ pub mod batch_account_properties {
         Cancelled,
     }
 }
+#[doc = "Parameters supplied to the RegenerateKey operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchAccountRegenerateKeyParameters {
+    #[doc = "The type of account key to regenerate."]
     #[serde(rename = "keyName")]
     pub key_name: batch_account_regenerate_key_parameters::KeyName,
 }
@@ -353,16 +418,20 @@ impl BatchAccountRegenerateKeyParameters {
 }
 pub mod batch_account_regenerate_key_parameters {
     use super::*;
+    #[doc = "The type of account key to regenerate."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
         Primary,
         Secondary,
     }
 }
+#[doc = "Parameters for updating an Azure Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountUpdateParameters {
+    #[doc = "The user-specified tags associated with the account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The properties of a Batch account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BatchAccountUpdateProperties>,
 }
@@ -371,8 +440,10 @@ impl BatchAccountUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties of a Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchAccountUpdateProperties {
+    #[doc = "The properties related to the auto-storage account."]
     #[serde(rename = "autoStorage", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage: Option<AutoStorageBaseProperties>,
 }
@@ -381,8 +452,10 @@ impl BatchAccountUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Quotas associated with a Batch region for a particular subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BatchLocationQuota {
+    #[doc = "The number of Batch accounts that may be created under the subscription in the specified region."]
     #[serde(rename = "accountQuota", default, skip_serializing_if = "Option::is_none")]
     pub account_quota: Option<i32>,
 }
@@ -395,8 +468,10 @@ impl BatchLocationQuota {
 pub struct CifsMountConfiguration {
     pub username: String,
     pub source: String,
+    #[doc = "All file systems are mounted relative to the Batch mounts directory, accessible via the AZ_BATCH_NODE_MOUNTS_DIR environment variable."]
     #[serde(rename = "relativeMountPath")]
     pub relative_mount_path: String,
+    #[doc = "These are 'net use' options in Windows and 'mount' options in Linux."]
     #[serde(rename = "mountOptions", default, skip_serializing_if = "Option::is_none")]
     pub mount_options: Option<String>,
     pub password: String,
@@ -418,10 +493,12 @@ pub enum CachingType {
     ReadOnly,
     ReadWrite,
 }
+#[doc = "Contains information about a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Certificate {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Certificate properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateProperties>,
 }
@@ -432,10 +509,13 @@ impl Certificate {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateBaseProperties {
+    #[doc = "This must match the first portion of the certificate name. Currently required to be 'SHA1'."]
     #[serde(rename = "thumbprintAlgorithm", default, skip_serializing_if = "Option::is_none")]
     pub thumbprint_algorithm: Option<String>,
+    #[doc = "This must match the thumbprint from the name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
+    #[doc = "The format of the certificate - either Pfx or Cer. If omitted, the default is Pfx."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<certificate_base_properties::Format>,
 }
@@ -446,16 +526,19 @@ impl CertificateBaseProperties {
 }
 pub mod certificate_base_properties {
     use super::*;
+    #[doc = "The format of the certificate - either Pfx or Cer. If omitted, the default is Pfx."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Format {
         Pfx,
         Cer,
     }
 }
+#[doc = "Contains information about a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateCreateOrUpdateParameters {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Certificate properties for create operations"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateCreateOrUpdateProperties>,
 }
@@ -464,11 +547,14 @@ impl CertificateCreateOrUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Certificate properties for create operations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateCreateOrUpdateProperties {
     #[serde(flatten)]
     pub certificate_base_properties: CertificateBaseProperties,
+    #[doc = "The maximum size is 10KB."]
     pub data: String,
+    #[doc = "This is required if the certificate format is pfx and must be omitted if the certificate format is cer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
@@ -481,6 +567,7 @@ impl CertificateCreateOrUpdateProperties {
         }
     }
 }
+#[doc = "Certificate properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateProperties {
     #[serde(flatten)]
@@ -489,6 +576,7 @@ pub struct CertificateProperties {
     pub provisioning_state: Option<certificate_properties::ProvisioningState>,
     #[serde(rename = "provisioningStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state_transition_time: Option<String>,
+    #[doc = "The previous provisioned state of the resource"]
     #[serde(rename = "previousProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub previous_provisioning_state: Option<certificate_properties::PreviousProvisioningState>,
     #[serde(
@@ -497,8 +585,10 @@ pub struct CertificateProperties {
         skip_serializing_if = "Option::is_none"
     )]
     pub previous_provisioning_state_transition_time: Option<String>,
+    #[doc = "The public key of the certificate."]
     #[serde(rename = "publicData", default, skip_serializing_if = "Option::is_none")]
     pub public_data: Option<String>,
+    #[doc = "An error response from the Batch service."]
     #[serde(rename = "deleteCertificateError", default, skip_serializing_if = "Option::is_none")]
     pub delete_certificate_error: Option<DeleteCertificateError>,
 }
@@ -515,6 +605,7 @@ pub mod certificate_properties {
         Deleting,
         Failed,
     }
+    #[doc = "The previous provisioned state of the resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PreviousProvisioningState {
         Succeeded,
@@ -525,8 +616,10 @@ pub mod certificate_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateReference {
     pub id: String,
+    #[doc = "The default value is currentUser. This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(rename = "storeLocation", default, skip_serializing_if = "Option::is_none")]
     pub store_location: Option<certificate_reference::StoreLocation>,
+    #[doc = "This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). Common store names include: My, Root, CA, Trust, Disallowed, TrustedPeople, TrustedPublisher, AuthRoot, AddressBook, but any custom store name can also be used. The default value is My."]
     #[serde(rename = "storeName", default, skip_serializing_if = "Option::is_none")]
     pub store_name: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -544,15 +637,19 @@ impl CertificateReference {
 }
 pub mod certificate_reference {
     use super::*;
+    #[doc = "The default value is currentUser. This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StoreLocation {
         CurrentUser,
         LocalMachine,
     }
 }
+#[doc = "Parameters for a check name availability request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameters {
+    #[doc = "The name to check for availability"]
     pub name: String,
+    #[doc = "The resource type. Must be set to Microsoft.Batch/batchAccounts"]
     #[serde(rename = "type")]
     pub type_: check_name_availability_parameters::Type,
 }
@@ -563,18 +660,23 @@ impl CheckNameAvailabilityParameters {
 }
 pub mod check_name_availability_parameters {
     use super::*;
+    #[doc = "The resource type. Must be set to Microsoft.Batch/batchAccounts"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Batch/batchAccounts")]
         MicrosoftBatchBatchAccounts,
     }
 }
+#[doc = "The CheckNameAvailability operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
+    #[doc = "Gets a boolean value that indicates whether the name is available for you to use. If true, the name is available. If false, the name has already been taken or invalid and cannot be used."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "Gets the reason that a Batch account name could not be used. The Reason element is only returned if NameAvailable is false."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_result::Reason>,
+    #[doc = "Gets an error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -585,14 +687,17 @@ impl CheckNameAvailabilityResult {
 }
 pub mod check_name_availability_result {
     use super::*;
+    #[doc = "Gets the reason that a Batch account name could not be used. The Reason element is only returned if NameAvailable is false."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
         Invalid,
         AlreadyExists,
     }
 }
+#[doc = "An error response from the Batch service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "An error response from the Batch service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -601,14 +706,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "An error response from the Batch service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -619,8 +729,10 @@ impl CloudErrorBody {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudServiceConfiguration {
+    #[doc = "Possible values are: 2 - OS Family 2, equivalent to Windows Server 2008 R2 SP1. 3 - OS Family 3, equivalent to Windows Server 2012. 4 - OS Family 4, equivalent to Windows Server 2012 R2. 5 - OS Family 5, equivalent to Windows Server 2016. 6 - OS Family 6, equivalent to Windows Server 2019. For more information, see Azure Guest OS Releases (https://azure.microsoft.com/documentation/articles/cloud-services-guestos-update-matrix/#releases)."]
     #[serde(rename = "osFamily")]
     pub os_family: String,
+    #[doc = "The default value is * which specifies the latest operating system version for the specified OS family."]
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
 }
@@ -643,8 +755,10 @@ pub enum ComputeNodeDeallocationOption {
 pub struct ContainerConfiguration {
     #[serde(rename = "type")]
     pub type_: container_configuration::Type,
+    #[doc = "This is the full image reference, as would be specified to \"docker pull\". An image will be sourced from the default Docker registry unless the image is fully qualified with an alternative registry."]
     #[serde(rename = "containerImageNames", default, skip_serializing_if = "Vec::is_empty")]
     pub container_image_names: Vec<String>,
+    #[doc = "If any images must be downloaded from a private registry which requires credentials, then those credentials must be provided here."]
     #[serde(rename = "containerRegistries", default, skip_serializing_if = "Vec::is_empty")]
     pub container_registries: Vec<ContainerRegistry>,
 }
@@ -666,6 +780,7 @@ pub mod container_configuration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistry {
+    #[doc = "If omitted, the default is \"docker.io\"."]
     #[serde(rename = "registryServer", default, skip_serializing_if = "Option::is_none")]
     pub registry_server: Option<String>,
     pub username: String,
@@ -680,8 +795,10 @@ impl ContainerRegistry {
         }
     }
 }
+#[doc = "Settings which will be used by the data disks associated to Compute Nodes in the Pool. When using attached data disks, you need to mount and format the disks from within a VM to use them."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataDisk {
+    #[doc = "The lun is used to uniquely identify each data disk. If attaching multiple disks, each should have a distinct lun."]
     pub lun: i32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caching: Option<CachingType>,
@@ -700,12 +817,17 @@ impl DataDisk {
         }
     }
 }
+#[doc = "An error response from the Batch service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeleteCertificateError {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     pub code: String,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     pub message: String,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<DeleteCertificateError>,
 }
@@ -749,10 +871,13 @@ impl EnvironmentSetting {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FixedScaleSettings {
+    #[doc = "The default value is 15 minutes. Timeout values use ISO 8601 format. For example, use PT10M for 10 minutes. The minimum value is 5 minutes. If you specify a value less than 5 minutes, the Batch service rejects the request with an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
+    #[doc = "At least one of targetDedicatedNodes, targetLowPriority nodes must be set."]
     #[serde(rename = "targetDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_dedicated_nodes: Option<i32>,
+    #[doc = "At least one of targetDedicatedNodes, targetLowPriority nodes must be set."]
     #[serde(rename = "targetLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_low_priority_nodes: Option<i32>,
     #[serde(rename = "nodeDeallocationOption", default, skip_serializing_if = "Option::is_none")]
@@ -765,14 +890,19 @@ impl FixedScaleSettings {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageReference {
+    #[doc = "For example, Canonical or MicrosoftWindowsServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "For example, UbuntuServer or WindowsServer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offer: Option<String>,
+    #[doc = "For example, 18.04-LTS or 2019-Datacenter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
+    #[doc = "A value of 'latest' can be specified to select the latest version of an image. If omitted, the default is 'latest'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "This property is mutually exclusive with other properties. For Virtual Machine Image it must be in the same region and subscription as the Azure Batch account. For SIG image it must have replicas in the same region as the Azure Batch account. For information about the firewall settings for the Batch node agent to communicate with the Batch service see https://docs.microsoft.com/en-us/azure/batch/batch-api-basics#virtual-network-vnet-and-firewall-configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -783,14 +913,19 @@ impl ImageReference {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundNatPool {
+    #[doc = "The name must be unique within a Batch pool, can contain letters, numbers, underscores, periods, and hyphens. Names must start with a letter or number, must end with a letter, number, or underscore, and cannot exceed 77 characters.  If any invalid values are provided the request fails with HTTP status code 400."]
     pub name: String,
     pub protocol: inbound_nat_pool::Protocol,
+    #[doc = "This must be unique within a Batch pool. Acceptable values are between 1 and 65535 except for 22, 3389, 29876 and 29877 as these are reserved. If any reserved values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "backendPort")]
     pub backend_port: i32,
+    #[doc = "Acceptable values range between 1 and 65534 except ports from 50000 to 55000 which are reserved. All ranges within a pool must be distinct and cannot overlap. If any reserved or overlapping values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "frontendPortRangeStart")]
     pub frontend_port_range_start: i32,
+    #[doc = "Acceptable values range between 1 and 65534 except ports from 50000 to 55000 which are reserved by the Batch service. All ranges within a pool must be distinct and cannot overlap. If any reserved or overlapping values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "frontendPortRangeEnd")]
     pub frontend_port_range_end: i32,
+    #[doc = "The maximum number of rules that can be specified across all the endpoints on a Batch pool is 25. If no network security group rules are specified, a default rule will be created to allow inbound access to the specified backendPort. If the maximum number of network security group rules is exceeded the request fails with HTTP status code 400."]
     #[serde(rename = "networkSecurityGroupRules", default, skip_serializing_if = "Vec::is_empty")]
     pub network_security_group_rules: Vec<NetworkSecurityGroupRule>,
 }
@@ -822,9 +957,12 @@ pub mod inbound_nat_pool {
         Udp,
     }
 }
+#[doc = "Identifies the Azure key vault associated with a Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultReference {
+    #[doc = "The resource ID of the Azure key vault associated with the Batch account."]
     pub id: String,
+    #[doc = "The URL of the Azure key vault associated with the Batch account."]
     pub url: String,
 }
 impl KeyVaultReference {
@@ -834,10 +972,13 @@ impl KeyVaultReference {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxUserConfiguration {
+    #[doc = "The uid and gid properties must be specified together or not at all. If not specified the underlying operating system picks the uid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uid: Option<i32>,
+    #[doc = "The uid and gid properties must be specified together or not at all. If not specified the underlying operating system picks the gid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gid: Option<i32>,
+    #[doc = "The private key must not be password protected. The private key is used to automatically configure asymmetric-key based authentication for SSH between nodes in a Linux pool when the pool's enableInterNodeCommunication property is true (it is ignored if enableInterNodeCommunication is false). It does this by placing the key pair into the user's .ssh directory. If not specified, password-less SSH is not configured between nodes (no modification of the user's .ssh directory is done)."]
     #[serde(rename = "sshPrivateKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_private_key: Option<String>,
 }
@@ -846,10 +987,13 @@ impl LinuxUserConfiguration {
         Self::default()
     }
 }
+#[doc = "The result of performing list application packages."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListApplicationPackagesResult {
+    #[doc = "The list of application packages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationPackage>,
+    #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -858,10 +1002,13 @@ impl ListApplicationPackagesResult {
         Self::default()
     }
 }
+#[doc = "The result of performing list applications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListApplicationsResult {
+    #[doc = "The list of applications."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Application>,
+    #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -870,10 +1017,13 @@ impl ListApplicationsResult {
         Self::default()
     }
 }
+#[doc = "Values returned by the List operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListCertificatesResult {
+    #[doc = "The collection of returned certificates."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Certificate>,
+    #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -882,10 +1032,13 @@ impl ListCertificatesResult {
         Self::default()
     }
 }
+#[doc = "Values returned by the List operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListPoolsResult {
+    #[doc = "The collection of returned pools."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Pool>,
+    #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -894,6 +1047,7 @@ impl ListPoolsResult {
         Self::default()
     }
 }
+#[doc = "The Batch service does not assign any meaning to this metadata; it is solely for the use of user code."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataItem {
     pub name: String,
@@ -923,8 +1077,10 @@ impl MountConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NfsMountConfiguration {
     pub source: String,
+    #[doc = "All file systems are mounted relative to the Batch mounts directory, accessible via the AZ_BATCH_NODE_MOUNTS_DIR environment variable."]
     #[serde(rename = "relativeMountPath")]
     pub relative_mount_path: String,
+    #[doc = "These are 'net use' options in Windows and 'mount' options in Linux."]
     #[serde(rename = "mountOptions", default, skip_serializing_if = "Option::is_none")]
     pub mount_options: Option<String>,
 }
@@ -937,12 +1093,15 @@ impl NfsMountConfiguration {
         }
     }
 }
+#[doc = "The network configuration for a pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfiguration {
+    #[doc = "The virtual network must be in the same region and subscription as the Azure Batch account. The specified subnet should have enough free IP addresses to accommodate the number of nodes in the pool. If the subnet doesn't have enough free IP addresses, the pool will partially allocate compute nodes, and a resize error will occur. The 'MicrosoftAzureBatch' service principal must have the 'Classic Virtual Machine Contributor' Role-Based Access Control (RBAC) role for the specified VNet. The specified subnet must allow communication from the Azure Batch service to be able to schedule tasks on the compute nodes. This can be verified by checking if the specified VNet has any associated Network Security Groups (NSG). If communication to the compute nodes in the specified subnet is denied by an NSG, then the Batch service will set the state of the compute nodes to unusable. For pools created via virtualMachineConfiguration the Batch account must have poolAllocationMode userSubscription in order to use a VNet. If the specified VNet has any associated Network Security Groups (NSG), then a few reserved system ports must be enabled for inbound communication. For pools created with a virtual machine configuration, enable ports 29876 and 29877, as well as port 22 for Linux and port 3389 for Windows. For pools created with a cloud service configuration, enable ports 10100, 20100, and 30100. Also enable outbound connections to Azure Storage on port 443. For more details see: https://docs.microsoft.com/en-us/azure/batch/batch-api-basics#virtual-network-vnet-and-firewall-configuration"]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
     #[serde(rename = "endpointConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_configuration: Option<PoolEndpointConfiguration>,
+    #[doc = "The number of IPs specified here limits the maximum size of the Pool - 50 dedicated nodes or 20 low-priority nodes can be allocated for each public IP. For example, a pool needing 150 dedicated VMs would need at least 3 public IPs specified. Each element of this collection is of the form: /subscriptions/{subscription}/resourceGroups/{group}/providers/Microsoft.Network/publicIPAddresses/{ip}."]
     #[serde(rename = "publicIPs", default, skip_serializing_if = "Vec::is_empty")]
     pub public_i_ps: Vec<String>,
 }
@@ -953,10 +1112,13 @@ impl NetworkConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkSecurityGroupRule {
+    #[doc = "Priorities within a pool must be unique and are evaluated in order of priority. The lower the number the higher the priority. For example, rules could be specified with order numbers of 150, 250, and 350. The rule with the order number of 150 takes precedence over the rule that has an order of 250. Allowed priorities are 150 to 3500. If any reserved or duplicate values are provided the request fails with HTTP status code 400."]
     pub priority: i32,
     pub access: network_security_group_rule::Access,
+    #[doc = "Valid values are a single IP address (i.e. 10.10.10.10), IP subnet (i.e. 192.168.1.0/24), default tag, or * (for all addresses).  If any other values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "sourceAddressPrefix")]
     pub source_address_prefix: String,
+    #[doc = "Valid values are '*' (for all ports 0 - 65535) or arrays of ports or port ranges (i.e. 100-200). The ports should in the range of 0 to 65535 and the port ranges or ports can't overlap. If any other values are provided the request fails with HTTP status code 400. Default value will be *."]
     #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub source_port_ranges: Vec<String>,
 }
@@ -980,6 +1142,7 @@ pub mod network_security_group_rule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "This is of the format {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1000,6 +1163,7 @@ pub mod operation {
     pub struct Display {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "For example: read, write, delete, or listKeys/action"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1025,10 +1189,12 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Contains information about a pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pool {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Pool properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PoolProperties>,
 }
@@ -1037,6 +1203,7 @@ impl Pool {
         Self::default()
     }
 }
+#[doc = "The allocation mode for creating pools in the Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PoolAllocationMode {
     BatchService,
@@ -1044,6 +1211,7 @@ pub enum PoolAllocationMode {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolEndpointConfiguration {
+    #[doc = "The maximum number of inbound NAT pools per Batch pool is 5. If the maximum number of inbound NAT pools is exceeded the request fails with HTTP status code 400."]
     #[serde(rename = "inboundNatPools")]
     pub inbound_nat_pools: Vec<InboundNatPool>,
 }
@@ -1052,10 +1220,13 @@ impl PoolEndpointConfiguration {
         Self { inbound_nat_pools }
     }
 }
+#[doc = "Pool properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolProperties {
+    #[doc = "The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "This is the last time at which the pool level data, such as the targetDedicatedNodes or autoScaleSettings, changed. It does not factor in node-level changes such as a compute node changing state."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
@@ -1068,6 +1239,7 @@ pub struct PoolProperties {
     pub allocation_state: Option<pool_properties::AllocationState>,
     #[serde(rename = "allocationStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub allocation_state_transition_time: Option<String>,
+    #[doc = "For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (https://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series)."]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
     #[serde(rename = "deploymentConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1076,32 +1248,43 @@ pub struct PoolProperties {
     pub current_dedicated_nodes: Option<i32>,
     #[serde(rename = "currentLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub current_low_priority_nodes: Option<i32>,
+    #[doc = "Defines the desired size of the pool. This can either be 'fixedScale' where the requested targetDedicatedNodes is specified, or 'autoScale' which defines a formula which is periodically reevaluated. If this property is not specified, the pool will have a fixed scale with 0 targetDedicatedNodes."]
     #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
     pub scale_settings: Option<ScaleSettings>,
     #[serde(rename = "autoScaleRun", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_run: Option<AutoScaleRun>,
+    #[doc = "This imposes restrictions on which nodes can be assigned to the pool. Enabling this value can reduce the chance of the requested number of nodes to be allocated in the pool. If not specified, this value defaults to 'Disabled'."]
     #[serde(rename = "interNodeCommunication", default, skip_serializing_if = "Option::is_none")]
     pub inter_node_communication: Option<pool_properties::InterNodeCommunication>,
+    #[doc = "The network configuration for a pool."]
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<NetworkConfiguration>,
+    #[doc = "The default value is 1. The maximum value is the smaller of 4 times the number of cores of the vmSize of the pool or 256."]
     #[serde(rename = "maxTasksPerNode", default, skip_serializing_if = "Option::is_none")]
     pub max_tasks_per_node: Option<i32>,
     #[serde(rename = "taskSchedulingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub task_scheduling_policy: Option<TaskSchedulingPolicy>,
     #[serde(rename = "userAccounts", default, skip_serializing_if = "Vec::is_empty")]
     pub user_accounts: Vec<UserAccount>,
+    #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
+    #[doc = "In some cases the start task may be re-run even though the node was not rebooted. Due to this, start tasks should be idempotent and exit gracefully if the setup they're performing has already been done. Special care should be taken to avoid start tasks which create breakaway process or install/launch services from the start task working directory, as this will block Batch from being able to re-run the start task."]
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
+    #[doc = "For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub certificates: Vec<CertificateReference>,
+    #[doc = "Changes to application package references affect all new compute nodes joining the pool, but do not affect compute nodes that are already in the pool until they are rebooted or reimaged. There is a maximum of 10 application package references on any given pool."]
     #[serde(rename = "applicationPackages", default, skip_serializing_if = "Vec::is_empty")]
     pub application_packages: Vec<ApplicationPackageReference>,
+    #[doc = "The list of application licenses must be a subset of available Batch service application licenses. If a license is requested which is not supported, pool creation will fail."]
     #[serde(rename = "applicationLicenses", default, skip_serializing_if = "Vec::is_empty")]
     pub application_licenses: Vec<String>,
+    #[doc = "Describes either the current operation (if the pool AllocationState is Resizing) or the previously completed operation (if the AllocationState is Steady)."]
     #[serde(rename = "resizeOperationStatus", default, skip_serializing_if = "Option::is_none")]
     pub resize_operation_status: Option<ResizeOperationStatus>,
+    #[doc = "This supports Azure Files, NFS, CIFS/SMB, and Blobfuse."]
     #[serde(rename = "mountConfiguration", default, skip_serializing_if = "Vec::is_empty")]
     pub mount_configuration: Vec<MountConfiguration>,
 }
@@ -1123,20 +1306,26 @@ pub mod pool_properties {
         Resizing,
         Stopping,
     }
+    #[doc = "This imposes restrictions on which nodes can be assigned to the pool. Enabling this value can reduce the chance of the requested number of nodes to be allocated in the pool. If not specified, this value defaults to 'Disabled'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum InterNodeCommunication {
         Enabled,
         Disabled,
     }
 }
+#[doc = "A definition of an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
+    #[doc = "The ID of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The ETag of the resource, used for concurrency statements."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1147,7 +1336,9 @@ impl ProxyResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResizeError {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     pub code: String,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     pub message: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ResizeError>,
@@ -1161,18 +1352,21 @@ impl ResizeError {
         }
     }
 }
+#[doc = "Describes either the current operation (if the pool AllocationState is Resizing) or the previously completed operation (if the AllocationState is Steady)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResizeOperationStatus {
     #[serde(rename = "targetDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_dedicated_nodes: Option<i32>,
     #[serde(rename = "targetLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_low_priority_nodes: Option<i32>,
+    #[doc = "The default value is 15 minutes. The minimum value is 5 minutes. If you specify a value less than 5 minutes, the Batch service returns an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
     #[serde(rename = "nodeDeallocationOption", default, skip_serializing_if = "Option::is_none")]
     pub node_deallocation_option: Option<ComputeNodeDeallocationOption>,
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "This property is set only if an error occurred during the last pool resize, and only when the pool allocationState is Steady."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<ResizeError>,
 }
@@ -1181,16 +1375,22 @@ impl ResizeOperationStatus {
         Self::default()
     }
 }
+#[doc = "A definition of an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "The ID of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The tags of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1201,16 +1401,22 @@ impl Resource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceFile {
+    #[doc = "The autoStorageContainerName, storageContainerUrl and httpUrl properties are mutually exclusive and one of them must be specified."]
     #[serde(rename = "autoStorageContainerName", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage_container_name: Option<String>,
+    #[doc = "The autoStorageContainerName, storageContainerUrl and httpUrl properties are mutually exclusive and one of them must be specified. This URL must be readable and listable using anonymous access; that is, the Batch service does not present any credentials when downloading the blob. There are two ways to get such a URL for a blob in Azure storage: include a Shared Access Signature (SAS) granting read and list permissions on the blob, or set the ACL for the blob or its container to allow public access."]
     #[serde(rename = "storageContainerUrl", default, skip_serializing_if = "Option::is_none")]
     pub storage_container_url: Option<String>,
+    #[doc = "The autoStorageContainerName, storageContainerUrl and httpUrl properties are mutually exclusive and one of them must be specified. If the URL is Azure Blob Storage, it must be readable using anonymous access; that is, the Batch service does not present any credentials when downloading the blob. There are two ways to get such a URL for a blob in Azure storage: include a Shared Access Signature (SAS) granting read permissions on the blob, or set the ACL for the blob or its container to allow public access."]
     #[serde(rename = "httpUrl", default, skip_serializing_if = "Option::is_none")]
     pub http_url: Option<String>,
+    #[doc = "The property is valid only when autoStorageContainerName or storageContainerUrl is used. This prefix can be a partial filename or a subdirectory. If a prefix is not specified, all the files in the container will be downloaded."]
     #[serde(rename = "blobPrefix", default, skip_serializing_if = "Option::is_none")]
     pub blob_prefix: Option<String>,
+    #[doc = "If the httpUrl property is specified, the filePath is required and describes the path which the file will be downloaded to, including the filename. Otherwise, if the autoStorageContainerName or storageContainerUrl property is specified, filePath is optional and is the directory to download the files to. In the case where filePath is used as a directory, any directory structure already associated with the input data will be retained in full and appended to the specified filePath directory. The specified relative path cannot break out of the task's working directory (for example by using '..')."]
     #[serde(rename = "filePath", default, skip_serializing_if = "Option::is_none")]
     pub file_path: Option<String>,
+    #[doc = "This property applies only to files being downloaded to Linux compute nodes. It will be ignored if it is specified for a resourceFile which will be downloaded to a Windows node. If this property is not specified for a Linux node, then a default value of 0770 is applied to the file."]
     #[serde(rename = "fileMode", default, skip_serializing_if = "Option::is_none")]
     pub file_mode: Option<String>,
 }
@@ -1219,6 +1425,7 @@ impl ResourceFile {
         Self::default()
     }
 }
+#[doc = "Defines the desired size of the pool. This can either be 'fixedScale' where the requested targetDedicatedNodes is specified, or 'autoScale' which defines a formula which is periodically reevaluated. If this property is not specified, the pool will have a fixed scale with 0 targetDedicatedNodes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScaleSettings {
     #[serde(rename = "fixedScale", default, skip_serializing_if = "Option::is_none")]
@@ -1231,18 +1438,23 @@ impl ScaleSettings {
         Self::default()
     }
 }
+#[doc = "In some cases the start task may be re-run even though the node was not rebooted. Due to this, start tasks should be idempotent and exit gracefully if the setup they're performing has already been done. Special care should be taken to avoid start tasks which create breakaway process or install/launch services from the start task working directory, as this will block Batch from being able to re-run the start task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StartTask {
+    #[doc = "The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux. Required if any other properties of the startTask are specified."]
     #[serde(rename = "commandLine", default, skip_serializing_if = "Option::is_none")]
     pub command_line: Option<String>,
     #[serde(rename = "resourceFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_files: Vec<ResourceFile>,
     #[serde(rename = "environmentSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_settings: Vec<EnvironmentSetting>,
+    #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
+    #[doc = "The Batch service retries a task if its exit code is nonzero. Note that this value specifically controls the number of retries. The Batch service will try the task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the task. If the maximum retry count is -1, the Batch service retries the task without limit."]
     #[serde(rename = "maxTaskRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_task_retry_count: Option<i32>,
+    #[doc = "If true and the start task fails on a compute node, the Batch service retries the start task up to its maximum retry count (maxTaskRetryCount). If the task has still not completed successfully after all retries, then the Batch service marks the compute node unusable, and will not schedule tasks to it. This condition can be detected via the node state and scheduling error detail. If false, the Batch service will not wait for the start task to complete. In this case, other tasks can start executing on the compute node while the start task is still running; and even if the start task fails, new tasks will continue to be scheduled on the node. The default is true."]
     #[serde(rename = "waitForSuccess", default, skip_serializing_if = "Option::is_none")]
     pub wait_for_success: Option<bool>,
     #[serde(rename = "containerSettings", default, skip_serializing_if = "Option::is_none")]
@@ -1262,8 +1474,10 @@ pub enum StorageAccountType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskContainerSettings {
+    #[doc = "These additional options are supplied as arguments to the \"docker create\" command, in addition to those controlled by the Batch Service."]
     #[serde(rename = "containerRunOptions", default, skip_serializing_if = "Option::is_none")]
     pub container_run_options: Option<String>,
+    #[doc = "This is the full image reference, as would be specified to \"docker pull\". If no tag is provided as part of the image name, the tag \":latest\" is used as a default."]
     #[serde(rename = "imageName")]
     pub image_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1329,8 +1543,10 @@ impl UserAccount {
         }
     }
 }
+#[doc = "Specify either the userName or autoUser property, but not both."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentity {
+    #[doc = "The userName and autoUser properties are mutually exclusive; you must specify one but not both."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
     #[serde(rename = "autoUser", default, skip_serializing_if = "Option::is_none")]
@@ -1345,12 +1561,15 @@ impl UserIdentity {
 pub struct VirtualMachineConfiguration {
     #[serde(rename = "imageReference")]
     pub image_reference: ImageReference,
+    #[doc = "The Batch node agent is a program that runs on each node in the pool, and provides the command-and-control interface between the node and the Batch service. There are different implementations of the node agent, known as SKUs, for different operating systems. You must specify a node agent SKU which matches the selected image reference. To get the list of supported node agent SKUs along with their list of verified image references, see the 'List supported node agent SKUs' operation."]
     #[serde(rename = "nodeAgentSkuId")]
     pub node_agent_sku_id: String,
     #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub windows_configuration: Option<WindowsConfiguration>,
+    #[doc = "This property must be specified if the compute nodes in the pool need to have empty data disks attached to them."]
     #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disks: Vec<DataDisk>,
+    #[doc = "This only applies to images that contain the Windows operating system, and should only be used when you hold valid on-premises licenses for the nodes which will be deployed. If omitted, no on-premises licensing discount is applied. Values are:\n\n Windows_Server - The on-premises license is for Windows Server.\n Windows_Client - The on-premises license is for Windows Client.\n"]
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<String>,
     #[serde(rename = "containerConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1368,10 +1587,13 @@ impl VirtualMachineConfiguration {
         }
     }
 }
+#[doc = "A VM Family and its associated core quota for the Batch account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineFamilyCoreQuota {
+    #[doc = "The Virtual Machine family name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The core quota for the VM family for the Batch account."]
     #[serde(rename = "coreQuota", default, skip_serializing_if = "Option::is_none")]
     pub core_quota: Option<i32>,
 }
@@ -1382,6 +1604,7 @@ impl VirtualMachineFamilyCoreQuota {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsConfiguration {
+    #[doc = "If omitted, the default value is true."]
     #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
     pub enable_automatic_updates: Option<bool>,
 }
@@ -1392,6 +1615,7 @@ impl WindowsConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsUserConfiguration {
+    #[doc = "Specifies login mode for the user. The default value for VirtualMachineConfiguration pools is interactive mode and for CloudServiceConfiguration pools is batch mode."]
     #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
     pub login_mode: Option<windows_user_configuration::LoginMode>,
 }
@@ -1402,6 +1626,7 @@ impl WindowsUserConfiguration {
 }
 pub mod windows_user_configuration {
     use super::*;
+    #[doc = "Specifies login mode for the user. The default value for VirtualMachineConfiguration pools is interactive mode and for CloudServiceConfiguration pools is batch mode."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LoginMode {
         Batch,

@@ -2,22 +2,31 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The parameters to list SAS credentials of a storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountSasParameters {
+    #[doc = "The signed services accessible with the account SAS. Possible values include: Blob (b), Queue (q), Table (t), File (f)."]
     #[serde(rename = "signedServices")]
     pub signed_services: account_sas_parameters::SignedServices,
+    #[doc = "The signed resource types that are accessible with the account SAS. Service (s): Access to service-level APIs; Container (c): Access to container-level APIs; Object (o): Access to object-level APIs for blobs, queue messages, table entities, and files."]
     #[serde(rename = "signedResourceTypes")]
     pub signed_resource_types: account_sas_parameters::SignedResourceTypes,
+    #[doc = "The signed permissions for the account SAS. Possible values include: Read (r), Write (w), Delete (d), List (l), Add (a), Create (c), Update (u) and Process (p)."]
     #[serde(rename = "signedPermission")]
     pub signed_permission: account_sas_parameters::SignedPermission,
+    #[doc = "An IP address or a range of IP addresses from which to accept requests."]
     #[serde(rename = "signedIp", default, skip_serializing_if = "Option::is_none")]
     pub signed_ip: Option<String>,
+    #[doc = "The protocol permitted for a request made with the account SAS."]
     #[serde(rename = "signedProtocol", default, skip_serializing_if = "Option::is_none")]
     pub signed_protocol: Option<account_sas_parameters::SignedProtocol>,
+    #[doc = "The time at which the SAS becomes valid."]
     #[serde(rename = "signedStart", default, skip_serializing_if = "Option::is_none")]
     pub signed_start: Option<String>,
+    #[doc = "The time at which the shared access signature becomes invalid."]
     #[serde(rename = "signedExpiry")]
     pub signed_expiry: String,
+    #[doc = "The key to sign the account SAS token with."]
     #[serde(rename = "keyToSign", default, skip_serializing_if = "Option::is_none")]
     pub key_to_sign: Option<String>,
 }
@@ -42,6 +51,7 @@ impl AccountSasParameters {
 }
 pub mod account_sas_parameters {
     use super::*;
+    #[doc = "The signed services accessible with the account SAS. Possible values include: Blob (b), Queue (q), Table (t), File (f)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedServices {
         #[serde(rename = "b")]
@@ -53,6 +63,7 @@ pub mod account_sas_parameters {
         #[serde(rename = "f")]
         F,
     }
+    #[doc = "The signed resource types that are accessible with the account SAS. Service (s): Access to service-level APIs; Container (c): Access to container-level APIs; Object (o): Access to object-level APIs for blobs, queue messages, table entities, and files."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedResourceTypes {
         #[serde(rename = "s")]
@@ -62,6 +73,7 @@ pub mod account_sas_parameters {
         #[serde(rename = "o")]
         O,
     }
+    #[doc = "The signed permissions for the account SAS. Possible values include: Read (r), Write (w), Delete (d), List (l), Add (a), Create (c), Update (u) and Process (p)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedPermission {
         #[serde(rename = "r")]
@@ -81,6 +93,7 @@ pub mod account_sas_parameters {
         #[serde(rename = "p")]
         P,
     }
+    #[doc = "The protocol permitted for a request made with the account SAS."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedProtocol {
         #[serde(rename = "https,http")]
@@ -89,12 +102,16 @@ pub mod account_sas_parameters {
         Https,
     }
 }
+#[doc = "The CheckNameAvailability operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
+    #[doc = "Gets a boolean value that indicates whether the name is available for you to use. If true, the name is available. If false, the name has already been taken or is invalid and cannot be used."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "Gets the reason that a storage account name could not be used. The Reason element is only returned if NameAvailable is false."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_availability_result::Reason>,
+    #[doc = "Gets an error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -105,15 +122,19 @@ impl CheckNameAvailabilityResult {
 }
 pub mod check_name_availability_result {
     use super::*;
+    #[doc = "Gets the reason that a storage account name could not be used. The Reason element is only returned if NameAvailable is false."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
         AccountNameInvalid,
         AlreadyExists,
     }
 }
+#[doc = "The custom domain assigned to this storage account. This can be set via Update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomain {
+    #[doc = "Gets or sets the custom domain name assigned to the storage account. Name is the CNAME source."]
     pub name: String,
+    #[doc = "Indicates whether indirect CName validation is enabled. Default value is false. This should only be set on updates."]
     #[serde(rename = "useSubDomainName", default, skip_serializing_if = "Option::is_none")]
     pub use_sub_domain_name: Option<bool>,
 }
@@ -125,10 +146,13 @@ impl CustomDomain {
         }
     }
 }
+#[doc = "Dimension of blobs, possibly be blob type or access tier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
+    #[doc = "Display name of dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display name of dimension."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
@@ -137,12 +161,16 @@ impl Dimension {
         Self::default()
     }
 }
+#[doc = "The encryption settings on the storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Encryption {
+    #[doc = "A list of services that support encryption."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub services: Option<EncryptionServices>,
+    #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Microsoft.Storage, Microsoft.Keyvault"]
     #[serde(rename = "keySource")]
     pub key_source: encryption::KeySource,
+    #[doc = "Properties of key vault."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keyvaultproperties: Option<KeyVaultProperties>,
 }
@@ -157,6 +185,7 @@ impl Encryption {
 }
 pub mod encryption {
     use super::*;
+    #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Microsoft.Storage, Microsoft.Keyvault"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeySource {
         #[serde(rename = "Microsoft.Storage")]
@@ -170,10 +199,13 @@ pub mod encryption {
         }
     }
 }
+#[doc = "A service that allows server-side encryption to be used."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionService {
+    #[doc = "A boolean indicating whether or not the service encrypts the data as it is stored."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "Gets a rough estimate of the date/time when the encryption was last enabled by the user. Only returned when encryption is enabled. There might be some unencrypted blobs which were written after this time, as it is just a rough estimate."]
     #[serde(rename = "lastEnabledTime", default, skip_serializing_if = "Option::is_none")]
     pub last_enabled_time: Option<String>,
 }
@@ -182,14 +214,19 @@ impl EncryptionService {
         Self::default()
     }
 }
+#[doc = "A list of services that support encryption."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionServices {
+    #[doc = "A service that allows server-side encryption to be used."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub blob: Option<EncryptionService>,
+    #[doc = "A service that allows server-side encryption to be used."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file: Option<EncryptionService>,
+    #[doc = "A service that allows server-side encryption to be used."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<EncryptionService>,
+    #[doc = "A service that allows server-side encryption to be used."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub queue: Option<EncryptionService>,
 }
@@ -198,14 +235,19 @@ impl EncryptionServices {
         Self::default()
     }
 }
+#[doc = "The URIs that are used to perform a retrieval of a public blob, queue, or table object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoints {
+    #[doc = "Gets the blob endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub blob: Option<String>,
+    #[doc = "Gets the queue endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub queue: Option<String>,
+    #[doc = "Gets the table endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<String>,
+    #[doc = "Gets the file endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file: Option<String>,
 }
@@ -214,9 +256,12 @@ impl Endpoints {
         Self::default()
     }
 }
+#[doc = "IP rule with specific IP or IP range in CIDR format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpRule {
+    #[doc = "Specifies the IP or IP range in CIDR format. Only IPV4 address is allowed."]
     pub value: String,
+    #[doc = "The action of IP ACL rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ip_rule::Action>,
 }
@@ -227,6 +272,7 @@ impl IpRule {
 }
 pub mod ip_rule {
     use super::*;
+    #[doc = "The action of IP ACL rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
@@ -237,12 +283,16 @@ pub mod ip_rule {
         }
     }
 }
+#[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Identity {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
     #[serde(rename = "type")]
     pub type_: identity::Type,
 }
@@ -257,17 +307,22 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "Properties of key vault."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultProperties {
+    #[doc = "The name of KeyVault key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keyname: Option<String>,
+    #[doc = "The version of KeyVault key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keyversion: Option<String>,
+    #[doc = "The Uri of KeyVault."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keyvaulturi: Option<String>,
 }
@@ -276,8 +331,10 @@ impl KeyVaultProperties {
         Self::default()
     }
 }
+#[doc = "The List SAS credentials operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListAccountSasResponse {
+    #[doc = "List SAS credentials of storage account."]
     #[serde(rename = "accountSasToken", default, skip_serializing_if = "Option::is_none")]
     pub account_sas_token: Option<String>,
 }
@@ -286,8 +343,10 @@ impl ListAccountSasResponse {
         Self::default()
     }
 }
+#[doc = "The List service SAS credentials operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListServiceSasResponse {
+    #[doc = "List service SAS credentials of specific resource."]
     #[serde(rename = "serviceSasToken", default, skip_serializing_if = "Option::is_none")]
     pub service_sas_token: Option<String>,
 }
@@ -296,24 +355,34 @@ impl ListServiceSasResponse {
         Self::default()
     }
 }
+#[doc = "Metric specification of operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
+    #[doc = "Name of metric specification."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display name of metric specification."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Display description of metric specification."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "Unit could be Bytes or Count."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Dimensions of blobs, including blob type and access tier."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<Dimension>,
+    #[doc = "Aggregation type could be Average."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "The property to decide fill gap with zero or not."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
+    #[doc = "The category this metric specification belong to, could be Capacity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "Account Resource Id."]
     #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
     pub resource_id_dimension_name_override: Option<String>,
 }
@@ -322,14 +391,19 @@ impl MetricSpecification {
         Self::default()
     }
 }
+#[doc = "Network rule set"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRuleSet {
+    #[doc = "Specifies whether traffic is bypassed for Logging/Metrics/AzureServices. Possible values are any combination of Logging|Metrics|AzureServices (For example, \"Logging, Metrics\"), or None to bypass none of those traffics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub bypass: Option<network_rule_set::Bypass>,
+    #[doc = "Sets the virtual network rules"]
     #[serde(rename = "virtualNetworkRules", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_network_rules: Vec<VirtualNetworkRule>,
+    #[doc = "Sets the IP ACL rules"]
     #[serde(rename = "ipRules", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_rules: Vec<IpRule>,
+    #[doc = "Specifies the default action of allow or deny when no other rules match."]
     #[serde(rename = "defaultAction")]
     pub default_action: network_rule_set::DefaultAction,
 }
@@ -345,6 +419,7 @@ impl NetworkRuleSet {
 }
 pub mod network_rule_set {
     use super::*;
+    #[doc = "Specifies whether traffic is bypassed for Logging/Metrics/AzureServices. Possible values are any combination of Logging|Metrics|AzureServices (For example, \"Logging, Metrics\"), or None to bypass none of those traffics."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Bypass {
         None,
@@ -357,6 +432,7 @@ pub mod network_rule_set {
             Self::AzureServices
         }
     }
+    #[doc = "Specifies the default action of allow or deny when no other rules match."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DefaultAction {
         Allow,
@@ -368,14 +444,19 @@ pub mod network_rule_set {
         }
     }
 }
+#[doc = "Storage REST API operation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+    #[doc = "The origin of operations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Properties of operation, include metric specifications."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
 }
@@ -386,12 +467,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Display metadata associated with the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft Storage."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Type of operation: get, read, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -401,8 +486,10 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list Storage operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of Storage operations supported by the Storage resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -411,8 +498,10 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Properties of operation, include metric specifications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
+    #[doc = "One property of operation, include metric specifications."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
@@ -421,16 +510,22 @@ impl OperationProperties {
         Self::default()
     }
 }
+#[doc = "Describes a storage resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Tags assigned to a resource; can be used for viewing and grouping a resource (across resource groups)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -439,12 +534,16 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The restriction because of which SKU cannot be used."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Restriction {
+    #[doc = "The type of restrictions. As of now only possible value for this is location."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
+    #[doc = "The reason for the restriction. As of now this can be \"QuotaId\" or \"NotAvailableForSubscription\". Quota Id is set when the SKU has requiredQuotas parameter as the subscription does not belong to that quota. The \"NotAvailableForSubscription\" is related to capacity at DC."]
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<restriction::ReasonCode>,
 }
@@ -455,16 +554,20 @@ impl Restriction {
 }
 pub mod restriction {
     use super::*;
+    #[doc = "The reason for the restriction. As of now this can be \"QuotaId\" or \"NotAvailableForSubscription\". Quota Id is set when the SKU has requiredQuotas parameter as the subscription does not belong to that quota. The \"NotAvailableForSubscription\" is related to capacity at DC."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReasonCode {
         QuotaId,
         NotAvailableForSubscription,
     }
 }
+#[doc = "The capability information in the specified sku, including file encryption, network acls, change notification, etc."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuCapability {
+    #[doc = "The name of capability, The capability information in the specified sku, including file encryption, network acls, change notification, etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A string value to indicate states of given capability. Possibly 'true' or 'false'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -473,42 +576,61 @@ impl SkuCapability {
         Self::default()
     }
 }
+#[doc = "The parameters to list service SAS credentials of a specific resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceSasParameters {
+    #[doc = "The canonical path to the signed resource."]
     #[serde(rename = "canonicalizedResource")]
     pub canonicalized_resource: String,
+    #[doc = "The signed services accessible with the service SAS. Possible values include: Blob (b), Container (c), File (f), Share (s)."]
     #[serde(rename = "signedResource")]
     pub signed_resource: service_sas_parameters::SignedResource,
+    #[doc = "The signed permissions for the service SAS. Possible values include: Read (r), Write (w), Delete (d), List (l), Add (a), Create (c), Update (u) and Process (p)."]
     #[serde(rename = "signedPermission", default, skip_serializing_if = "Option::is_none")]
     pub signed_permission: Option<service_sas_parameters::SignedPermission>,
+    #[doc = "An IP address or a range of IP addresses from which to accept requests."]
     #[serde(rename = "signedIp", default, skip_serializing_if = "Option::is_none")]
     pub signed_ip: Option<String>,
+    #[doc = "The protocol permitted for a request made with the account SAS."]
     #[serde(rename = "signedProtocol", default, skip_serializing_if = "Option::is_none")]
     pub signed_protocol: Option<service_sas_parameters::SignedProtocol>,
+    #[doc = "The time at which the SAS becomes valid."]
     #[serde(rename = "signedStart", default, skip_serializing_if = "Option::is_none")]
     pub signed_start: Option<String>,
+    #[doc = "The time at which the shared access signature becomes invalid."]
     #[serde(rename = "signedExpiry", default, skip_serializing_if = "Option::is_none")]
     pub signed_expiry: Option<String>,
+    #[doc = "A unique value up to 64 characters in length that correlates to an access policy specified for the container, queue, or table."]
     #[serde(rename = "signedIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub signed_identifier: Option<String>,
+    #[doc = "The start of partition key."]
     #[serde(rename = "startPk", default, skip_serializing_if = "Option::is_none")]
     pub start_pk: Option<String>,
+    #[doc = "The end of partition key."]
     #[serde(rename = "endPk", default, skip_serializing_if = "Option::is_none")]
     pub end_pk: Option<String>,
+    #[doc = "The start of row key."]
     #[serde(rename = "startRk", default, skip_serializing_if = "Option::is_none")]
     pub start_rk: Option<String>,
+    #[doc = "The end of row key."]
     #[serde(rename = "endRk", default, skip_serializing_if = "Option::is_none")]
     pub end_rk: Option<String>,
+    #[doc = "The key to sign the account SAS token with."]
     #[serde(rename = "keyToSign", default, skip_serializing_if = "Option::is_none")]
     pub key_to_sign: Option<String>,
+    #[doc = "The response header override for cache control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rscc: Option<String>,
+    #[doc = "The response header override for content disposition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rscd: Option<String>,
+    #[doc = "The response header override for content encoding."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rsce: Option<String>,
+    #[doc = "The response header override for content language."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rscl: Option<String>,
+    #[doc = "The response header override for content type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rsct: Option<String>,
 }
@@ -538,6 +660,7 @@ impl ServiceSasParameters {
 }
 pub mod service_sas_parameters {
     use super::*;
+    #[doc = "The signed services accessible with the service SAS. Possible values include: Blob (b), Container (c), File (f), Share (s)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedResource {
         #[serde(rename = "b")]
@@ -549,6 +672,7 @@ pub mod service_sas_parameters {
         #[serde(rename = "s")]
         S,
     }
+    #[doc = "The signed permissions for the service SAS. Possible values include: Read (r), Write (w), Delete (d), List (l), Add (a), Create (c), Update (u) and Process (p)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedPermission {
         #[serde(rename = "r")]
@@ -568,6 +692,7 @@ pub mod service_sas_parameters {
         #[serde(rename = "p")]
         P,
     }
+    #[doc = "The protocol permitted for a request made with the account SAS."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignedProtocol {
         #[serde(rename = "https,http")]
@@ -576,8 +701,10 @@ pub mod service_sas_parameters {
         Https,
     }
 }
+#[doc = "One property of operation, include metric specifications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
+    #[doc = "Metric specifications of operation."]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
 }
@@ -586,19 +713,27 @@ impl ServiceSpecification {
         Self::default()
     }
 }
+#[doc = "The SKU of the storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "Gets or sets the sku name. Required for account creation; optional for update. Note that in older versions, sku name was called accountType."]
     pub name: sku::Name,
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
+    #[doc = "The type of the resource, usually it is 'storageAccounts'."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Indicates the type of storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<sku::Kind>,
+    #[doc = "The set of locations that the SKU is available. This will be supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.)."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<String>,
+    #[doc = "The capability information in the specified sku, including file encryption, network acls, change notification, etc."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub capabilities: Vec<SkuCapability>,
+    #[doc = "The restrictions because of which SKU cannot be used. This is empty if there are no restrictions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub restrictions: Vec<Restriction>,
 }
@@ -617,6 +752,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Gets or sets the sku name. Required for account creation; optional for update. Note that in older versions, sku name was called accountType."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "Standard_LRS")]
@@ -630,11 +766,13 @@ pub mod sku {
         #[serde(rename = "Premium_LRS")]
         PremiumLrs,
     }
+    #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Standard,
         Premium,
     }
+    #[doc = "Indicates the type of storage account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Storage,
@@ -642,16 +780,21 @@ pub mod sku {
         BlobStorage,
     }
 }
+#[doc = "The storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccount {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The SKU of the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Gets the Kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<storage_account::Kind>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[doc = "Properties of the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountProperties>,
 }
@@ -662,6 +805,7 @@ impl StorageAccount {
 }
 pub mod storage_account {
     use super::*;
+    #[doc = "Gets the Kind."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Storage,
@@ -669,9 +813,12 @@ pub mod storage_account {
         BlobStorage,
     }
 }
+#[doc = "The parameters used to check the availability of the storage account name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountCheckNameAvailabilityParameters {
+    #[doc = "The storage account name."]
     pub name: String,
+    #[doc = "The type of resource, Microsoft.Storage/storageAccounts"]
     #[serde(rename = "type")]
     pub type_: storage_account_check_name_availability_parameters::Type,
 }
@@ -682,21 +829,29 @@ impl StorageAccountCheckNameAvailabilityParameters {
 }
 pub mod storage_account_check_name_availability_parameters {
     use super::*;
+    #[doc = "The type of resource, Microsoft.Storage/storageAccounts"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.Storage/storageAccounts")]
         MicrosoftStorageStorageAccounts,
     }
 }
+#[doc = "The parameters used when creating a storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountCreateParameters {
+    #[doc = "The SKU of the storage account."]
     pub sku: Sku,
+    #[doc = "Required. Indicates the type of storage account."]
     pub kind: storage_account_create_parameters::Kind,
+    #[doc = "Required. Gets or sets the location of the resource. This will be one of the supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.). The geo region of a resource cannot be changed once it is created, but if an identical geo region is specified on update, the request will succeed."]
     pub location: String,
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used for viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key with a length no greater than 128 characters and a value with a length no greater than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[doc = "The parameters used to create the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesCreateParameters>,
 }
@@ -714,6 +869,7 @@ impl StorageAccountCreateParameters {
 }
 pub mod storage_account_create_parameters {
     use super::*;
+    #[doc = "Required. Indicates the type of storage account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Storage,
@@ -721,12 +877,16 @@ pub mod storage_account_create_parameters {
         BlobStorage,
     }
 }
+#[doc = "An access key for the storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountKey {
+    #[doc = "Name of the key."]
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
+    #[doc = "Base 64-encoded value of the key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Permissions for the key -- read-only or full permissions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub permissions: Option<storage_account_key::Permissions>,
 }
@@ -737,14 +897,17 @@ impl StorageAccountKey {
 }
 pub mod storage_account_key {
     use super::*;
+    #[doc = "Permissions for the key -- read-only or full permissions."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Permissions {
         Read,
         Full,
     }
 }
+#[doc = "The response from the ListKeys operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountListKeysResult {
+    #[doc = "Gets the list of storage account keys and their properties for the specified storage account."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<StorageAccountKey>,
 }
@@ -753,8 +916,10 @@ impl StorageAccountListKeysResult {
         Self::default()
     }
 }
+#[doc = "The response from the List Storage Accounts operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountListResult {
+    #[doc = "Gets the list of storage accounts and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<StorageAccount>,
 }
@@ -763,34 +928,49 @@ impl StorageAccountListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountProperties {
+    #[doc = "Gets the status of the storage account at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<storage_account_properties::ProvisioningState>,
+    #[doc = "The URIs that are used to perform a retrieval of a public blob, queue, or table object."]
     #[serde(rename = "primaryEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub primary_endpoints: Option<Endpoints>,
+    #[doc = "Gets the location of the primary data center for the storage account."]
     #[serde(rename = "primaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub primary_location: Option<String>,
+    #[doc = "Gets the status indicating whether the primary location of the storage account is available or unavailable."]
     #[serde(rename = "statusOfPrimary", default, skip_serializing_if = "Option::is_none")]
     pub status_of_primary: Option<storage_account_properties::StatusOfPrimary>,
+    #[doc = "Gets the timestamp of the most recent instance of a failover to the secondary location. Only the most recent timestamp is retained. This element is not returned if there has never been a failover instance. Only available if the accountType is Standard_GRS or Standard_RAGRS."]
     #[serde(rename = "lastGeoFailoverTime", default, skip_serializing_if = "Option::is_none")]
     pub last_geo_failover_time: Option<String>,
+    #[doc = "Gets the location of the geo-replicated secondary for the storage account. Only available if the accountType is Standard_GRS or Standard_RAGRS."]
     #[serde(rename = "secondaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub secondary_location: Option<String>,
+    #[doc = "Gets the status indicating whether the secondary location of the storage account is available or unavailable. Only available if the SKU name is Standard_GRS or Standard_RAGRS."]
     #[serde(rename = "statusOfSecondary", default, skip_serializing_if = "Option::is_none")]
     pub status_of_secondary: Option<storage_account_properties::StatusOfSecondary>,
+    #[doc = "Gets the creation date and time of the storage account in UTC."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "The custom domain assigned to this storage account. This can be set via Update."]
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
+    #[doc = "The URIs that are used to perform a retrieval of a public blob, queue, or table object."]
     #[serde(rename = "secondaryEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub secondary_endpoints: Option<Endpoints>,
+    #[doc = "The encryption settings on the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[doc = "Required for storage accounts where kind = BlobStorage. The access tier used for billing."]
     #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<storage_account_properties::AccessTier>,
+    #[doc = "Allows https traffic only to storage service if sets to true."]
     #[serde(rename = "supportsHttpsTrafficOnly", default, skip_serializing_if = "Option::is_none")]
     pub supports_https_traffic_only: Option<bool>,
+    #[doc = "Network rule set"]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
 }
@@ -801,6 +981,7 @@ impl StorageAccountProperties {
 }
 pub mod storage_account_properties {
     use super::*;
+    #[doc = "Gets the status of the storage account at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -808,6 +989,7 @@ pub mod storage_account_properties {
         ResolvingDns,
         Succeeded,
     }
+    #[doc = "Gets the status indicating whether the primary location of the storage account is available or unavailable."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StatusOfPrimary {
         #[serde(rename = "available")]
@@ -815,6 +997,7 @@ pub mod storage_account_properties {
         #[serde(rename = "unavailable")]
         Unavailable,
     }
+    #[doc = "Gets the status indicating whether the secondary location of the storage account is available or unavailable. Only available if the SKU name is Standard_GRS or Standard_RAGRS."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StatusOfSecondary {
         #[serde(rename = "available")]
@@ -822,22 +1005,29 @@ pub mod storage_account_properties {
         #[serde(rename = "unavailable")]
         Unavailable,
     }
+    #[doc = "Required for storage accounts where kind = BlobStorage. The access tier used for billing."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccessTier {
         Hot,
         Cool,
     }
 }
+#[doc = "The parameters used to create the storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountPropertiesCreateParameters {
+    #[doc = "The custom domain assigned to this storage account. This can be set via Update."]
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
+    #[doc = "The encryption settings on the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[doc = "Network rule set"]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
+    #[doc = "Required for storage accounts where kind = BlobStorage. The access tier used for billing."]
     #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<storage_account_properties_create_parameters::AccessTier>,
+    #[doc = "Allows https traffic only to storage service if sets to true."]
     #[serde(rename = "supportsHttpsTrafficOnly", default, skip_serializing_if = "Option::is_none")]
     pub supports_https_traffic_only: Option<bool>,
 }
@@ -848,22 +1038,29 @@ impl StorageAccountPropertiesCreateParameters {
 }
 pub mod storage_account_properties_create_parameters {
     use super::*;
+    #[doc = "Required for storage accounts where kind = BlobStorage. The access tier used for billing."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccessTier {
         Hot,
         Cool,
     }
 }
+#[doc = "The parameters used when updating a storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountPropertiesUpdateParameters {
+    #[doc = "The custom domain assigned to this storage account. This can be set via Update."]
     #[serde(rename = "customDomain", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain: Option<CustomDomain>,
+    #[doc = "The encryption settings on the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
+    #[doc = "Required for storage accounts where kind = BlobStorage. The access tier used for billing."]
     #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
     pub access_tier: Option<storage_account_properties_update_parameters::AccessTier>,
+    #[doc = "Allows https traffic only to storage service if sets to true."]
     #[serde(rename = "supportsHttpsTrafficOnly", default, skip_serializing_if = "Option::is_none")]
     pub supports_https_traffic_only: Option<bool>,
+    #[doc = "Network rule set"]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
 }
@@ -874,14 +1071,17 @@ impl StorageAccountPropertiesUpdateParameters {
 }
 pub mod storage_account_properties_update_parameters {
     use super::*;
+    #[doc = "Required for storage accounts where kind = BlobStorage. The access tier used for billing."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccessTier {
         Hot,
         Cool,
     }
 }
+#[doc = "The parameters used to regenerate the storage account key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountRegenerateKeyParameters {
+    #[doc = "The name of storage keys that want to be regenerated, possible values are key1, key2."]
     #[serde(rename = "keyName")]
     pub key_name: String,
 }
@@ -890,16 +1090,22 @@ impl StorageAccountRegenerateKeyParameters {
         Self { key_name }
     }
 }
+#[doc = "The parameters that can be provided when updating the storage account properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountUpdateParameters {
+    #[doc = "The SKU of the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater in length than 128 characters and a value no greater in length than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[doc = "The parameters used when updating a storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesUpdateParameters>,
+    #[doc = "Optional. Indicates the type of storage account. Currently only StorageV2 value supported by server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<storage_account_update_parameters::Kind>,
 }
@@ -910,6 +1116,7 @@ impl StorageAccountUpdateParameters {
 }
 pub mod storage_account_update_parameters {
     use super::*;
+    #[doc = "Optional. Indicates the type of storage account. Currently only StorageV2 value supported by server."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Storage,
@@ -917,8 +1124,10 @@ pub mod storage_account_update_parameters {
         BlobStorage,
     }
 }
+#[doc = "The response from the List Storage SKUs operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageSkuListResult {
+    #[doc = "Get the list result of storage SKUs and their properties."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Sku>,
 }
@@ -927,14 +1136,19 @@ impl StorageSkuListResult {
         Self::default()
     }
 }
+#[doc = "Describes Storage Resource Usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
+    #[doc = "Gets the unit of measurement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<usage::Unit>,
+    #[doc = "Gets the current count of the allocated resources in the subscription."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i32>,
+    #[doc = "Gets the maximum count of the resources that can be allocated in the subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i32>,
+    #[doc = "The usage names that can be used; currently limited to StorageAccount."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
 }
@@ -945,6 +1159,7 @@ impl Usage {
 }
 pub mod usage {
     use super::*;
+    #[doc = "Gets the unit of measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
@@ -955,8 +1170,10 @@ pub mod usage {
         BytesPerSecond,
     }
 }
+#[doc = "The response from the List Usages operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
+    #[doc = "Gets or sets the list of Storage Resource Usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
 }
@@ -965,10 +1182,13 @@ impl UsageListResult {
         Self::default()
     }
 }
+#[doc = "The usage names that can be used; currently limited to StorageAccount."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageName {
+    #[doc = "Gets a string describing the resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Gets a localized string describing the resource name."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -977,11 +1197,15 @@ impl UsageName {
         Self::default()
     }
 }
+#[doc = "Virtual Network rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkRule {
+    #[doc = "Resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{groupName}/providers/Microsoft.Network/virtualNetworks/{vnetName}/subnets/{subnetName}."]
     pub id: String,
+    #[doc = "The action of virtual network rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<virtual_network_rule::Action>,
+    #[doc = "Gets the state of virtual network rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<virtual_network_rule::State>,
 }
@@ -996,6 +1220,7 @@ impl VirtualNetworkRule {
 }
 pub mod virtual_network_rule {
     use super::*;
+    #[doc = "The action of virtual network rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Allow,
@@ -1005,6 +1230,7 @@ pub mod virtual_network_rule {
             Self::Allow
         }
     }
+    #[doc = "Gets the state of virtual network rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         #[serde(rename = "provisioning")]

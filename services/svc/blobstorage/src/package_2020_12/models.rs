@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Access policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicy {
+    #[doc = "the date-time the policy is active"]
     #[serde(rename = "Start", default, skip_serializing_if = "Option::is_none")]
     pub start: Option<String>,
+    #[doc = "the date-time the policy expires"]
     #[serde(rename = "Expiry", default, skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
+    #[doc = "the permissions for the acl policy"]
     #[serde(rename = "Permission", default, skip_serializing_if = "Option::is_none")]
     pub permission: Option<String>,
 }
@@ -40,6 +44,7 @@ pub enum ArchiveStatus {
     #[serde(rename = "rehydrate-pending-to-cool")]
     RehydratePendingToCool,
 }
+#[doc = "Groups the settings used for formatting the response if the response should be Arrow formatted."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArrowConfiguration {
     #[serde(rename = "Schema")]
@@ -50,6 +55,7 @@ impl ArrowConfiguration {
         Self { schema }
     }
 }
+#[doc = "Groups settings regarding specific field of an arrow schema"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ArrowField {
     #[serde(rename = "Type")]
@@ -96,6 +102,7 @@ impl BlobHierarchyListSegment {
         }
     }
 }
+#[doc = "An Azure Storage blob"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobItemInternal {
     #[serde(rename = "Name")]
@@ -108,10 +115,12 @@ pub struct BlobItemInternal {
     pub version_id: Option<String>,
     #[serde(rename = "IsCurrentVersion", default, skip_serializing_if = "Option::is_none")]
     pub is_current_version: Option<bool>,
+    #[doc = "Properties of a blob"]
     #[serde(rename = "Properties")]
     pub properties: BlobPropertiesInternal,
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<BlobMetadata>,
+    #[doc = "Blob tags"]
     #[serde(rename = "BlobTags", default, skip_serializing_if = "Option::is_none")]
     pub blob_tags: Option<BlobTags>,
     #[serde(rename = "ObjectReplicationMetadata", default, skip_serializing_if = "Option::is_none")]
@@ -155,6 +164,7 @@ impl BlobPrefix {
         Self { name }
     }
 }
+#[doc = "Properties of a blob"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobPropertiesInternal {
     #[serde(rename = "Creation-Time", default, skip_serializing_if = "Option::is_none")]
@@ -163,6 +173,7 @@ pub struct BlobPropertiesInternal {
     pub last_modified: String,
     #[serde(rename = "Etag")]
     pub etag: String,
+    #[doc = "Size in bytes"]
     #[serde(rename = "Content-Length", default, skip_serializing_if = "Option::is_none")]
     pub content_length: Option<i64>,
     #[serde(rename = "Content-Type", default, skip_serializing_if = "Option::is_none")]
@@ -217,6 +228,7 @@ pub struct BlobPropertiesInternal {
     pub archive_status: Option<ArchiveStatus>,
     #[serde(rename = "CustomerProvidedKeySha256", default, skip_serializing_if = "Option::is_none")]
     pub customer_provided_key_sha256: Option<String>,
+    #[doc = "The name of the encryption scope under which the blob is encrypted."]
     #[serde(rename = "EncryptionScope", default, skip_serializing_if = "Option::is_none")]
     pub encryption_scope: Option<String>,
     #[serde(rename = "AccessTierChangeTime", default, skip_serializing_if = "Option::is_none")]
@@ -227,6 +239,7 @@ pub struct BlobPropertiesInternal {
     pub expiry_time: Option<String>,
     #[serde(rename = "Sealed", default, skip_serializing_if = "Option::is_none")]
     pub sealed: Option<bool>,
+    #[doc = "If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High and Standard."]
     #[serde(rename = "RehydratePriority", default, skip_serializing_if = "Option::is_none")]
     pub rehydrate_priority: Option<RehydratePriority>,
     #[serde(rename = "LastAccessTime", default, skip_serializing_if = "Option::is_none")]
@@ -311,6 +324,7 @@ impl BlobTag {
         Self { key, value }
     }
 }
+#[doc = "Blob tags"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobTags {
     #[serde(rename = "BlobTagSet")]
@@ -321,10 +335,13 @@ impl BlobTags {
         Self { blob_tag_set }
     }
 }
+#[doc = "Represents a single block in a block blob.  It describes the block's ID and size."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Block {
+    #[doc = "The base64 encoded block ID."]
     #[serde(rename = "Name")]
     pub name: String,
+    #[doc = "The block size in bytes."]
     #[serde(rename = "Size")]
     pub size: i64,
 }
@@ -371,6 +388,7 @@ impl ClearRange {
         Self { start, end }
     }
 }
+#[doc = "An Azure Storage container"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerItem {
     #[serde(rename = "Name")]
@@ -379,6 +397,7 @@ pub struct ContainerItem {
     pub deleted: Option<bool>,
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Properties of a container"]
     #[serde(rename = "Properties")]
     pub properties: ContainerProperties,
     #[serde(rename = "Metadata", default, skip_serializing_if = "Option::is_none")]
@@ -402,6 +421,7 @@ impl ContainerMetadata {
         Self::default()
     }
 }
+#[doc = "Properties of a container"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
     #[serde(rename = "Last-Modified")]
@@ -428,6 +448,7 @@ pub struct ContainerProperties {
     pub deleted_time: Option<String>,
     #[serde(rename = "RemainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub remaining_retention_days: Option<i64>,
+    #[doc = "Indicates if version level worm is enabled on this container."]
     #[serde(rename = "ImmutableStorageWithVersioningEnabled", default, skip_serializing_if = "Option::is_none")]
     pub immutable_storage_with_versioning_enabled: Option<bool>,
 }
@@ -461,16 +482,22 @@ pub enum CopyStatus {
     #[serde(rename = "failed")]
     Failed,
 }
+#[doc = "CORS is an HTTP feature that enables a web application running under one domain to access resources in another domain. Web browsers implement a security restriction known as same-origin policy that prevents a web page from calling APIs in a different domain; CORS provides a secure way to allow one domain (the origin domain) to call APIs in another domain"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorsRule {
+    #[doc = "The origin domains that are permitted to make a request against the storage service via CORS. The origin domain is the domain from which the request originates. Note that the origin must be an exact case-sensitive match with the origin that the user age sends to the service. You can also use the wildcard character '*' to allow all origin domains to make requests via CORS."]
     #[serde(rename = "AllowedOrigins")]
     pub allowed_origins: String,
+    #[doc = "The methods (HTTP request verbs) that the origin domain may use for a CORS request. (comma separated)"]
     #[serde(rename = "AllowedMethods")]
     pub allowed_methods: String,
+    #[doc = "the request headers that the origin domain may specify on the CORS request."]
     #[serde(rename = "AllowedHeaders")]
     pub allowed_headers: String,
+    #[doc = "The response headers that may be sent in the response to the CORS request and exposed by the browser to the request issuer"]
     #[serde(rename = "ExposedHeaders")]
     pub exposed_headers: String,
+    #[doc = "The maximum amount time that a browser should cache the preflight OPTIONS request."]
     #[serde(rename = "MaxAgeInSeconds")]
     pub max_age_in_seconds: i64,
 }
@@ -491,16 +518,22 @@ impl CorsRule {
         }
     }
 }
+#[doc = "Groups the settings used for interpreting the blob data if the blob is delimited text formatted."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DelimitedTextConfiguration {
+    #[doc = "The string used to separate columns."]
     #[serde(rename = "ColumnSeparator", default, skip_serializing_if = "Option::is_none")]
     pub column_separator: Option<String>,
+    #[doc = "The string used to quote a specific field."]
     #[serde(rename = "FieldQuote", default, skip_serializing_if = "Option::is_none")]
     pub field_quote: Option<String>,
+    #[doc = "The string used to separate records."]
     #[serde(rename = "RecordSeparator", default, skip_serializing_if = "Option::is_none")]
     pub record_separator: Option<String>,
+    #[doc = "The string used as an escape character."]
     #[serde(rename = "EscapeChar", default, skip_serializing_if = "Option::is_none")]
     pub escape_char: Option<String>,
+    #[doc = "Represents whether the data has headers."]
     #[serde(rename = "HeadersPresent", default, skip_serializing_if = "Option::is_none")]
     pub headers_present: Option<bool>,
 }
@@ -509,6 +542,7 @@ impl DelimitedTextConfiguration {
         Self::default()
     }
 }
+#[doc = "Error codes returned by the service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ErrorCode {
     AccountAlreadyExists,
@@ -626,12 +660,14 @@ pub enum ErrorCode {
     AuthorizationServiceMismatch,
     AuthorizationResourceTypeMismatch,
 }
+#[doc = "Blob info from a Filter Blobs API call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterBlobItem {
     #[serde(rename = "Name")]
     pub name: String,
     #[serde(rename = "ContainerName")]
     pub container_name: String,
+    #[doc = "Blob tags"]
     #[serde(rename = "Tags", default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<BlobTags>,
 }
@@ -644,6 +680,7 @@ impl FilterBlobItem {
         }
     }
 }
+#[doc = "The result of a Filter Blobs API call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterBlobSegment {
     #[serde(rename = "ServiceEndpoint")]
@@ -665,10 +702,13 @@ impl FilterBlobSegment {
         }
     }
 }
+#[doc = "Geo-Replication information for the Secondary Storage Service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoReplication {
+    #[doc = "The status of the secondary location"]
     #[serde(rename = "Status")]
     pub status: geo_replication::Status,
+    #[doc = "A GMT date/time value, to the second. All primary writes preceding this value are guaranteed to be available for read operations at the secondary. Primary writes after this point in time may or may not be available for reads."]
     #[serde(rename = "LastSyncTime")]
     pub last_sync_time: String,
 }
@@ -679,6 +719,7 @@ impl GeoReplication {
 }
 pub mod geo_replication {
     use super::*;
+    #[doc = "The status of the secondary location"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "live")]
@@ -689,8 +730,10 @@ pub mod geo_replication {
         Unavailable,
     }
 }
+#[doc = "json text configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonTextConfiguration {
+    #[doc = "The string used to separate records."]
     #[serde(rename = "RecordSeparator", default, skip_serializing_if = "Option::is_none")]
     pub record_separator: Option<String>,
 }
@@ -699,10 +742,13 @@ impl JsonTextConfiguration {
         Self::default()
     }
 }
+#[doc = "Key information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyInfo {
+    #[doc = "The date-time the key is active in ISO 8601 UTC time"]
     #[serde(rename = "Start")]
     pub start: String,
+    #[doc = "The date-time the key expires in ISO 8601 UTC time"]
     #[serde(rename = "Expiry")]
     pub expiry: String,
 }
@@ -738,6 +784,7 @@ pub enum LeaseStatus {
     #[serde(rename = "unlocked")]
     Unlocked,
 }
+#[doc = "An enumeration of blobs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsFlatSegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -768,6 +815,7 @@ impl ListBlobsFlatSegmentResponse {
         }
     }
 }
+#[doc = "An enumeration of blobs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsHierarchySegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -801,6 +849,7 @@ impl ListBlobsHierarchySegmentResponse {
         }
     }
 }
+#[doc = "An enumeration of containers"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListContainersSegmentResponse {
     #[serde(rename = "ServiceEndpoint")]
@@ -828,16 +877,22 @@ impl ListContainersSegmentResponse {
         }
     }
 }
+#[doc = "Azure Analytics Logging settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Logging {
+    #[doc = "The version of Storage Analytics to configure."]
     #[serde(rename = "Version")]
     pub version: String,
+    #[doc = "Indicates whether all delete requests should be logged."]
     #[serde(rename = "Delete")]
     pub delete: bool,
+    #[doc = "Indicates whether all read requests should be logged."]
     #[serde(rename = "Read")]
     pub read: bool,
+    #[doc = "Indicates whether all write requests should be logged."]
     #[serde(rename = "Write")]
     pub write: bool,
+    #[doc = "the retention policy which determines how long the associated data should persist"]
     #[serde(rename = "RetentionPolicy")]
     pub retention_policy: RetentionPolicy,
 }
@@ -852,14 +907,19 @@ impl Logging {
         }
     }
 }
+#[doc = "a summary of request statistics grouped by API in hour or minute aggregates for blobs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metrics {
+    #[doc = "The version of Storage Analytics to configure."]
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Indicates whether metrics are enabled for the Blob service."]
     #[serde(rename = "Enabled")]
     pub enabled: bool,
+    #[doc = "Indicates whether metrics should generate summary statistics for called API operations."]
     #[serde(rename = "IncludeAPIs", default, skip_serializing_if = "Option::is_none")]
     pub include_ap_is: Option<bool>,
+    #[doc = "the retention policy which determines how long the associated data should persist"]
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub retention_policy: Option<RetentionPolicy>,
 }
@@ -880,6 +940,7 @@ impl ObjectReplicationMetadata {
         Self::default()
     }
 }
+#[doc = "the list of pages"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PageList {
     #[serde(rename = "PageRange", default, skip_serializing_if = "Vec::is_empty")]
@@ -904,6 +965,7 @@ impl PageRange {
         Self { start, end }
     }
 }
+#[doc = "parquet configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParquetConfiguration {}
 impl ParquetConfiguration {
@@ -920,14 +982,19 @@ pub enum PublicAccessType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryFormat {
+    #[doc = "The quick query format type."]
     #[serde(rename = "Type")]
     pub type_: QueryType,
+    #[doc = "Groups the settings used for interpreting the blob data if the blob is delimited text formatted."]
     #[serde(rename = "DelimitedTextConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub delimited_text_configuration: Option<DelimitedTextConfiguration>,
+    #[doc = "json text configuration"]
     #[serde(rename = "JsonTextConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub json_text_configuration: Option<JsonTextConfiguration>,
+    #[doc = "Groups the settings used for formatting the response if the response should be Arrow formatted."]
     #[serde(rename = "ArrowConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub arrow_configuration: Option<ArrowConfiguration>,
+    #[doc = "parquet configuration"]
     #[serde(rename = "ParquetTextConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub parquet_text_configuration: Option<ParquetConfiguration>,
 }
@@ -942,10 +1009,13 @@ impl QueryFormat {
         }
     }
 }
+#[doc = "Groups the set of query request settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
+    #[doc = "Required. The type of the provided query expression."]
     #[serde(rename = "QueryType")]
     pub query_type: query_request::QueryType,
+    #[doc = "The query expression in SQL. The maximum size of the query expression is 256KiB."]
     #[serde(rename = "Expression")]
     pub expression: String,
     #[serde(rename = "InputSerialization", default, skip_serializing_if = "Option::is_none")]
@@ -965,6 +1035,7 @@ impl QueryRequest {
 }
 pub mod query_request {
     use super::*;
+    #[doc = "Required. The type of the provided query expression."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QueryType {
         #[serde(rename = "SQL")]
@@ -981,6 +1052,7 @@ impl QuerySerialization {
         Self { format }
     }
 }
+#[doc = "The quick query format type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryType {
     #[serde(rename = "delimited")]
@@ -992,17 +1064,22 @@ pub enum QueryType {
     #[serde(rename = "parquet")]
     Parquet,
 }
+#[doc = "If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High and Standard."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RehydratePriority {
     High,
     Standard,
 }
+#[doc = "the retention policy which determines how long the associated data should persist"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RetentionPolicy {
+    #[doc = "Indicates whether a retention policy is enabled for the storage service"]
     #[serde(rename = "Enabled")]
     pub enabled: bool,
+    #[doc = "Indicates the number of days that metrics or logging or soft-deleted data should be retained. All data older than this value will be deleted"]
     #[serde(rename = "Days", default, skip_serializing_if = "Option::is_none")]
     pub days: Option<i64>,
+    #[doc = "Indicates whether permanent delete is allowed on this storage account."]
     #[serde(rename = "AllowPermanentDelete", default, skip_serializing_if = "Option::is_none")]
     pub allow_permanent_delete: Option<bool>,
 }
@@ -1015,10 +1092,13 @@ impl RetentionPolicy {
         }
     }
 }
+#[doc = "signed identifier"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignedIdentifier {
+    #[doc = "a unique id"]
     #[serde(rename = "Id")]
     pub id: String,
+    #[doc = "An Access policy"]
     #[serde(rename = "AccessPolicy")]
     pub access_policy: AccessPolicy,
 }
@@ -1028,14 +1108,19 @@ impl SignedIdentifier {
     }
 }
 pub type SignedIdentifiers = Vec<SignedIdentifier>;
+#[doc = "The properties that enable an account to host a static website"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StaticWebsite {
+    #[doc = "Indicates whether this account is hosting a static website"]
     #[serde(rename = "Enabled")]
     pub enabled: bool,
+    #[doc = "The default name of the index page under each directory"]
     #[serde(rename = "IndexDocument", default, skip_serializing_if = "Option::is_none")]
     pub index_document: Option<String>,
+    #[doc = "The absolute path of the custom 404 page"]
     #[serde(rename = "ErrorDocument404Path", default, skip_serializing_if = "Option::is_none")]
     pub error_document404_path: Option<String>,
+    #[doc = "Absolute path of the default index page"]
     #[serde(rename = "DefaultIndexDocumentPath", default, skip_serializing_if = "Option::is_none")]
     pub default_index_document_path: Option<String>,
 }
@@ -1059,20 +1144,28 @@ impl StorageError {
         Self::default()
     }
 }
+#[doc = "Storage Service Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceProperties {
+    #[doc = "Azure Analytics Logging settings."]
     #[serde(rename = "Logging", default, skip_serializing_if = "Option::is_none")]
     pub logging: Option<Logging>,
+    #[doc = "a summary of request statistics grouped by API in hour or minute aggregates for blobs"]
     #[serde(rename = "HourMetrics", default, skip_serializing_if = "Option::is_none")]
     pub hour_metrics: Option<Metrics>,
+    #[doc = "a summary of request statistics grouped by API in hour or minute aggregates for blobs"]
     #[serde(rename = "MinuteMetrics", default, skip_serializing_if = "Option::is_none")]
     pub minute_metrics: Option<Metrics>,
+    #[doc = "The set of CORS rules."]
     #[serde(rename = "Cors", default, skip_serializing_if = "Vec::is_empty")]
     pub cors: Vec<CorsRule>,
+    #[doc = "The default version to use for requests to the Blob service if an incoming request's version is not specified. Possible values include version 2008-10-27 and all more recent versions"]
     #[serde(rename = "DefaultServiceVersion", default, skip_serializing_if = "Option::is_none")]
     pub default_service_version: Option<String>,
+    #[doc = "the retention policy which determines how long the associated data should persist"]
     #[serde(rename = "DeleteRetentionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub delete_retention_policy: Option<RetentionPolicy>,
+    #[doc = "The properties that enable an account to host a static website"]
     #[serde(rename = "StaticWebsite", default, skip_serializing_if = "Option::is_none")]
     pub static_website: Option<StaticWebsite>,
 }
@@ -1081,8 +1174,10 @@ impl StorageServiceProperties {
         Self::default()
     }
 }
+#[doc = "Stats for the storage service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageServiceStats {
+    #[doc = "Geo-Replication information for the Secondary Storage Service"]
     #[serde(rename = "GeoReplication", default, skip_serializing_if = "Option::is_none")]
     pub geo_replication: Option<GeoReplication>,
 }
@@ -1091,20 +1186,28 @@ impl StorageServiceStats {
         Self::default()
     }
 }
+#[doc = "A user delegation key"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserDelegationKey {
+    #[doc = "The Azure Active Directory object ID in GUID format."]
     #[serde(rename = "SignedOid")]
     pub signed_oid: String,
+    #[doc = "The Azure Active Directory tenant ID in GUID format"]
     #[serde(rename = "SignedTid")]
     pub signed_tid: String,
+    #[doc = "The date-time the key is active"]
     #[serde(rename = "SignedStart")]
     pub signed_start: String,
+    #[doc = "The date-time the key expires"]
     #[serde(rename = "SignedExpiry")]
     pub signed_expiry: String,
+    #[doc = "Abbreviation of the Azure Storage service that accepts the key"]
     #[serde(rename = "SignedService")]
     pub signed_service: String,
+    #[doc = "The service version that created the key"]
     #[serde(rename = "SignedVersion")]
     pub signed_version: String,
+    #[doc = "The key as a base64 string"]
     #[serde(rename = "Value")]
     pub value: String,
 }

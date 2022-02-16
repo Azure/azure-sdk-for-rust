@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An error response from a policy operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -12,10 +14,13 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -24,16 +29,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -42,12 +53,16 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
+    #[doc = "The principal ID of the resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of the resource identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type. This is the only required field when adding a system assigned identity to a resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
@@ -58,12 +73,14 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "The identity type. This is the only required field when adding a system assigned identity to a resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
         None,
     }
 }
+#[doc = "The parameter definitions for parameters used in the policy. The keys are the parameter names."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterDefinitions {}
 impl ParameterDefinitions {
@@ -71,14 +88,19 @@ impl ParameterDefinitions {
         Self::default()
     }
 }
+#[doc = "The definition of a parameter that can be provided to the policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterDefinitionsValue {
+    #[doc = "The data type of the parameter."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<parameter_definitions_value::Type>,
+    #[doc = "The allowed values for the parameter."]
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_values: Vec<serde_json::Value>,
+    #[doc = "The default value for the parameter if no value is provided."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<serde_json::Value>,
+    #[doc = "General metadata for the parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<parameter_definitions_value::Metadata>,
 }
@@ -89,6 +111,7 @@ impl ParameterDefinitionsValue {
 }
 pub mod parameter_definitions_value {
     use super::*;
+    #[doc = "The data type of the parameter."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         String,
@@ -99,10 +122,13 @@ pub mod parameter_definitions_value {
         Float,
         DateTime,
     }
+    #[doc = "General metadata for the parameter."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Metadata {
+        #[doc = "The display name for the parameter."]
         #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
         pub display_name: Option<String>,
+        #[doc = "The description of the parameter."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -112,6 +138,7 @@ pub mod parameter_definitions_value {
         }
     }
 }
+#[doc = "The parameter values for the policy rule. The keys are the parameter names."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterValues {}
 impl ParameterValues {
@@ -119,8 +146,10 @@ impl ParameterValues {
         Self::default()
     }
 }
+#[doc = "The value of a parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterValuesValue {
+    #[doc = "The value of the parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
 }
@@ -129,20 +158,28 @@ impl ParameterValuesValue {
         Self::default()
     }
 }
+#[doc = "The policy assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyAssignment {
+    #[doc = "The policy assignment properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PolicyAssignmentProperties>,
+    #[doc = "The ID of the policy assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The type of the policy assignment."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The name of the policy assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The policy sku. This property is optional, obsolete, and will be ignored."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<PolicySku>,
+    #[doc = "The location of the policy assignment. Only required when utilizing managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
 }
@@ -151,10 +188,13 @@ impl PolicyAssignment {
         Self::default()
     }
 }
+#[doc = "List of policy assignments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyAssignmentListResult {
+    #[doc = "An array of policy assignments."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyAssignment>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -163,22 +203,31 @@ impl PolicyAssignmentListResult {
         Self::default()
     }
 }
+#[doc = "The policy assignment properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyAssignmentProperties {
+    #[doc = "The display name of the policy assignment."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The ID of the policy definition or policy set definition being assigned."]
     #[serde(rename = "policyDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_id: Option<String>,
+    #[doc = "The scope for the policy assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "The policy's excluded scopes."]
     #[serde(rename = "notScopes", default, skip_serializing_if = "Vec::is_empty")]
     pub not_scopes: Vec<String>,
+    #[doc = "The parameter values for the policy rule. The keys are the parameter names."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterValues>,
+    #[doc = "This message will be part of response in case of policy violation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The policy assignment metadata. Metadata is an open ended object and is typically a collection of key value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+    #[doc = "The policy assignment enforcement mode. Possible values are Default and DoNotEnforce."]
     #[serde(rename = "enforcementMode", default, skip_serializing_if = "Option::is_none")]
     pub enforcement_mode: Option<policy_assignment_properties::EnforcementMode>,
 }
@@ -189,20 +238,26 @@ impl PolicyAssignmentProperties {
 }
 pub mod policy_assignment_properties {
     use super::*;
+    #[doc = "The policy assignment enforcement mode. Possible values are Default and DoNotEnforce."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EnforcementMode {
         Default,
         DoNotEnforce,
     }
 }
+#[doc = "The policy definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDefinition {
+    #[doc = "The policy definition properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PolicyDefinitionProperties>,
+    #[doc = "The ID of the policy definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the policy definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource (Microsoft.Authorization/policyDefinitions)."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -211,15 +266,21 @@ impl PolicyDefinition {
         Self::default()
     }
 }
+#[doc = "The policy definition group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyDefinitionGroup {
+    #[doc = "The name of the group."]
     pub name: String,
+    #[doc = "The group's display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The group's category."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "The group's description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "A resource ID of a resource that contains additional metadata about the group."]
     #[serde(rename = "additionalMetadataId", default, skip_serializing_if = "Option::is_none")]
     pub additional_metadata_id: Option<String>,
 }
@@ -234,10 +295,13 @@ impl PolicyDefinitionGroup {
         }
     }
 }
+#[doc = "List of policy definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDefinitionListResult {
+    #[doc = "An array of policy definitions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicyDefinition>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -246,20 +310,28 @@ impl PolicyDefinitionListResult {
         Self::default()
     }
 }
+#[doc = "The policy definition properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDefinitionProperties {
+    #[doc = "The type of policy definition. Possible values are NotSpecified, BuiltIn, Custom, and Static."]
     #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
     pub policy_type: Option<policy_definition_properties::PolicyType>,
+    #[doc = "The policy definition mode. Some examples are All, Indexed, Microsoft.KeyVault.Data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<String>,
+    #[doc = "The display name of the policy definition."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The policy definition description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The policy rule."]
     #[serde(rename = "policyRule", default, skip_serializing_if = "Option::is_none")]
     pub policy_rule: Option<serde_json::Value>,
+    #[doc = "The policy definition metadata.  Metadata is an open ended object and is typically a collection of key value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+    #[doc = "The parameter definitions for parameters used in the policy. The keys are the parameter names."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterDefinitions>,
 }
@@ -270,6 +342,7 @@ impl PolicyDefinitionProperties {
 }
 pub mod policy_definition_properties {
     use super::*;
+    #[doc = "The type of policy definition. Possible values are NotSpecified, BuiltIn, Custom, and Static."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {
         NotSpecified,
@@ -278,14 +351,19 @@ pub mod policy_definition_properties {
         Static,
     }
 }
+#[doc = "The policy definition reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyDefinitionReference {
+    #[doc = "The ID of the policy definition or policy set definition."]
     #[serde(rename = "policyDefinitionId")]
     pub policy_definition_id: String,
+    #[doc = "The parameter values for the policy rule. The keys are the parameter names."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterValues>,
+    #[doc = "A unique id (within the policy set definition) for this policy definition reference."]
     #[serde(rename = "policyDefinitionReferenceId", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_reference_id: Option<String>,
+    #[doc = "The name of the groups that this policy definition reference belongs to."]
     #[serde(rename = "groupNames", default, skip_serializing_if = "Vec::is_empty")]
     pub group_names: Vec<String>,
 }
@@ -299,14 +377,19 @@ impl PolicyDefinitionReference {
         }
     }
 }
+#[doc = "The policy set definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicySetDefinition {
+    #[doc = "The policy set definition properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PolicySetDefinitionProperties>,
+    #[doc = "The ID of the policy set definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the policy set definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource (Microsoft.Authorization/policySetDefinitions)."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -315,10 +398,13 @@ impl PolicySetDefinition {
         Self::default()
     }
 }
+#[doc = "List of policy set definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicySetDefinitionListResult {
+    #[doc = "An array of policy set definitions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PolicySetDefinition>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -327,20 +413,28 @@ impl PolicySetDefinitionListResult {
         Self::default()
     }
 }
+#[doc = "The policy set definition properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicySetDefinitionProperties {
+    #[doc = "The type of policy definition. Possible values are NotSpecified, BuiltIn, Custom, and Static."]
     #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
     pub policy_type: Option<policy_set_definition_properties::PolicyType>,
+    #[doc = "The display name of the policy set definition."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The policy set definition description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The policy set definition metadata.  Metadata is an open ended object and is typically a collection of key value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+    #[doc = "The parameter definitions for parameters used in the policy. The keys are the parameter names."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterDefinitions>,
+    #[doc = "An array of policy definition references."]
     #[serde(rename = "policyDefinitions")]
     pub policy_definitions: Vec<PolicyDefinitionReference>,
+    #[doc = "The metadata describing groups of policy definition references within the policy set definition."]
     #[serde(rename = "policyDefinitionGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub policy_definition_groups: Vec<PolicyDefinitionGroup>,
 }
@@ -359,6 +453,7 @@ impl PolicySetDefinitionProperties {
 }
 pub mod policy_set_definition_properties {
     use super::*;
+    #[doc = "The type of policy definition. Possible values are NotSpecified, BuiltIn, Custom, and Static."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PolicyType {
         NotSpecified,
@@ -367,9 +462,12 @@ pub mod policy_set_definition_properties {
         Static,
     }
 }
+#[doc = "The policy sku. This property is optional, obsolete, and will be ignored."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicySku {
+    #[doc = "The name of the policy sku. Possible values are A0 and A1."]
     pub name: String,
+    #[doc = "The policy sku tier. Possible values are Free and Standard."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }

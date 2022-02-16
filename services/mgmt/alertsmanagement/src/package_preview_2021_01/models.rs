@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "API error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrationErrorResponse {
+    #[doc = "API error body."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<MigrationErrorResponseBody>,
 }
@@ -12,10 +14,13 @@ impl MigrationErrorResponse {
         Self::default()
     }
 }
+#[doc = "API error body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrationErrorResponseBody {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -24,14 +29,19 @@ impl MigrationErrorResponseBody {
         Self::default()
     }
 }
+#[doc = "Response for the quota submission request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrationStatusResponse {
+    #[doc = "The migration resource identifier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The migration process name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. \"Microsoft.AlertsManagement/migrateFromSmartDetection\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "A migration status response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MigrationStatusResponseProperties>,
 }
@@ -40,12 +50,17 @@ impl MigrationStatusResponse {
         Self::default()
     }
 }
+#[doc = "A migration status response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrationStatusResponseProperties {
+    #[doc = "The migration process unique id."]
     #[serde(rename = "migrationId")]
     pub migration_id: String,
+    #[doc = "The current status of the migration process"]
     pub status: migration_status_response_properties::Status,
+    #[doc = "The list of resource IDs that the requested migration should be performed on."]
     pub scope: Vec<String>,
+    #[doc = "The name of the ARM deployment associated with the migration process."]
     #[serde(rename = "armDeploymentName", default, skip_serializing_if = "Option::is_none")]
     pub arm_deployment_name: Option<String>,
 }
@@ -61,6 +76,7 @@ impl MigrationStatusResponseProperties {
 }
 pub mod migration_status_response_properties {
     use super::*;
+    #[doc = "The current status of the migration process"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Starting,
@@ -71,11 +87,15 @@ pub mod migration_status_response_properties {
         Canceled,
     }
 }
+#[doc = "The Smart Detection migration request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmartDetectionMigrationRequest {
+    #[doc = "The list of resource IDs that the requested migration should be performed on."]
     pub scope: Vec<String>,
+    #[doc = "The policy for migrating the email settings in the Smart Detection Rules into action groups. If not specified, 'Auto' policy is used."]
     #[serde(rename = "actionGroupCreationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub action_group_creation_policy: Option<smart_detection_migration_request::ActionGroupCreationPolicy>,
+    #[doc = "A custom name of an existing action group to attach to the created alert rules. Required only when actionGroupCreationPolicy is set to 'Custom'."]
     #[serde(rename = "customActionGroupName", default, skip_serializing_if = "Option::is_none")]
     pub custom_action_group_name: Option<String>,
 }
@@ -90,16 +110,20 @@ impl SmartDetectionMigrationRequest {
 }
 pub mod smart_detection_migration_request {
     use super::*;
+    #[doc = "The policy for migrating the email settings in the Smart Detection Rules into action groups. If not specified, 'Auto' policy is used."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActionGroupCreationPolicy {
         Custom,
         Auto,
     }
 }
+#[doc = "Operation provided by provider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -110,14 +134,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Properties of the operation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Provider name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of the operation"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -127,10 +156,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Lists the operations available in the AlertsManagement RP."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
+    #[doc = "URL to fetch the next set of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
 impl OperationsList {

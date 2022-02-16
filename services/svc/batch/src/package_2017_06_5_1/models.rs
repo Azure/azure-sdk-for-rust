@@ -17,6 +17,7 @@ impl AccountListNodeAgentSkusResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AffinityInformation {
+    #[doc = "You can pass the affinityId of a compute node to indicate that this task needs to run on that compute node. Note that this is just a soft affinity. If the target node is busy or unavailable at the time the task is scheduled, then the task will be scheduled elsewhere."]
     #[serde(rename = "affinityId")]
     pub affinity_id: String,
 }
@@ -41,6 +42,7 @@ impl ApplicationListResult {
 pub struct ApplicationPackageReference {
     #[serde(rename = "applicationId")]
     pub application_id: String,
+    #[doc = "If this is omitted on a pool, and no default version is specified for this application, the request fails with the error code InvalidApplicationPackageReferences and HTTP status code 409. If this is omitted on a task, and no default version is specified for this application, the task fails with a pre-processing error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -70,6 +72,7 @@ impl ApplicationSummary {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthenticationTokenSettings {
+    #[doc = "The authentication token grants access to a limited set of Batch service operations. Currently the only supported value for the access property is 'job', which grants access to all operations related to the job which contains the task."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub access: Vec<String>,
 }
@@ -80,10 +83,13 @@ impl AuthenticationTokenSettings {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoPoolSpecification {
+    #[doc = "The Batch service assigns each auto pool a unique identifier on creation. To distinguish between pools created for different purposes, you can specify this element to add a prefix to the ID that is assigned. The prefix can be up to 20 characters long."]
     #[serde(rename = "autoPoolIdPrefix", default, skip_serializing_if = "Option::is_none")]
     pub auto_pool_id_prefix: Option<String>,
+    #[doc = "When the pool lifetime is jobSchedule the pool exists for the lifetime of the job schedule. The Batch Service creates the pool when it creates the first job on the schedule. You may apply this option only to job schedules, not to jobs. When the pool lifetime is job the pool exists for the lifetime of the job to which it is dedicated. The Batch service creates the pool when it creates the job. If the 'job' option is applied to a job schedule, the Batch service creates a new auto pool for every job created on the schedule."]
     #[serde(rename = "poolLifetimeOption", deserialize_with = "case_insensitive_deserialize")]
     pub pool_lifetime_option: auto_pool_specification::PoolLifetimeOption,
+    #[doc = "If false, the Batch service deletes the pool once its lifetime (as determined by the poolLifetimeOption setting) expires; that is, when the job or job schedule completes. If true, the Batch service does not delete the pool automatically. It is up to the user to delete auto pools created with this option."]
     #[serde(rename = "keepAlive", default, skip_serializing_if = "Option::is_none")]
     pub keep_alive: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -101,6 +107,7 @@ impl AutoPoolSpecification {
 }
 pub mod auto_pool_specification {
     use super::*;
+    #[doc = "When the pool lifetime is jobSchedule the pool exists for the lifetime of the job schedule. The Batch Service creates the pool when it creates the first job on the schedule. You may apply this option only to job schedules, not to jobs. When the pool lifetime is job the pool exists for the lifetime of the job to which it is dedicated. The Batch service creates the pool when it creates the job. If the 'job' option is applied to a job schedule, the Batch service creates a new auto pool for every job created on the schedule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PoolLifetimeOption {
         #[serde(rename = "jobSchedule", alias = "jobschedule")]
@@ -112,6 +119,7 @@ pub mod auto_pool_specification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScaleRun {
     pub timestamp: String,
+    #[doc = "Each variable value is returned in the form $variable=value, and variables are separated by semicolons."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub results: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -142,12 +150,14 @@ impl AutoScaleRunError {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoUserSpecification {
+    #[doc = "Values are:\n\n pool - specifies that the task runs as the common auto user account which is created on every node in a pool.\n task - specifies that the service should create a new user for the task.\n The default value is task."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub scope: Option<auto_user_specification::Scope>,
+    #[doc = "Values are:\n\n nonAdmin - The user is a standard user without elevated access.\n admin - The user is a user with elevated access and operates with full Administrator permissions."]
     #[serde(
         rename = "elevationLevel",
         default,
@@ -163,6 +173,7 @@ impl AutoUserSpecification {
 }
 pub mod auto_user_specification {
     use super::*;
+    #[doc = "Values are:\n\n pool - specifies that the task runs as the common auto user account which is created on every node in a pool.\n task - specifies that the service should create a new user for the task.\n The default value is task."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Scope {
         #[serde(rename = "task")]
@@ -197,6 +208,7 @@ impl BatchErrorDetail {
         Self::default()
     }
 }
+#[doc = "A certificate that can be installed on compute nodes and can be used to authenticate operations on the machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Certificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -205,6 +217,7 @@ pub struct Certificate {
     pub thumbprint_algorithm: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "Values are:\n\n active - The certificate is available for use in pools.\n deleting - The user has requested that the certificate be deleted, but the delete operation has not yet completed. You may not reference the certificate when creating or updating pools.\n deletefailed - The user requested that the certificate be deleted, but there are pools that still have references to the certificate, or it is still installed on one or more compute nodes. (The latter can occur if the certificate has been removed from the pool, but the node has not yet restarted. Nodes refresh their certificates only when they restart.) You may use the cancel certificate delete operation to cancel the delete, or the delete certificate operation to retry the delete."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -213,6 +226,7 @@ pub struct Certificate {
     pub state: Option<CertificateState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
+    #[doc = "Values are:\n\n active - The certificate is available for use in pools.\n deleting - The user has requested that the certificate be deleted, but the delete operation has not yet completed. You may not reference the certificate when creating or updating pools.\n deletefailed - The user requested that the certificate be deleted, but there are pools that still have references to the certificate, or it is still installed on one or more compute nodes. (The latter can occur if the certificate has been removed from the pool, but the node has not yet restarted. Nodes refresh their certificates only when they restart.) You may use the cancel certificate delete operation to cancel the delete, or the delete certificate operation to retry the delete."]
     #[serde(
         rename = "previousState",
         default,
@@ -220,6 +234,7 @@ pub struct Certificate {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub previous_state: Option<CertificateState>,
+    #[doc = "This property is not set if the certificate is in its initial Active state."]
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
     #[serde(rename = "publicData", default, skip_serializing_if = "Option::is_none")]
@@ -245,6 +260,7 @@ pub struct CertificateAddParameter {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub certificate_format: Option<certificate_add_parameter::CertificateFormat>,
+    #[doc = "This is required if the certificate format is pfx. It should be omitted if the certificate format is cer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
@@ -286,6 +302,7 @@ pub struct CertificateReference {
     pub thumbprint: String,
     #[serde(rename = "thumbprintAlgorithm")]
     pub thumbprint_algorithm: String,
+    #[doc = "The default value is currentUser. This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(
         rename = "storeLocation",
         default,
@@ -293,8 +310,10 @@ pub struct CertificateReference {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub store_location: Option<certificate_reference::StoreLocation>,
+    #[doc = "This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). Common store names include: My, Root, CA, Trust, Disallowed, TrustedPeople, TrustedPublisher, AuthRoot, AddressBook, but any custom store name can also be used. The default value is My."]
     #[serde(rename = "storeName", default, skip_serializing_if = "Option::is_none")]
     pub store_name: Option<String>,
+    #[doc = "Values are:\n\n starttask - The user account under which the start task is run.\n task - The accounts under which job tasks are run.\n remoteuser - The accounts under which users remotely access the node.\n\n You can specify more than one visibility in this collection. The default is all accounts."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub visibility: Vec<String>,
 }
@@ -311,6 +330,7 @@ impl CertificateReference {
 }
 pub mod certificate_reference {
     use super::*;
+    #[doc = "The default value is currentUser. This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum StoreLocation {
         #[serde(rename = "currentUser", alias = "currentuser")]
@@ -319,6 +339,7 @@ pub mod certificate_reference {
         LocalMachine,
     }
 }
+#[doc = "Values are:\n\n active - The certificate is available for use in pools.\n deleting - The user has requested that the certificate be deleted, but the delete operation has not yet completed. You may not reference the certificate when creating or updating pools.\n deletefailed - The user requested that the certificate be deleted, but there are pools that still have references to the certificate, or it is still installed on one or more compute nodes. (The latter can occur if the certificate has been removed from the pool, but the node has not yet restarted. Nodes refresh their certificates only when they restart.) You may use the cancel certificate delete operation to cancel the delete, or the delete certificate operation to retry the delete."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CertificateState {
     #[serde(rename = "active")]
@@ -330,6 +351,7 @@ pub enum CertificateState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudJob {
+    #[doc = "The ID is case-preserving and case-insensitive (that is, you may not have two IDs within an account that differ only by case)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -338,12 +360,15 @@ pub struct CloudJob {
     pub uses_task_dependencies: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "This is an opaque string. You can use it to detect whether the job has changed between requests. In particular, you can be pass the ETag when updating a job to specify that your changes should take effect only if nobody else has modified the job in the meantime."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "This is the last time at which the job level data, such as the job state or priority, changed. It does not factor in task-level changes such as adding new tasks or tasks changing state."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Values are:\n\n active - the job is available to have tasks scheduled.\n disabling - a user has requested that the job be disabled, but the disable operation is still in progress (for example, waiting for tasks to terminate).\n disabled - a user has disabled the job. No tasks are running, and no new tasks will be scheduled.\n enabling - a user has requested that the job be enabled, but the enable operation is still in progress.\n terminating - the job is about to complete, either because a Job Manager task has completed or because the user has terminated the job, but the terminate operation is still in progress (for example, because Job Release tasks are running).\n completed - all tasks have terminated, and the system will not accept any more tasks or any further changes to the job.\n deleting - a user has requested that the job be deleted, but the delete operation is still in progress (for example, because the system is still terminating running tasks)."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -352,6 +377,7 @@ pub struct CloudJob {
     pub state: Option<JobState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
+    #[doc = "Values are:\n\n active - the job is available to have tasks scheduled.\n disabling - a user has requested that the job be disabled, but the disable operation is still in progress (for example, waiting for tasks to terminate).\n disabled - a user has disabled the job. No tasks are running, and no new tasks will be scheduled.\n enabling - a user has requested that the job be enabled, but the enable operation is still in progress.\n terminating - the job is about to complete, either because a Job Manager task has completed or because the user has terminated the job, but the terminate operation is still in progress (for example, because Job Release tasks are running).\n completed - all tasks have terminated, and the system will not accept any more tasks or any further changes to the job.\n deleting - a user has requested that the job be deleted, but the delete operation is still in progress (for example, because the system is still terminating running tasks)."]
     #[serde(
         rename = "previousState",
         default,
@@ -359,22 +385,29 @@ pub struct CloudJob {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub previous_state: Option<JobState>,
+    #[doc = "This property is not set if the job is in its initial Active state."]
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
+    #[doc = "Priority values can range from -1000 to 1000, with -1000 being the lowest priority and 1000 being the highest priority. The default value is 0."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<JobConstraints>,
+    #[doc = "The Job Manager task is automatically started when the job is created. The Batch service tries to schedule the Job Manager task before any other tasks in the job. When shrinking a pool, the Batch service tries to preserve compute nodes where Job Manager tasks are running for as long as possible (that is, nodes running 'normal' tasks are removed before nodes running Job Manager tasks). When a Job Manager task fails and needs to be restarted, the system tries to schedule it at the highest priority. If there are no idle nodes available, the system may terminate one of the running tasks in the pool and return it to the queue in order to make room for the Job Manager task to restart. Note that a Job Manager task in one job does not have priority over tasks in other jobs. Across jobs, only job level priorities are observed. For example, if a Job Manager in a priority 0 job needs to be restarted, it will not displace tasks of a priority 1 job."]
     #[serde(rename = "jobManagerTask", default, skip_serializing_if = "Option::is_none")]
     pub job_manager_task: Option<JobManagerTask>,
+    #[doc = "You can use Job Preparation to prepare a compute node to run tasks for the job. Activities commonly performed in Job Preparation include: Downloading common resource files used by all the tasks in the job. The Job Preparation task can download these common resource files to the shared location on the compute node. (AZ_BATCH_NODE_ROOT_DIR\\shared), or starting a local service on the compute node so that all tasks of that job can communicate with it. If the Job Preparation task fails (that is, exhausts its retry count before exiting with exit code 0), Batch will not run tasks of this job on the compute node. The node remains ineligible to run tasks of this job until it is reimaged. The node remains active and can be used for other jobs. The Job Preparation task can run multiple times on the same compute node. Therefore, you should write the Job Preparation task to handle re-execution. If the compute node is rebooted, the Job Preparation task is run again on the node before scheduling any other task of the job, if rerunOnNodeRebootAfterSuccess is true or if the Job Preparation task did not previously complete. If the compute node is reimaged, the Job Preparation task is run again before scheduling any task of the job."]
     #[serde(rename = "jobPreparationTask", default, skip_serializing_if = "Option::is_none")]
     pub job_preparation_task: Option<JobPreparationTask>,
+    #[doc = "The Job Release task runs when the job ends, because of one of the following: The user calls the Terminate Job API, or the Delete Job API while the job is still active, the job's maximum wall clock time constraint is reached, and the job is still active, or the job's Job Manager task completed, and the job is configured to terminate when the Job Manager completes. The Job Release task runs on each compute node where tasks of the job have run and the Job Preparation task ran and completed. If you reimage a compute node after it has run the Job Preparation task, and the job ends without any further tasks of the job running on that compute node (and hence the Job Preparation task does not re-run), then the Job Release task does not run on that node. If a compute node reboots while the Job Release task is still running, the Job Release task runs again when the compute node starts up. The job is not marked as complete until all Job Release tasks have completed. The Job Release task runs in the background. It does not occupy a scheduling slot; that is, it does not count towards the maxTasksPerNode limit specified on the pool."]
     #[serde(rename = "jobReleaseTask", default, skip_serializing_if = "Option::is_none")]
     pub job_release_task: Option<JobReleaseTask>,
+    #[doc = "Individual tasks can override an environment setting specified here by specifying the same setting name with a different value."]
     #[serde(rename = "commonEnvironmentSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub common_environment_settings: Vec<EnvironmentSetting>,
     #[serde(rename = "poolInfo", default, skip_serializing_if = "Option::is_none")]
     pub pool_info: Option<PoolInformation>,
+    #[doc = "Values are:\n\n noAction - do nothing. The job remains active unless terminated or disabled by some other means.\n terminateJob - terminate the job. The job's terminateReason is set to 'AllTasksComplete'."]
     #[serde(
         rename = "onAllTasksComplete",
         default,
@@ -382,6 +415,7 @@ pub struct CloudJob {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
+    #[doc = "A task is considered to have failed if has a failureInfo. A failureInfo is set if the task completes with a non-zero exit code after exhausting its retry count, or if there was an error starting the task, for example due to a resource file download error. Values are:\n\n noAction - do nothing.\n performExitOptionsJobAction - take the action associated with the task exit condition in the task's exitConditions collection. (This may still result in no action being taken, if that is what the task specifies.)\n\n The default is noAction."]
     #[serde(
         rename = "onTaskFailure",
         default,
@@ -389,6 +423,7 @@ pub struct CloudJob {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub on_task_failure: Option<OnTaskFailure>,
+    #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
     #[serde(rename = "executionInfo", default, skip_serializing_if = "Option::is_none")]
@@ -433,12 +468,15 @@ pub struct CloudJobSchedule {
     pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "This is an opaque string. You can use it to detect whether the job schedule has changed between requests. In particular, you can be pass the ETag with an Update Job Schedule request to specify that your changes should take effect only if nobody else has modified the schedule in the meantime."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "This is the last time at which the schedule level data, such as the job specification or recurrence information, changed. It does not factor in job-level changes such as new jobs being created or jobs changing state."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Values are:\n\n active - The job schedule is active and will create jobs as per its schedule.\n disabled - The user has disabled the schedule. The scheduler will not initiate any new jobs will on this schedule, but any existing active job will continue to run.\n terminating - The schedule has no more work to do, or has been explicitly terminated by the user, but the termination operation is still in progress. The scheduler will not initiate any new jobs for this schedule, nor is any existing job active.\n completed - The schedule has terminated, either by reaching its end time or by the user terminating it explicitly.\n deleting - The user has requested that the schedule be deleted, but the delete operation is still in progress. The scheduler will not initiate any new jobs for this schedule, and will delete any existing jobs and tasks under the schedule, including any active job. The schedule will be deleted when all jobs and tasks under the schedule have been deleted."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -447,6 +485,7 @@ pub struct CloudJobSchedule {
     pub state: Option<JobScheduleState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
+    #[doc = "Values are:\n\n active - The job schedule is active and will create jobs as per its schedule.\n disabled - The user has disabled the schedule. The scheduler will not initiate any new jobs will on this schedule, but any existing active job will continue to run.\n terminating - The schedule has no more work to do, or has been explicitly terminated by the user, but the termination operation is still in progress. The scheduler will not initiate any new jobs for this schedule, nor is any existing job active.\n completed - The schedule has terminated, either by reaching its end time or by the user terminating it explicitly.\n deleting - The user has requested that the schedule be deleted, but the delete operation is still in progress. The scheduler will not initiate any new jobs for this schedule, and will delete any existing jobs and tasks under the schedule, including any active job. The schedule will be deleted when all jobs and tasks under the schedule have been deleted."]
     #[serde(
         rename = "previousState",
         default,
@@ -454,6 +493,7 @@ pub struct CloudJobSchedule {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub previous_state: Option<JobScheduleState>,
+    #[doc = "This property is not present if the job schedule is in its initial active state."]
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -462,6 +502,7 @@ pub struct CloudJobSchedule {
     pub job_specification: Option<JobSpecification>,
     #[serde(rename = "executionInfo", default, skip_serializing_if = "Option::is_none")]
     pub execution_info: Option<JobScheduleExecutionInformation>,
+    #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -486,18 +527,23 @@ impl CloudJobScheduleListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudPool {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 64 characters. The ID is case-preserving and case-insensitive (that is, you may not have two IDs within an account that differ only by case)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "This is an opaque string. You can use it to detect whether the pool has changed between requests. In particular, you can be pass the ETag when updating a pool to specify that your changes should take effect only if nobody else has modified the pool in the meantime."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "This is the last time at which the pool level data, such as the targetDedicatedNodes or enableAutoscale settings, changed. It does not factor in node-level changes such as a compute node changing state."]
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
     pub last_modified: Option<String>,
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "Values are:\n\n active - The pool is available to run tasks subject to the availability of compute nodes.\n deleting - The user has requested that the pool be deleted, but the delete operation has not yet completed.\n upgrading - The user has requested that the operating system of the pool's nodes be upgraded, but the upgrade operation has not yet completed (that is, some nodes in the pool have not yet been upgraded). While upgrading, the pool may be able to run tasks (with reduced capacity) but this is not guaranteed."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -506,6 +552,7 @@ pub struct CloudPool {
     pub state: Option<cloud_pool::State>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
+    #[doc = "Values are:\n\n steady - The pool is not resizing. There are no changes to the number of nodes in the pool in progress. A pool enters this state when it is created and when no operations are being performed on the pool to change the number of dedicated nodes.\n resizing - The pool is resizing; that is, compute nodes are being added to or removed from the pool.\n stopping - The pool was resizing, but the user has requested that the resize be stopped, but the stop request has not yet been completed."]
     #[serde(
         rename = "allocationState",
         default,
@@ -515,42 +562,53 @@ pub struct CloudPool {
     pub allocation_state: Option<cloud_pool::AllocationState>,
     #[serde(rename = "allocationStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub allocation_state_transition_time: Option<String>,
+    #[doc = "For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series)."]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
     #[serde(rename = "cloudServiceConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub cloud_service_configuration: Option<CloudServiceConfiguration>,
     #[serde(rename = "virtualMachineConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_configuration: Option<VirtualMachineConfiguration>,
+    #[doc = "This is the timeout for the most recent resize operation. (The initial sizing when the pool is created counts as a resize.) The default value is 15 minutes."]
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
+    #[doc = "This property is set only if one or more errors occurred during the last pool resize, and only when the pool allocationState is Steady."]
     #[serde(rename = "resizeErrors", default, skip_serializing_if = "Vec::is_empty")]
     pub resize_errors: Vec<ResizeError>,
     #[serde(rename = "currentDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub current_dedicated_nodes: Option<i32>,
+    #[doc = "Low-priority compute nodes which have been preempted are included in this count."]
     #[serde(rename = "currentLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub current_low_priority_nodes: Option<i32>,
     #[serde(rename = "targetDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_dedicated_nodes: Option<i32>,
     #[serde(rename = "targetLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_low_priority_nodes: Option<i32>,
+    #[doc = "If false, at least one of targetDedicateNodes and targetLowPriorityNodes must be specified. If true, the autoScaleFormula property is required and the pool automatically resizes according to the formula. The default value is false."]
     #[serde(rename = "enableAutoScale", default, skip_serializing_if = "Option::is_none")]
     pub enable_auto_scale: Option<bool>,
+    #[doc = "This property is set only if the pool automatically scales, i.e. enableAutoScale is true."]
     #[serde(rename = "autoScaleFormula", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_formula: Option<String>,
+    #[doc = "This property is set only if the pool automatically scales, i.e. enableAutoScale is true."]
     #[serde(rename = "autoScaleEvaluationInterval", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_evaluation_interval: Option<String>,
     #[serde(rename = "autoScaleRun", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_run: Option<AutoScaleRun>,
+    #[doc = "This imposes restrictions on which nodes can be assigned to the pool. Specifying this value can reduce the chance of the requested number of nodes to be allocated in the pool."]
     #[serde(rename = "enableInterNodeCommunication", default, skip_serializing_if = "Option::is_none")]
     pub enable_inter_node_communication: Option<bool>,
+    #[doc = "The network configuration for a pool."]
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<NetworkConfiguration>,
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
+    #[doc = "For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(rename = "certificateReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub certificate_references: Vec<CertificateReference>,
     #[serde(rename = "applicationPackageReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_package_references: Vec<ApplicationPackageReference>,
+    #[doc = "The list of application licenses must be a subset of available Batch service application licenses. If a license is requested which is not supported, pool creation will fail."]
     #[serde(rename = "applicationLicenses", default, skip_serializing_if = "Vec::is_empty")]
     pub application_licenses: Vec<String>,
     #[serde(rename = "maxTasksPerNode", default, skip_serializing_if = "Option::is_none")]
@@ -571,6 +629,7 @@ impl CloudPool {
 }
 pub mod cloud_pool {
     use super::*;
+    #[doc = "Values are:\n\n active - The pool is available to run tasks subject to the availability of compute nodes.\n deleting - The user has requested that the pool be deleted, but the delete operation has not yet completed.\n upgrading - The user has requested that the operating system of the pool's nodes be upgraded, but the upgrade operation has not yet completed (that is, some nodes in the pool have not yet been upgraded). While upgrading, the pool may be able to run tasks (with reduced capacity) but this is not guaranteed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         #[serde(rename = "active")]
@@ -580,6 +639,7 @@ pub mod cloud_pool {
         #[serde(rename = "upgrading")]
         Upgrading,
     }
+    #[doc = "Values are:\n\n steady - The pool is not resizing. There are no changes to the number of nodes in the pool in progress. A pool enters this state when it is created and when no operations are being performed on the pool to change the number of dedicated nodes.\n resizing - The pool is resizing; that is, compute nodes are being added to or removed from the pool.\n stopping - The pool was resizing, but the user has requested that the resize be stopped, but the stop request has not yet been completed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllocationState {
         #[serde(rename = "steady")]
@@ -604,10 +664,13 @@ impl CloudPoolListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudServiceConfiguration {
+    #[doc = "Possible values are: 2 - OS Family 2, equivalent to Windows Server 2008 R2 SP1. 3 - OS Family 3, equivalent to Windows Server 2012. 4 - OS Family 4, equivalent to Windows Server 2012 R2. 5 - OS Family 5, equivalent to Windows Server 2016. For more information, see Azure Guest OS Releases (https://azure.microsoft.com/documentation/articles/cloud-services-guestos-update-matrix/#releases)."]
     #[serde(rename = "osFamily")]
     pub os_family: String,
+    #[doc = "The default value is * which specifies the latest operating system version for the specified OS family."]
     #[serde(rename = "targetOSVersion", default, skip_serializing_if = "Option::is_none")]
     pub target_os_version: Option<String>,
+    #[doc = "This may differ from targetOSVersion if the pool state is Upgrading. In this case some virtual machines may be on the targetOSVersion and some may be on the currentOSVersion during the upgrade process. Once all virtual machines have upgraded, currentOSVersion is updated to be the same as targetOSVersion."]
     #[serde(rename = "currentOSVersion", default, skip_serializing_if = "Option::is_none")]
     pub current_os_version: Option<String>,
 }
@@ -622,12 +685,15 @@ impl CloudServiceConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudTask {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 64 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "This is an opaque string. You can use it to detect whether the task has changed between requests. In particular, you can be pass the ETag when updating a task to specify that your changes should take effect only if nobody else has modified the task in the meantime."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
@@ -636,6 +702,7 @@ pub struct CloudTask {
     pub creation_time: Option<String>,
     #[serde(rename = "exitConditions", default, skip_serializing_if = "Option::is_none")]
     pub exit_conditions: Option<ExitConditions>,
+    #[doc = "Values are:\n\n active - The task is queued and able to run, but is not currently assigned to a compute node. A task enters this state when it is created, when it is enabled after being disabled, or when it is awaiting a retry after a failed run.\n preparing - The task has been assigned to a compute node, but is waiting for a required Job Preparation task to complete on the node. If the Job Preparation task succeeds, the task will move to running. If the Job Preparation task fails, the task will return to active and will be eligible to be assigned to a different node.\n running - The task is running on a compute node. This includes task-level preparation such as downloading resource files or deploying application packages specified on the task - it does not necessarily mean that the task command line has started executing.\n completed - The task is no longer eligible to run, usually because the task has finished successfully, or the task has finished unsuccessfully and has exhausted its retry limit. A task is also marked as completed if an error occurred launching the task, or when the task has been terminated."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -644,6 +711,7 @@ pub struct CloudTask {
     pub state: Option<TaskState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
+    #[doc = "Values are:\n\n active - The task is queued and able to run, but is not currently assigned to a compute node. A task enters this state when it is created, when it is enabled after being disabled, or when it is awaiting a retry after a failed run.\n preparing - The task has been assigned to a compute node, but is waiting for a required Job Preparation task to complete on the node. If the Job Preparation task succeeds, the task will move to running. If the Job Preparation task fails, the task will return to active and will be eligible to be assigned to a different node.\n running - The task is running on a compute node. This includes task-level preparation such as downloading resource files or deploying application packages specified on the task - it does not necessarily mean that the task command line has started executing.\n completed - The task is no longer eligible to run, usually because the task has finished successfully, or the task has finished unsuccessfully and has exhausted its retry limit. A task is also marked as completed if an error occurred launching the task, or when the task has been terminated."]
     #[serde(
         rename = "previousState",
         default,
@@ -651,12 +719,16 @@ pub struct CloudTask {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub previous_state: Option<TaskState>,
+    #[doc = "This property is not set if the task is in its initial Active state."]
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
+    #[doc = "For multi-instance tasks, the command line is executed as the primary task, after the primary task and all subtasks have finished executing the coordination command line. The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux."]
     #[serde(rename = "commandLine", default, skip_serializing_if = "Option::is_none")]
     pub command_line: Option<String>,
+    #[doc = "For multi-instance tasks, the resource files will only be downloaded to the compute node on which the primary task is executed."]
     #[serde(rename = "resourceFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_files: Vec<ResourceFile>,
+    #[doc = "For multi-instance tasks, the files will only be uploaded from the compute node on which the primary task is executed."]
     #[serde(rename = "outputFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub output_files: Vec<OutputFile>,
     #[serde(rename = "environmentSettings", default, skip_serializing_if = "Vec::is_empty")]
@@ -665,18 +737,21 @@ pub struct CloudTask {
     pub affinity_info: Option<AffinityInformation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<TaskConstraints>,
+    #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
     #[serde(rename = "executionInfo", default, skip_serializing_if = "Option::is_none")]
     pub execution_info: Option<TaskExecutionInformation>,
     #[serde(rename = "nodeInfo", default, skip_serializing_if = "Option::is_none")]
     pub node_info: Option<ComputeNodeInformation>,
+    #[doc = "Multi-instance tasks are commonly used to support MPI tasks."]
     #[serde(rename = "multiInstanceSettings", default, skip_serializing_if = "Option::is_none")]
     pub multi_instance_settings: Option<MultiInstanceSettings>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<TaskStatistics>,
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Option::is_none")]
     pub depends_on: Option<TaskDependencies>,
+    #[doc = "Application packages are downloaded and deployed to a shared directory, not the task working directory. Therefore, if a referenced package is already on the compute node, and is up to date, then it is not re-downloaded; the existing copy on the compute node is used. If a referenced application package cannot be installed, for example because the package has been deleted or because download failed, the task fails."]
     #[serde(rename = "applicationPackageReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_package_references: Vec<ApplicationPackageReference>,
     #[serde(rename = "authenticationTokenSettings", default, skip_serializing_if = "Option::is_none")]
@@ -711,16 +786,19 @@ impl CloudTaskListSubtasksResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeNode {
+    #[doc = "Every node that is added to a pool is assigned a unique ID. Whenever a node is removed from a pool, all of its local files are deleted, and the ID is reclaimed and could be reused for new nodes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+    #[doc = "Values are:\n\n idle - The node is not currently running a task.\n rebooting - The node is rebooting.\n reimaging - The node is reimaging.\n running - The node is running one or more tasks (other than a start task).\n unusable - The node cannot be used for task execution due to errors.\n creating - The Batch service has obtained the underlying virtual machine from Azure Compute, but it has not yet started to join the pool.\n starting - the Batch service is starting on the underlying virtual machine.\n waitingforstarttask - The start task has started running on the compute node, but waitForSuccess is set and the start task has not yet completed.\n starttaskfailed - The start task has failed on the compute node (and exhausted all retries), and waitForSuccess is set. The node is not usable for running tasks.\n unknown - The Batch service has lost contact with the node, and does not know its true state.\n leavingpool - The node is leaving the pool, either because the user explicitly removed it or because the pool is resizing or autoscaling down.\n offline - The node is not currently running a task, and scheduling of new tasks to the node is disabled.\n preempted - The low-priority node has been preempted. Tasks which were running on the node when it was preempted will be rescheduled when another node becomes available."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub state: Option<compute_node::State>,
+    #[doc = "Values are:\n\n enabled - Tasks can be scheduled on the node.\n disabled - No new tasks will be scheduled on the node. Tasks already running on the node may still run to completion. All nodes start with scheduling enabled."]
     #[serde(
         rename = "schedulingState",
         default,
@@ -730,14 +808,18 @@ pub struct ComputeNode {
     pub scheduling_state: Option<compute_node::SchedulingState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
+    #[doc = "This property may not be present if the node state is unusable."]
     #[serde(rename = "lastBootTime", default, skip_serializing_if = "Option::is_none")]
     pub last_boot_time: Option<String>,
     #[serde(rename = "allocationTime", default, skip_serializing_if = "Option::is_none")]
     pub allocation_time: Option<String>,
+    #[doc = "Every node that is added to a pool is assigned a unique IP address. Whenever a node is removed from a pool, all of its local files are deleted, and the IP address is reclaimed and could be reused for new nodes."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
+    #[doc = "Note that this is just a soft affinity. If the target node is busy or unavailable at the time the task is scheduled, then the task will be scheduled elsewhere."]
     #[serde(rename = "affinityId", default, skip_serializing_if = "Option::is_none")]
     pub affinity_id: Option<String>,
+    #[doc = "For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series)."]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
     #[serde(rename = "totalTasksRun", default, skip_serializing_if = "Option::is_none")]
@@ -746,12 +828,14 @@ pub struct ComputeNode {
     pub running_tasks_count: Option<i32>,
     #[serde(rename = "totalTasksSucceeded", default, skip_serializing_if = "Option::is_none")]
     pub total_tasks_succeeded: Option<i32>,
+    #[doc = "This property is present only if at least one task has run on this node since it was assigned to the pool."]
     #[serde(rename = "recentTasks", default, skip_serializing_if = "Vec::is_empty")]
     pub recent_tasks: Vec<TaskInformation>,
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
     #[serde(rename = "startTaskInfo", default, skip_serializing_if = "Option::is_none")]
     pub start_task_info: Option<StartTaskInformation>,
+    #[doc = "For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(rename = "certificateReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub certificate_references: Vec<CertificateReference>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -768,6 +852,7 @@ impl ComputeNode {
 }
 pub mod compute_node {
     use super::*;
+    #[doc = "Values are:\n\n idle - The node is not currently running a task.\n rebooting - The node is rebooting.\n reimaging - The node is reimaging.\n running - The node is running one or more tasks (other than a start task).\n unusable - The node cannot be used for task execution due to errors.\n creating - The Batch service has obtained the underlying virtual machine from Azure Compute, but it has not yet started to join the pool.\n starting - the Batch service is starting on the underlying virtual machine.\n waitingforstarttask - The start task has started running on the compute node, but waitForSuccess is set and the start task has not yet completed.\n starttaskfailed - The start task has failed on the compute node (and exhausted all retries), and waitForSuccess is set. The node is not usable for running tasks.\n unknown - The Batch service has lost contact with the node, and does not know its true state.\n leavingpool - The node is leaving the pool, either because the user explicitly removed it or because the pool is resizing or autoscaling down.\n offline - The node is not currently running a task, and scheduling of new tasks to the node is disabled.\n preempted - The low-priority node has been preempted. Tasks which were running on the node when it was preempted will be rescheduled when another node becomes available."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         #[serde(rename = "idle")]
@@ -797,6 +882,7 @@ pub mod compute_node {
         #[serde(rename = "preempted")]
         Preempted,
     }
+    #[doc = "Values are:\n\n enabled - Tasks can be scheduled on the node.\n disabled - No new tasks will be scheduled on the node. Tasks already running on the node may still run to completion. All nodes start with scheduling enabled."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SchedulingState {
         #[serde(rename = "enabled")]
@@ -805,6 +891,7 @@ pub mod compute_node {
         Disabled,
     }
 }
+#[doc = "Values are:\n\n requeue - Terminate running tasks and requeue them. The tasks will run again when the job is enabled. Remove nodes as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Remove nodes as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Remove nodes when all tasks have completed.\n retaineddata - Allow currently running tasks to complete, then wait for all task data retention periods to expire. Schedule no new tasks while waiting. Remove nodes when all task retention periods have expired.\n\n The default value is requeue."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ComputeNodeDeallocationOption {
     #[serde(rename = "requeue")]
@@ -890,12 +977,16 @@ impl ComputeNodeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeNodeUser {
     pub name: String,
+    #[doc = "The default value is false."]
     #[serde(rename = "isAdmin", default, skip_serializing_if = "Option::is_none")]
     pub is_admin: Option<bool>,
+    #[doc = "If omitted, the default is 1 day from the current time. For Linux compute nodes, the expiryTime has a precision up to a day."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "The password is required for Windows nodes (those created with 'cloudServiceConfiguration', or created with 'virtualMachineConfiguration' using a Windows image reference). For Linux compute nodes, the password can optionally be specified along with the sshPublicKey property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "The public key should be compatible with OpenSSH encoding and should be base 64 encoded. This property can be specified only for Linux nodes. If this is specified for a Windows node, then the Batch service rejects the request; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<String>,
 }
@@ -916,6 +1007,7 @@ pub struct DeleteCertificateError {
     pub code: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "This list includes details such as the active pools and nodes referencing this certificate. However, if a large number of resources reference the certificate, the list contains only about the first hundred."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<NameValuePair>,
 }
@@ -924,6 +1016,7 @@ impl DeleteCertificateError {
         Self::default()
     }
 }
+#[doc = "Values are:\n\n nonAdmin - The user is a standard user without elevated access.\n admin - The user is a user with elevated access and operates with full Administrator permissions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ElevationLevel {
     #[serde(rename = "nonAdmin")]
@@ -1004,6 +1097,7 @@ impl ExitConditions {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExitOptions {
+    #[doc = "Values are:\n\n none - Take no action.\n disable - Disable the job. This is equivalent to calling the disable job API, with a disableTasks value of requeue.\n terminate - Terminate the job. The terminateReason in the job's executionInfo is set to \"TaskFailed\". The default is none for exit code 0 and terminate for all other exit conditions.\n\n If the job's onTaskFailed property is noAction, then specifying this property returns an error and the add task request fails with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(
         rename = "jobAction",
         default,
@@ -1011,6 +1105,7 @@ pub struct ExitOptions {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub job_action: Option<exit_options::JobAction>,
+    #[doc = "Values are:\n\n satisfy - Satisfy the task's dependencies.\n block - Block the task's dependencies.\n\n The default is 'satisfy' for exit code 0, and 'block' for all other exit conditions. If the job's usesTaskDependencies property is set to false, then specifying the dependencyAction property returns an error and the add task request fails with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400  (Bad Request)."]
     #[serde(
         rename = "dependencyAction",
         default,
@@ -1026,6 +1121,7 @@ impl ExitOptions {
 }
 pub mod exit_options {
     use super::*;
+    #[doc = "Values are:\n\n none - Take no action.\n disable - Disable the job. This is equivalent to calling the disable job API, with a disableTasks value of requeue.\n terminate - Terminate the job. The terminateReason in the job's executionInfo is set to \"TaskFailed\". The default is none for exit code 0 and terminate for all other exit conditions.\n\n If the job's onTaskFailed property is noAction, then specifying this property returns an error and the add task request fails with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum JobAction {
         #[serde(rename = "none")]
@@ -1035,6 +1131,7 @@ pub mod exit_options {
         #[serde(rename = "terminate")]
         Terminate,
     }
+    #[doc = "Values are:\n\n satisfy - Satisfy the task's dependencies.\n block - Block the task's dependencies.\n\n The default is 'satisfy' for exit code 0, and 'block' for all other exit conditions. If the job's usesTaskDependencies property is set to false, then specifying the dependencyAction property returns an error and the add task request fails with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400  (Bad Request)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DependencyAction {
         #[serde(rename = "satisfy")]
@@ -1045,6 +1142,7 @@ pub mod exit_options {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileProperties {
+    #[doc = "The creation time is not returned for files on Linux compute nodes."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
     #[serde(rename = "lastModified")]
@@ -1053,6 +1151,7 @@ pub struct FileProperties {
     pub content_length: i64,
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
+    #[doc = "The file mode is returned only for files on Linux compute nodes."]
     #[serde(rename = "fileMode", default, skip_serializing_if = "Option::is_none")]
     pub file_mode: Option<String>,
 }
@@ -1069,9 +1168,13 @@ impl FileProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageReference {
+    #[doc = "For example, Canonical or MicrosoftWindowsServer."]
     pub publisher: String,
+    #[doc = "For example, UbuntuServer or WindowsServer."]
     pub offer: String,
+    #[doc = "For example, 14.04.0-LTS or 2012-R2-Datacenter."]
     pub sku: String,
+    #[doc = "A value of 'latest' can be specified to select the latest version of an image. If omitted, the default is 'latest'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -1130,15 +1233,20 @@ pub mod inbound_endpoint {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundNatPool {
+    #[doc = "The name must be unique within a Batch pool, can contain letters, numbers, underscores, periods, and hyphens. Names must start with a letter or number, must end with a letter, number, or underscore, and cannot exceed 77 characters.  If any invalid values are provided the request fails with HTTP status code 400."]
     pub name: String,
     #[serde(deserialize_with = "case_insensitive_deserialize")]
     pub protocol: inbound_nat_pool::Protocol,
+    #[doc = "This must be unique within a Batch pool. Acceptable values are between 1 and 65535 except for 22, 3389, 29876 and 29877 as these are reserved. If any reserved values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "backendPort")]
     pub backend_port: i32,
+    #[doc = "Acceptable values range between 1 and 65534 except ports from 50000 to 55000 which are reserved. All ranges within a pool must be distinct and cannot overlap. If any reserved or overlapping values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "frontendPortRangeStart")]
     pub frontend_port_range_start: i32,
+    #[doc = "Acceptable values range between 1 and 65534 except ports from 50000 to 55000 which are reserved by the Batch service. All ranges within a pool must be distinct and cannot overlap. If any reserved or overlapping values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "frontendPortRangeEnd")]
     pub frontend_port_range_end: i32,
+    #[doc = "The maximum number of rules that can be specified across all the endpoints on a Batch pool is 25. If no network security group rules are specified, a default rule will be created to allow inbound access to the specified backendPort. If the maximum number of network security group rules is exceeded the request fails with HTTP status code 400."]
     #[serde(rename = "networkSecurityGroupRules", default, skip_serializing_if = "Vec::is_empty")]
     pub network_security_group_rules: Vec<NetworkSecurityGroupRule>,
 }
@@ -1172,23 +1280,31 @@ pub mod inbound_nat_pool {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobAddParameter {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 64 characters. The ID is case-preserving and case-insensitive (that is, you may not have two IDs within an account that differ only by case)."]
     pub id: String,
+    #[doc = "The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Priority values can range from -1000 to 1000, with -1000 being the lowest priority and 1000 being the highest priority. The default value is 0."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<JobConstraints>,
+    #[doc = "The Job Manager task is automatically started when the job is created. The Batch service tries to schedule the Job Manager task before any other tasks in the job. When shrinking a pool, the Batch service tries to preserve compute nodes where Job Manager tasks are running for as long as possible (that is, nodes running 'normal' tasks are removed before nodes running Job Manager tasks). When a Job Manager task fails and needs to be restarted, the system tries to schedule it at the highest priority. If there are no idle nodes available, the system may terminate one of the running tasks in the pool and return it to the queue in order to make room for the Job Manager task to restart. Note that a Job Manager task in one job does not have priority over tasks in other jobs. Across jobs, only job level priorities are observed. For example, if a Job Manager in a priority 0 job needs to be restarted, it will not displace tasks of a priority 1 job."]
     #[serde(rename = "jobManagerTask", default, skip_serializing_if = "Option::is_none")]
     pub job_manager_task: Option<JobManagerTask>,
+    #[doc = "You can use Job Preparation to prepare a compute node to run tasks for the job. Activities commonly performed in Job Preparation include: Downloading common resource files used by all the tasks in the job. The Job Preparation task can download these common resource files to the shared location on the compute node. (AZ_BATCH_NODE_ROOT_DIR\\shared), or starting a local service on the compute node so that all tasks of that job can communicate with it. If the Job Preparation task fails (that is, exhausts its retry count before exiting with exit code 0), Batch will not run tasks of this job on the compute node. The node remains ineligible to run tasks of this job until it is reimaged. The node remains active and can be used for other jobs. The Job Preparation task can run multiple times on the same compute node. Therefore, you should write the Job Preparation task to handle re-execution. If the compute node is rebooted, the Job Preparation task is run again on the node before scheduling any other task of the job, if rerunOnNodeRebootAfterSuccess is true or if the Job Preparation task did not previously complete. If the compute node is reimaged, the Job Preparation task is run again before scheduling any task of the job."]
     #[serde(rename = "jobPreparationTask", default, skip_serializing_if = "Option::is_none")]
     pub job_preparation_task: Option<JobPreparationTask>,
+    #[doc = "The Job Release task runs when the job ends, because of one of the following: The user calls the Terminate Job API, or the Delete Job API while the job is still active, the job's maximum wall clock time constraint is reached, and the job is still active, or the job's Job Manager task completed, and the job is configured to terminate when the Job Manager completes. The Job Release task runs on each compute node where tasks of the job have run and the Job Preparation task ran and completed. If you reimage a compute node after it has run the Job Preparation task, and the job ends without any further tasks of the job running on that compute node (and hence the Job Preparation task does not re-run), then the Job Release task does not run on that node. If a compute node reboots while the Job Release task is still running, the Job Release task runs again when the compute node starts up. The job is not marked as complete until all Job Release tasks have completed. The Job Release task runs in the background. It does not occupy a scheduling slot; that is, it does not count towards the maxTasksPerNode limit specified on the pool."]
     #[serde(rename = "jobReleaseTask", default, skip_serializing_if = "Option::is_none")]
     pub job_release_task: Option<JobReleaseTask>,
+    #[doc = "Individual tasks can override an environment setting specified here by specifying the same setting name with a different value."]
     #[serde(rename = "commonEnvironmentSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub common_environment_settings: Vec<EnvironmentSetting>,
     #[serde(rename = "poolInfo")]
     pub pool_info: PoolInformation,
+    #[doc = "Values are:\n\n noAction - do nothing. The job remains active unless terminated or disabled by some other means.\n terminateJob - terminate the job. The job's terminateReason is set to 'AllTasksComplete'."]
     #[serde(
         rename = "onAllTasksComplete",
         default,
@@ -1196,6 +1312,7 @@ pub struct JobAddParameter {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
+    #[doc = "A task is considered to have failed if has a failureInfo. A failureInfo is set if the task completes with a non-zero exit code after exhausting its retry count, or if there was an error starting the task, for example due to a resource file download error. Values are:\n\n noAction - do nothing.\n performExitOptionsJobAction - take the action associated with the task exit condition in the task's exitConditions collection. (This may still result in no action being taken, if that is what the task specifies.)\n\n The default is noAction."]
     #[serde(
         rename = "onTaskFailure",
         default,
@@ -1203,6 +1320,7 @@ pub struct JobAddParameter {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub on_task_failure: Option<OnTaskFailure>,
+    #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
     #[serde(rename = "usesTaskDependencies", default, skip_serializing_if = "Option::is_none")]
@@ -1229,8 +1347,10 @@ impl JobAddParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobConstraints {
+    #[doc = "If the job does not complete within the time limit, the Batch service terminates it and any tasks that are still running. In this case, the termination reason will be MaxWallClockTimeExpiry. If this property is not specified, there is no time limit on how long the job may run."]
     #[serde(rename = "maxWallClockTime", default, skip_serializing_if = "Option::is_none")]
     pub max_wall_clock_time: Option<String>,
+    #[doc = "Note that this value specifically controls the number of retries. The Batch service will try each task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries a task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry tasks. If the maximum retry count is -1, the Batch service retries tasks without limit. The default value is 0 (no retries)."]
     #[serde(rename = "maxTaskRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_task_retry_count: Option<i32>,
 }
@@ -1241,6 +1361,7 @@ impl JobConstraints {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDisableParameter {
+    #[doc = "Values are:\n\n requeue - Terminate running tasks and requeue them. The tasks will run again when the job is enabled.\n terminate - Terminate running tasks. The tasks will not run again.\n wait - Allow currently running tasks to complete."]
     #[serde(rename = "disableTasks", deserialize_with = "case_insensitive_deserialize")]
     pub disable_tasks: job_disable_parameter::DisableTasks,
 }
@@ -1251,6 +1372,7 @@ impl JobDisableParameter {
 }
 pub mod job_disable_parameter {
     use super::*;
+    #[doc = "Values are:\n\n requeue - Terminate running tasks and requeue them. The tasks will run again when the job is enabled.\n terminate - Terminate running tasks. The tasks will not run again.\n wait - Allow currently running tasks to complete."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DisableTasks {
         #[serde(rename = "requeue")]
@@ -1263,14 +1385,18 @@ pub mod job_disable_parameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobExecutionInformation {
+    #[doc = "This is the time at which the job was created."]
     #[serde(rename = "startTime")]
     pub start_time: String,
+    #[doc = "This property is set only if the job is in the completed state."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "This element contains the actual pool where the job is assigned. When you get job details from the service, they also contain a poolInfo element, which contains the pool configuration data from when the job was added or updated. That poolInfo element may also contain a poolId element. If it does, the two IDs are the same. If it does not, it means the job ran on an auto pool, and this property contains the ID of that auto pool."]
     #[serde(rename = "poolId", default, skip_serializing_if = "Option::is_none")]
     pub pool_id: Option<String>,
     #[serde(rename = "schedulingError", default, skip_serializing_if = "Option::is_none")]
     pub scheduling_error: Option<JobSchedulingError>,
+    #[doc = "This property is set only if the job is in the completed state. If the Batch service terminates the job, it sets the reason as follows: JMComplete - the Job Manager task completed, and killJobOnCompletion was set to true. MaxWallClockTimeExpiry - the job reached its maxWallClockTime constraint. TerminateJobSchedule - the job ran as part of a schedule, and the schedule terminated. AllTasksComplete - the job's onAllTasksComplete attribute is set to terminateJob, and all tasks in the job are complete. TaskFailed - the job's onTaskFailure attribute is set to performExitOptionsJobAction, and a task in the job failed with an exit condition that specified a jobAction of terminateJob. Any other string is a user-defined reason specified in a call to the 'Terminate a job' operation."]
     #[serde(rename = "terminateReason", default, skip_serializing_if = "Option::is_none")]
     pub terminate_reason: Option<String>,
 }
@@ -1285,31 +1411,42 @@ impl JobExecutionInformation {
         }
     }
 }
+#[doc = "The Job Manager task is automatically started when the job is created. The Batch service tries to schedule the Job Manager task before any other tasks in the job. When shrinking a pool, the Batch service tries to preserve compute nodes where Job Manager tasks are running for as long as possible (that is, nodes running 'normal' tasks are removed before nodes running Job Manager tasks). When a Job Manager task fails and needs to be restarted, the system tries to schedule it at the highest priority. If there are no idle nodes available, the system may terminate one of the running tasks in the pool and return it to the queue in order to make room for the Job Manager task to restart. Note that a Job Manager task in one job does not have priority over tasks in other jobs. Across jobs, only job level priorities are observed. For example, if a Job Manager in a priority 0 job needs to be restarted, it will not displace tasks of a priority 1 job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobManagerTask {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores and cannot contain more than 64 characters."]
     pub id: String,
+    #[doc = "It need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux."]
     #[serde(rename = "commandLine")]
     pub command_line: String,
+    #[doc = "Files listed under this element are located in the task's working directory."]
     #[serde(rename = "resourceFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_files: Vec<ResourceFile>,
+    #[doc = "For multi-instance tasks, the files will only be uploaded from the compute node on which the primary task is executed."]
     #[serde(rename = "outputFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub output_files: Vec<OutputFile>,
     #[serde(rename = "environmentSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_settings: Vec<EnvironmentSetting>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<TaskConstraints>,
+    #[doc = "If true, when the Job Manager task completes, the Batch service marks the job as complete. If any tasks are still running at this time (other than Job Release), those tasks are terminated. If false, the completion of the Job Manager task does not affect the job status. In this case, you should either use the onAllTasksComplete attribute to terminate the job, or have a client or user terminate the job explicitly. An example of this is if the Job Manager creates a set of tasks but then takes no further role in their execution. The default value is true. If you are using the onAllTasksComplete and onTaskFailure attributes to control job lifetime, and using the Job Manager task only to create the tasks for the job (not to monitor progress), then it is important to set killJobOnCompletion to false."]
     #[serde(rename = "killJobOnCompletion", default, skip_serializing_if = "Option::is_none")]
     pub kill_job_on_completion: Option<bool>,
+    #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
+    #[doc = "If true, no other tasks will run on the same compute node for as long as the Job Manager is running. If false, other tasks can run simultaneously with the Job Manager on a compute node. The Job Manager task counts normally against the node's concurrent task limit, so this is only relevant if the node allows multiple concurrent tasks. The default value is true."]
     #[serde(rename = "runExclusive", default, skip_serializing_if = "Option::is_none")]
     pub run_exclusive: Option<bool>,
+    #[doc = "Application packages are downloaded and deployed to a shared directory, not the task working directory. Therefore, if a referenced package is already on the compute node, and is up to date, then it is not re-downloaded; the existing copy on the compute node is used. If a referenced application package cannot be installed, for example because the package has been deleted or because download failed, the task fails."]
     #[serde(rename = "applicationPackageReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_package_references: Vec<ApplicationPackageReference>,
     #[serde(rename = "authenticationTokenSettings", default, skip_serializing_if = "Option::is_none")]
     pub authentication_token_settings: Option<AuthenticationTokenSettings>,
+    #[doc = "The default value is false."]
     #[serde(rename = "allowLowPriorityNode", default, skip_serializing_if = "Option::is_none")]
     pub allow_low_priority_node: Option<bool>,
 }
@@ -1334,8 +1471,10 @@ impl JobManagerTask {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobPatchParameter {
+    #[doc = "Priority values can range from -1000 to 1000, with -1000 being the lowest priority and 1000 being the highest priority. If omitted, the priority of the job is left unchanged."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
+    #[doc = "Values are:\n\n noAction - do nothing. The job remains active unless terminated or disabled by some other means.\n terminateJob - terminate the job. The job's terminateReason is set to 'AllTasksComplete'."]
     #[serde(
         rename = "onAllTasksComplete",
         default,
@@ -1347,6 +1486,7 @@ pub struct JobPatchParameter {
     pub constraints: Option<JobConstraints>,
     #[serde(rename = "poolInfo", default, skip_serializing_if = "Option::is_none")]
     pub pool_info: Option<PoolInformation>,
+    #[doc = "If omitted, the existing job metadata is left unchanged."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
@@ -1373,22 +1513,29 @@ impl JobPreparationAndReleaseTaskExecutionInformation {
         Self::default()
     }
 }
+#[doc = "You can use Job Preparation to prepare a compute node to run tasks for the job. Activities commonly performed in Job Preparation include: Downloading common resource files used by all the tasks in the job. The Job Preparation task can download these common resource files to the shared location on the compute node. (AZ_BATCH_NODE_ROOT_DIR\\shared), or starting a local service on the compute node so that all tasks of that job can communicate with it. If the Job Preparation task fails (that is, exhausts its retry count before exiting with exit code 0), Batch will not run tasks of this job on the compute node. The node remains ineligible to run tasks of this job until it is reimaged. The node remains active and can be used for other jobs. The Job Preparation task can run multiple times on the same compute node. Therefore, you should write the Job Preparation task to handle re-execution. If the compute node is rebooted, the Job Preparation task is run again on the node before scheduling any other task of the job, if rerunOnNodeRebootAfterSuccess is true or if the Job Preparation task did not previously complete. If the compute node is reimaged, the Job Preparation task is run again before scheduling any task of the job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobPreparationTask {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores and cannot contain more than 64 characters. If you do not specify this property, the Batch service assigns a default value of 'jobpreparation'. No other task in the job can have the same ID as the Job Preparation task. If you try to submit a task with the same id, the Batch service rejects the request with error code TaskIdSameAsJobPreparationTask; if you are calling the REST API directly, the HTTP status code is 409 (Conflict)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux."]
     #[serde(rename = "commandLine")]
     pub command_line: String,
+    #[doc = "Files listed under this element are located in the task's working directory."]
     #[serde(rename = "resourceFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_files: Vec<ResourceFile>,
     #[serde(rename = "environmentSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_settings: Vec<EnvironmentSetting>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<TaskConstraints>,
+    #[doc = "If true and the Job Preparation task fails on a compute node, the Batch service retries the Job Preparation task up to its maximum retry count (as specified in the constraints element). If the task has still not completed successfully after all retries, then the Batch service will not schedule tasks of the job to the compute node. The compute node remains active and eligible to run tasks of other jobs. If false, the Batch service will not wait for the Job Preparation task to complete. In this case, other tasks of the job can start executing on the compute node while the Job Preparation task is still running; and even if the Job Preparation task fails, new tasks will continue to be scheduled on the node. The default value is true."]
     #[serde(rename = "waitForSuccess", default, skip_serializing_if = "Option::is_none")]
     pub wait_for_success: Option<bool>,
+    #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
+    #[doc = "The Job Preparation task is always rerun if a compute node is reimaged, or if the Job Preparation task did not complete (e.g. because the reboot occurred while the task was running). Therefore, you should always write a Job Preparation task to be idempotent and to behave correctly if run multiple times. The default value is true."]
     #[serde(rename = "rerunOnNodeRebootAfterSuccess", default, skip_serializing_if = "Option::is_none")]
     pub rerun_on_node_reboot_after_success: Option<bool>,
 }
@@ -1408,24 +1555,31 @@ impl JobPreparationTask {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobPreparationTaskExecutionInformation {
+    #[doc = "If the task has been restarted or retried, this is the most recent time at which the task started running."]
     #[serde(rename = "startTime")]
     pub start_time: String,
+    #[doc = "This property is set only if the task is in the Completed state."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Values are:\n\n running - the task is currently running (including retrying).\n completed - the task has exited with exit code 0, or the task has exhausted its retry limit, or the Batch service was unable to start the task due to task preparation errors (such as resource file download failures)."]
     #[serde(deserialize_with = "case_insensitive_deserialize")]
     pub state: job_preparation_task_execution_information::State,
     #[serde(rename = "taskRootDirectory", default, skip_serializing_if = "Option::is_none")]
     pub task_root_directory: Option<String>,
     #[serde(rename = "taskRootDirectoryUrl", default, skip_serializing_if = "Option::is_none")]
     pub task_root_directory_url: Option<String>,
+    #[doc = "This parameter is returned only if the task is in the completed state. The exit code for a process reflects the specific convention implemented by the application developer for that process. If you use the exit code value to make decisions in your code, be sure that you know the exit code convention used by the application process. Note that the exit code may also be generated by the compute node operating system, such as when a process is forcibly terminated."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
     #[serde(rename = "failureInfo", default, skip_serializing_if = "Option::is_none")]
     pub failure_info: Option<TaskFailureInformation>,
+    #[doc = "Task application failures (non-zero exit code) are retried, pre-processing errors (the task could not be run) and file upload errors are not retried. The Batch service will retry the task up to the limit specified by the constraints."]
     #[serde(rename = "retryCount")]
     pub retry_count: i32,
+    #[doc = "This property is set only if the task was retried (i.e. retryCount is nonzero). If present, this is typically the same as startTime, but may be different if the task has been restarted for reasons other than retry; for example, if the compute node was rebooted during a retry, then the startTime is updated but the lastRetryTime is not."]
     #[serde(rename = "lastRetryTime", default, skip_serializing_if = "Option::is_none")]
     pub last_retry_time: Option<String>,
+    #[doc = "Values are:\n\n success - The task ran successfully.\n failure - There was an error during processing of the task. The failure may have occurred before the task process was launched, while the task process was executing, or after the task process exited."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -1451,6 +1605,7 @@ impl JobPreparationTaskExecutionInformation {
 }
 pub mod job_preparation_task_execution_information {
     use super::*;
+    #[doc = "Values are:\n\n running - the task is currently running (including retrying).\n completed - the task has exited with exit code 0, or the task has exhausted its retry limit, or the Batch service was unable to start the task due to task preparation errors (such as resource file download failures)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         #[serde(rename = "running")]
@@ -1459,20 +1614,26 @@ pub mod job_preparation_task_execution_information {
         Completed,
     }
 }
+#[doc = "The Job Release task runs when the job ends, because of one of the following: The user calls the Terminate Job API, or the Delete Job API while the job is still active, the job's maximum wall clock time constraint is reached, and the job is still active, or the job's Job Manager task completed, and the job is configured to terminate when the Job Manager completes. The Job Release task runs on each compute node where tasks of the job have run and the Job Preparation task ran and completed. If you reimage a compute node after it has run the Job Preparation task, and the job ends without any further tasks of the job running on that compute node (and hence the Job Preparation task does not re-run), then the Job Release task does not run on that node. If a compute node reboots while the Job Release task is still running, the Job Release task runs again when the compute node starts up. The job is not marked as complete until all Job Release tasks have completed. The Job Release task runs in the background. It does not occupy a scheduling slot; that is, it does not count towards the maxTasksPerNode limit specified on the pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobReleaseTask {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores and cannot contain more than 64 characters. If you do not specify this property, the Batch service assigns a default value of 'jobrelease'. No other task in the job can have the same ID as the Job Release task. If you try to submit a task with the same id, the Batch service rejects the request with error code TaskIdSameAsJobReleaseTask; if you are calling the REST API directly, the HTTP status code is 409 (Conflict)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux."]
     #[serde(rename = "commandLine")]
     pub command_line: String,
+    #[doc = "Files listed under this element are located in the task's working directory."]
     #[serde(rename = "resourceFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_files: Vec<ResourceFile>,
     #[serde(rename = "environmentSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_settings: Vec<EnvironmentSetting>,
     #[serde(rename = "maxWallClockTime", default, skip_serializing_if = "Option::is_none")]
     pub max_wall_clock_time: Option<String>,
+    #[doc = "The default is infinite, i.e. the task directory will be retained until the compute node is removed or reimaged."]
     #[serde(rename = "retentionTime", default, skip_serializing_if = "Option::is_none")]
     pub retention_time: Option<String>,
+    #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
 }
@@ -1491,20 +1652,25 @@ impl JobReleaseTask {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobReleaseTaskExecutionInformation {
+    #[doc = "If the task has been restarted or retried, this is the most recent time at which the task started running."]
     #[serde(rename = "startTime")]
     pub start_time: String,
+    #[doc = "This property is set only if the task is in the Completed state."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Values are:\n\n running - the task is currently running (including retrying).\n completed - the task has exited, or the Batch service was unable to start the task due to task preparation errors (such as resource file download failures)."]
     #[serde(deserialize_with = "case_insensitive_deserialize")]
     pub state: job_release_task_execution_information::State,
     #[serde(rename = "taskRootDirectory", default, skip_serializing_if = "Option::is_none")]
     pub task_root_directory: Option<String>,
     #[serde(rename = "taskRootDirectoryUrl", default, skip_serializing_if = "Option::is_none")]
     pub task_root_directory_url: Option<String>,
+    #[doc = "This parameter is returned only if the task is in the completed state. The exit code for a process reflects the specific convention implemented by the application developer for that process. If you use the exit code value to make decisions in your code, be sure that you know the exit code convention used by the application process. Note that the exit code may also be generated by the compute node operating system, such as when a process is forcibly terminated."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
     #[serde(rename = "failureInfo", default, skip_serializing_if = "Option::is_none")]
     pub failure_info: Option<TaskFailureInformation>,
+    #[doc = "Values are:\n\n success - The task ran successfully.\n failure - There was an error during processing of the task. The failure may have occurred before the task process was launched, while the task process was executing, or after the task process exited."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -1528,6 +1694,7 @@ impl JobReleaseTaskExecutionInformation {
 }
 pub mod job_release_task_execution_information {
     use super::*;
+    #[doc = "Values are:\n\n running - the task is currently running (including retrying).\n completed - the task has exited, or the Batch service was unable to start the task due to task preparation errors (such as resource file download failures)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         #[serde(rename = "running")]
@@ -1538,12 +1705,15 @@ pub mod job_release_task_execution_information {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobScheduleAddParameter {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 64 characters. The ID is case-preserving and case-insensitive (that is, you may not have two IDs within an account that differ only by case)."]
     pub id: String,
+    #[doc = "The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     pub schedule: Schedule,
     #[serde(rename = "jobSpecification")]
     pub job_specification: JobSpecification,
+    #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
@@ -1560,10 +1730,12 @@ impl JobScheduleAddParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobScheduleExecutionInformation {
+    #[doc = "This property is meaningful only if the schedule is in the active state when the time comes around. For example, if the schedule is disabled, no job will be created at nextRunTime unless the job is enabled before then."]
     #[serde(rename = "nextRunTime", default, skip_serializing_if = "Option::is_none")]
     pub next_run_time: Option<String>,
     #[serde(rename = "recentJob", default, skip_serializing_if = "Option::is_none")]
     pub recent_job: Option<RecentJob>,
+    #[doc = "This property is set only if the job schedule is in the completed state."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
@@ -1578,6 +1750,7 @@ pub struct JobSchedulePatchParameter {
     pub schedule: Option<Schedule>,
     #[serde(rename = "jobSpecification", default, skip_serializing_if = "Option::is_none")]
     pub job_specification: Option<JobSpecification>,
+    #[doc = "If you do not specify this element, existing metadata is left unchanged."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
@@ -1586,6 +1759,7 @@ impl JobSchedulePatchParameter {
         Self::default()
     }
 }
+#[doc = "Values are:\n\n active - The job schedule is active and will create jobs as per its schedule.\n disabled - The user has disabled the schedule. The scheduler will not initiate any new jobs will on this schedule, but any existing active job will continue to run.\n terminating - The schedule has no more work to do, or has been explicitly terminated by the user, but the termination operation is still in progress. The scheduler will not initiate any new jobs for this schedule, nor is any existing job active.\n completed - The schedule has terminated, either by reaching its end time or by the user terminating it explicitly.\n deleting - The user has requested that the schedule be deleted, but the delete operation is still in progress. The scheduler will not initiate any new jobs for this schedule, and will delete any existing jobs and tasks under the schedule, including any active job. The schedule will be deleted when all jobs and tasks under the schedule have been deleted."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum JobScheduleState {
     #[serde(rename = "active")]
@@ -1610,6 +1784,7 @@ pub struct JobScheduleStatistics {
     pub user_cpu_time: String,
     #[serde(rename = "kernelCPUTime")]
     pub kernel_cpu_time: String,
+    #[doc = "The wall clock time is the elapsed time from when the task started running on a compute node to when it finished (or to the last time the statistics were updated, if the task had not finished by then). If a task was retried, this includes the wall clock time of all the task retries."]
     #[serde(rename = "wallClockTime")]
     pub wall_clock_time: String,
     #[serde(rename = "readIOps")]
@@ -1626,6 +1801,7 @@ pub struct JobScheduleStatistics {
     pub num_failed_tasks: i64,
     #[serde(rename = "numTaskRetries")]
     pub num_task_retries: i64,
+    #[doc = "This value is only reported in the account lifetime statistics; it is not included in the job statistics."]
     #[serde(rename = "waitTime")]
     pub wait_time: String,
 }
@@ -1669,6 +1845,7 @@ pub struct JobScheduleUpdateParameter {
     pub schedule: Schedule,
     #[serde(rename = "jobSpecification")]
     pub job_specification: JobSpecification,
+    #[doc = "If you do not specify this element, it takes the default value of an empty list; in effect, any existing metadata is deleted."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
@@ -1704,12 +1881,15 @@ impl JobSchedulingError {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSpecification {
+    #[doc = "Priority values can range from -1000 to 1000, with -1000 being the lowest priority and 1000 being the highest priority. The default value is 0. This priority is used as the default for all jobs under the job schedule. You can update a job's priority after it has been created using by using the update job API."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
+    #[doc = "The name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[serde(rename = "usesTaskDependencies", default, skip_serializing_if = "Option::is_none")]
     pub uses_task_dependencies: Option<bool>,
+    #[doc = "Values are:\n\n noAction - do nothing. The job remains active unless terminated or disabled by some other means.\n terminateJob - terminate the job. The job's terminateReason is set to 'AllTasksComplete'."]
     #[serde(
         rename = "onAllTasksComplete",
         default,
@@ -1717,6 +1897,7 @@ pub struct JobSpecification {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub on_all_tasks_complete: Option<OnAllTasksComplete>,
+    #[doc = "A task is considered to have failed if has a failureInfo. A failureInfo is set if the task completes with a non-zero exit code after exhausting its retry count, or if there was an error starting the task, for example due to a resource file download error. Values are:\n\n noAction - do nothing.\n performExitOptionsJobAction - take the action associated with the task exit condition in the task's exitConditions collection. (This may still result in no action being taken, if that is what the task specifies.)\n\n The default is noAction."]
     #[serde(
         rename = "onTaskFailure",
         default,
@@ -1726,16 +1907,21 @@ pub struct JobSpecification {
     pub on_task_failure: Option<OnTaskFailure>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<JobConstraints>,
+    #[doc = "The Job Manager task is automatically started when the job is created. The Batch service tries to schedule the Job Manager task before any other tasks in the job. When shrinking a pool, the Batch service tries to preserve compute nodes where Job Manager tasks are running for as long as possible (that is, nodes running 'normal' tasks are removed before nodes running Job Manager tasks). When a Job Manager task fails and needs to be restarted, the system tries to schedule it at the highest priority. If there are no idle nodes available, the system may terminate one of the running tasks in the pool and return it to the queue in order to make room for the Job Manager task to restart. Note that a Job Manager task in one job does not have priority over tasks in other jobs. Across jobs, only job level priorities are observed. For example, if a Job Manager in a priority 0 job needs to be restarted, it will not displace tasks of a priority 1 job."]
     #[serde(rename = "jobManagerTask", default, skip_serializing_if = "Option::is_none")]
     pub job_manager_task: Option<JobManagerTask>,
+    #[doc = "You can use Job Preparation to prepare a compute node to run tasks for the job. Activities commonly performed in Job Preparation include: Downloading common resource files used by all the tasks in the job. The Job Preparation task can download these common resource files to the shared location on the compute node. (AZ_BATCH_NODE_ROOT_DIR\\shared), or starting a local service on the compute node so that all tasks of that job can communicate with it. If the Job Preparation task fails (that is, exhausts its retry count before exiting with exit code 0), Batch will not run tasks of this job on the compute node. The node remains ineligible to run tasks of this job until it is reimaged. The node remains active and can be used for other jobs. The Job Preparation task can run multiple times on the same compute node. Therefore, you should write the Job Preparation task to handle re-execution. If the compute node is rebooted, the Job Preparation task is run again on the node before scheduling any other task of the job, if rerunOnNodeRebootAfterSuccess is true or if the Job Preparation task did not previously complete. If the compute node is reimaged, the Job Preparation task is run again before scheduling any task of the job."]
     #[serde(rename = "jobPreparationTask", default, skip_serializing_if = "Option::is_none")]
     pub job_preparation_task: Option<JobPreparationTask>,
+    #[doc = "The Job Release task runs when the job ends, because of one of the following: The user calls the Terminate Job API, or the Delete Job API while the job is still active, the job's maximum wall clock time constraint is reached, and the job is still active, or the job's Job Manager task completed, and the job is configured to terminate when the Job Manager completes. The Job Release task runs on each compute node where tasks of the job have run and the Job Preparation task ran and completed. If you reimage a compute node after it has run the Job Preparation task, and the job ends without any further tasks of the job running on that compute node (and hence the Job Preparation task does not re-run), then the Job Release task does not run on that node. If a compute node reboots while the Job Release task is still running, the Job Release task runs again when the compute node starts up. The job is not marked as complete until all Job Release tasks have completed. The Job Release task runs in the background. It does not occupy a scheduling slot; that is, it does not count towards the maxTasksPerNode limit specified on the pool."]
     #[serde(rename = "jobReleaseTask", default, skip_serializing_if = "Option::is_none")]
     pub job_release_task: Option<JobReleaseTask>,
+    #[doc = "Individual tasks can override an environment setting specified here by specifying the same setting name with a different value."]
     #[serde(rename = "commonEnvironmentSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub common_environment_settings: Vec<EnvironmentSetting>,
     #[serde(rename = "poolInfo")]
     pub pool_info: PoolInformation,
+    #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
@@ -1757,6 +1943,7 @@ impl JobSpecification {
         }
     }
 }
+#[doc = "Values are:\n\n active - the job is available to have tasks scheduled.\n disabling - a user has requested that the job be disabled, but the disable operation is still in progress (for example, waiting for tasks to terminate).\n disabled - a user has disabled the job. No tasks are running, and no new tasks will be scheduled.\n enabling - a user has requested that the job be enabled, but the enable operation is still in progress.\n terminating - the job is about to complete, either because a Job Manager task has completed or because the user has terminated the job, but the terminate operation is still in progress (for example, because Job Release tasks are running).\n completed - all tasks have terminated, and the system will not accept any more tasks or any further changes to the job.\n deleting - a user has requested that the job be deleted, but the delete operation is still in progress (for example, because the system is still terminating running tasks)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum JobState {
     #[serde(rename = "active")]
@@ -1785,6 +1972,7 @@ pub struct JobStatistics {
     pub user_cpu_time: String,
     #[serde(rename = "kernelCPUTime")]
     pub kernel_cpu_time: String,
+    #[doc = " The wall clock time is the elapsed time from when the task started running on a compute node to when it finished (or to the last time the statistics were updated, if the task had not finished by then). If a task was retried, this includes the wall clock time of all the task retries."]
     #[serde(rename = "wallClockTime")]
     pub wall_clock_time: String,
     #[serde(rename = "readIOps")]
@@ -1795,12 +1983,15 @@ pub struct JobStatistics {
     pub read_io_gi_b: f64,
     #[serde(rename = "writeIOGiB")]
     pub write_io_gi_b: f64,
+    #[doc = "A task completes successfully if it returns exit code 0."]
     #[serde(rename = "numSucceededTasks")]
     pub num_succeeded_tasks: i64,
+    #[doc = "A task fails if it exhausts its maximum retry count without returning exit code 0."]
     #[serde(rename = "numFailedTasks")]
     pub num_failed_tasks: i64,
     #[serde(rename = "numTaskRetries")]
     pub num_task_retries: i64,
+    #[doc = "The wait time for a task is defined as the elapsed time between the creation of the task and the start of task execution. (If the task is retried due to failures, the wait time is the time to the most recent task execution.) This value is only reported in the account lifetime statistics; it is not included in the job statistics."]
     #[serde(rename = "waitTime")]
     pub wait_time: String,
 }
@@ -1851,14 +2042,17 @@ impl JobTerminateParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobUpdateParameter {
+    #[doc = "Priority values can range from -1000 to 1000, with -1000 being the lowest priority and 1000 being the highest priority. If omitted, it is set to the default value 0."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<JobConstraints>,
     #[serde(rename = "poolInfo")]
     pub pool_info: PoolInformation,
+    #[doc = "If omitted, it takes the default value of an empty list; in effect, any existing metadata is deleted."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
+    #[doc = "Values are:\n\n noAction - do nothing. The job remains active unless terminated or disabled by some other means.\n terminateJob - terminate the job. The job's terminateReason is set to 'AllTasksComplete'."]
     #[serde(
         rename = "onAllTasksComplete",
         default,
@@ -1880,10 +2074,13 @@ impl JobUpdateParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxUserConfiguration {
+    #[doc = "The uid and gid properties must be specified together or not at all. If not specified the underlying operating system picks the uid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uid: Option<i32>,
+    #[doc = "The uid and gid properties must be specified together or not at all. If not specified the underlying operating system picks the gid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gid: Option<i32>,
+    #[doc = "The private key must not be password protected. The private key is used to automatically configure asymmetric-key based authentication for SSH between nodes in a Linux pool when the pool's enableInterNodeCommunication property is true (it is ignored if enableInterNodeCommunication is false). It does this by placing the key pair into the user's .ssh directory. If not specified, password-less SSH is not configured between nodes (no modification of the user's .ssh directory is done)."]
     #[serde(rename = "sshPrivateKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_private_key: Option<String>,
 }
@@ -1892,6 +2089,7 @@ impl LinuxUserConfiguration {
         Self::default()
     }
 }
+#[doc = "The Batch service does not assign any meaning to this metadata; it is solely for the use of user code."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataItem {
     pub name: String,
@@ -1902,12 +2100,15 @@ impl MetadataItem {
         Self { name, value }
     }
 }
+#[doc = "Multi-instance tasks are commonly used to support MPI tasks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiInstanceSettings {
     #[serde(rename = "numberOfInstances")]
     pub number_of_instances: i32,
+    #[doc = "A typical coordination command line launches a background service and verifies that the service is ready to process inter-node messages."]
     #[serde(rename = "coordinationCommandLine", default, skip_serializing_if = "Option::is_none")]
     pub coordination_command_line: Option<String>,
+    #[doc = "The difference between common resource files and task resource files is that common resource files are downloaded for all subtasks including the primary, whereas task resource files are downloaded only for the primary. Also note that these resource files are not downloaded to the task working directory, but instead are downloaded to the task root directory (one directory above the working directory)."]
     #[serde(rename = "commonResourceFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub common_resource_files: Vec<ResourceFile>,
 }
@@ -1932,8 +2133,10 @@ impl NameValuePair {
         Self::default()
     }
 }
+#[doc = "The network configuration for a pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkConfiguration {
+    #[doc = "The virtual network must be in the same region and subscription as the Azure Batch account. The specified subnet should have enough free IP addresses to accommodate the number of nodes in the pool. If the subnet doesn't have enough free IP addresses, the pool will partially allocate compute nodes, and a resize error will occur. The 'MicrosoftAzureBatch' service principal must have the 'Classic Virtual Machine Contributor' Role-Based Access Control (RBAC) role for the specified VNet. The specified subnet must allow communication from the Azure Batch service to be able to schedule tasks on the compute nodes. This can be verified by checking if the specified VNet has any associated Network Security Groups (NSG). If communication to the compute nodes in the specified subnet is denied by an NSG, then the Batch service will set the state of the compute nodes to unusable. For pools created via virtualMachineConfiguration the Batch account must have poolAllocationMode userSubscription in order to use a VNet. If the specified VNet has any associated Network Security Groups (NSG), then a few reserved system ports must be enabled for inbound communication. For pools created with a virtual machine configuration, enable ports 29876 and 29877, as well as port 22 for Linux and port 3389 for Windows. For pools created with a cloud service configuration, enable ports 10100, 20100, and 30100. Also enable outbound connections to Azure Storage on port 443. For more details see: https://docs.microsoft.com/en-us/azure/batch/batch-api-basics#virtual-network-vnet-and-firewall-configuration"]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
     #[serde(rename = "endpointConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1946,9 +2149,11 @@ impl NetworkConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkSecurityGroupRule {
+    #[doc = "Priorities within a pool must be unique and are evaluated in order of priority. The lower the number the higher the priority. For example, rules could be specified with order numbers of 150, 250, and 350. The rule with the order number of 150 takes precedence over the rule that has an order of 250. Allowed priorities are 150 to 3500. If any reserved or duplicate values are provided the request fails with HTTP status code 400."]
     pub priority: i32,
     #[serde(deserialize_with = "case_insensitive_deserialize")]
     pub access: network_security_group_rule::Access,
+    #[doc = "Valid values are a single IP address (i.e. 10.10.10.10), IP subnet (i.e. 192.168.1.0/24), default tag, or * (for all addresses).  If any other values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "sourceAddressPrefix")]
     pub source_address_prefix: String,
 }
@@ -1971,10 +2176,12 @@ pub mod network_security_group_rule {
         Deny,
     }
 }
+#[doc = "The Batch node agent is a program that runs on each node in the pool, and provides the command-and-control interface between the node and the Batch service. There are different implementations of the node agent, known as SKUs, for different operating systems."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeAgentSku {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "This collection is not exhaustive (the node agent may be compatible with other images)."]
     #[serde(rename = "verifiedImageReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub verified_image_references: Vec<ImageReference>,
     #[serde(
@@ -2002,6 +2209,7 @@ pub mod node_agent_sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeDisableSchedulingParameter {
+    #[doc = "Values are:\n\n requeue - Terminate running task processes and requeue the tasks. The tasks may run again on other compute nodes, or when task scheduling is re-enabled on this node. Enter offline state as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Enter offline state as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Enter offline state when all tasks have completed.\n\n The default value is requeue."]
     #[serde(
         rename = "nodeDisableSchedulingOption",
         default,
@@ -2017,6 +2225,7 @@ impl NodeDisableSchedulingParameter {
 }
 pub mod node_disable_scheduling_parameter {
     use super::*;
+    #[doc = "Values are:\n\n requeue - Terminate running task processes and requeue the tasks. The tasks may run again on other compute nodes, or when task scheduling is re-enabled on this node. Enter offline state as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Enter offline state as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Enter offline state when all tasks have completed.\n\n The default value is requeue."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NodeDisableSchedulingOption {
         #[serde(rename = "requeue")]
@@ -2057,6 +2266,7 @@ impl NodeFileListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeRebootParameter {
+    #[doc = "Values are:\n\n requeue - Terminate running task processes and requeue the tasks. The tasks will run again when a node is available. Restart the node as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Restart the node as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Restart the node when all tasks have completed.\n retaineddata - Allow currently running tasks to complete, then wait for all task data retention periods to expire. Schedule no new tasks while waiting. Restart the node when all task retention periods have expired.\n\n The default value is requeue."]
     #[serde(
         rename = "nodeRebootOption",
         default,
@@ -2072,6 +2282,7 @@ impl NodeRebootParameter {
 }
 pub mod node_reboot_parameter {
     use super::*;
+    #[doc = "Values are:\n\n requeue - Terminate running task processes and requeue the tasks. The tasks will run again when a node is available. Restart the node as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Restart the node as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Restart the node when all tasks have completed.\n retaineddata - Allow currently running tasks to complete, then wait for all task data retention periods to expire. Schedule no new tasks while waiting. Restart the node when all task retention periods have expired.\n\n The default value is requeue."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NodeRebootOption {
         #[serde(rename = "requeue")]
@@ -2086,6 +2297,7 @@ pub mod node_reboot_parameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeReimageParameter {
+    #[doc = "Values are:\n\n requeue - Terminate running task processes and requeue the tasks. The tasks will run again when a node is available. Reimage the node as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Reimage the node as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Reimage the node when all tasks have completed.\n retaineddata - Allow currently running tasks to complete, then wait for all task data retention periods to expire. Schedule no new tasks while waiting. Reimage the node when all task retention periods have expired.\n\n The default value is requeue."]
     #[serde(
         rename = "nodeReimageOption",
         default,
@@ -2101,6 +2313,7 @@ impl NodeReimageParameter {
 }
 pub mod node_reimage_parameter {
     use super::*;
+    #[doc = "Values are:\n\n requeue - Terminate running task processes and requeue the tasks. The tasks will run again when a node is available. Reimage the node as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Reimage the node as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Reimage the node when all tasks have completed.\n retaineddata - Allow currently running tasks to complete, then wait for all task data retention periods to expire. Schedule no new tasks while waiting. Reimage the node when all task retention periods have expired.\n\n The default value is requeue."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NodeReimageOption {
         #[serde(rename = "requeue")]
@@ -2117,8 +2330,10 @@ pub mod node_reimage_parameter {
 pub struct NodeRemoveParameter {
     #[serde(rename = "nodeList")]
     pub node_list: Vec<String>,
+    #[doc = "The default value is 15 minutes. The minimum value is 5 minutes. If you specify a value less than 5 minutes, the Batch service returns an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
+    #[doc = "Values are:\n\n requeue - Terminate running tasks and requeue them. The tasks will run again when the job is enabled. Remove nodes as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Remove nodes as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Remove nodes when all tasks have completed.\n retaineddata - Allow currently running tasks to complete, then wait for all task data retention periods to expire. Schedule no new tasks while waiting. Remove nodes when all task retention periods have expired.\n\n The default value is requeue."]
     #[serde(
         rename = "nodeDeallocationOption",
         default,
@@ -2138,10 +2353,13 @@ impl NodeRemoveParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeUpdateUserParameter {
+    #[doc = "The password is required for Windows nodes (those created with 'cloudServiceConfiguration', or created with 'virtualMachineConfiguration' using a Windows image reference). For Linux compute nodes, the password can optionally be specified along with the sshPublicKey property. If omitted, any existing password is removed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "If omitted, the default is 1 day from the current time. For Linux compute nodes, the expiryTime has a precision up to a day."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "The public key should be compatible with OpenSSH encoding and should be base 64 encoded. This property can be specified only for Linux nodes. If this is specified for a Windows node, then the Batch service rejects the request; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request). If omitted, any existing SSH public key is removed."]
     #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<String>,
 }
@@ -2152,8 +2370,10 @@ impl NodeUpdateUserParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsDisk {
+    #[doc = "All the VHDs must be identical and must reside in an Azure Storage account within the same subscription and same region as the Batch account. For best performance, it is recommended that each VHD resides in a separate Azure Storage account. Each VHD can serve up to 20 Windows compute nodes or 40 Linux compute nodes. You must supply enough VHD URIs to satisfy the 'targetDedicated' property of the pool. If you do not supply enough VHD URIs, the pool will partially allocate compute nodes, and a resize error will occur."]
     #[serde(rename = "imageUris")]
     pub image_uris: Vec<String>,
+    #[doc = "Values are:\n\n none - The caching mode for the disk is not enabled.\n readOnly - The caching mode for the disk is read only.\n readWrite - The caching mode for the disk is read and write.\n\n The default value for caching is none. For information about the caching options see: https://blogs.msdn.microsoft.com/windowsazurestorage/2012/06/27/exploring-windows-azure-drives-disks-and-images/."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -2168,6 +2388,7 @@ impl OsDisk {
 }
 pub mod os_disk {
     use super::*;
+    #[doc = "Values are:\n\n none - The caching mode for the disk is not enabled.\n readOnly - The caching mode for the disk is read only.\n readWrite - The caching mode for the disk is read and write.\n\n The default value for caching is none. For information about the caching options see: https://blogs.msdn.microsoft.com/windowsazurestorage/2012/06/27/exploring-windows-azure-drives-disks-and-images/."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Caching {
         #[serde(rename = "none")]
@@ -2178,6 +2399,7 @@ pub mod os_disk {
         ReadWrite,
     }
 }
+#[doc = "Values are:\n\n noAction - do nothing. The job remains active unless terminated or disabled by some other means.\n terminateJob - terminate the job. The job's terminateReason is set to 'AllTasksComplete'."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OnAllTasksComplete {
     #[serde(rename = "noAction")]
@@ -2185,6 +2407,7 @@ pub enum OnAllTasksComplete {
     #[serde(rename = "terminateJob")]
     TerminateJob,
 }
+#[doc = "A task is considered to have failed if has a failureInfo. A failureInfo is set if the task completes with a non-zero exit code after exhausting its retry count, or if there was an error starting the task, for example due to a resource file download error. Values are:\n\n noAction - do nothing.\n performExitOptionsJobAction - take the action associated with the task exit condition in the task's exitConditions collection. (This may still result in no action being taken, if that is what the task specifies.)\n\n The default is noAction."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OnTaskFailure {
     #[serde(rename = "noAction")]
@@ -2194,6 +2417,7 @@ pub enum OnTaskFailure {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputFile {
+    #[doc = "Both relative and absolute paths are supported. Relative paths are relative to the task working directory. The following wildcards are supported: * matches 0 or more characters (for example pattern abc* would match abc or abcdef), ** matches any directory, ? matches any single character, [abc] matches one character in the brackets, and [a-c] matches one character in the range. Brackets can include a negation to match any character not specified (for example [!abc] matches any character but a, b, or c). If a file name starts with \".\" it is ignored by default but may be matched by specifying it explicitly (for example *.gif will not match .a.gif, but .*.gif will). A simple example: **\\*.txt matches any file that does not start in '.' and ends with .txt in the task working directory or any subdirectory. If the filename contains a wildcard character it can be escaped using brackets (for example abc[*] would match a file named abc*). Note that both \\ and / are treated as directory separators on Windows, but only / is on Linux. Environment variables (%var% on Windows or $var on Linux) are expanded prior to the pattern being applied."]
     #[serde(rename = "filePattern")]
     pub file_pattern: String,
     pub destination: OutputFileDestination,
@@ -2211,8 +2435,10 @@ impl OutputFile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputFileBlobContainerDestination {
+    #[doc = "If filePattern refers to a specific file (i.e. contains no wildcards), then path is the name of the blob to which to upload that file. If filePattern contains one or more wildcards (and therefore may match multiple files), then path is the name of the blob virtual directory (which is prepended to each blob name) to which to upload the file(s). If omitted, file(s) are uploaded to the root of the container with a blob name matching their file name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "The URL must include a Shared Access Signature (SAS) granting write permissions to the container."]
     #[serde(rename = "containerUrl")]
     pub container_url: String,
 }
@@ -2231,6 +2457,7 @@ impl OutputFileDestination {
         Self::default()
     }
 }
+#[doc = "Values are:\n\n taskSuccess - Upload the file(s) only after the task process exits with an exit code of 0.\n taskFailure - Upload the file(s) only after the task process exits with a nonzero exit code.\n taskCompletion - Upload the file(s) after the task process exits, no matter what the exit code was."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OutputFileUploadCondition {
     #[serde(rename = "taskSuccess")]
@@ -2242,6 +2469,7 @@ pub enum OutputFileUploadCondition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputFileUploadOptions {
+    #[doc = "Values are:\n\n taskSuccess - Upload the file(s) only after the task process exits with an exit code of 0.\n taskFailure - Upload the file(s) only after the task process exits with a nonzero exit code.\n taskCompletion - Upload the file(s) after the task process exits, no matter what the exit code was."]
     #[serde(rename = "uploadCondition", deserialize_with = "case_insensitive_deserialize")]
     pub upload_condition: OutputFileUploadCondition,
 }
@@ -2252,45 +2480,60 @@ impl OutputFileUploadOptions {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolAddParameter {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 64 characters. The ID is case-preserving and case-insensitive (that is, you may not have two pool IDs within an account that differ only by case)."]
     pub id: String,
+    #[doc = "The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series)."]
     #[serde(rename = "vmSize")]
     pub vm_size: String,
     #[serde(rename = "cloudServiceConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub cloud_service_configuration: Option<CloudServiceConfiguration>,
     #[serde(rename = "virtualMachineConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_configuration: Option<VirtualMachineConfiguration>,
+    #[doc = "This timeout applies only to manual scaling; it has no effect when enableAutoScale is set to true. The default value is 15 minutes. The minimum value is 5 minutes. If you specify a value less than 5 minutes, the Batch service returns an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
+    #[doc = "This property must not be specified if enableAutoScale is set to true. If enableAutoScale is set to false, then you must set either targetDedicatedNodes, targetLowPriorityNodes, or both."]
     #[serde(rename = "targetDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_dedicated_nodes: Option<i32>,
+    #[doc = "This property must not be specified if enableAutoScale is set to true. If enableAutoScale is set to false, then you must set either targetDedicatedNodes, targetLowPriorityNodes, or both."]
     #[serde(rename = "targetLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_low_priority_nodes: Option<i32>,
+    #[doc = "If false, at least one of targetDedicateNodes and targetLowPriorityNodes must be specified. If true, the autoScaleFormula property is required and the pool automatically resizes according to the formula. The default value is false."]
     #[serde(rename = "enableAutoScale", default, skip_serializing_if = "Option::is_none")]
     pub enable_auto_scale: Option<bool>,
+    #[doc = "This property must not be specified if enableAutoScale is set to false. It is required if enableAutoScale is set to true. The formula is checked for validity before the pool is created. If the formula is not valid, the Batch service rejects the request with detailed error information. For more information about specifying this formula, see 'Automatically scale compute nodes in an Azure Batch pool' (https://azure.microsoft.com/documentation/articles/batch-automatic-scaling/)."]
     #[serde(rename = "autoScaleFormula", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_formula: Option<String>,
+    #[doc = "The default value is 15 minutes. The minimum and maximum value are 5 minutes and 168 hours respectively. If you specify a value less than 5 minutes or greater than 168 hours, the Batch service returns an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "autoScaleEvaluationInterval", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_evaluation_interval: Option<String>,
+    #[doc = "Enabling inter-node communication limits the maximum size of the pool due to deployment restrictions on the nodes of the pool. This may result in the pool not reaching its desired size. The default value is false."]
     #[serde(rename = "enableInterNodeCommunication", default, skip_serializing_if = "Option::is_none")]
     pub enable_inter_node_communication: Option<bool>,
+    #[doc = "The network configuration for a pool."]
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<NetworkConfiguration>,
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
+    #[doc = "For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(rename = "certificateReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub certificate_references: Vec<CertificateReference>,
     #[serde(rename = "applicationPackageReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_package_references: Vec<ApplicationPackageReference>,
+    #[doc = "The list of application licenses must be a subset of available Batch service application licenses. If a license is requested which is not supported, pool creation will fail."]
     #[serde(rename = "applicationLicenses", default, skip_serializing_if = "Vec::is_empty")]
     pub application_licenses: Vec<String>,
+    #[doc = "The default value is 1. The maximum value of this setting depends on the size of the compute nodes in the pool (the vmSize setting)."]
     #[serde(rename = "maxTasksPerNode", default, skip_serializing_if = "Option::is_none")]
     pub max_tasks_per_node: Option<i32>,
     #[serde(rename = "taskSchedulingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub task_scheduling_policy: Option<TaskSchedulingPolicy>,
     #[serde(rename = "userAccounts", default, skip_serializing_if = "Vec::is_empty")]
     pub user_accounts: Vec<UserAccount>,
+    #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
@@ -2323,8 +2566,10 @@ impl PoolAddParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolEnableAutoScaleParameter {
+    #[doc = "The formula is checked for validity before it is applied to the pool. If the formula is not valid, the Batch service rejects the request with detailed error information. For more information about specifying this formula, see Automatically scale compute nodes in an Azure Batch pool (https://azure.microsoft.com/en-us/documentation/articles/batch-automatic-scaling)."]
     #[serde(rename = "autoScaleFormula", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_formula: Option<String>,
+    #[doc = "The default value is 15 minutes. The minimum and maximum value are 5 minutes and 168 hours respectively. If you specify a value less than 5 minutes or greater than 168 hours, the Batch service rejects the request with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request). If you specify a new interval, then the existing autoscale evaluation schedule will be stopped and a new autoscale evaluation schedule will be started, with its starting time being the time when this request was issued."]
     #[serde(rename = "autoScaleEvaluationInterval", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_evaluation_interval: Option<String>,
 }
@@ -2335,6 +2580,7 @@ impl PoolEnableAutoScaleParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolEndpointConfiguration {
+    #[doc = "The maximum number of inbound NAT pools per Batch pool is 5. If the maximum number of inbound NAT pools is exceeded the request fails with HTTP status code 400."]
     #[serde(rename = "inboundNATPools")]
     pub inbound_nat_pools: Vec<InboundNatPool>,
 }
@@ -2345,6 +2591,7 @@ impl PoolEndpointConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolEvaluateAutoScaleParameter {
+    #[doc = "The formula is validated and its results calculated, but it is not applied to the pool. To apply the formula to the pool, 'Enable automatic scaling on a pool'. For more information about specifying this formula, see Automatically scale compute nodes in an Azure Batch pool (https://azure.microsoft.com/en-us/documentation/articles/batch-automatic-scaling)."]
     #[serde(rename = "autoScaleFormula")]
     pub auto_scale_formula: String,
 }
@@ -2355,6 +2602,7 @@ impl PoolEvaluateAutoScaleParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PoolInformation {
+    #[doc = "You must ensure that the pool referenced by this property exists. If the pool does not exist at the time the Batch service tries to schedule a job, no tasks for the job will run until you create a pool with that id. Note that the Batch service will not reject the job request; it will simply not run tasks until the pool exists. You must specify either the pool ID or the auto pool specification, but not both."]
     #[serde(rename = "poolId", default, skip_serializing_if = "Option::is_none")]
     pub pool_id: Option<String>,
     #[serde(rename = "autoPoolSpecification", default, skip_serializing_if = "Option::is_none")]
@@ -2381,10 +2629,13 @@ impl PoolListUsageMetricsResult {
 pub struct PoolPatchParameter {
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
+    #[doc = "If this element is present, it replaces any existing certificate references configured on the pool. If omitted, any existing certificate references are left unchanged. For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(rename = "certificateReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub certificate_references: Vec<CertificateReference>,
+    #[doc = "Changes to application package references affect all new compute nodes joining the pool, but do not affect compute nodes that are already in the pool until they are rebooted or reimaged. If this element is present, it replaces any existing application package references. If you specify an empty collection, then all application package references are removed from the pool. If omitted, any existing application package references are left unchanged."]
     #[serde(rename = "applicationPackageReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_package_references: Vec<ApplicationPackageReference>,
+    #[doc = "If this element is present, it replaces any existing metadata configured on the pool. If you specify an empty collection, any metadata is removed from the pool. If omitted, any existing metadata is left unchanged."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
@@ -2399,8 +2650,10 @@ pub struct PoolResizeParameter {
     pub target_dedicated_nodes: Option<i32>,
     #[serde(rename = "targetLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_low_priority_nodes: Option<i32>,
+    #[doc = "The default value is 15 minutes. The minimum value is 5 minutes. If you specify a value less than 5 minutes, the Batch service returns an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
+    #[doc = "Values are:\n\n requeue - Terminate running tasks and requeue them. The tasks will run again when the job is enabled. Remove nodes as soon as tasks have been terminated.\n terminate - Terminate running tasks. The tasks will not run again. Remove nodes as soon as tasks have been terminated.\n taskcompletion - Allow currently running tasks to complete. Schedule no new tasks while waiting. Remove nodes when all tasks have completed.\n retaineddata - Allow currently running tasks to complete, then wait for all task data retention periods to expire. Schedule no new tasks while waiting. Remove nodes when all task retention periods have expired.\n\n The default value is requeue."]
     #[serde(
         rename = "nodeDeallocationOption",
         default,
@@ -2416,44 +2669,58 @@ impl PoolResizeParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolSpecification {
+    #[doc = "The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, A1V2 and A2V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series)."]
     #[serde(rename = "vmSize")]
     pub vm_size: String,
     #[serde(rename = "cloudServiceConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub cloud_service_configuration: Option<CloudServiceConfiguration>,
     #[serde(rename = "virtualMachineConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_configuration: Option<VirtualMachineConfiguration>,
+    #[doc = "The default value is 1. The maximum value of this setting depends on the size of the compute nodes in the pool (the vmSize setting)."]
     #[serde(rename = "maxTasksPerNode", default, skip_serializing_if = "Option::is_none")]
     pub max_tasks_per_node: Option<i32>,
     #[serde(rename = "taskSchedulingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub task_scheduling_policy: Option<TaskSchedulingPolicy>,
+    #[doc = "This timeout applies only to manual scaling; it has no effect when enableAutoScale is set to true. The default value is 15 minutes. The minimum value is 5 minutes. If you specify a value less than 5 minutes, the Batch service rejects the request with an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
+    #[doc = "This property must not be specified if enableAutoScale is set to true. If enableAutoScale is set to false, then you must set either targetDedicatedNodes, targetLowPriorityNodes, or both."]
     #[serde(rename = "targetDedicatedNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_dedicated_nodes: Option<i32>,
+    #[doc = "This property must not be specified if enableAutoScale is set to true. If enableAutoScale is set to false, then you must set either targetDedicatedNodes, targetLowPriorityNodes, or both."]
     #[serde(rename = "targetLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_low_priority_nodes: Option<i32>,
+    #[doc = "If false, at least one of targetDedicateNodes and targetLowPriorityNodes must be specified. If true, the autoScaleFormula element is required. The pool automatically resizes according to the formula. The default value is false."]
     #[serde(rename = "enableAutoScale", default, skip_serializing_if = "Option::is_none")]
     pub enable_auto_scale: Option<bool>,
+    #[doc = "This property must not be specified if enableAutoScale is set to false. It is required if enableAutoScale is set to true. The formula is checked for validity before the pool is created. If the formula is not valid, the Batch service rejects the request with detailed error information."]
     #[serde(rename = "autoScaleFormula", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_formula: Option<String>,
+    #[doc = "The default value is 15 minutes. The minimum and maximum value are 5 minutes and 168 hours respectively. If you specify a value less than 5 minutes or greater than 168 hours, the Batch service rejects the request with an invalid property value error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "autoScaleEvaluationInterval", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_evaluation_interval: Option<String>,
+    #[doc = "Enabling inter-node communication limits the maximum size of the pool due to deployment restrictions on the nodes of the pool. This may result in the pool not reaching its desired size. The default value is false."]
     #[serde(rename = "enableInterNodeCommunication", default, skip_serializing_if = "Option::is_none")]
     pub enable_inter_node_communication: Option<bool>,
+    #[doc = "The network configuration for a pool."]
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub network_configuration: Option<NetworkConfiguration>,
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
+    #[doc = "For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(rename = "certificateReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub certificate_references: Vec<CertificateReference>,
     #[serde(rename = "applicationPackageReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_package_references: Vec<ApplicationPackageReference>,
+    #[doc = "The list of application licenses must be a subset of available Batch service application licenses. If a license is requested which is not supported, pool creation will fail."]
     #[serde(rename = "applicationLicenses", default, skip_serializing_if = "Vec::is_empty")]
     pub application_licenses: Vec<String>,
     #[serde(rename = "userAccounts", default, skip_serializing_if = "Vec::is_empty")]
     pub user_accounts: Vec<UserAccount>,
+    #[doc = "The Batch service does not assign any meaning to metadata; it is solely for the use of user code."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadata: Vec<MetadataItem>,
 }
@@ -2510,10 +2777,13 @@ impl PoolStatistics {
 pub struct PoolUpdatePropertiesParameter {
     #[serde(rename = "startTask", default, skip_serializing_if = "Option::is_none")]
     pub start_task: Option<StartTask>,
+    #[doc = "This list replaces any existing certificate references configured on the pool. If you specify an empty collection, any existing certificate references are removed from the pool. For Windows compute nodes, the Batch service installs the certificates to the specified certificate store and location. For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
     #[serde(rename = "certificateReferences")]
     pub certificate_references: Vec<CertificateReference>,
+    #[doc = "The list replaces any existing application package references on the pool. Changes to application package references affect all new compute nodes joining the pool, but do not affect compute nodes that are already in the pool until they are rebooted or reimaged. If omitted, or if you specify an empty collection, any existing application packages references are removed from the pool."]
     #[serde(rename = "applicationPackageReferences")]
     pub application_package_references: Vec<ApplicationPackageReference>,
+    #[doc = "This list replaces any existing metadata configured on the pool. If omitted, or if you specify an empty collection, any existing metadata is removed from the pool."]
     pub metadata: Vec<MetadataItem>,
 }
 impl PoolUpdatePropertiesParameter {
@@ -2548,6 +2818,7 @@ pub struct PoolUsageMetrics {
     pub start_time: String,
     #[serde(rename = "endTime")]
     pub end_time: String,
+    #[doc = "For information about available sizes of virtual machines for Cloud Services pools (pools created with cloudServiceConfiguration), see Sizes for Cloud Services (http://azure.microsoft.com/documentation/articles/cloud-services-sizes-specs/). Batch supports all Cloud Services VM sizes except ExtraSmall, STANDARD_A1_V2 and STANDARD_A2_V2. For information about available VM sizes for pools using images from the Virtual Machines Marketplace (pools created with virtualMachineConfiguration) see Sizes for Virtual Machines (Linux) (https://azure.microsoft.com/documentation/articles/virtual-machines-linux-sizes/) or Sizes for Virtual Machines (Windows) (https://azure.microsoft.com/documentation/articles/virtual-machines-windows-sizes/). Batch supports all Azure VM sizes except STANDARD_A0 and those with premium storage (STANDARD_GS, STANDARD_DS, and STANDARD_DSV2 series)."]
     #[serde(rename = "vmSize")]
     pub vm_size: String,
     #[serde(rename = "totalCoreHours")]
@@ -2606,10 +2877,12 @@ impl ResizeError {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceFile {
+    #[doc = "This URL must be readable using anonymous access; that is, the Batch service does not present any credentials when downloading the blob. There are two ways to get such a URL for a blob in Azure storage: include a Shared Access Signature (SAS) granting read permissions on the blob, or set the ACL for the blob or its container to allow public access."]
     #[serde(rename = "blobSource")]
     pub blob_source: String,
     #[serde(rename = "filePath")]
     pub file_path: String,
+    #[doc = "This property applies only to files being downloaded to Linux compute nodes. It will be ignored if it is specified for a resourceFile which will be downloaded to a Windows node. If this property is not specified for a Linux node, then a default value of 0770 is applied to the file."]
     #[serde(rename = "fileMode", default, skip_serializing_if = "Option::is_none")]
     pub file_mode: Option<String>,
 }
@@ -2686,12 +2959,16 @@ impl ResourceStatistics {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Schedule {
+    #[doc = "If you do not specify a doNotRunUntil time, the schedule becomes ready to create jobs immediately."]
     #[serde(rename = "doNotRunUntil", default, skip_serializing_if = "Option::is_none")]
     pub do_not_run_until: Option<String>,
+    #[doc = "If you do not specify a doNotRunAfter time, and you are creating a recurring job schedule, the job schedule will remain active until you explicitly terminate it."]
     #[serde(rename = "doNotRunAfter", default, skip_serializing_if = "Option::is_none")]
     pub do_not_run_after: Option<String>,
+    #[doc = "If a job is not created within the startWindow interval, then the 'opportunity' is lost; no job will be created until the next recurrence of the schedule. If the schedule is recurring, and the startWindow is longer than the recurrence interval, then this is equivalent to an infinite startWindow, because the job that is 'due' in one recurrenceInterval is not carried forward into the next recurrence interval. The default is infinite. The minimum value is 1 minute. If you specify a lower value, the Batch service rejects the schedule with an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "startWindow", default, skip_serializing_if = "Option::is_none")]
     pub start_window: Option<String>,
+    #[doc = "Because a job schedule can have at most one active job under it at any given time, if it is time to create a new job under a job schedule, but the previous job is still running, the Batch service will not create the new job until the previous job finishes. If the previous job does not finish within the startWindow period of the new recurrenceInterval, then no new job will be scheduled for that interval. For recurring jobs, you should normally specify a jobManagerTask in the jobSpecification. If you do not use jobManagerTask, you will need an external process to monitor when jobs are created, add tasks to the jobs and terminate the jobs ready for the next recurrence. The default is that the schedule does not recur: one job is created, within the startWindow after the doNotRunUntil time, and the schedule is complete as soon as that job finishes. The minimum value is 1 minute. If you specify a lower value, the Batch service rejects the schedule with an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "recurrenceInterval", default, skip_serializing_if = "Option::is_none")]
     pub recurrence_interval: Option<String>,
 }
@@ -2702,16 +2979,21 @@ impl Schedule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StartTask {
+    #[doc = "The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux."]
     #[serde(rename = "commandLine")]
     pub command_line: String,
+    #[doc = "Files listed under this element are located in the task's working directory."]
     #[serde(rename = "resourceFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_files: Vec<ResourceFile>,
     #[serde(rename = "environmentSettings", default, skip_serializing_if = "Vec::is_empty")]
     pub environment_settings: Vec<EnvironmentSetting>,
+    #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
+    #[doc = "The Batch service retries a task if its exit code is nonzero. Note that this value specifically controls the number of retries. The Batch service will try the task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the task. If the maximum retry count is -1, the Batch service retries the task without limit."]
     #[serde(rename = "maxTaskRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_task_retry_count: Option<i32>,
+    #[doc = "If true and the start task fails on a compute node, the Batch service retries the start task up to its maximum retry count (maxTaskRetryCount). If the task has still not completed successfully after all retries, then the Batch service marks the compute node unusable, and will not schedule tasks to it. This condition can be detected via the node state and failure info details. If false, the Batch service will not wait for the start task to complete. In this case, other tasks can start executing on the compute node while the start task is still running; and even if the start task fails, new tasks will continue to be scheduled on the node. The default is false."]
     #[serde(rename = "waitForSuccess", default, skip_serializing_if = "Option::is_none")]
     pub wait_for_success: Option<bool>,
 }
@@ -2729,20 +3011,27 @@ impl StartTask {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StartTaskInformation {
+    #[doc = "Values are:\n\n running - The start task is currently running.\n completed - The start task has exited with exit code 0, or the start task has failed and the retry limit has reached, or the start task process did not run due to task preparation errors (such as resource file download failures)."]
     #[serde(deserialize_with = "case_insensitive_deserialize")]
     pub state: start_task_information::State,
+    #[doc = "This value is reset every time the task is restarted or retried (that is, this is the most recent time at which the start task started running)."]
     #[serde(rename = "startTime")]
     pub start_time: String,
+    #[doc = "This is the end time of the most recent run of the start task, if that run has completed (even if that run failed and a retry is pending). This element is not present if the start task is currently running."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "This property is set only if the start task is in the completed state. In general, the exit code for a process reflects the specific convention implemented by the application developer for that process. If you use the exit code value to make decisions in your code, be sure that you know the exit code convention used by the application process. However, if the Batch service terminates the start task (due to timeout, or user termination via the API) you may see an operating system-defined exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
     #[serde(rename = "failureInfo", default, skip_serializing_if = "Option::is_none")]
     pub failure_info: Option<TaskFailureInformation>,
+    #[doc = "Task application failures (non-zero exit code) are retried, pre-processing errors (the task could not be run) and file upload errors are not retried. The Batch service will retry the task up to the limit specified by the constraints."]
     #[serde(rename = "retryCount")]
     pub retry_count: i32,
+    #[doc = "This element is present only if the task was retried (i.e. retryCount is nonzero). If present, this is typically the same as startTime, but may be different if the task has been restarted for reasons other than retry; for example, if the compute node was rebooted during a retry, then the startTime is updated but the lastRetryTime is not."]
     #[serde(rename = "lastRetryTime", default, skip_serializing_if = "Option::is_none")]
     pub last_retry_time: Option<String>,
+    #[doc = "Values are:\n\n success - The task ran successfully.\n failure - There was an error during processing of the task. The failure may have occurred before the task process was launched, while the task process was executing, or after the task process exited."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -2766,6 +3055,7 @@ impl StartTaskInformation {
 }
 pub mod start_task_information {
     use super::*;
+    #[doc = "Values are:\n\n running - The start task is currently running.\n completed - The start task has exited with exit code 0, or the start task has failed and the retry limit has reached, or the start task process did not run due to task preparation errors (such as resource file download failures)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         #[serde(rename = "running")]
@@ -2782,12 +3072,15 @@ pub struct SubtaskInformation {
     pub node_info: Option<ComputeNodeInformation>,
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "This property is set only if the subtask is in the Completed state."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "This property is set only if the subtask is in the completed state. In general, the exit code for a process reflects the specific convention implemented by the application developer for that process. If you use the exit code value to make decisions in your code, be sure that you know the exit code convention used by the application process. However, if the Batch service terminates the subtask (due to timeout, or user termination via the API) you may see an operating system-defined exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
     #[serde(rename = "failureInfo", default, skip_serializing_if = "Option::is_none")]
     pub failure_info: Option<TaskFailureInformation>,
+    #[doc = "Values are:\n\n preparing - The task has been assigned to a compute node, but is waiting for a required Job Preparation task to complete on the node. If the Job Preparation task succeeds, the task will move to running. If the Job Preparation task fails, the task will be eligible to be assigned to a different node.\n running - The subtask is running on a compute node.\n completed - The subtask is no longer eligible to run, usually because the subtask has finished successfully, or the subtask has finished unsuccessfully and has exhausted its retry limit. A subtask is also marked as completed if an error occurred launching the subtask, or when the task has been terminated."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -2796,6 +3089,7 @@ pub struct SubtaskInformation {
     pub state: Option<SubtaskState>,
     #[serde(rename = "stateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub state_transition_time: Option<String>,
+    #[doc = "Values are:\n\n preparing - The task has been assigned to a compute node, but is waiting for a required Job Preparation task to complete on the node. If the Job Preparation task succeeds, the task will move to running. If the Job Preparation task fails, the task will be eligible to be assigned to a different node.\n running - The subtask is running on a compute node.\n completed - The subtask is no longer eligible to run, usually because the subtask has finished successfully, or the subtask has finished unsuccessfully and has exhausted its retry limit. A subtask is also marked as completed if an error occurred launching the subtask, or when the task has been terminated."]
     #[serde(
         rename = "previousState",
         default,
@@ -2803,8 +3097,10 @@ pub struct SubtaskInformation {
         deserialize_with = "case_insensitive_deserialize"
     )]
     pub previous_state: Option<SubtaskState>,
+    #[doc = "This property is not set if the subtask is in its initial running state."]
     #[serde(rename = "previousStateTransitionTime", default, skip_serializing_if = "Option::is_none")]
     pub previous_state_transition_time: Option<String>,
+    #[doc = "Values are:\n\n success - The task ran successfully.\n failure - There was an error during processing of the task. The failure may have occurred before the task process was launched, while the task process was executing, or after the task process exited."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -2817,6 +3113,7 @@ impl SubtaskInformation {
         Self::default()
     }
 }
+#[doc = "Values are:\n\n preparing - The task has been assigned to a compute node, but is waiting for a required Job Preparation task to complete on the node. If the Job Preparation task succeeds, the task will move to running. If the Job Preparation task fails, the task will be eligible to be assigned to a different node.\n running - The subtask is running on a compute node.\n completed - The subtask is no longer eligible to run, usually because the subtask has finished successfully, or the subtask has finished unsuccessfully and has exhausted its retry limit. A subtask is also marked as completed if an error occurred launching the subtask, or when the task has been terminated."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SubtaskState {
     #[serde(rename = "preparing")]
@@ -2828,6 +3125,7 @@ pub enum SubtaskState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskAddCollectionParameter {
+    #[doc = "The total serialized size of this collection must be less than 4MB. If it is greater than 4MB (for example if each task has 100's of resource files or environment variables), the request will fail with code 'RequestBodyTooLarge' and should be retried again with fewer tasks."]
     pub value: Vec<TaskAddParameter>,
 }
 impl TaskAddCollectionParameter {
@@ -2847,15 +3145,20 @@ impl TaskAddCollectionResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskAddParameter {
+    #[doc = "The ID can contain any combination of alphanumeric characters including hyphens and underscores, and cannot contain more than 64 characters. The ID is case-preserving and case-insensitive (that is, you may not have two IDs within a job that differ only by case)."]
     pub id: String,
+    #[doc = "The display name need not be unique and can contain any Unicode characters up to a maximum length of 1024."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "For multi-instance tasks, the command line is executed as the primary task, after the primary task and all subtasks have finished executing the coordination command line. The command line does not run under a shell, and therefore cannot take advantage of shell features such as environment variable expansion. If you want to take advantage of such features, you should invoke the shell in the command line, for example using \"cmd /c MyCommand\" in Windows or \"/bin/sh -c MyCommand\" in Linux."]
     #[serde(rename = "commandLine")]
     pub command_line: String,
     #[serde(rename = "exitConditions", default, skip_serializing_if = "Option::is_none")]
     pub exit_conditions: Option<ExitConditions>,
+    #[doc = "For multi-instance tasks, the resource files will only be downloaded to the compute node on which the primary task is executed."]
     #[serde(rename = "resourceFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_files: Vec<ResourceFile>,
+    #[doc = "For multi-instance tasks, the files will only be uploaded from the compute node on which the primary task is executed."]
     #[serde(rename = "outputFiles", default, skip_serializing_if = "Vec::is_empty")]
     pub output_files: Vec<OutputFile>,
     #[serde(rename = "environmentSettings", default, skip_serializing_if = "Vec::is_empty")]
@@ -2864,12 +3167,15 @@ pub struct TaskAddParameter {
     pub affinity_info: Option<AffinityInformation>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints: Option<TaskConstraints>,
+    #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
+    #[doc = "Multi-instance tasks are commonly used to support MPI tasks."]
     #[serde(rename = "multiInstanceSettings", default, skip_serializing_if = "Option::is_none")]
     pub multi_instance_settings: Option<MultiInstanceSettings>,
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Option::is_none")]
     pub depends_on: Option<TaskDependencies>,
+    #[doc = "Application packages are downloaded and deployed to a shared directory, not the task working directory. Therefore, if a referenced package is already on the compute node, and is up to date, then it is not re-downloaded; the existing copy on the compute node is used. If a referenced application package cannot be installed, for example because the package has been deleted or because download failed, the task fails."]
     #[serde(rename = "applicationPackageReferences", default, skip_serializing_if = "Vec::is_empty")]
     pub application_package_references: Vec<ApplicationPackageReference>,
     #[serde(rename = "authenticationTokenSettings", default, skip_serializing_if = "Option::is_none")]
@@ -2897,10 +3203,12 @@ impl TaskAddParameter {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskAddResult {
+    #[doc = "Values are:\n\n success - Task was added successfully.\n clienterror - Task failed to add due to a client error and should not be retried without modifying the request as appropriate.\n servererror - Task failed to add due to a server error and can be retried without modification."]
     #[serde(deserialize_with = "case_insensitive_deserialize")]
     pub status: task_add_result::Status,
     #[serde(rename = "taskId")]
     pub task_id: String,
+    #[doc = "You can use this to detect whether the task has changed between requests. In particular, you can be pass the ETag with an Update Task request to specify that your changes should take effect only if nobody else has modified the job in the meantime."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
     #[serde(rename = "lastModified", default, skip_serializing_if = "Option::is_none")]
@@ -2924,6 +3232,7 @@ impl TaskAddResult {
 }
 pub mod task_add_result {
     use super::*;
+    #[doc = "Values are:\n\n success - Task was added successfully.\n clienterror - Task failed to add due to a client error and should not be retried without modifying the request as appropriate.\n servererror - Task failed to add due to a server error and can be retried without modification."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "success")]
@@ -2936,10 +3245,13 @@ pub mod task_add_result {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskConstraints {
+    #[doc = "If this is not specified, there is no time limit on how long the task may run."]
     #[serde(rename = "maxWallClockTime", default, skip_serializing_if = "Option::is_none")]
     pub max_wall_clock_time: Option<String>,
+    #[doc = "The default is infinite, i.e. the task directory will be retained until the compute node is removed or reimaged."]
     #[serde(rename = "retentionTime", default, skip_serializing_if = "Option::is_none")]
     pub retention_time: Option<String>,
+    #[doc = "Note that this value specifically controls the number of retries. The Batch service will try the task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the task. If the maximum retry count is -1, the Batch service retries the task without limit."]
     #[serde(rename = "maxTaskRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_task_retry_count: Option<i32>,
 }
@@ -2955,6 +3267,7 @@ pub struct TaskCounts {
     pub completed: i32,
     pub succeeded: i32,
     pub failed: i32,
+    #[doc = "If the validationStatus is unvalidated, then the Batch service has not been able to check state counts against the task states as reported in the List Tasks API. The validationStatus may be unvalidated if the job contains more than 200,000 tasks."]
     #[serde(rename = "validationStatus", deserialize_with = "case_insensitive_deserialize")]
     pub validation_status: task_counts::ValidationStatus,
 }
@@ -2979,6 +3292,7 @@ impl TaskCounts {
 }
 pub mod task_counts {
     use super::*;
+    #[doc = "If the validationStatus is unvalidated, then the Batch service has not been able to check state counts against the task states as reported in the List Tasks API. The validationStatus may be unvalidated if the job contains more than 200,000 tasks."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ValidationStatus {
         #[serde(rename = "validated")]
@@ -2989,6 +3303,7 @@ pub mod task_counts {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TaskDependencies {
+    #[doc = "The taskIds collection is limited to 64000 characters total (i.e. the combined length of all task IDs). If the taskIds collection exceeds the maximum length, the Add Task request fails with error code TaskDependencyListTooLong. In this case consider using task ID ranges instead."]
     #[serde(rename = "taskIds", default, skip_serializing_if = "Vec::is_empty")]
     pub task_ids: Vec<String>,
     #[serde(rename = "taskIdRanges", default, skip_serializing_if = "Vec::is_empty")]
@@ -3001,22 +3316,30 @@ impl TaskDependencies {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskExecutionInformation {
+    #[doc = "'Running' corresponds to the running state, so if the task specifies resource files or application packages, then the start time reflects the time at which the task started downloading or deploying these. If the task has been restarted or retried, this is the most recent time at which the task started running. This property is present only for tasks that are in the running or completed state."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "This property is set only if the task is in the Completed state."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "This property is set only if the task is in the completed state. In general, the exit code for a process reflects the specific convention implemented by the application developer for that process. If you use the exit code value to make decisions in your code, be sure that you know the exit code convention used by the application process. However, if the Batch service terminates the task (due to timeout, or user termination via the API) you may see an operating system-defined exit code."]
     #[serde(rename = "exitCode", default, skip_serializing_if = "Option::is_none")]
     pub exit_code: Option<i32>,
     #[serde(rename = "failureInfo", default, skip_serializing_if = "Option::is_none")]
     pub failure_info: Option<TaskFailureInformation>,
+    #[doc = "Task application failures (non-zero exit code) are retried, pre-processing errors (the task could not be run) and file upload errors are not retried. The Batch service will retry the task up to the limit specified by the constraints."]
     #[serde(rename = "retryCount")]
     pub retry_count: i32,
+    #[doc = "This element is present only if the task was retried (i.e. retryCount is nonzero). If present, this is typically the same as startTime, but may be different if the task has been restarted for reasons other than retry; for example, if the compute node was rebooted during a retry, then the startTime is updated but the lastRetryTime is not."]
     #[serde(rename = "lastRetryTime", default, skip_serializing_if = "Option::is_none")]
     pub last_retry_time: Option<String>,
+    #[doc = "When the user removes nodes from a pool (by resizing/shrinking the pool) or when the job is being disabled, the user can specify that running tasks on the nodes be requeued for execution. This count tracks how many times the task has been requeued for these reasons."]
     #[serde(rename = "requeueCount")]
     pub requeue_count: i32,
+    #[doc = "This property is set only if the requeueCount is nonzero."]
     #[serde(rename = "lastRequeueTime", default, skip_serializing_if = "Option::is_none")]
     pub last_requeue_time: Option<String>,
+    #[doc = "Values are:\n\n success - The task ran successfully.\n failure - There was an error during processing of the task. The failure may have occurred before the task process was launched, while the task process was executing, or after the task process exited."]
     #[serde(
         default,
         skip_serializing_if = "Option::is_none",
@@ -3039,6 +3362,7 @@ impl TaskExecutionInformation {
         }
     }
 }
+#[doc = "Values are:\n\n success - The task ran successfully.\n failure - There was an error during processing of the task. The failure may have occurred before the task process was launched, while the task process was executing, or after the task process exited."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TaskExecutionResult {
     #[serde(rename = "success")]
@@ -3067,6 +3391,7 @@ impl TaskFailureInformation {
         }
     }
 }
+#[doc = "The start and end of the range are inclusive. For example, if a range has start 9 and end 12, then it represents tasks '9', '10', '11' and '12'."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskIdRange {
     pub start: i32,
@@ -3087,6 +3412,7 @@ pub struct TaskInformation {
     pub task_id: Option<String>,
     #[serde(rename = "subtaskId", default, skip_serializing_if = "Option::is_none")]
     pub subtask_id: Option<i32>,
+    #[doc = "Values are:\n\n active - The task is queued and able to run, but is not currently assigned to a compute node. A task enters this state when it is created, when it is enabled after being disabled, or when it is awaiting a retry after a failed run.\n preparing - The task has been assigned to a compute node, but is waiting for a required Job Preparation task to complete on the node. If the Job Preparation task succeeds, the task will move to running. If the Job Preparation task fails, the task will return to active and will be eligible to be assigned to a different node.\n running - The task is running on a compute node. This includes task-level preparation such as downloading resource files or deploying application packages specified on the task - it does not necessarily mean that the task command line has started executing.\n completed - The task is no longer eligible to run, usually because the task has finished successfully, or the task has finished unsuccessfully and has exhausted its retry limit. A task is also marked as completed if an error occurred launching the task, or when the task has been terminated."]
     #[serde(rename = "taskState", deserialize_with = "case_insensitive_deserialize")]
     pub task_state: TaskState,
     #[serde(rename = "executionInfo", default, skip_serializing_if = "Option::is_none")]
@@ -3124,6 +3450,7 @@ pub mod task_scheduling_policy {
         Pack,
     }
 }
+#[doc = "Values are:\n\n active - The task is queued and able to run, but is not currently assigned to a compute node. A task enters this state when it is created, when it is enabled after being disabled, or when it is awaiting a retry after a failed run.\n preparing - The task has been assigned to a compute node, but is waiting for a required Job Preparation task to complete on the node. If the Job Preparation task succeeds, the task will move to running. If the Job Preparation task fails, the task will return to active and will be eligible to be assigned to a different node.\n running - The task is running on a compute node. This includes task-level preparation such as downloading resource files or deploying application packages specified on the task - it does not necessarily mean that the task command line has started executing.\n completed - The task is no longer eligible to run, usually because the task has finished successfully, or the task has finished unsuccessfully and has exhausted its retry limit. A task is also marked as completed if an error occurred launching the task, or when the task has been terminated."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TaskState {
     #[serde(rename = "active")]
@@ -3146,6 +3473,7 @@ pub struct TaskStatistics {
     pub user_cpu_time: String,
     #[serde(rename = "kernelCPUTime")]
     pub kernel_cpu_time: String,
+    #[doc = "The wall clock time is the elapsed time from when the task started running on a compute node to when it finished (or to the last time the statistics were updated, if the task had not finished by then). If the task was retried, this includes the wall clock time of all the task retries."]
     #[serde(rename = "wallClockTime")]
     pub wall_clock_time: String,
     #[serde(rename = "readIOps")]
@@ -3220,6 +3548,7 @@ impl UsageStatistics {
 pub struct UserAccount {
     pub name: String,
     pub password: String,
+    #[doc = "Values are:\n\n nonAdmin - The user is a standard user without elevated access.\n admin - The user is a user with elevated access and operates with full Administrator permissions."]
     #[serde(
         rename = "elevationLevel",
         default,
@@ -3240,8 +3569,10 @@ impl UserAccount {
         }
     }
 }
+#[doc = "Specify either the userName or autoUser property, but not both."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserIdentity {
+    #[doc = "The userName and autoUser properties are mutually exclusive; you must specify one but not both."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[serde(rename = "autoUser", default, skip_serializing_if = "Option::is_none")]
@@ -3258,6 +3589,7 @@ pub struct VirtualMachineConfiguration {
     pub image_reference: Option<ImageReference>,
     #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
     pub os_disk: Option<OsDisk>,
+    #[doc = "The Batch node agent is a program that runs on each node in the pool, and provides the command-and-control interface between the node and the Batch service. There are different implementations of the node agent, known as SKUs, for different operating systems. You must specify a node agent SKU which matches the selected image reference. To get the list of supported node agent SKUs along with their list of verified image references, see the 'List supported node agent SKUs' operation."]
     #[serde(rename = "nodeAgentSKUId")]
     pub node_agent_sku_id: String,
     #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -3275,6 +3607,7 @@ impl VirtualMachineConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsConfiguration {
+    #[doc = "If omitted, the default value is true."]
     #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
     pub enable_automatic_updates: Option<bool>,
 }

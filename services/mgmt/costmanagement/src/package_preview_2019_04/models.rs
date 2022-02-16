@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "A budget resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BudgetModel {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of the budget."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BudgetProperties>,
 }
@@ -14,18 +16,26 @@ impl BudgetModel {
         Self::default()
     }
 }
+#[doc = "The properties of the budget."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BudgetProperties {
+    #[doc = "The category of the budget, whether the budget tracks cost or usage."]
     pub category: budget_properties::Category,
+    #[doc = "The total amount of cost to track with the budget"]
     pub amount: f64,
+    #[doc = "The time covered by a budget. Tracking of the amount will be reset based on the time grain."]
     #[serde(rename = "timeGrain")]
     pub time_grain: budget_properties::TimeGrain,
+    #[doc = "The start and end date for a budget."]
     #[serde(rename = "timePeriod")]
     pub time_period: BudgetTimePeriod,
+    #[doc = "The filter expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<ReportConfigFilter>,
+    #[doc = "The current amount of cost which is being tracked for a budget."]
     #[serde(rename = "currentSpend", default, skip_serializing_if = "Option::is_none")]
     pub current_spend: Option<CurrentSpend>,
+    #[doc = "Dictionary of notifications associated with the budget. Budget can have up to five notifications."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notifications: Option<serde_json::Value>,
 }
@@ -49,11 +59,13 @@ impl BudgetProperties {
 }
 pub mod budget_properties {
     use super::*;
+    #[doc = "The category of the budget, whether the budget tracks cost or usage."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Category {
         Cost,
         Usage,
     }
+    #[doc = "The time covered by a budget. Tracking of the amount will be reset based on the time grain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum TimeGrain {
         Monthly,
@@ -61,10 +73,13 @@ pub mod budget_properties {
         Annually,
     }
 }
+#[doc = "The start and end date for a budget."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BudgetTimePeriod {
+    #[doc = "The start date for the budget."]
     #[serde(rename = "startDate")]
     pub start_date: String,
+    #[doc = "The end date for the budget. If not provided, we default this to 10 years from the start date."]
     #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
     pub end_date: Option<String>,
 }
@@ -76,10 +91,13 @@ impl BudgetTimePeriod {
         }
     }
 }
+#[doc = "Result of listing budgets. It contains a list of available budgets in the scope provided."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BudgetsListResult {
+    #[doc = "The list of budgets."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BudgetModel>,
+    #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -88,10 +106,13 @@ impl BudgetsListResult {
         Self::default()
     }
 }
+#[doc = "The current amount of cost which is being tracked for a budget."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CurrentSpend {
+    #[doc = "The total amount of cost which is being tracked by the budget."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub amount: Option<f64>,
+    #[doc = "The unit of measure for the budget amount."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
 }
@@ -100,12 +121,16 @@ impl CurrentSpend {
         Self::default()
     }
 }
+#[doc = "The details of the error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorBase {
+    #[doc = "A machine readable error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A human readable error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Indicates which property in the request is responsible for the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -114,14 +139,19 @@ impl ErrorBase {
         Self::default()
     }
 }
+#[doc = "The details of the error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
+    #[doc = "A machine readable error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A human readable error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Indicates which property in the request is responsible for the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorBase>,
 }
@@ -130,8 +160,10 @@ impl ErrorDetails {
         Self::default()
     }
 }
+#[doc = "Error response indicates that the service is not able to process the incoming request. The reason is provided in the error message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The details of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
@@ -140,12 +172,16 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Each KPI must contain a 'type' and 'enabled' key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KpiProperties {
+    #[doc = "KPI type (Forecast, Budget)."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<kpi_properties::Type>,
+    #[doc = "ID of resource related to metric (budget)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "show the KPI in the UI?"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -156,21 +192,29 @@ impl KpiProperties {
 }
 pub mod kpi_properties {
     use super::*;
+    #[doc = "KPI type (Forecast, Budget)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Forecast,
         Budget,
     }
 }
+#[doc = "The notification associated with a budget."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Notification {
+    #[doc = "The notification is enabled or not."]
     pub enabled: bool,
+    #[doc = "The comparison operator."]
     pub operator: notification::Operator,
+    #[doc = "Threshold value associated with a notification. Notification is sent when the cost exceeded the threshold. It is always percent and has to be between 0 and 1000."]
     pub threshold: f64,
+    #[doc = "Email addresses to send the budget notification to when the threshold is exceeded."]
     #[serde(rename = "contactEmails")]
     pub contact_emails: Vec<String>,
+    #[doc = "Contact roles to send the budget notification to when the threshold is exceeded."]
     #[serde(rename = "contactRoles", default, skip_serializing_if = "Vec::is_empty")]
     pub contact_roles: Vec<String>,
+    #[doc = "Action groups to send the budget notification to when the threshold is exceeded."]
     #[serde(rename = "contactGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub contact_groups: Vec<String>,
 }
@@ -188,6 +232,7 @@ impl Notification {
 }
 pub mod notification {
     use super::*;
+    #[doc = "The comparison operator."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         EqualTo,
@@ -195,10 +240,13 @@ pub mod notification {
         GreaterThanOrEqualTo,
     }
 }
+#[doc = "A Cost management REST API operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -209,12 +257,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.CostManagement."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Dimensions, Query."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -224,10 +276,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of listing cost management operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of cost management operations supported by the Microsoft.CostManagement resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -236,10 +291,13 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Each pivot must contain a 'type' and 'name'."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PivotProperties {
+    #[doc = "Data type to show in view."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<pivot_properties::Type>,
+    #[doc = "Data field to show in view."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -250,20 +308,26 @@ impl PivotProperties {
 }
 pub mod pivot_properties {
     use super::*;
+    #[doc = "Data type to show in view."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Dimension,
         TagKey,
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "eTag of the resource. To handle concurrent update scenario, this field will be used to determine whether the user is updating the latest version or not."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
 }
@@ -272,9 +336,12 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "The aggregation expression to be used in the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigAggregation {
+    #[doc = "The name of the column to aggregate."]
     pub name: String,
+    #[doc = "The name of the aggregation function to use."]
     pub function: report_config_aggregation::Function,
 }
 impl ReportConfigAggregation {
@@ -284,20 +351,26 @@ impl ReportConfigAggregation {
 }
 pub mod report_config_aggregation {
     use super::*;
+    #[doc = "The name of the aggregation function to use."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Function {
         Sum,
     }
 }
+#[doc = "The type of the column in the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReportConfigColumnType {
     Tag,
     Dimension,
 }
+#[doc = "The comparison expression to be used in the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigComparisonExpression {
+    #[doc = "The name of the column to use in comparison."]
     pub name: String,
+    #[doc = "The operator to use for comparison."]
     pub operator: report_config_comparison_expression::Operator,
+    #[doc = "Array of values to use for comparison"]
     pub values: Vec<String>,
 }
 impl ReportConfigComparisonExpression {
@@ -307,24 +380,32 @@ impl ReportConfigComparisonExpression {
 }
 pub mod report_config_comparison_expression {
     use super::*;
+    #[doc = "The operator to use for comparison."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         In,
         Contains,
     }
 }
+#[doc = "The definition of data present in the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportConfigDataset {
+    #[doc = "The granularity of rows in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub granularity: Option<report_config_dataset::Granularity>,
+    #[doc = "The configuration of dataset in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<ReportConfigDatasetConfiguration>,
+    #[doc = "Dictionary of aggregation expression to use in the report. The key of each item in the dictionary is the alias for the aggregated column. Report can have up to 2 aggregation clauses."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub aggregation: Option<serde_json::Value>,
+    #[doc = "Array of group by expression to use in the report. Report can have up to 2 group by clauses."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub grouping: Vec<ReportConfigGrouping>,
+    #[doc = "Array of order by expression to use in the report."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sorting: Vec<ReportConfigSorting>,
+    #[doc = "The filter expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<ReportConfigFilter>,
 }
@@ -335,14 +416,17 @@ impl ReportConfigDataset {
 }
 pub mod report_config_dataset {
     use super::*;
+    #[doc = "The granularity of rows in the report."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Granularity {
         Daily,
         Monthly,
     }
 }
+#[doc = "The configuration of dataset in the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportConfigDatasetConfiguration {
+    #[doc = "Array of column names to be included in the report. Any valid report column name is allowed. If not provided, then report includes all columns."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub columns: Vec<String>,
 }
@@ -351,13 +435,18 @@ impl ReportConfigDatasetConfiguration {
         Self::default()
     }
 }
+#[doc = "The definition of a report config."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigDefinition {
+    #[doc = "The type of the report. Usage represents actual usage, forecast represents forecasted data and UsageAndForecast represents both usage and forecasted data. Actual usage and forecasted data can be differentiated based on dates."]
     #[serde(rename = "type")]
     pub type_: report_config_definition::Type,
+    #[doc = "The time frame for pulling data for the report. If custom, then a specific time period must be provided."]
     pub timeframe: report_config_definition::Timeframe,
+    #[doc = "The start and end date for pulling data for the report."]
     #[serde(rename = "timePeriod", default, skip_serializing_if = "Option::is_none")]
     pub time_period: Option<ReportConfigTimePeriod>,
+    #[doc = "The definition of data present in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dataset: Option<ReportConfigDataset>,
 }
@@ -373,10 +462,12 @@ impl ReportConfigDefinition {
 }
 pub mod report_config_definition {
     use super::*;
+    #[doc = "The type of the report. Usage represents actual usage, forecast represents forecasted data and UsageAndForecast represents both usage and forecasted data. Actual usage and forecasted data can be differentiated based on dates."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Usage,
     }
+    #[doc = "The time frame for pulling data for the report. If custom, then a specific time period must be provided."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Timeframe {
         WeekToDate,
@@ -385,16 +476,22 @@ pub mod report_config_definition {
         Custom,
     }
 }
+#[doc = "The filter expression to be used in the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReportConfigFilter {
+    #[doc = "The logical \"AND\" expression. Must have at least 2 items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub and: Vec<ReportConfigFilter>,
+    #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<ReportConfigFilter>,
+    #[doc = "The filter expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub not: Box<Option<ReportConfigFilter>>,
+    #[doc = "The comparison expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<ReportConfigComparisonExpression>,
+    #[doc = "The comparison expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<ReportConfigComparisonExpression>,
 }
@@ -403,10 +500,13 @@ impl ReportConfigFilter {
         Self::default()
     }
 }
+#[doc = "The group by expression to be used in the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigGrouping {
+    #[doc = "The type of the column in the report."]
     #[serde(rename = "type")]
     pub type_: ReportConfigColumnType,
+    #[doc = "The name of the column to group. This version supports subscription lowest possible grain."]
     pub name: String,
 }
 impl ReportConfigGrouping {
@@ -414,10 +514,13 @@ impl ReportConfigGrouping {
         Self { type_, name }
     }
 }
+#[doc = "The order by expression to be used in the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigSorting {
+    #[doc = "Direction of sort."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<report_config_sorting::Direction>,
+    #[doc = "The name of the column to sort."]
     pub name: String,
 }
 impl ReportConfigSorting {
@@ -427,15 +530,19 @@ impl ReportConfigSorting {
 }
 pub mod report_config_sorting {
     use super::*;
+    #[doc = "Direction of sort."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Direction {
         Ascending,
         Descending,
     }
 }
+#[doc = "The start and end date for pulling data for the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportConfigTimePeriod {
+    #[doc = "The start date to pull data from."]
     pub from: String,
+    #[doc = "The end date to pull data to."]
     pub to: String,
 }
 impl ReportConfigTimePeriod {
@@ -443,14 +550,19 @@ impl ReportConfigTimePeriod {
         Self { from, to }
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -459,14 +571,19 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The Scope model definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Scope {
+    #[doc = "Scope id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Scope name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Scope type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The Scope model definition"]
     #[serde(rename = "childScope", default, skip_serializing_if = "Option::is_none")]
     pub child_scope: Box<Option<Scope>>,
 }
@@ -475,10 +592,12 @@ impl Scope {
         Self::default()
     }
 }
+#[doc = "States and configurations of Cost Analysis."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct View {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of the view."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ViewProperties>,
 }
@@ -487,10 +606,13 @@ impl View {
         Self::default()
     }
 }
+#[doc = "Result of listing views. It contains a list of available views."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ViewListResult {
+    #[doc = "The list of views."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<View>,
+    #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -499,26 +621,37 @@ impl ViewListResult {
         Self::default()
     }
 }
+#[doc = "The properties of the view."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ViewProperties {
+    #[doc = "User input name of the view. Required."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Cost Management scope to save the view on. This includes 'subscriptions/{subscriptionId}' for subscription scope, 'subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}' for resourceGroup scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}' for Billing Account scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/departments/{departmentId}' for Department scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}' for EnrollmentAccount scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/billingProfiles/{billingProfileId}' for BillingProfile scope, 'providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' for InvoiceSection scope, 'providers/Microsoft.Management/managementGroups/{managementGroupId}' for Management Group scope, '/providers/Microsoft.CostManagement/externalBillingAccounts/{externalBillingAccountName}' for ExternalBillingAccount scope, and '/providers/Microsoft.CostManagement/externalSubscriptions/{externalSubscriptionName}' for ExternalSubscription scope."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "Date the user created this view."]
     #[serde(rename = "createdOn", default, skip_serializing_if = "Option::is_none")]
     pub created_on: Option<String>,
+    #[doc = "Date when the user last modified this view."]
     #[serde(rename = "modifiedOn", default, skip_serializing_if = "Option::is_none")]
     pub modified_on: Option<String>,
+    #[doc = "The definition of a report config."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<ReportConfigDefinition>,
+    #[doc = "Chart type of the main view in Cost Analysis. Required."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub chart: Option<view_properties::Chart>,
+    #[doc = "Show costs accumulated over time."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accumulated: Option<view_properties::Accumulated>,
+    #[doc = "Metric to use when displaying costs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metric: Option<view_properties::Metric>,
+    #[doc = "List of KPIs to show in Cost Analysis UI."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub kpis: Vec<KpiProperties>,
+    #[doc = "Configuration of 3 sub-views in the Cost Analysis UI."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pivots: Vec<PivotProperties>,
 }
@@ -529,6 +662,7 @@ impl ViewProperties {
 }
 pub mod view_properties {
     use super::*;
+    #[doc = "Chart type of the main view in Cost Analysis. Required."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Chart {
         Area,
@@ -537,6 +671,7 @@ pub mod view_properties {
         GroupedColumn,
         Table,
     }
+    #[doc = "Show costs accumulated over time."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Accumulated {
         #[serde(rename = "true")]
@@ -544,6 +679,7 @@ pub mod view_properties {
         #[serde(rename = "false")]
         False,
     }
+    #[doc = "Metric to use when displaying costs."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Metric {
         ActualCost,

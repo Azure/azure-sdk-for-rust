@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Error description and code explaining why an operation failed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
+    #[doc = "Error description and code explaining why an operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinitionProperties>,
 }
@@ -12,10 +14,13 @@ impl ErrorDefinition {
         Self::default()
     }
 }
+#[doc = "Error description and code explaining why an operation failed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinitionProperties {
+    #[doc = "Description of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Error code of list gateway."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
 }
@@ -24,14 +29,19 @@ impl ErrorDefinitionProperties {
         Self::default()
     }
 }
+#[doc = "The definition of a Microsoft.Authorization operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "The display information for a Microsoft.Authorization operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Origin of the operation. Values include user|system|user,system"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -40,14 +50,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "The display information for a Microsoft.Authorization operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "The resource provider name: Microsoft.Authorization."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The resource on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The operation that users can perform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The description for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -56,10 +71,13 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "The result of a request to list Microsoft.Authorization operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "The collection value."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "The URI that can be used to request the next set of paged results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -68,14 +86,19 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Role Assignment Approval."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApproval {
+    #[doc = "The role assignment approval id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The role assignment approval unique id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Role Assignment Approval properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentApprovalProperties>,
 }
@@ -84,14 +107,19 @@ impl RoleAssignmentApproval {
         Self::default()
     }
 }
+#[doc = "Details of the actor identity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalActorIdentity {
+    #[doc = "The identity id"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The identity type : user/servicePrincipal"]
     #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<role_assignment_approval_actor_identity::PrincipalType>,
+    #[doc = "The identity display name"]
     #[serde(rename = "principalName", default, skip_serializing_if = "Option::is_none")]
     pub principal_name: Option<String>,
+    #[doc = "The user principal name(if valid)"]
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
 }
@@ -102,6 +130,7 @@ impl RoleAssignmentApprovalActorIdentity {
 }
 pub mod role_assignment_approval_actor_identity {
     use super::*;
+    #[doc = "The identity type : user/servicePrincipal"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrincipalType {
         #[serde(rename = "user")]
@@ -110,10 +139,13 @@ pub mod role_assignment_approval_actor_identity {
         ServicePrincipal,
     }
 }
+#[doc = "List of role assignment approvals."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalListResult {
+    #[doc = "Role Assignment Approval list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignmentApproval>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -122,8 +154,10 @@ impl RoleAssignmentApprovalListResult {
         Self::default()
     }
 }
+#[doc = "Role Assignment Approval properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalProperties {
+    #[doc = "This is the collection of stages returned when one does an expand on it."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stages: Vec<RoleAssignmentApprovalStep>,
 }
@@ -132,14 +166,19 @@ impl RoleAssignmentApprovalProperties {
         Self::default()
     }
 }
+#[doc = "Role assignment approval stage properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalStep {
+    #[doc = "The role assignment approval stage id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The role assignment approval stage name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Approval Step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentApprovalStepProperties>,
 }
@@ -148,10 +187,13 @@ impl RoleAssignmentApprovalStep {
         Self::default()
     }
 }
+#[doc = "List of role assignment approval stage list."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalStepListResult {
+    #[doc = "Role Assignment Approval Step list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignmentApprovalStep>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -160,20 +202,28 @@ impl RoleAssignmentApprovalStepListResult {
         Self::default()
     }
 }
+#[doc = "Approval Step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentApprovalStepProperties {
+    #[doc = "The display name for the approval stage."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "This read-only field specifies the status of an approval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<role_assignment_approval_step_properties::Status>,
+    #[doc = "Indicates whether the stage is assigned to me for review"]
     #[serde(rename = "assignedToMe", default, skip_serializing_if = "Option::is_none")]
     pub assigned_to_me: Option<bool>,
+    #[doc = "Details of the actor identity"]
     #[serde(rename = "reviewedBy", default, skip_serializing_if = "Option::is_none")]
     pub reviewed_by: Option<RoleAssignmentApprovalActorIdentity>,
+    #[doc = "Date Time when a decision was taken."]
     #[serde(rename = "reviewedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub reviewed_date_time: Option<String>,
+    #[doc = "The decision on the approval stage. This value is initially set to NotReviewed. Approvers can take action of Approve/Deny"]
     #[serde(rename = "reviewResult", default, skip_serializing_if = "Option::is_none")]
     pub review_result: Option<role_assignment_approval_step_properties::ReviewResult>,
+    #[doc = "Justification provided by approvers for their action"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub justification: Option<String>,
 }
@@ -184,6 +234,7 @@ impl RoleAssignmentApprovalStepProperties {
 }
 pub mod role_assignment_approval_step_properties {
     use super::*;
+    #[doc = "This read-only field specifies the status of an approval."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         NotStarted,
@@ -195,6 +246,7 @@ pub mod role_assignment_approval_step_properties {
         Completing,
         Escalated,
     }
+    #[doc = "The decision on the approval stage. This value is initially set to NotReviewed. Approvers can take action of Approve/Deny"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ReviewResult {
         Approve,

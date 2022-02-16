@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The list of locks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementLockListResult {
+    #[doc = "The list of locks."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementLockObject>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -14,13 +17,18 @@ impl ManagementLockListResult {
         Self::default()
     }
 }
+#[doc = "The lock information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementLockObject {
+    #[doc = "The lock properties."]
     pub properties: ManagementLockProperties,
+    #[doc = "The resource ID of the lock."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The resource type of the lock - Microsoft.Authorization/locks."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The name of the lock."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -34,8 +42,10 @@ impl ManagementLockObject {
         }
     }
 }
+#[doc = "Lock owner properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementLockOwner {
+    #[doc = "The application ID of the lock owner."]
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
 }
@@ -44,11 +54,15 @@ impl ManagementLockOwner {
         Self::default()
     }
 }
+#[doc = "The lock properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagementLockProperties {
+    #[doc = "The level of the lock. Possible values are: NotSpecified, CanNotDelete, ReadOnly. CanNotDelete means authorized users are able to read and modify the resources, but not delete. ReadOnly means authorized users can only read from a resource, but they can't modify or delete it."]
     pub level: management_lock_properties::Level,
+    #[doc = "Notes about the lock. Maximum of 512 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+    #[doc = "The owners of the lock."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub owners: Vec<ManagementLockOwner>,
 }
@@ -63,6 +77,7 @@ impl ManagementLockProperties {
 }
 pub mod management_lock_properties {
     use super::*;
+    #[doc = "The level of the lock. Possible values are: NotSpecified, CanNotDelete, ReadOnly. CanNotDelete means authorized users are able to read and modify the resources, but not delete. ReadOnly means authorized users can only read from a resource, but they can't modify or delete it."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Level {
         NotSpecified,
@@ -70,10 +85,13 @@ pub mod management_lock_properties {
         ReadOnly,
     }
 }
+#[doc = "Microsoft.Authorization operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -84,12 +102,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.Authorization"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Profile, endpoint, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -99,10 +121,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list Microsoft.Authorization operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of Microsoft.Authorization operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

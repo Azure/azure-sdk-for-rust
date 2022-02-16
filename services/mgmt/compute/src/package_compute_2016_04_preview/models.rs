@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "A disk access SAS uri."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessUri {
+    #[doc = "Azure properties, including output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessUriOutput>,
 }
@@ -12,8 +14,10 @@ impl AccessUri {
         Self::default()
     }
 }
+#[doc = "Azure properties, including output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessUriOutput {
+    #[doc = "This object gets 'bubbled up' through flattening."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<AccessUriRaw>,
 }
@@ -22,8 +26,10 @@ impl AccessUriOutput {
         Self::default()
     }
 }
+#[doc = "This object gets 'bubbled up' through flattening."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessUriRaw {
+    #[doc = "A SAS uri for accessing a disk."]
     #[serde(rename = "accessSAS", default, skip_serializing_if = "Option::is_none")]
     pub access_sas: Option<String>,
 }
@@ -32,14 +38,19 @@ impl AccessUriRaw {
         Self::default()
     }
 }
+#[doc = "Specifies additional XML formatted information that can be included in the Unattend.xml file, which is used by Windows Setup. Contents are defined by setting name, component name, and the pass in which the content is applied."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdditionalUnattendContent {
+    #[doc = "The pass name. Currently, the only allowable value is OobeSystem."]
     #[serde(rename = "passName", default, skip_serializing_if = "Option::is_none")]
     pub pass_name: Option<additional_unattend_content::PassName>,
+    #[doc = "The component name. Currently, the only allowable value is Microsoft-Windows-Shell-Setup."]
     #[serde(rename = "componentName", default, skip_serializing_if = "Option::is_none")]
     pub component_name: Option<additional_unattend_content::ComponentName>,
+    #[doc = "Specifies the name of the setting to which the content applies. Possible values are: FirstLogonCommands and AutoLogon."]
     #[serde(rename = "settingName", default, skip_serializing_if = "Option::is_none")]
     pub setting_name: Option<additional_unattend_content::SettingName>,
+    #[doc = "Specifies the XML formatted content that is added to the unattend.xml file for the specified path and component. The XML must be less than 4KB and must include the root element for the setting or feature that is being inserted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
 }
@@ -50,23 +61,28 @@ impl AdditionalUnattendContent {
 }
 pub mod additional_unattend_content {
     use super::*;
+    #[doc = "The pass name. Currently, the only allowable value is OobeSystem."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PassName {
         OobeSystem,
     }
+    #[doc = "The component name. Currently, the only allowable value is Microsoft-Windows-Shell-Setup."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ComponentName {
         #[serde(rename = "Microsoft-Windows-Shell-Setup")]
         MicrosoftWindowsShellSetup,
     }
+    #[doc = "Specifies the name of the setting to which the content applies. Possible values are: FirstLogonCommands and AutoLogon."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SettingName {
         AutoLogon,
         FirstLogonCommands,
     }
 }
+#[doc = "The API entity reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiEntityReference {
+    #[doc = "The ARM resource id in the form of /subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroupName}/..."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -75,16 +91,22 @@ impl ApiEntityReference {
         Self::default()
     }
 }
+#[doc = "Api error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiError {
+    #[doc = "The Api error details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ApiErrorBase>,
+    #[doc = "Inner error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -93,12 +115,16 @@ impl ApiError {
         Self::default()
     }
 }
+#[doc = "Api error base."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiErrorBase {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -107,12 +133,15 @@ impl ApiErrorBase {
         Self::default()
     }
 }
+#[doc = "Specifies information about the availability set that the virtual machine should be assigned to. Virtual machines specified in the same availability set are allocated to different nodes to maximize availability. For more information about availability sets, see [Manage the availability of virtual machines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-manage-availability?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json). <br><br> For more information on Azure planned maintenance, see [Planned maintenance for virtual machines in Azure](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-planned-maintenance?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json) <br><br> Currently, a VM can only be added to availability set at creation time. An existing VM cannot be added to an availability set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailabilitySet {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The instance view of a resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AvailabilitySetProperties>,
+    #[doc = "Describes a virtual machine scale set sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
@@ -125,9 +154,12 @@ impl AvailabilitySet {
         }
     }
 }
+#[doc = "The List Availability Set operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailabilitySetListResult {
+    #[doc = "The list of availability sets"]
     pub value: Vec<AvailabilitySet>,
+    #[doc = "The URI to fetch the next page of AvailabilitySets. Call ListNext() with this URI to fetch the next page of AvailabilitySets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -136,16 +168,22 @@ impl AvailabilitySetListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "The instance view of a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilitySetProperties {
+    #[doc = "Update Domain count."]
     #[serde(rename = "platformUpdateDomainCount", default, skip_serializing_if = "Option::is_none")]
     pub platform_update_domain_count: Option<i32>,
+    #[doc = "Fault Domain count."]
     #[serde(rename = "platformFaultDomainCount", default, skip_serializing_if = "Option::is_none")]
     pub platform_fault_domain_count: Option<i32>,
+    #[doc = "A list of references to all virtual machines in the availability set."]
     #[serde(rename = "virtualMachines", default, skip_serializing_if = "Vec::is_empty")]
     pub virtual_machines: Vec<SubResource>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
+    #[doc = "If the availability set supports managed disks."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 }
@@ -154,10 +192,13 @@ impl AvailabilitySetProperties {
         Self::default()
     }
 }
+#[doc = "Boot Diagnostics is a debugging feature which allows you to view Console Output and Screenshot to diagnose VM status. <br><br> You can easily view the output of your console log. <br><br> Azure also enables you to see a screenshot of the VM from the hypervisor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BootDiagnostics {
+    #[doc = "Whether boot diagnostics should be enabled on the Virtual Machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "Uri of the storage account to use for placing the console output and screenshot."]
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
 }
@@ -166,10 +207,13 @@ impl BootDiagnostics {
         Self::default()
     }
 }
+#[doc = "The instance view of a virtual machine boot diagnostics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BootDiagnosticsInstanceView {
+    #[doc = "The console screenshot blob URI."]
     #[serde(rename = "consoleScreenshotBlobUri", default, skip_serializing_if = "Option::is_none")]
     pub console_screenshot_blob_uri: Option<String>,
+    #[doc = "The Linux serial console log blob Uri."]
     #[serde(rename = "serialConsoleLogBlobUri", default, skip_serializing_if = "Option::is_none")]
     pub serial_console_log_blob_uri: Option<String>,
 }
@@ -178,14 +222,17 @@ impl BootDiagnosticsInstanceView {
         Self::default()
     }
 }
+#[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Caching {
     None,
     ReadOnly,
     ReadWrite,
 }
+#[doc = "Compute-specific operation properties, including output"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComputeLongRunningOperationProperties {
+    #[doc = "Operation output data (raw JSON)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<serde_json::Value>,
 }
@@ -194,22 +241,29 @@ impl ComputeLongRunningOperationProperties {
         Self::default()
     }
 }
+#[doc = "Specifies how the virtual machine should be created.<br><br> Possible values are:<br><br> **Attach** \\u2013 This value is used when you are using a specialized disk to create the virtual machine.<br><br> **FromImage** \\u2013 This value is used when you are using an image to create the virtual machine. If you are using a platform image, you also use the imageReference element described above. If you are using a marketplace image, you  also use the plan element previously described."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CreateOption {
     FromImage,
     Empty,
     Attach,
 }
+#[doc = "Data used when creating a disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreationData {
+    #[doc = "This enumerates the possible sources of a disk's creation."]
     #[serde(rename = "createOption")]
     pub create_option: creation_data::CreateOption,
+    #[doc = "If createOption is Import, the Azure Resource Manager identifier of the storage account containing the blob to import as a disk. Required only if the blob is in a different subscription"]
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_id: Option<String>,
+    #[doc = "The source image used for creating the disk."]
     #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
     pub image_reference: Option<ImageDiskReference>,
+    #[doc = "If createOption is Import, this is a SAS URI to a blob to be imported into a managed disk. If createOption is Copy, this is a relative Uri containing the id of the source snapshot to be copied into a managed disk."]
     #[serde(rename = "sourceUri", default, skip_serializing_if = "Option::is_none")]
     pub source_uri: Option<String>,
+    #[doc = "If createOption is Copy, this is the ARM id of the source snapshot or disk. If createOption is Restore, this is the ARM-like id of the source disk restore point."]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
 }
@@ -226,6 +280,7 @@ impl CreationData {
 }
 pub mod creation_data {
     use super::*;
+    #[doc = "This enumerates the possible sources of a disk's creation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreateOption {
         Empty,
@@ -236,21 +291,30 @@ pub mod creation_data {
         Restore,
     }
 }
+#[doc = "Describes a data disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataDisk {
+    #[doc = "Specifies the logical unit number of the data disk. This value is used to identify data disks within the VM and therefore must be unique for each data disk attached to a VM."]
     pub lun: i32,
+    #[doc = "The disk name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Describes the uri of a disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vhd: Option<VirtualHardDisk>,
+    #[doc = "Describes the uri of a disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<VirtualHardDisk>,
+    #[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caching: Option<Caching>,
+    #[doc = "Specifies how the virtual machine should be created.<br><br> Possible values are:<br><br> **Attach** \\u2013 This value is used when you are using a specialized disk to create the virtual machine.<br><br> **FromImage** \\u2013 This value is used when you are using an image to create the virtual machine. If you are using a platform image, you also use the imageReference element described above. If you are using a marketplace image, you  also use the plan element previously described."]
     #[serde(rename = "createOption")]
     pub create_option: CreateOption,
+    #[doc = "Specifies the size of an empty data disk in gigabytes. This element can be used to overwrite the size of the disk in a virtual machine image. <br><br> This value cannot be larger than 1023 GB"]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "The parameters of a managed disk."]
     #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
     pub managed_disk: Option<ManagedDiskParameters>,
 }
@@ -268,8 +332,10 @@ impl DataDisk {
         }
     }
 }
+#[doc = "Contains the data disk images information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataDiskImage {
+    #[doc = "Specifies the logical unit number of the data disk. This value is used to identify data disks within the VM and therefore must be unique for each data disk attached to a VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
@@ -278,8 +344,10 @@ impl DataDiskImage {
         Self::default()
     }
 }
+#[doc = "Specifies the boot diagnostic settings state. <br><br>Minimum api-version: 2015-06-15."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticsProfile {
+    #[doc = "Boot Diagnostics is a debugging feature which allows you to view Console Output and Screenshot to diagnose VM status. <br><br> You can easily view the output of your console log. <br><br> Azure also enables you to see a screenshot of the VM from the hypervisor."]
     #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub boot_diagnostics: Option<BootDiagnostics>,
 }
@@ -288,10 +356,12 @@ impl DiagnosticsProfile {
         Self::default()
     }
 }
+#[doc = "Disk resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Disk {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Disk resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskProperties>,
 }
@@ -303,12 +373,16 @@ impl Disk {
         }
     }
 }
+#[doc = "Describes a Encryption Settings for a Disk"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskEncryptionSettings {
+    #[doc = "Describes a reference to Key Vault Secret"]
     #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_key: Option<KeyVaultSecretReference>,
+    #[doc = "Describes a reference to Key Vault Key"]
     #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub key_encryption_key: Option<KeyVaultKeyReference>,
+    #[doc = "Specifies whether disk encryption should be enabled on the virtual machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -317,10 +391,13 @@ impl DiskEncryptionSettings {
         Self::default()
     }
 }
+#[doc = "The instance view of the disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskInstanceView {
+    #[doc = "The disk name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
 }
@@ -329,9 +406,12 @@ impl DiskInstanceView {
         Self::default()
     }
 }
+#[doc = "The List Disks operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskList {
+    #[doc = "A list of disks."]
     pub value: Vec<Disk>,
+    #[doc = "the uri to fetch the next page of disks. Call ListNext() with this to fetch the next page of disks."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -340,22 +420,31 @@ impl DiskList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Disk resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskProperties {
+    #[doc = "the storage account type of the disk."]
     #[serde(rename = "accountType", default, skip_serializing_if = "Option::is_none")]
     pub account_type: Option<disk_properties::AccountType>,
+    #[doc = "The time when the disk was created."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "The Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<disk_properties::OsType>,
+    #[doc = "Data used when creating a disk."]
     #[serde(rename = "creationData")]
     pub creation_data: CreationData,
+    #[doc = "If creationData.createOption is Empty, this field is mandatory and it indicates the size of the VHD to create. If this field is present for updates or creation with other options, it indicates a resize. Resizes are only allowed if the disk is not attached to a running VM, and can only increase the disk's size."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "Encryption settings for disk or snapshot"]
     #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings: Option<EncryptionSettings>,
+    #[doc = "A relative URI containing the VM id that has the disk attached."]
     #[serde(rename = "ownerId", default, skip_serializing_if = "Option::is_none")]
     pub owner_id: Option<String>,
+    #[doc = "The disk provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -375,6 +464,7 @@ impl DiskProperties {
 }
 pub mod disk_properties {
     use super::*;
+    #[doc = "the storage account type of the disk."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccountType {
         #[serde(rename = "Standard_LRS")]
@@ -382,16 +472,19 @@ pub mod disk_properties {
         #[serde(rename = "Premium_LRS")]
         PremiumLrs,
     }
+    #[doc = "The Operating System type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
 }
+#[doc = "Disk update resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskUpdate {
     #[serde(flatten)]
     pub resource_update: ResourceUpdate,
+    #[doc = "Disk resource update properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskUpdateProperties>,
 }
@@ -400,16 +493,22 @@ impl DiskUpdate {
         Self::default()
     }
 }
+#[doc = "Disk resource update properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskUpdateProperties {
+    #[doc = "the storage account type of the disk."]
     #[serde(rename = "accountType", default, skip_serializing_if = "Option::is_none")]
     pub account_type: Option<disk_update_properties::AccountType>,
+    #[doc = "the Operating System type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<disk_update_properties::OsType>,
+    #[doc = "Data used when creating a disk."]
     #[serde(rename = "creationData", default, skip_serializing_if = "Option::is_none")]
     pub creation_data: Option<CreationData>,
+    #[doc = "If creationData.createOption is Empty, this field is mandatory and it indicates the size of the VHD to create. If this field is present for updates or creation with other options, it indicates a resize. Resizes are only allowed if the disk is not attached to a running VM, and can only increase the disk's size."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "Encryption settings for disk or snapshot"]
     #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings: Option<EncryptionSettings>,
 }
@@ -420,6 +519,7 @@ impl DiskUpdateProperties {
 }
 pub mod disk_update_properties {
     use super::*;
+    #[doc = "the storage account type of the disk."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AccountType {
         #[serde(rename = "Standard_LRS")]
@@ -427,18 +527,23 @@ pub mod disk_update_properties {
         #[serde(rename = "Premium_LRS")]
         PremiumLrs,
     }
+    #[doc = "the Operating System type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
 }
+#[doc = "Encryption settings for disk or snapshot"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionSettings {
+    #[doc = "Set this flag to true and provide DiskEncryptionKey and optional KeyEncryptionKey to enable encryption. Set this flag to false and remove DiskEncryptionKey and KeyEncryptionKey to disable encryption. If EncryptionSettings is null in the request object, the existing settings remain unchanged."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "Key Vault Secret Url and vault id of the encryption key "]
     #[serde(rename = "diskEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_key: Option<KeyVaultAndSecretReference>,
+    #[doc = "Key Vault Key Url and vault id of KeK, KeK is optional and when provided is used to unwrap the encryptionKey"]
     #[serde(rename = "keyEncryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub key_encryption_key: Option<KeyVaultAndKeyReference>,
 }
@@ -447,9 +552,11 @@ impl EncryptionSettings {
         Self::default()
     }
 }
+#[doc = "Data used for requesting a SAS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GrantAccessData {
     pub access: grant_access_data::Access,
+    #[doc = "Time duration in seconds until the SAS access expires."]
     #[serde(rename = "durationInSeconds")]
     pub duration_in_seconds: i32,
 }
@@ -469,8 +576,10 @@ pub mod grant_access_data {
         Read,
     }
 }
+#[doc = "Specifies the hardware settings for the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HardwareProfile {
+    #[doc = "Specifies the size of the virtual machine. For more information about virtual machine sizes, see [Sizes for virtual machines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-sizes?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json). <br><br> The available VM sizes depend on region and availability set. For a list of available sizes use these APIs:  <br><br> [List all available virtual machine sizes in an availability set](virtualmachines-list-sizes-availability-set.md) <br><br> [List all available virtual machine sizes in a region](virtualmachines-list-sizes-region.md) <br><br> [List all available virtual machine sizes for resizing](virtualmachines-list-sizes-for-resizing.md)"]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<hardware_profile::VmSize>,
 }
@@ -481,6 +590,7 @@ impl HardwareProfile {
 }
 pub mod hardware_profile {
     use super::*;
+    #[doc = "Specifies the size of the virtual machine. For more information about virtual machine sizes, see [Sizes for virtual machines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-sizes?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json). <br><br> The available VM sizes depend on region and availability set. For a list of available sizes use these APIs:  <br><br> [List all available virtual machine sizes in an availability set](virtualmachines-list-sizes-availability-set.md) <br><br> [List all available virtual machine sizes in a region](virtualmachines-list-sizes-region.md) <br><br> [List all available virtual machine sizes for resizing](virtualmachines-list-sizes-for-resizing.md)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VmSize {
         #[serde(rename = "Basic_A0")]
@@ -611,10 +721,12 @@ pub mod hardware_profile {
         StandardGs5,
     }
 }
+#[doc = "The source user image virtual hard disk. The virtual hard disk will be copied before being attached to the virtual machine. If SourceImage is provided, the destination virtual hard drive must not exist."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Image {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes the properties of an Image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImageProperties>,
 }
@@ -626,17 +738,22 @@ impl Image {
         }
     }
 }
+#[doc = "Describes a data disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageDataDisk {
+    #[doc = "Specifies the logical unit number of the data disk. This value is used to identify data disks within the VM and therefore must be unique for each data disk attached to a VM."]
     pub lun: i32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<SubResource>,
     #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
     pub managed_disk: Option<SubResource>,
+    #[doc = "The Virtual Hard Disk."]
     #[serde(rename = "blobUri", default, skip_serializing_if = "Option::is_none")]
     pub blob_uri: Option<String>,
+    #[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caching: Option<image_data_disk::Caching>,
+    #[doc = "Specifies the size of empty data disks in gigabytes. This element can be used to overwrite the name of the disk in a virtual machine image. <br><br> This value cannot be larger than 1023 GB"]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
 }
@@ -654,6 +771,7 @@ impl ImageDataDisk {
 }
 pub mod image_data_disk {
     use super::*;
+    #[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Caching {
         None,
@@ -661,9 +779,12 @@ pub mod image_data_disk {
         ReadWrite,
     }
 }
+#[doc = "The source image used for creating the disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageDiskReference {
+    #[doc = "A relative uri containing either a Platform Image Repository or user image reference."]
     pub id: String,
+    #[doc = "If the disk is created from an image's data disk, this is an index that indicates which of the data disks in the image to use. For OS disks, this field is null."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
@@ -672,9 +793,12 @@ impl ImageDiskReference {
         Self { id, lun: None }
     }
 }
+#[doc = "The List Image operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageListResult {
+    #[doc = "The list of Images."]
     pub value: Vec<Image>,
+    #[doc = "The uri to fetch the next page of Images. Call ListNext() with this to fetch the next page of Images."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -683,20 +807,26 @@ impl ImageListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes an Operating System disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageOsDisk {
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk if creating a VM from a custom image. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[serde(rename = "osType")]
     pub os_type: image_os_disk::OsType,
+    #[doc = "The OS State."]
     #[serde(rename = "osState")]
     pub os_state: image_os_disk::OsState,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<SubResource>,
     #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
     pub managed_disk: Option<SubResource>,
+    #[doc = "The Virtual Hard Disk."]
     #[serde(rename = "blobUri", default, skip_serializing_if = "Option::is_none")]
     pub blob_uri: Option<String>,
+    #[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caching: Option<image_os_disk::Caching>,
+    #[doc = "Specifies the size of empty data disks in gigabytes. This element can be used to overwrite the name of the disk in a virtual machine image. <br><br> This value cannot be larger than 1023 GB"]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
 }
@@ -715,16 +845,19 @@ impl ImageOsDisk {
 }
 pub mod image_os_disk {
     use super::*;
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk if creating a VM from a custom image. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
+    #[doc = "The OS State."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsState {
         Generalized,
         Specialized,
     }
+    #[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Caching {
         None,
@@ -732,12 +865,15 @@ pub mod image_os_disk {
         ReadWrite,
     }
 }
+#[doc = "Describes the properties of an Image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageProperties {
     #[serde(rename = "sourceVirtualMachine", default, skip_serializing_if = "Option::is_none")]
     pub source_virtual_machine: Option<SubResource>,
+    #[doc = "Describes a storage profile."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<ImageStorageProfile>,
+    #[doc = "The provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -746,16 +882,21 @@ impl ImageProperties {
         Self::default()
     }
 }
+#[doc = "Specifies information about the image to use. You can specify information about platform images, marketplace images, or virtual machine images. This element is required when you want to use a platform image, marketplace image, or virtual machine image, but is not used in other creation operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageReference {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "The image publisher."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "Specifies the offer of the platform image or marketplace image used to create the virtual machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offer: Option<String>,
+    #[doc = "The image SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
+    #[doc = "Specifies the version of the platform image or marketplace image used to create the virtual machine. The allowed formats are Major.Minor.Build or 'latest'. Major, Minor, and Build are decimal numbers. Specify 'latest' to use the latest version of an image available at deploy time. Even if you use 'latest', the VM image will not automatically update after deploy time even if a new version becomes available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -764,10 +905,13 @@ impl ImageReference {
         Self::default()
     }
 }
+#[doc = "Describes a storage profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageStorageProfile {
+    #[doc = "Describes an Operating System disk."]
     #[serde(rename = "osDisk")]
     pub os_disk: ImageOsDisk,
+    #[doc = "Specifies the parameters that are used to add a data disk to a virtual machine. <br><br> For more information about disks, see [About disks and VHDs for Azure virtual machines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-about-disks-vhds?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json)."]
     #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disks: Vec<ImageDataDisk>,
 }
@@ -779,10 +923,13 @@ impl ImageStorageProfile {
         }
     }
 }
+#[doc = "Inner error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
+    #[doc = "The exception type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exceptiontype: Option<String>,
+    #[doc = "The internal error message or exception dump."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errordetail: Option<String>,
 }
@@ -791,16 +938,22 @@ impl InnerError {
         Self::default()
     }
 }
+#[doc = "Instance view status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceViewStatus {
+    #[doc = "The status code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The level code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<instance_view_status::Level>,
+    #[doc = "The short localizable label for the status."]
     #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
+    #[doc = "The detailed status message, including for alerts and error messages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The time of the status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
 }
@@ -811,6 +964,7 @@ impl InstanceViewStatus {
 }
 pub mod instance_view_status {
     use super::*;
+    #[doc = "The level code."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Level {
         Info,
@@ -818,10 +972,13 @@ pub mod instance_view_status {
         Error,
     }
 }
+#[doc = "Key Vault Key Url and vault id of KeK, KeK is optional and when provided is used to unwrap the encryptionKey"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultAndKeyReference {
+    #[doc = "The vault id is an Azure Resource Manager Resource id in the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}"]
     #[serde(rename = "sourceVault")]
     pub source_vault: SourceVault,
+    #[doc = "Url pointing to a key or secret in KeyVault"]
     #[serde(rename = "keyUrl")]
     pub key_url: String,
 }
@@ -830,10 +987,13 @@ impl KeyVaultAndKeyReference {
         Self { source_vault, key_url }
     }
 }
+#[doc = "Key Vault Secret Url and vault id of the encryption key "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultAndSecretReference {
+    #[doc = "The vault id is an Azure Resource Manager Resource id in the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}"]
     #[serde(rename = "sourceVault")]
     pub source_vault: SourceVault,
+    #[doc = "Url pointing to a key or secret in KeyVault"]
     #[serde(rename = "secretUrl")]
     pub secret_url: String,
 }
@@ -842,8 +1002,10 @@ impl KeyVaultAndSecretReference {
         Self { source_vault, secret_url }
     }
 }
+#[doc = "Describes a reference to Key Vault Key"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultKeyReference {
+    #[doc = "The URL referencing a key encryption key in Key Vault."]
     #[serde(rename = "keyUrl")]
     pub key_url: String,
     #[serde(rename = "sourceVault")]
@@ -854,8 +1016,10 @@ impl KeyVaultKeyReference {
         Self { key_url, source_vault }
     }
 }
+#[doc = "Describes a reference to Key Vault Secret"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSecretReference {
+    #[doc = "The URL referencing a secret in a Key Vault."]
     #[serde(rename = "secretUrl")]
     pub secret_url: String,
     #[serde(rename = "sourceVault")]
@@ -866,10 +1030,13 @@ impl KeyVaultSecretReference {
         Self { secret_url, source_vault }
     }
 }
+#[doc = "Specifies the Linux operating system settings on the virtual machine. <br><br>For a list of supported Linux distributions, see [Linux on Azure-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-endorsed-distros?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json) <br><br> For running non-endorsed distributions, see [Information for Non-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-create-upload-generic?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxConfiguration {
+    #[doc = "Specifies whether password authentication should be disabled."]
     #[serde(rename = "disablePasswordAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub disable_password_authentication: Option<bool>,
+    #[doc = "SSH configuration for Linux based VMs running on Azure"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ssh: Option<SshConfiguration>,
 }
@@ -878,9 +1045,12 @@ impl LinuxConfiguration {
         Self::default()
     }
 }
+#[doc = "The List Usages operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListUsagesResult {
+    #[doc = "The list of compute resource usages."]
     pub value: Vec<Usage>,
+    #[doc = "The URI to fetch the next page of compute resource usage information. Call ListNext() with this to fetch the next page of compute resource usage information."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -889,10 +1059,12 @@ impl ListUsagesResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "The parameters of a managed disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDiskParameters {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Specifies the storage account type for the managed disk. Possible values are: Standard_LRS or Premium_LRS."]
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<StorageAccountType>,
 }
@@ -901,10 +1073,12 @@ impl ManagedDiskParameters {
         Self::default()
     }
 }
+#[doc = "Describes a network interface reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceReference {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Describes a network interface reference properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkInterfaceReferenceProperties>,
 }
@@ -913,8 +1087,10 @@ impl NetworkInterfaceReference {
         Self::default()
     }
 }
+#[doc = "Describes a network interface reference properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceReferenceProperties {
+    #[doc = "Specifies the primary network interface in case the virtual machine has more than 1 network interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<bool>,
 }
@@ -923,8 +1099,10 @@ impl NetworkInterfaceReferenceProperties {
         Self::default()
     }
 }
+#[doc = "Specifies the network interfaces of the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
+    #[doc = "Specifies the list of resource Ids for the network interfaces associated with the virtual machine."]
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<NetworkInterfaceReference>,
 }
@@ -933,24 +1111,34 @@ impl NetworkProfile {
         Self::default()
     }
 }
+#[doc = "Specifies information about the operating system disk used by the virtual machine. <br><br> For more information about disks, see [About disks and VHDs for Azure virtual machines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-about-disks-vhds?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsDisk {
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk if creating a VM from user-image or a specialized VHD. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<os_disk::OsType>,
+    #[doc = "Describes a Encryption Settings for a Disk"]
     #[serde(rename = "encryptionSettings", default, skip_serializing_if = "Option::is_none")]
     pub encryption_settings: Option<DiskEncryptionSettings>,
+    #[doc = "The disk name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Describes the uri of a disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vhd: Option<VirtualHardDisk>,
+    #[doc = "Describes the uri of a disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<VirtualHardDisk>,
+    #[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caching: Option<Caching>,
+    #[doc = "Specifies how the virtual machine should be created.<br><br> Possible values are:<br><br> **Attach** \\u2013 This value is used when you are using a specialized disk to create the virtual machine.<br><br> **FromImage** \\u2013 This value is used when you are using an image to create the virtual machine. If you are using a platform image, you also use the imageReference element described above. If you are using a marketplace image, you  also use the plan element previously described."]
     #[serde(rename = "createOption")]
     pub create_option: CreateOption,
+    #[doc = "Specifies the size of an empty data disk in gigabytes. This element can be used to overwrite the size of the disk in a virtual machine image. <br><br> This value cannot be larger than 1023 GB"]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "The parameters of a managed disk."]
     #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
     pub managed_disk: Option<ManagedDiskParameters>,
 }
@@ -971,14 +1159,17 @@ impl OsDisk {
 }
 pub mod os_disk {
     use super::*;
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk if creating a VM from user-image or a specialized VHD. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
 }
+#[doc = "Contains the os disk image information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsDiskImage {
+    #[doc = "The operating system of the osDiskImage."]
     #[serde(rename = "operatingSystem")]
     pub operating_system: os_disk_image::OperatingSystem,
 }
@@ -989,26 +1180,35 @@ impl OsDiskImage {
 }
 pub mod os_disk_image {
     use super::*;
+    #[doc = "The operating system of the osDiskImage."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperatingSystem {
         Windows,
         Linux,
     }
 }
+#[doc = "Specifies the operating system settings for the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsProfile {
+    #[doc = "Specifies the host OS name of the virtual machine. <br><br> This name cannot be updated after the VM is created. <br><br> **Max-length (Windows):** 15 characters <br><br> **Max-length (Linux):** 64 characters. <br><br> For naming conventions and restrictions see [Azure infrastructure services implementation guidelines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-infrastructure-subscription-accounts-guidelines?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json#1-naming-conventions)."]
     #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
     pub computer_name: Option<String>,
+    #[doc = "Specifies the name of the administrator account. <br><br> **Windows-only restriction:** Cannot end in \".\" <br><br> **Disallowed values:** \"administrator\", \"admin\", \"user\", \"user1\", \"test\", \"user2\", \"test1\", \"user3\", \"admin1\", \"1\", \"123\", \"a\", \"actuser\", \"adm\", \"admin2\", \"aspnet\", \"backup\", \"console\", \"david\", \"guest\", \"john\", \"owner\", \"root\", \"server\", \"sql\", \"support\", \"support_388945a0\", \"sys\", \"test2\", \"test3\", \"user4\", \"user5\". <br><br> **Minimum-length (Linux):** 1  character <br><br> **Max-length (Linux):** 64 characters <br><br> **Max-length (Windows):** 20 characters  <br><br><li> For root access to the Linux VM, see [Using root privileges on Linux virtual machines in Azure](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-use-root-privileges?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)<br><li> For a list of built-in system users on Linux that should not be used in this field, see [Selecting User Names for Linux on Azure](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-usernames?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)"]
     #[serde(rename = "adminUsername", default, skip_serializing_if = "Option::is_none")]
     pub admin_username: Option<String>,
+    #[doc = "Specifies the password of the administrator account. <br><br> **Minimum-length (Windows):** 8 characters <br><br> **Minimum-length (Linux):** 6 characters <br><br> **Max-length (Windows):** 123 characters <br><br> **Max-length (Linux):** 72 characters <br><br> **Complexity requirements:** 3 out of 4 conditions below need to be fulfilled <br> Has lower characters <br>Has upper characters <br> Has a digit <br> Has a special character (Regex match [\\W_]) <br><br> **Disallowed values:** \"abc@123\", \"P@$$w0rd\", \"P@ssw0rd\", \"P@ssword123\", \"Pa$$word\", \"pass@word1\", \"Password!\", \"Password1\", \"Password22\", \"iloveyou!\" <br><br> For resetting the password, see [How to reset the Remote Desktop service or its login password in a Windows VM](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-reset-rdp?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json) <br><br> For resetting root password, see [Manage users, SSH, and check or repair disks on Azure Linux VMs using the VMAccess Extension](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-using-vmaccess-extension?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json#reset-root-password)"]
     #[serde(rename = "adminPassword", default, skip_serializing_if = "Option::is_none")]
     pub admin_password: Option<String>,
+    #[doc = "Specifies a base-64 encoded string of custom data. The base-64 encoded string is decoded to a binary array that is saved as a file on the Virtual Machine. The maximum length of the binary array is 65535 bytes. <br><br> For using cloud-init for your VM, see [Using cloud-init to customize a Linux VM during creation](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-using-cloud-init?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)"]
     #[serde(rename = "customData", default, skip_serializing_if = "Option::is_none")]
     pub custom_data: Option<String>,
+    #[doc = "Specifies Windows operating system settings on the virtual machine."]
     #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub windows_configuration: Option<WindowsConfiguration>,
+    #[doc = "Specifies the Linux operating system settings on the virtual machine. <br><br>For a list of supported Linux distributions, see [Linux on Azure-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-endorsed-distros?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json) <br><br> For running non-endorsed distributions, see [Information for Non-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-create-upload-generic?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)."]
     #[serde(rename = "linuxConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub linux_configuration: Option<LinuxConfiguration>,
+    #[doc = "Specifies set of certificates that should be installed onto the virtual machine."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub secrets: Vec<VaultSecretGroup>,
 }
@@ -1017,16 +1217,22 @@ impl OsProfile {
         Self::default()
     }
 }
+#[doc = "Operation status response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatusResponse {
+    #[doc = "Operation ID"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Operation status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "Start time of the operation"]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "End time of the operation"]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Api error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
@@ -1035,14 +1241,19 @@ impl OperationStatusResponse {
         Self::default()
     }
 }
+#[doc = "Specifies information about the marketplace image used to create the virtual machine. This element is only used for marketplace images. Before you can use a marketplace image from an API, you must enable the image for programmatic use.  In the Azure portal, find the marketplace image that you want to use and then click **Want to deploy programmatically, Get Started ->**. Enter any required information and then click **Save**."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Plan {
+    #[doc = "The plan ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The publisher ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "Specifies the product of the image from the marketplace. This is the same value as Offer under the imageReference element."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
+    #[doc = "The promotion code."]
     #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
 }
@@ -1051,10 +1262,14 @@ impl Plan {
         Self::default()
     }
 }
+#[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PurchasePlan {
+    #[doc = "The publisher ID."]
     pub publisher: String,
+    #[doc = "The plan ID."]
     pub name: String,
+    #[doc = "Specifies the product of the image from the marketplace. This is the same value as Offer under the imageReference element."]
     pub product: String,
 }
 impl PurchasePlan {
@@ -1062,16 +1277,22 @@ impl PurchasePlan {
         Self { publisher, name, product }
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1086,8 +1307,10 @@ impl Resource {
         }
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceUpdate {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1096,12 +1319,16 @@ impl ResourceUpdate {
         Self::default()
     }
 }
+#[doc = "Describes a virtual machine scale set sku."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
+    #[doc = "The sku name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the tier of virtual machines in a scale set.<br /><br /> Possible Values:<br /><br /> **Standard**<br /><br /> **Basic**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "Specifies the number of virtual machines in the scale set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
 }
@@ -1110,10 +1337,12 @@ impl Sku {
         Self::default()
     }
 }
+#[doc = "Snapshot resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Disk resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskProperties>,
 }
@@ -1125,9 +1354,12 @@ impl Snapshot {
         }
     }
 }
+#[doc = "The List Snapshots operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotList {
+    #[doc = "A list of snapshots."]
     pub value: Vec<Snapshot>,
+    #[doc = "The uri to fetch the next page of snapshots. Call ListNext() with this to fetch the next page of snapshots."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1136,10 +1368,12 @@ impl SnapshotList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Snapshot update resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotUpdate {
     #[serde(flatten)]
     pub resource_update: ResourceUpdate,
+    #[doc = "Disk resource update properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiskUpdateProperties>,
 }
@@ -1148,8 +1382,10 @@ impl SnapshotUpdate {
         Self::default()
     }
 }
+#[doc = "The vault id is an Azure Resource Manager Resource id in the form /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceVault {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1158,8 +1394,10 @@ impl SourceVault {
         Self::default()
     }
 }
+#[doc = "SSH configuration for Linux based VMs running on Azure"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SshConfiguration {
+    #[doc = "The list of SSH public keys used to authenticate with linux based VMs."]
     #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub public_keys: Vec<SshPublicKey>,
 }
@@ -1168,10 +1406,13 @@ impl SshConfiguration {
         Self::default()
     }
 }
+#[doc = "Contains information about SSH certificate public key and the path on the Linux VM where the public key is placed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SshPublicKey {
+    #[doc = "Specifies the full path on the created VM where ssh public key is stored. If the file already exists, the specified key is appended to the file. Example: /home/user/.ssh/authorized_keys"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "SSH public key certificate used to authenticate with the VM through ssh. The key needs to be at least 2048-bit and in ssh-rsa format. <br><br> For creating ssh keys, see [Create SSH keys on Linux and Mac for Linux VMs in Azure](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-mac-create-ssh-keys?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)."]
     #[serde(rename = "keyData", default, skip_serializing_if = "Option::is_none")]
     pub key_data: Option<String>,
 }
@@ -1180,6 +1421,7 @@ impl SshPublicKey {
         Self::default()
     }
 }
+#[doc = "Specifies the storage account type for the managed disk. Possible values are: Standard_LRS or Premium_LRS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum StorageAccountType {
     #[serde(rename = "Standard_LRS")]
@@ -1187,12 +1429,16 @@ pub enum StorageAccountType {
     #[serde(rename = "Premium_LRS")]
     PremiumLrs,
 }
+#[doc = "Specifies the storage settings for the virtual machine disks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfile {
+    #[doc = "Specifies information about the image to use. You can specify information about platform images, marketplace images, or virtual machine images. This element is required when you want to use a platform image, marketplace image, or virtual machine image, but is not used in other creation operations."]
     #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
     pub image_reference: Option<ImageReference>,
+    #[doc = "Specifies information about the operating system disk used by the virtual machine. <br><br> For more information about disks, see [About disks and VHDs for Azure virtual machines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-about-disks-vhds?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json)."]
     #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
     pub os_disk: Option<OsDisk>,
+    #[doc = "Specifies the parameters that are used to add a data disk to a virtual machine. <br><br> For more information about disks, see [About disks and VHDs for Azure virtual machines](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-about-disks-vhds?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json)."]
     #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disks: Vec<DataDisk>,
 }
@@ -1203,6 +1449,7 @@ impl StorageProfile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1213,6 +1460,7 @@ impl SubResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResourceReadOnly {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1221,8 +1469,10 @@ impl SubResourceReadOnly {
         Self::default()
     }
 }
+#[doc = "The Update Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateResource {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1231,8 +1481,10 @@ impl UpdateResource {
         Self::default()
     }
 }
+#[doc = "Describes an upgrade policy - automatic or manual."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpgradePolicy {
+    #[doc = "Specifies the mode of an upgrade to virtual machines in the scale set.<br /><br /> Possible values are:<br /><br /> **Manual** - You  control the application of updates to virtual machines in the scale set. You do this by using the manualUpgrade action.<br /><br /> **Automatic** - All virtual machines in the scale set are  automatically updated at the same time."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<upgrade_policy::Mode>,
 }
@@ -1243,18 +1495,24 @@ impl UpgradePolicy {
 }
 pub mod upgrade_policy {
     use super::*;
+    #[doc = "Specifies the mode of an upgrade to virtual machines in the scale set.<br /><br /> Possible values are:<br /><br /> **Manual** - You  control the application of updates to virtual machines in the scale set. You do this by using the manualUpgrade action.<br /><br /> **Automatic** - All virtual machines in the scale set are  automatically updated at the same time."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         Automatic,
         Manual,
     }
 }
+#[doc = "Describes Compute Resource Usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Usage {
+    #[doc = "An enum describing the unit of usage measurement."]
     pub unit: usage::Unit,
+    #[doc = "The current usage of the resource."]
     #[serde(rename = "currentValue")]
     pub current_value: i32,
+    #[doc = "The maximum permitted usage of the resource."]
     pub limit: i64,
+    #[doc = "The Usage Names."]
     pub name: UsageName,
 }
 impl Usage {
@@ -1269,15 +1527,19 @@ impl Usage {
 }
 pub mod usage {
     use super::*;
+    #[doc = "An enum describing the unit of usage measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
     }
 }
+#[doc = "The Usage Names."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageName {
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The localized name of the resource."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -1286,10 +1548,13 @@ impl UsageName {
         Self::default()
     }
 }
+#[doc = "Describes a single certificate reference in a Key Vault, and where the certificate should reside on the VM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaultCertificate {
+    #[doc = "This is the URL of a certificate that has been uploaded to Key Vault as a secret. For adding a secret to the Key Vault, see [Add a key or secret to the key vault](https://docs.microsoft.com/azure/key-vault/key-vault-get-started/#add). In this case, your certificate needs to be It is the Base64 encoding of the following JSON Object which is encoded in UTF-8: <br><br> {<br>  \"data\":\"<Base64-encoded-certificate>\",<br>  \"dataType\":\"pfx\",<br>  \"password\":\"<pfx-file-password>\"<br>}"]
     #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
     pub certificate_url: Option<String>,
+    #[doc = "For Windows VMs, specifies the certificate store on the Virtual Machine to which the certificate should be added. The specified certificate store is implicitly in the LocalMachine account. <br><br>For Linux VMs, the certificate file is placed under the /var/lib/waagent directory, with the file name <UppercaseThumbprint>.crt for the X509 certificate file and <UppercaseThumbprint>.prv for private key. Both of these files are .pem formatted."]
     #[serde(rename = "certificateStore", default, skip_serializing_if = "Option::is_none")]
     pub certificate_store: Option<String>,
 }
@@ -1298,10 +1563,12 @@ impl VaultCertificate {
         Self::default()
     }
 }
+#[doc = "Describes a set of certificates which are all in the same Key Vault."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaultSecretGroup {
     #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
     pub source_vault: Option<SubResource>,
+    #[doc = "The list of key vault references in SourceVault which contain certificates."]
     #[serde(rename = "vaultCertificates", default, skip_serializing_if = "Vec::is_empty")]
     pub vault_certificates: Vec<VaultCertificate>,
 }
@@ -1310,8 +1577,10 @@ impl VaultSecretGroup {
         Self::default()
     }
 }
+#[doc = "Describes the uri of a disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualHardDisk {
+    #[doc = "Specifies the virtual hard disk's uri."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
@@ -1320,16 +1589,21 @@ impl VirtualHardDisk {
         Self::default()
     }
 }
+#[doc = "Describes a Virtual Machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachine {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Specifies information about the marketplace image used to create the virtual machine. This element is only used for marketplace images. Before you can use a marketplace image from an API, you must enable the image for programmatic use.  In the Azure portal, find the marketplace image that you want to use and then click **Want to deploy programmatically, Get Started ->**. Enter any required information and then click **Save**."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<Plan>,
+    #[doc = "Describes the properties of a Virtual Machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineProperties>,
+    #[doc = "The virtual machine child extension resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<VirtualMachineExtension>,
+    #[doc = "Identity for the virtual machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<VirtualMachineIdentity>,
 }
@@ -1344,12 +1618,16 @@ impl VirtualMachine {
         }
     }
 }
+#[doc = "The instance view of the VM Agent running on the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineAgentInstanceView {
+    #[doc = "The VM Agent full version."]
     #[serde(rename = "vmAgentVersion", default, skip_serializing_if = "Option::is_none")]
     pub vm_agent_version: Option<String>,
+    #[doc = "The virtual machine extension handler instance view."]
     #[serde(rename = "extensionHandlers", default, skip_serializing_if = "Vec::is_empty")]
     pub extension_handlers: Vec<VirtualMachineExtensionHandlerInstanceView>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
 }
@@ -1358,12 +1636,16 @@ impl VirtualMachineAgentInstanceView {
         Self::default()
     }
 }
+#[doc = "Capture Virtual Machine parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineCaptureParameters {
+    #[doc = "The captured virtual hard disk's name prefix."]
     #[serde(rename = "vhdPrefix")]
     pub vhd_prefix: String,
+    #[doc = "The destination container name."]
     #[serde(rename = "destinationContainerName")]
     pub destination_container_name: String,
+    #[doc = "Specifies whether to overwrite the destination virtual hard disk, in case of conflict."]
     #[serde(rename = "overwriteVhds")]
     pub overwrite_vhds: bool,
 }
@@ -1376,10 +1658,12 @@ impl VirtualMachineCaptureParameters {
         }
     }
 }
+#[doc = "Resource Id."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineCaptureResult {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Compute-specific operation properties, including output"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineCaptureResultProperties>,
 }
@@ -1388,8 +1672,10 @@ impl VirtualMachineCaptureResult {
         Self::default()
     }
 }
+#[doc = "Compute-specific operation properties, including output"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineCaptureResultProperties {
+    #[doc = "Operation output data (raw JSON)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<serde_json::Value>,
 }
@@ -1398,10 +1684,12 @@ impl VirtualMachineCaptureResultProperties {
         Self::default()
     }
 }
+#[doc = "Describes a Virtual Machine Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineExtension {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes the properties of a Virtual Machine Extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineExtensionProperties>,
 }
@@ -1413,12 +1701,16 @@ impl VirtualMachineExtension {
         }
     }
 }
+#[doc = "The instance view of a virtual machine extension handler."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineExtensionHandlerInstanceView {
+    #[doc = "Specifies the type of the extension; an example is \"CustomScriptExtension\"."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the script handler."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "Instance view status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<InstanceViewStatus>,
 }
@@ -1427,10 +1719,12 @@ impl VirtualMachineExtensionHandlerInstanceView {
         Self::default()
     }
 }
+#[doc = "Describes a Virtual Machine Extension Image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineExtensionImage {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes the properties of a Virtual Machine Extension Image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineExtensionImageProperties>,
 }
@@ -1442,16 +1736,22 @@ impl VirtualMachineExtensionImage {
         }
     }
 }
+#[doc = "Describes the properties of a Virtual Machine Extension Image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineExtensionImageProperties {
+    #[doc = "The operating system this extension supports."]
     #[serde(rename = "operatingSystem")]
     pub operating_system: String,
+    #[doc = "The type of role (IaaS or PaaS) this extension supports."]
     #[serde(rename = "computeRole")]
     pub compute_role: String,
+    #[doc = "The schema defined by publisher, where extension consumers should provide settings in a matching schema."]
     #[serde(rename = "handlerSchema")]
     pub handler_schema: String,
+    #[doc = "Whether the extension can be used on xRP VMScaleSets. By default existing extensions are usable on scalesets, but there might be cases where a publisher wants to explicitly indicate the extension is only enabled for CRP VMs but not VMSS."]
     #[serde(rename = "vmScaleSetEnabled", default, skip_serializing_if = "Option::is_none")]
     pub vm_scale_set_enabled: Option<bool>,
+    #[doc = "Whether the handler can support multiple extensions."]
     #[serde(rename = "supportsMultipleExtensions", default, skip_serializing_if = "Option::is_none")]
     pub supports_multiple_extensions: Option<bool>,
 }
@@ -1466,16 +1766,22 @@ impl VirtualMachineExtensionImageProperties {
         }
     }
 }
+#[doc = "The instance view of a virtual machine extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineExtensionInstanceView {
+    #[doc = "The virtual machine extension name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the type of the extension; an example is \"CustomScriptExtension\"."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the script handler."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub substatuses: Vec<InstanceViewStatus>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
 }
@@ -1484,24 +1790,34 @@ impl VirtualMachineExtensionInstanceView {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a Virtual Machine Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineExtensionProperties {
+    #[doc = "How the extension handler should be forced to update even if the extension configuration has not changed."]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
+    #[doc = "The name of the extension handler publisher."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "Specifies the type of the extension; an example is \"CustomScriptExtension\"."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the script handler."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "Indicates whether the extension should use a newer minor version if one is available at deployment time. Once deployed, however, the extension will not upgrade minor versions unless redeployed, even with this property set to true."]
     #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
     pub auto_upgrade_minor_version: Option<bool>,
+    #[doc = "Json formatted public settings for the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<serde_json::Value>,
+    #[doc = "The extension can contain either protectedSettings or protectedSettingsFromKeyVault or no protected settings at all."]
     #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
     pub protected_settings: Option<serde_json::Value>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The instance view of a virtual machine extension."]
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<VirtualMachineExtensionInstanceView>,
 }
@@ -1510,10 +1826,12 @@ impl VirtualMachineExtensionProperties {
         Self::default()
     }
 }
+#[doc = "Describes a Virtual Machine Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineExtensionUpdate {
     #[serde(flatten)]
     pub update_resource: UpdateResource,
+    #[doc = "Describes the properties of a Virtual Machine Extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineExtensionUpdateProperties>,
 }
@@ -1522,20 +1840,28 @@ impl VirtualMachineExtensionUpdate {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a Virtual Machine Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineExtensionUpdateProperties {
+    #[doc = "How the extension handler should be forced to update even if the extension configuration has not changed."]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
+    #[doc = "The name of the extension handler publisher."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "Specifies the type of the extension; an example is \"CustomScriptExtension\"."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the script handler."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "Indicates whether the extension should use a newer minor version if one is available at deployment time. Once deployed, however, the extension will not upgrade minor versions unless redeployed, even with this property set to true."]
     #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
     pub auto_upgrade_minor_version: Option<bool>,
+    #[doc = "Json formatted public settings for the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<serde_json::Value>,
+    #[doc = "The extension can contain either protectedSettings or protectedSettingsFromKeyVault or no protected settings at all."]
     #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
     pub protected_settings: Option<serde_json::Value>,
 }
@@ -1544,8 +1870,10 @@ impl VirtualMachineExtensionUpdateProperties {
         Self::default()
     }
 }
+#[doc = "The List Extension operation response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineExtensionsListResult {
+    #[doc = "The list of extensions"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualMachineExtension>,
 }
@@ -1554,12 +1882,16 @@ impl VirtualMachineExtensionsListResult {
         Self::default()
     }
 }
+#[doc = "Identity for the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineIdentity {
+    #[doc = "The principal id of virtual machine identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant id associated with the virtual machine."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The type of identity used for the virtual machine. Currently, the only supported type is 'SystemAssigned', which implicitly creates an identity."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<virtual_machine_identity::Type>,
 }
@@ -1570,15 +1902,18 @@ impl VirtualMachineIdentity {
 }
 pub mod virtual_machine_identity {
     use super::*;
+    #[doc = "The type of identity used for the virtual machine. Currently, the only supported type is 'SystemAssigned', which implicitly creates an identity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "Describes a Virtual Machine Image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineImage {
     #[serde(flatten)]
     pub virtual_machine_image_resource: VirtualMachineImageResource,
+    #[doc = "Describes the properties of a Virtual Machine Image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineImageProperties>,
 }
@@ -1590,10 +1925,13 @@ impl VirtualMachineImage {
         }
     }
 }
+#[doc = "Describes the properties of a Virtual Machine Image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineImageProperties {
+    #[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<PurchasePlan>,
+    #[doc = "Contains the os disk image information."]
     #[serde(rename = "osDiskImage", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_image: Option<OsDiskImage>,
     #[serde(rename = "dataDiskImages", default, skip_serializing_if = "Vec::is_empty")]
@@ -1604,12 +1942,16 @@ impl VirtualMachineImageProperties {
         Self::default()
     }
 }
+#[doc = "Virtual machine image resource information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineImageResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "The name of the resource."]
     pub name: String,
+    #[doc = "The supported Azure location of the resource."]
     pub location: String,
+    #[doc = "Specifies the tags that are assigned to the virtual machine. For more information about using tags, see [Using tags to organize your Azure resources](https://docs.microsoft.com/azure/azure-resource-manager/resource-group-using-tags.md)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1623,22 +1965,31 @@ impl VirtualMachineImageResource {
         }
     }
 }
+#[doc = "The instance view of a virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineInstanceView {
+    #[doc = "Specifies the update domain of the virtual machine."]
     #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
     pub platform_update_domain: Option<i32>,
+    #[doc = "Specifies the fault domain of the virtual machine."]
     #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
     pub platform_fault_domain: Option<i32>,
+    #[doc = "The Remote desktop certificate thumbprint."]
     #[serde(rename = "rdpThumbPrint", default, skip_serializing_if = "Option::is_none")]
     pub rdp_thumb_print: Option<String>,
+    #[doc = "The instance view of the VM Agent running on the virtual machine."]
     #[serde(rename = "vmAgent", default, skip_serializing_if = "Option::is_none")]
     pub vm_agent: Option<VirtualMachineAgentInstanceView>,
+    #[doc = "The virtual machine disk information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<DiskInstanceView>,
+    #[doc = "The extensions information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<VirtualMachineExtensionInstanceView>,
+    #[doc = "The instance view of a virtual machine boot diagnostics."]
     #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub boot_diagnostics: Option<BootDiagnosticsInstanceView>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
 }
@@ -1647,9 +1998,12 @@ impl VirtualMachineInstanceView {
         Self::default()
     }
 }
+#[doc = "The List Virtual Machine operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineListResult {
+    #[doc = "The list of virtual machines."]
     pub value: Vec<VirtualMachine>,
+    #[doc = "The URI to fetch the next page of VMs. Call ListNext() with this URI to fetch the next page of Virtual Machines."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1658,26 +2012,36 @@ impl VirtualMachineListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the properties of a Virtual Machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineProperties {
+    #[doc = "Specifies the hardware settings for the virtual machine."]
     #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
     pub hardware_profile: Option<HardwareProfile>,
+    #[doc = "Specifies the storage settings for the virtual machine disks."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<StorageProfile>,
+    #[doc = "Specifies the operating system settings for the virtual machine."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
     pub os_profile: Option<OsProfile>,
+    #[doc = "Specifies the network interfaces of the virtual machine."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
+    #[doc = "Specifies the boot diagnostic settings state. <br><br>Minimum api-version: 2015-06-15."]
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<DiagnosticsProfile>,
     #[serde(rename = "availabilitySet", default, skip_serializing_if = "Option::is_none")]
     pub availability_set: Option<SubResource>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The instance view of a virtual machine."]
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<VirtualMachineInstanceView>,
+    #[doc = "Specifies that the image or disk that is being used was licensed on-premises. This element is only used for images that contain the Windows Server operating system. <br><br> Possible values are: <br><br> Windows_Client <br><br> Windows_Server <br><br> If this element is included in a request for an update, the value must match the initial value. This value cannot be updated. <br><br> For more information, see [Azure Hybrid Use Benefit for Windows Server](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-hybrid-use-benefit-licensing?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json) <br><br> Minimum api-version: 2015-06-15"]
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<String>,
+    #[doc = "Specifies the VM unique ID which is a 128-bits identifier that is encoded and stored in all Azure IaaS VMs SMBIOS and can be read using platform BIOS commands."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
 }
@@ -1686,16 +2050,21 @@ impl VirtualMachineProperties {
         Self::default()
     }
 }
+#[doc = "Describes a Virtual Machine Scale Set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSet {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes a virtual machine scale set sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Specifies information about the marketplace image used to create the virtual machine. This element is only used for marketplace images. Before you can use a marketplace image from an API, you must enable the image for programmatic use.  In the Azure portal, find the marketplace image that you want to use and then click **Want to deploy programmatically, Get Started ->**. Enter any required information and then click **Save**."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<Plan>,
+    #[doc = "Describes the properties of a Virtual Machine Scale Set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineScaleSetProperties>,
+    #[doc = "Identity for the virtual machine scale set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<VirtualMachineScaleSetIdentity>,
 }
@@ -1710,17 +2079,24 @@ impl VirtualMachineScaleSet {
         }
     }
 }
+#[doc = "Describes a virtual machine scale set data disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetDataDisk {
+    #[doc = "The disk name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the logical unit number of the data disk. This value is used to identify data disks within the VM and therefore must be unique for each data disk attached to a VM."]
     pub lun: i32,
+    #[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caching: Option<Caching>,
+    #[doc = "Specifies how the virtual machine should be created.<br><br> Possible values are:<br><br> **Attach** \\u2013 This value is used when you are using a specialized disk to create the virtual machine.<br><br> **FromImage** \\u2013 This value is used when you are using an image to create the virtual machine. If you are using a platform image, you also use the imageReference element described above. If you are using a marketplace image, you  also use the plan element previously described."]
     #[serde(rename = "createOption")]
     pub create_option: CreateOption,
+    #[doc = "Specifies the size of an empty data disk in gigabytes. This element can be used to overwrite the size of the disk in a virtual machine image. <br><br> This value cannot be larger than 1023 GB"]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "Describes the parameters of a ScaleSet managed disk."]
     #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
     pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
 }
@@ -1736,12 +2112,15 @@ impl VirtualMachineScaleSetDataDisk {
         }
     }
 }
+#[doc = "Describes a Virtual Machine Scale Set Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetExtension {
     #[serde(flatten)]
     pub sub_resource_read_only: SubResourceReadOnly,
+    #[doc = "The name of the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Describes the properties of a Virtual Machine Scale Set Extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineScaleSetExtensionProperties>,
 }
@@ -1750,8 +2129,10 @@ impl VirtualMachineScaleSetExtension {
         Self::default()
     }
 }
+#[doc = "Describes a virtual machine scale set extension profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetExtensionProfile {
+    #[doc = "The virtual machine scale set child extension resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<VirtualMachineScaleSetExtension>,
 }
@@ -1760,20 +2141,28 @@ impl VirtualMachineScaleSetExtensionProfile {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a Virtual Machine Scale Set Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetExtensionProperties {
+    #[doc = "The name of the extension handler publisher."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "Specifies the type of the extension; an example is \"CustomScriptExtension\"."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the script handler."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "Indicates whether the extension should use a newer minor version if one is available at deployment time. Once deployed, however, the extension will not upgrade minor versions unless redeployed, even with this property set to true."]
     #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
     pub auto_upgrade_minor_version: Option<bool>,
+    #[doc = "Json formatted public settings for the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<serde_json::Value>,
+    #[doc = "The extension can contain either protectedSettings or protectedSettingsFromKeyVault or no protected settings at all."]
     #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
     pub protected_settings: Option<serde_json::Value>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1782,11 +2171,14 @@ impl VirtualMachineScaleSetExtensionProperties {
         Self::default()
     }
 }
+#[doc = "Describes a virtual machine scale set network profile's IP configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "The IP configuration name."]
     pub name: String,
+    #[doc = "Describes a virtual machine scale set network profile's IP configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineScaleSetIpConfigurationProperties>,
 }
@@ -1799,13 +2191,18 @@ impl VirtualMachineScaleSetIpConfiguration {
         }
     }
 }
+#[doc = "Describes a virtual machine scale set network profile's IP configuration properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetIpConfigurationProperties {
+    #[doc = "The API entity reference."]
     pub subnet: ApiEntityReference,
+    #[doc = "The application gateway backend address pools."]
     #[serde(rename = "applicationGatewayBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
     pub application_gateway_backend_address_pools: Vec<SubResource>,
+    #[doc = "The load balancer backend address pools."]
     #[serde(rename = "loadBalancerBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancer_backend_address_pools: Vec<SubResource>,
+    #[doc = "The load balancer inbound nat pools."]
     #[serde(rename = "loadBalancerInboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancer_inbound_nat_pools: Vec<SubResource>,
 }
@@ -1819,12 +2216,16 @@ impl VirtualMachineScaleSetIpConfigurationProperties {
         }
     }
 }
+#[doc = "Identity for the virtual machine scale set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetIdentity {
+    #[doc = "The principal id of virtual machine scale set identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant id associated with the virtual machine scale set."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The type of identity used for the virtual machine scale set. Currently, the only supported type is 'SystemAssigned', which implicitly creates an identity."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<virtual_machine_scale_set_identity::Type>,
 }
@@ -1835,17 +2236,22 @@ impl VirtualMachineScaleSetIdentity {
 }
 pub mod virtual_machine_scale_set_identity {
     use super::*;
+    #[doc = "The type of identity used for the virtual machine scale set. Currently, the only supported type is 'SystemAssigned', which implicitly creates an identity."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "The instance view of a virtual machine scale set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetInstanceView {
+    #[doc = "Instance view statuses summary for virtual machines of a virtual machine scale set."]
     #[serde(rename = "virtualMachine", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine: Option<VirtualMachineScaleSetInstanceViewStatusesSummary>,
+    #[doc = "The extensions information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<VirtualMachineScaleSetVmExtensionsSummary>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
 }
@@ -1854,8 +2260,10 @@ impl VirtualMachineScaleSetInstanceView {
         Self::default()
     }
 }
+#[doc = "Instance view statuses summary for virtual machines of a virtual machine scale set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetInstanceViewStatusesSummary {
+    #[doc = "The extensions information."]
     #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
     pub statuses_summary: Vec<VirtualMachineStatusCodeCount>,
 }
@@ -1864,9 +2272,12 @@ impl VirtualMachineScaleSetInstanceViewStatusesSummary {
         Self::default()
     }
 }
+#[doc = "The List Virtual Machine operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetListResult {
+    #[doc = "The list of virtual machine scale sets."]
     pub value: Vec<VirtualMachineScaleSet>,
+    #[doc = "The uri to fetch the next page of Virtual Machine Scale Sets. Call ListNext() with this to fetch the next page of VMSS."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1875,9 +2286,12 @@ impl VirtualMachineScaleSetListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "The Virtual Machine Scale Set List Skus operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetListSkusResult {
+    #[doc = "The list of skus available for the virtual machine scale set."]
     pub value: Vec<VirtualMachineScaleSetSku>,
+    #[doc = "The uri to fetch the next page of Virtual Machine Scale Set Skus. Call ListNext() with this to fetch the next page of VMSS Skus."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1886,9 +2300,12 @@ impl VirtualMachineScaleSetListSkusResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "The List Virtual Machine operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetListWithLinkResult {
+    #[doc = "The list of virtual machine scale sets."]
     pub value: Vec<VirtualMachineScaleSet>,
+    #[doc = "The uri to fetch the next page of Virtual Machine Scale Sets. Call ListNext() with this to fetch the next page of Virtual Machine Scale Sets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1897,8 +2314,10 @@ impl VirtualMachineScaleSetListWithLinkResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the parameters of a ScaleSet managed disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetManagedDiskParameters {
+    #[doc = "Specifies the storage account type for the managed disk. Possible values are: Standard_LRS or Premium_LRS."]
     #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_type: Option<StorageAccountType>,
 }
@@ -1907,11 +2326,14 @@ impl VirtualMachineScaleSetManagedDiskParameters {
         Self::default()
     }
 }
+#[doc = "Describes a virtual machine scale set network profile's network configurations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetNetworkConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "The network configuration name."]
     pub name: String,
+    #[doc = "Describes a virtual machine scale set network profile's IP configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineScaleSetNetworkConfigurationProperties>,
 }
@@ -1924,10 +2346,13 @@ impl VirtualMachineScaleSetNetworkConfiguration {
         }
     }
 }
+#[doc = "Describes a virtual machine scale set network profile's IP configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetNetworkConfigurationProperties {
+    #[doc = "Whether this is a primary NIC on a virtual machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<bool>,
+    #[doc = "The virtual machine scale set IP Configuration."]
     #[serde(rename = "ipConfigurations")]
     pub ip_configurations: Vec<VirtualMachineScaleSetIpConfiguration>,
 }
@@ -1939,8 +2364,10 @@ impl VirtualMachineScaleSetNetworkConfigurationProperties {
         }
     }
 }
+#[doc = "Describes a virtual machine scale set network profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetNetworkProfile {
+    #[doc = "The list of network configurations."]
     #[serde(rename = "networkInterfaceConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interface_configurations: Vec<VirtualMachineScaleSetNetworkConfiguration>,
 }
@@ -1949,20 +2376,28 @@ impl VirtualMachineScaleSetNetworkProfile {
         Self::default()
     }
 }
+#[doc = "Describes a virtual machine scale set operating system disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetOsDisk {
+    #[doc = "The disk name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the caching requirements. <br><br> Possible values are: <br><br> **None** <br><br> **ReadOnly** <br><br> **ReadWrite** <br><br> Default: **None for Standard storage. ReadOnly for Premium storage**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub caching: Option<Caching>,
+    #[doc = "Specifies how the virtual machine should be created.<br><br> Possible values are:<br><br> **Attach** \\u2013 This value is used when you are using a specialized disk to create the virtual machine.<br><br> **FromImage** \\u2013 This value is used when you are using an image to create the virtual machine. If you are using a platform image, you also use the imageReference element described above. If you are using a marketplace image, you  also use the plan element previously described."]
     #[serde(rename = "createOption")]
     pub create_option: CreateOption,
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk if creating a VM from user-image or a specialized VHD. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<virtual_machine_scale_set_os_disk::OsType>,
+    #[doc = "Describes the uri of a disk."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<VirtualHardDisk>,
+    #[doc = "The list of virtual hard disk container uris."]
     #[serde(rename = "vhdContainers", default, skip_serializing_if = "Vec::is_empty")]
     pub vhd_containers: Vec<String>,
+    #[doc = "Describes the parameters of a ScaleSet managed disk."]
     #[serde(rename = "managedDisk", default, skip_serializing_if = "Option::is_none")]
     pub managed_disk: Option<VirtualMachineScaleSetManagedDiskParameters>,
 }
@@ -1981,26 +2416,35 @@ impl VirtualMachineScaleSetOsDisk {
 }
 pub mod virtual_machine_scale_set_os_disk {
     use super::*;
+    #[doc = "This property allows you to specify the type of the OS that is included in the disk if creating a VM from user-image or a specialized VHD. <br><br> Possible values are: <br><br> **Windows** <br><br> **Linux**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Windows,
         Linux,
     }
 }
+#[doc = "Describes a virtual machine scale set OS profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetOsProfile {
+    #[doc = "Specifies the computer name prefix for all of the virtual machines in the scale set. Computer name prefixes must be 1 to 15 characters long."]
     #[serde(rename = "computerNamePrefix", default, skip_serializing_if = "Option::is_none")]
     pub computer_name_prefix: Option<String>,
+    #[doc = "Specifies the name of the administrator account. <br><br> **Windows-only restriction:** Cannot end in \".\" <br><br> **Disallowed values:** \"administrator\", \"admin\", \"user\", \"user1\", \"test\", \"user2\", \"test1\", \"user3\", \"admin1\", \"1\", \"123\", \"a\", \"actuser\", \"adm\", \"admin2\", \"aspnet\", \"backup\", \"console\", \"david\", \"guest\", \"john\", \"owner\", \"root\", \"server\", \"sql\", \"support\", \"support_388945a0\", \"sys\", \"test2\", \"test3\", \"user4\", \"user5\". <br><br> **Minimum-length (Linux):** 1  character <br><br> **Max-length (Linux):** 64 characters <br><br> **Max-length (Windows):** 20 characters  <br><br><li> For root access to the Linux VM, see [Using root privileges on Linux virtual machines in Azure](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-use-root-privileges?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)<br><li> For a list of built-in system users on Linux that should not be used in this field, see [Selecting User Names for Linux on Azure](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-usernames?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)"]
     #[serde(rename = "adminUsername", default, skip_serializing_if = "Option::is_none")]
     pub admin_username: Option<String>,
+    #[doc = "Specifies the password of the administrator account. <br><br> **Minimum-length (Windows):** 8 characters <br><br> **Minimum-length (Linux):** 6 characters <br><br> **Max-length (Windows):** 123 characters <br><br> **Max-length (Linux):** 72 characters <br><br> **Complexity requirements:** 3 out of 4 conditions below need to be fulfilled <br> Has lower characters <br>Has upper characters <br> Has a digit <br> Has a special character (Regex match [\\W_]) <br><br> **Disallowed values:** \"abc@123\", \"P@$$w0rd\", \"P@ssw0rd\", \"P@ssword123\", \"Pa$$word\", \"pass@word1\", \"Password!\", \"Password1\", \"Password22\", \"iloveyou!\" <br><br> For resetting the password, see [How to reset the Remote Desktop service or its login password in a Windows VM](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-reset-rdp?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json) <br><br> For resetting root password, see [Manage users, SSH, and check or repair disks on Azure Linux VMs using the VMAccess Extension](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-using-vmaccess-extension?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json#reset-root-password)"]
     #[serde(rename = "adminPassword", default, skip_serializing_if = "Option::is_none")]
     pub admin_password: Option<String>,
+    #[doc = "A base-64 encoded string of custom data."]
     #[serde(rename = "customData", default, skip_serializing_if = "Option::is_none")]
     pub custom_data: Option<String>,
+    #[doc = "Specifies Windows operating system settings on the virtual machine."]
     #[serde(rename = "windowsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub windows_configuration: Option<WindowsConfiguration>,
+    #[doc = "Specifies the Linux operating system settings on the virtual machine. <br><br>For a list of supported Linux distributions, see [Linux on Azure-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-endorsed-distros?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json) <br><br> For running non-endorsed distributions, see [Information for Non-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-linux-create-upload-generic?toc=%2fazure%2fvirtual-machines%2flinux%2ftoc.json)."]
     #[serde(rename = "linuxConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub linux_configuration: Option<LinuxConfiguration>,
+    #[doc = "The List of certificates for addition to the VM."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub secrets: Vec<VaultSecretGroup>,
 }
@@ -2009,16 +2453,22 @@ impl VirtualMachineScaleSetOsProfile {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a Virtual Machine Scale Set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetProperties {
+    #[doc = "Describes an upgrade policy - automatic or manual."]
     #[serde(rename = "upgradePolicy", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_policy: Option<UpgradePolicy>,
+    #[doc = "Describes a virtual machine scale set virtual machine profile."]
     #[serde(rename = "virtualMachineProfile", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine_profile: Option<VirtualMachineScaleSetVmProfile>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Specifies whether the Virtual Machine Scale Set should be overprovisioned."]
     #[serde(rename = "overProvision", default, skip_serializing_if = "Option::is_none")]
     pub over_provision: Option<bool>,
+    #[doc = "When true this limits the scale set to a single placement group, of max size 100 virtual machines."]
     #[serde(rename = "singlePlacementGroup", default, skip_serializing_if = "Option::is_none")]
     pub single_placement_group: Option<bool>,
 }
@@ -2027,12 +2477,16 @@ impl VirtualMachineScaleSetProperties {
         Self::default()
     }
 }
+#[doc = "Describes an available virtual machine scale set sku."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetSku {
+    #[doc = "The type of resource the sku applies to."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Describes a virtual machine scale set sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Describes scaling information of a sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<VirtualMachineScaleSetSkuCapacity>,
 }
@@ -2041,14 +2495,19 @@ impl VirtualMachineScaleSetSku {
         Self::default()
     }
 }
+#[doc = "Describes scaling information of a sku."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetSkuCapacity {
+    #[doc = "The minimum capacity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<i64>,
+    #[doc = "The maximum capacity that can be set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<i64>,
+    #[doc = "The default capacity."]
     #[serde(rename = "defaultCapacity", default, skip_serializing_if = "Option::is_none")]
     pub default_capacity: Option<i64>,
+    #[doc = "The scale type applicable to the sku."]
     #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
     pub scale_type: Option<virtual_machine_scale_set_sku_capacity::ScaleType>,
 }
@@ -2059,18 +2518,23 @@ impl VirtualMachineScaleSetSkuCapacity {
 }
 pub mod virtual_machine_scale_set_sku_capacity {
     use super::*;
+    #[doc = "The scale type applicable to the sku."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ScaleType {
         Automatic,
         None,
     }
 }
+#[doc = "Describes a virtual machine scale set storage profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetStorageProfile {
+    #[doc = "Specifies information about the image to use. You can specify information about platform images, marketplace images, or virtual machine images. This element is required when you want to use a platform image, marketplace image, or virtual machine image, but is not used in other creation operations."]
     #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
     pub image_reference: Option<ImageReference>,
+    #[doc = "Describes a virtual machine scale set operating system disk."]
     #[serde(rename = "osDisk", default, skip_serializing_if = "Option::is_none")]
     pub os_disk: Option<VirtualMachineScaleSetOsDisk>,
+    #[doc = "The data disks."]
     #[serde(rename = "dataDisks", default, skip_serializing_if = "Vec::is_empty")]
     pub data_disks: Vec<VirtualMachineScaleSetDataDisk>,
 }
@@ -2079,18 +2543,24 @@ impl VirtualMachineScaleSetStorageProfile {
         Self::default()
     }
 }
+#[doc = "Describes a virtual machine scale set virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetVm {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The virtual machine instance ID."]
     #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
+    #[doc = "Describes a virtual machine scale set sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Describes the properties of a virtual machine scale set virtual machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineScaleSetVmProperties>,
+    #[doc = "Specifies information about the marketplace image used to create the virtual machine. This element is only used for marketplace images. Before you can use a marketplace image from an API, you must enable the image for programmatic use.  In the Azure portal, find the marketplace image that you want to use and then click **Want to deploy programmatically, Get Started ->**. Enter any required information and then click **Save**."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<Plan>,
+    #[doc = "The virtual machine child extension resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<VirtualMachineExtension>,
 }
@@ -2106,10 +2576,13 @@ impl VirtualMachineScaleSetVm {
         }
     }
 }
+#[doc = "Extensions summary for virtual machines of a virtual machine scale set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetVmExtensionsSummary {
+    #[doc = "The extension name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The extensions information."]
     #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
     pub statuses_summary: Vec<VirtualMachineStatusCodeCount>,
 }
@@ -2118,8 +2591,10 @@ impl VirtualMachineScaleSetVmExtensionsSummary {
         Self::default()
     }
 }
+#[doc = "Specifies a list of virtual machine instance IDs from the VM scale set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetVmInstanceIDs {
+    #[doc = "The virtual machine scale set instance ids. Omitting the virtual machine scale set instance ids will result in the operation being performed on all virtual machines in the virtual machine scale set."]
     #[serde(rename = "instanceIds", default, skip_serializing_if = "Vec::is_empty")]
     pub instance_ids: Vec<String>,
 }
@@ -2128,8 +2603,10 @@ impl VirtualMachineScaleSetVmInstanceIDs {
         Self::default()
     }
 }
+#[doc = "Specifies a list of virtual machine instance IDs from the VM scale set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetVmInstanceRequiredIDs {
+    #[doc = "The virtual machine scale set instance ids."]
     #[serde(rename = "instanceIds")]
     pub instance_ids: Vec<String>,
 }
@@ -2138,24 +2615,34 @@ impl VirtualMachineScaleSetVmInstanceRequiredIDs {
         Self { instance_ids }
     }
 }
+#[doc = "The instance view of a virtual machine scale set VM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetVmInstanceView {
+    #[doc = "The Update Domain count."]
     #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
     pub platform_update_domain: Option<i32>,
+    #[doc = "The Fault Domain count."]
     #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
     pub platform_fault_domain: Option<i32>,
+    #[doc = "The Remote desktop certificate thumbprint."]
     #[serde(rename = "rdpThumbPrint", default, skip_serializing_if = "Option::is_none")]
     pub rdp_thumb_print: Option<String>,
+    #[doc = "The instance view of the VM Agent running on the virtual machine."]
     #[serde(rename = "vmAgent", default, skip_serializing_if = "Option::is_none")]
     pub vm_agent: Option<VirtualMachineAgentInstanceView>,
+    #[doc = "The disks information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<DiskInstanceView>,
+    #[doc = "The extensions information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<VirtualMachineExtensionInstanceView>,
+    #[doc = "The instance view of a virtual machine boot diagnostics."]
     #[serde(rename = "bootDiagnostics", default, skip_serializing_if = "Option::is_none")]
     pub boot_diagnostics: Option<BootDiagnosticsInstanceView>,
+    #[doc = "The resource status information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub statuses: Vec<InstanceViewStatus>,
+    #[doc = "The placement group in which the VM is running. If the VM is deallocated it will not have a placementGroupId."]
     #[serde(rename = "placementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub placement_group_id: Option<String>,
 }
@@ -2164,9 +2651,12 @@ impl VirtualMachineScaleSetVmInstanceView {
         Self::default()
     }
 }
+#[doc = "The List Virtual Machine Scale Set VMs operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineScaleSetVmListResult {
+    #[doc = "The list of virtual machine scale sets VMs."]
     pub value: Vec<VirtualMachineScaleSetVm>,
+    #[doc = "The uri to fetch the next page of Virtual Machine Scale Set VMs. Call ListNext() with this to fetch the next page of VMSS VMs"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2175,14 +2665,19 @@ impl VirtualMachineScaleSetVmListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes a virtual machine scale set virtual machine profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetVmProfile {
+    #[doc = "Describes a virtual machine scale set OS profile."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
     pub os_profile: Option<VirtualMachineScaleSetOsProfile>,
+    #[doc = "Describes a virtual machine scale set storage profile."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<VirtualMachineScaleSetStorageProfile>,
+    #[doc = "Describes a virtual machine scale set network profile."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<VirtualMachineScaleSetNetworkProfile>,
+    #[doc = "Describes a virtual machine scale set extension profile."]
     #[serde(rename = "extensionProfile", default, skip_serializing_if = "Option::is_none")]
     pub extension_profile: Option<VirtualMachineScaleSetExtensionProfile>,
 }
@@ -2191,28 +2686,39 @@ impl VirtualMachineScaleSetVmProfile {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a virtual machine scale set virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetVmProperties {
+    #[doc = "Specifies whether the latest model has been applied to the virtual machine."]
     #[serde(rename = "latestModelApplied", default, skip_serializing_if = "Option::is_none")]
     pub latest_model_applied: Option<bool>,
+    #[doc = "Azure VM unique ID."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
+    #[doc = "The instance view of a virtual machine scale set VM."]
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<VirtualMachineScaleSetVmInstanceView>,
+    #[doc = "Specifies the hardware settings for the virtual machine."]
     #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
     pub hardware_profile: Option<HardwareProfile>,
+    #[doc = "Specifies the storage settings for the virtual machine disks."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<StorageProfile>,
+    #[doc = "Specifies the operating system settings for the virtual machine."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
     pub os_profile: Option<OsProfile>,
+    #[doc = "Specifies the network interfaces of the virtual machine."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
+    #[doc = "Specifies the boot diagnostic settings state. <br><br>Minimum api-version: 2015-06-15."]
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<DiagnosticsProfile>,
     #[serde(rename = "availabilitySet", default, skip_serializing_if = "Option::is_none")]
     pub availability_set: Option<SubResource>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Specifies that the image or disk that is being used was licensed on-premises. This element is only used for images that contain the Windows Server operating system. <br><br> Possible values are: <br><br> Windows_Client <br><br> Windows_Server <br><br> If this element is included in a request for an update, the value must match the initial value. This value cannot be updated. <br><br> For more information, see [Azure Hybrid Use Benefit for Windows Server](https://docs.microsoft.com/azure/virtual-machines/virtual-machines-windows-hybrid-use-benefit-licensing?toc=%2fazure%2fvirtual-machines%2fwindows%2ftoc.json) <br><br> Minimum api-version: 2015-06-15"]
     #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
     pub license_type: Option<String>,
 }
@@ -2221,18 +2727,25 @@ impl VirtualMachineScaleSetVmProperties {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a VM size."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSize {
+    #[doc = "The name of the virtual machine size."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The number of cores supported by the virtual machine size."]
     #[serde(rename = "numberOfCores", default, skip_serializing_if = "Option::is_none")]
     pub number_of_cores: Option<i32>,
+    #[doc = "The OS disk size, in MB, allowed by the virtual machine size."]
     #[serde(rename = "osDiskSizeInMB", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_size_in_mb: Option<i32>,
+    #[doc = "The resource disk size, in MB, allowed by the virtual machine size."]
     #[serde(rename = "resourceDiskSizeInMB", default, skip_serializing_if = "Option::is_none")]
     pub resource_disk_size_in_mb: Option<i32>,
+    #[doc = "The amount of memory, in MB, supported by the virtual machine size."]
     #[serde(rename = "memoryInMB", default, skip_serializing_if = "Option::is_none")]
     pub memory_in_mb: Option<i32>,
+    #[doc = "The maximum number of data disks that can be attached to the virtual machine size."]
     #[serde(rename = "maxDataDiskCount", default, skip_serializing_if = "Option::is_none")]
     pub max_data_disk_count: Option<i32>,
 }
@@ -2241,8 +2754,10 @@ impl VirtualMachineSize {
         Self::default()
     }
 }
+#[doc = "The List Virtual Machine operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineSizeListResult {
+    #[doc = "The list of virtual machine sizes."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualMachineSize>,
 }
@@ -2251,10 +2766,13 @@ impl VirtualMachineSizeListResult {
         Self::default()
     }
 }
+#[doc = "The status code and count of the virtual machine scale set instance view status summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineStatusCodeCount {
+    #[doc = "The instance view status code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The number of instances having a particular status code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
 }
@@ -2263,8 +2781,10 @@ impl VirtualMachineStatusCodeCount {
         Self::default()
     }
 }
+#[doc = "Describes Windows Remote Management configuration of the VM"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WinRmConfiguration {
+    #[doc = "The list of Windows Remote Management listeners"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub listeners: Vec<WinRmListener>,
 }
@@ -2273,10 +2793,13 @@ impl WinRmConfiguration {
         Self::default()
     }
 }
+#[doc = "Describes Protocol and thumbprint of Windows Remote Management listener"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WinRmListener {
+    #[doc = "Specifies the protocol of listener. <br><br> Possible values are: <br>**http** <br><br> **https**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<win_rm_listener::Protocol>,
+    #[doc = "This is the URL of a certificate that has been uploaded to Key Vault as a secret. For adding a secret to the Key Vault, see [Add a key or secret to the key vault](https://docs.microsoft.com/azure/key-vault/key-vault-get-started/#add). In this case, your certificate needs to be It is the Base64 encoding of the following JSON Object which is encoded in UTF-8: <br><br> {<br>  \"data\":\"<Base64-encoded-certificate>\",<br>  \"dataType\":\"pfx\",<br>  \"password\":\"<pfx-file-password>\"<br>}"]
     #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
     pub certificate_url: Option<String>,
 }
@@ -2287,22 +2810,29 @@ impl WinRmListener {
 }
 pub mod win_rm_listener {
     use super::*;
+    #[doc = "Specifies the protocol of listener. <br><br> Possible values are: <br>**http** <br><br> **https**"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         Http,
         Https,
     }
 }
+#[doc = "Specifies Windows operating system settings on the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsConfiguration {
+    #[doc = "Indicates whether virtual machine agent should be provisioned on the virtual machine. <br><br> When this property is not specified in the request body, default behavior is to set it to true.  This will ensure that VM Agent is installed on the VM so that extensions can be added to the VM later."]
     #[serde(rename = "provisionVMAgent", default, skip_serializing_if = "Option::is_none")]
     pub provision_vm_agent: Option<bool>,
+    #[doc = "Indicates whether virtual machine is enabled for automatic updates."]
     #[serde(rename = "enableAutomaticUpdates", default, skip_serializing_if = "Option::is_none")]
     pub enable_automatic_updates: Option<bool>,
+    #[doc = "Specifies the time zone of the virtual machine. e.g. \"Pacific Standard Time\""]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
+    #[doc = "Specifies additional base-64 encoded XML formatted information that can be included in the Unattend.xml file, which is used by Windows Setup."]
     #[serde(rename = "additionalUnattendContent", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_unattend_content: Vec<AdditionalUnattendContent>,
+    #[doc = "Describes Windows Remote Management configuration of the VM"]
     #[serde(rename = "winRM", default, skip_serializing_if = "Option::is_none")]
     pub win_rm: Option<WinRmConfiguration>,
 }

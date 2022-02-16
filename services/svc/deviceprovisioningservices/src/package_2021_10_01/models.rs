@@ -2,14 +2,19 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Attestation mechanism for individualEnrollment as well as enrollmentGroup."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttestationMechanism {
+    #[doc = "Attestation Type."]
     #[serde(rename = "type")]
     pub type_: attestation_mechanism::Type,
+    #[doc = "Attestation via TPM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tpm: Option<TpmAttestation>,
+    #[doc = "Attestation via X509."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x509: Option<X509Attestation>,
+    #[doc = "Attestation via SymmetricKey."]
     #[serde(rename = "symmetricKey", default, skip_serializing_if = "Option::is_none")]
     pub symmetric_key: Option<SymmetricKeyAttestation>,
 }
@@ -25,6 +30,7 @@ impl AttestationMechanism {
 }
 pub mod attestation_mechanism {
     use super::*;
+    #[doc = "Attestation Type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "none")]
@@ -37,10 +43,13 @@ pub mod attestation_mechanism {
         SymmetricKey,
     }
 }
+#[doc = "Bulk enrollment operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BulkEnrollmentGroupOperation {
+    #[doc = "Enrollment items"]
     #[serde(rename = "enrollmentGroups")]
     pub enrollment_groups: Vec<EnrollmentGroup>,
+    #[doc = "Operation mode."]
     pub mode: bulk_enrollment_group_operation::Mode,
 }
 impl BulkEnrollmentGroupOperation {
@@ -50,6 +59,7 @@ impl BulkEnrollmentGroupOperation {
 }
 pub mod bulk_enrollment_group_operation {
     use super::*;
+    #[doc = "Operation mode."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         #[serde(rename = "create")]
@@ -62,12 +72,16 @@ pub mod bulk_enrollment_group_operation {
         Delete,
     }
 }
+#[doc = "Bulk enrollment operation error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BulkEnrollmentGroupOperationError {
+    #[doc = "Enrollment group id."]
     #[serde(rename = "enrollmentGroupId")]
     pub enrollment_group_id: String,
+    #[doc = "Error code"]
     #[serde(rename = "errorCode")]
     pub error_code: i32,
+    #[doc = "Error status."]
     #[serde(rename = "errorStatus")]
     pub error_status: String,
 }
@@ -80,10 +94,13 @@ impl BulkEnrollmentGroupOperationError {
         }
     }
 }
+#[doc = "Results of a bulk enrollment group operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BulkEnrollmentGroupOperationResult {
+    #[doc = "Registration errors"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<BulkEnrollmentGroupOperationError>,
+    #[doc = "Indicates if the operation was successful in its entirety."]
     #[serde(rename = "isSuccessful")]
     pub is_successful: bool,
 }
@@ -95,9 +112,12 @@ impl BulkEnrollmentGroupOperationResult {
         }
     }
 }
+#[doc = "Bulk enrollment operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BulkEnrollmentOperation {
+    #[doc = "Enrollment items"]
     pub enrollments: Vec<IndividualEnrollment>,
+    #[doc = "Operation mode."]
     pub mode: bulk_enrollment_operation::Mode,
 }
 impl BulkEnrollmentOperation {
@@ -107,6 +127,7 @@ impl BulkEnrollmentOperation {
 }
 pub mod bulk_enrollment_operation {
     use super::*;
+    #[doc = "Operation mode."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         #[serde(rename = "create")]
@@ -119,12 +140,16 @@ pub mod bulk_enrollment_operation {
         Delete,
     }
 }
+#[doc = "Bulk enrollment operation error"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BulkEnrollmentOperationError {
+    #[doc = "This id is used to uniquely identify a device registration of an enrollment.\r\nA case-insensitive string (up to 128 characters long) of alphanumeric characters plus certain special characters : . _ -. No special characters allowed at start or end."]
     #[serde(rename = "registrationId")]
     pub registration_id: String,
+    #[doc = "Error code"]
     #[serde(rename = "errorCode")]
     pub error_code: i32,
+    #[doc = "Error status."]
     #[serde(rename = "errorStatus")]
     pub error_status: String,
 }
@@ -137,10 +162,13 @@ impl BulkEnrollmentOperationError {
         }
     }
 }
+#[doc = "Results of a bulk enrollment operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BulkEnrollmentOperationResult {
+    #[doc = "Registration errors"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub errors: Vec<BulkEnrollmentOperationError>,
+    #[doc = "Indicates if the operation was successful in its entirety."]
     #[serde(rename = "isSuccessful")]
     pub is_successful: bool,
 }
@@ -152,10 +180,13 @@ impl BulkEnrollmentOperationResult {
         }
     }
 }
+#[doc = "This tells DPS which webhook to call when using custom allocation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomAllocationDefinition {
+    #[doc = "The webhook URL used for allocation requests."]
     #[serde(rename = "webhookUrl")]
     pub webhook_url: String,
+    #[doc = "The API version of the provisioning service types (such as IndividualEnrollment) sent in the custom allocation request. Minimum supported version: \"2018-09-01-preview\"."]
     #[serde(rename = "apiVersion")]
     pub api_version: String,
 }
@@ -164,8 +195,10 @@ impl CustomAllocationDefinition {
         Self { webhook_url, api_version }
     }
 }
+#[doc = "Device capabilities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCapabilities {
+    #[doc = "If set to true, this device is an IoTEdge device."]
     #[serde(rename = "iotEdge")]
     pub iot_edge: bool,
 }
@@ -174,28 +207,40 @@ impl DeviceCapabilities {
         Self { iot_edge }
     }
 }
+#[doc = "Device registration state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceRegistrationState {
+    #[doc = "This id is used to uniquely identify a device registration of an enrollment.\r\nA case-insensitive string (up to 128 characters long) of alphanumeric characters plus certain special characters : . _ -. No special characters allowed at start or end."]
     #[serde(rename = "registrationId", default, skip_serializing_if = "Option::is_none")]
     pub registration_id: Option<String>,
+    #[doc = "Registration create date time (in UTC)."]
     #[serde(rename = "createdDateTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub created_date_time_utc: Option<String>,
+    #[doc = "Assigned Azure IoT Hub."]
     #[serde(rename = "assignedHub", default, skip_serializing_if = "Option::is_none")]
     pub assigned_hub: Option<String>,
+    #[doc = "Device ID."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
+    #[doc = "Enrollment status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<device_registration_state::Status>,
+    #[doc = "Substatus for 'Assigned' devices. Possible values include - 'initialAssignment': Device has been assigned to an IoT hub for the first time, 'deviceDataMigrated': Device has been assigned to a different IoT hub and its device data was migrated from the previously assigned IoT hub. Device data was removed from the previously assigned IoT hub, 'deviceDataReset':  Device has been assigned to a different IoT hub and its device data was populated from the initial state stored in the enrollment. Device data was removed from the previously assigned IoT hub, 'reprovisionedToInitialAssignment': Device has been re-provisioned to a previously assigned IoT hub."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub substatus: Option<device_registration_state::Substatus>,
+    #[doc = "Error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<i32>,
+    #[doc = "Error message."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "Last updated date time (in UTC)."]
     #[serde(rename = "lastUpdatedDateTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date_time_utc: Option<String>,
+    #[doc = "The entity tag associated with the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Custom allocation payload returned from the webhook to the device."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub payload: Option<serde_json::Value>,
 }
@@ -206,6 +251,7 @@ impl DeviceRegistrationState {
 }
 pub mod device_registration_state {
     use super::*;
+    #[doc = "Enrollment status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "unassigned")]
@@ -219,6 +265,7 @@ pub mod device_registration_state {
         #[serde(rename = "disabled")]
         Disabled,
     }
+    #[doc = "Substatus for 'Assigned' devices. Possible values include - 'initialAssignment': Device has been assigned to an IoT hub for the first time, 'deviceDataMigrated': Device has been assigned to a different IoT hub and its device data was migrated from the previously assigned IoT hub. Device data was removed from the previously assigned IoT hub, 'deviceDataReset':  Device has been assigned to a different IoT hub and its device data was populated from the initial state stored in the enrollment. Device data was removed from the previously assigned IoT hub, 'reprovisionedToInitialAssignment': Device has been re-provisioned to a previously assigned IoT hub."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Substatus {
         #[serde(rename = "initialAssignment")]
@@ -231,31 +278,45 @@ pub mod device_registration_state {
         ReprovisionedToInitialAssignment,
     }
 }
+#[doc = "Enrollment group record."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnrollmentGroup {
+    #[doc = "Enrollment Group ID."]
     #[serde(rename = "enrollmentGroupId")]
     pub enrollment_group_id: String,
+    #[doc = "Attestation mechanism for individualEnrollment as well as enrollmentGroup."]
     pub attestation: AttestationMechanism,
+    #[doc = "Device capabilities."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<DeviceCapabilities>,
+    #[doc = "The Iot Hub host name."]
     #[serde(rename = "iotHubHostName", default, skip_serializing_if = "Option::is_none")]
     pub iot_hub_host_name: Option<String>,
+    #[doc = "Initial device twin. Contains a subset of the properties of Twin."]
     #[serde(rename = "initialTwin", default, skip_serializing_if = "Option::is_none")]
     pub initial_twin: Option<InitialTwin>,
+    #[doc = "The entity tag associated with the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "The provisioning status."]
     #[serde(rename = "provisioningStatus", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_status: Option<enrollment_group::ProvisioningStatus>,
+    #[doc = "The behavior of the service when a device is re-provisioned to an IoT hub."]
     #[serde(rename = "reprovisionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub reprovision_policy: Option<ReprovisionPolicy>,
+    #[doc = "The DateTime this resource was created."]
     #[serde(rename = "createdDateTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub created_date_time_utc: Option<String>,
+    #[doc = "The DateTime this resource was last updated."]
     #[serde(rename = "lastUpdatedDateTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date_time_utc: Option<String>,
+    #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
     #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub allocation_policy: Option<enrollment_group::AllocationPolicy>,
+    #[doc = "The list of IoT Hub hostnames the device(s) in this resource can be allocated to. Must be a subset of tenant level list of IoT hubs."]
     #[serde(rename = "iotHubs", default, skip_serializing_if = "Vec::is_empty")]
     pub iot_hubs: Vec<String>,
+    #[doc = "This tells DPS which webhook to call when using custom allocation."]
     #[serde(rename = "customAllocationDefinition", default, skip_serializing_if = "Option::is_none")]
     pub custom_allocation_definition: Option<CustomAllocationDefinition>,
 }
@@ -280,6 +341,7 @@ impl EnrollmentGroup {
 }
 pub mod enrollment_group {
     use super::*;
+    #[doc = "The provisioning status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningStatus {
         #[serde(rename = "enabled")]
@@ -292,6 +354,7 @@ pub mod enrollment_group {
             Self::Enabled
         }
     }
+    #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllocationPolicy {
         #[serde(rename = "hashed")]
@@ -304,37 +367,54 @@ pub mod enrollment_group {
         Custom,
     }
 }
+#[doc = "The device enrollment record."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IndividualEnrollment {
+    #[doc = "This id is used to uniquely identify a device registration of an enrollment.\r\nA case-insensitive string (up to 128 characters long) of alphanumeric characters plus certain special characters : . _ -. No special characters allowed at start or end."]
     #[serde(rename = "registrationId")]
     pub registration_id: String,
+    #[doc = "Desired IoT Hub device ID (optional)."]
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
+    #[doc = "Device registration state."]
     #[serde(rename = "registrationState", default, skip_serializing_if = "Option::is_none")]
     pub registration_state: Option<DeviceRegistrationState>,
+    #[doc = "Represents a collection of properties within a Twin"]
     #[serde(rename = "optionalDeviceInformation", default, skip_serializing_if = "Option::is_none")]
     pub optional_device_information: Option<TwinCollection>,
+    #[doc = "Attestation mechanism for individualEnrollment as well as enrollmentGroup."]
     pub attestation: AttestationMechanism,
+    #[doc = "Device capabilities."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<DeviceCapabilities>,
+    #[doc = "The Iot Hub host name."]
     #[serde(rename = "iotHubHostName", default, skip_serializing_if = "Option::is_none")]
     pub iot_hub_host_name: Option<String>,
+    #[doc = "Initial device twin. Contains a subset of the properties of Twin."]
     #[serde(rename = "initialTwin", default, skip_serializing_if = "Option::is_none")]
     pub initial_twin: Option<InitialTwin>,
+    #[doc = "The entity tag associated with the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "The provisioning status."]
     #[serde(rename = "provisioningStatus", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_status: Option<individual_enrollment::ProvisioningStatus>,
+    #[doc = "The behavior of the service when a device is re-provisioned to an IoT hub."]
     #[serde(rename = "reprovisionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub reprovision_policy: Option<ReprovisionPolicy>,
+    #[doc = "The DateTime this resource was created."]
     #[serde(rename = "createdDateTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub created_date_time_utc: Option<String>,
+    #[doc = "The DateTime this resource was last updated."]
     #[serde(rename = "lastUpdatedDateTimeUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date_time_utc: Option<String>,
+    #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
     #[serde(rename = "allocationPolicy", default, skip_serializing_if = "Option::is_none")]
     pub allocation_policy: Option<individual_enrollment::AllocationPolicy>,
+    #[doc = "The list of IoT Hub hostnames the device(s) in this resource can be allocated to. Must be a subset of tenant level list of IoT hubs."]
     #[serde(rename = "iotHubs", default, skip_serializing_if = "Vec::is_empty")]
     pub iot_hubs: Vec<String>,
+    #[doc = "This tells DPS which webhook to call when using custom allocation."]
     #[serde(rename = "customAllocationDefinition", default, skip_serializing_if = "Option::is_none")]
     pub custom_allocation_definition: Option<CustomAllocationDefinition>,
 }
@@ -362,6 +442,7 @@ impl IndividualEnrollment {
 }
 pub mod individual_enrollment {
     use super::*;
+    #[doc = "The provisioning status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningStatus {
         #[serde(rename = "enabled")]
@@ -374,6 +455,7 @@ pub mod individual_enrollment {
             Self::Enabled
         }
     }
+    #[doc = "The allocation policy of this resource. This policy overrides the tenant level allocation policy for this individual enrollment or enrollment group. Possible values include 'hashed': Linked IoT hubs are equally likely to have devices provisioned to them, 'geoLatency':  Devices are provisioned to an IoT hub with the lowest latency to the device.If multiple linked IoT hubs would provide the same lowest latency, the provisioning service hashes devices across those hubs, 'static' : Specification of the desired IoT hub in the enrollment list takes priority over the service-level allocation policy, 'custom': Devices are provisioned to an IoT hub based on your own custom logic. The provisioning service passes information about the device to the logic, and the logic returns the desired IoT hub as well as the desired initial configuration. We recommend using Azure Functions to host your logic."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AllocationPolicy {
         #[serde(rename = "hashed")]
@@ -386,10 +468,13 @@ pub mod individual_enrollment {
         Custom,
     }
 }
+#[doc = "Initial device twin. Contains a subset of the properties of Twin."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InitialTwin {
+    #[doc = "Represents a collection of properties within a Twin"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<TwinCollection>,
+    #[doc = "Represents the initial properties that will be set on the device twin."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InitialTwinProperties>,
 }
@@ -398,8 +483,10 @@ impl InitialTwin {
         Self::default()
     }
 }
+#[doc = "Represents the initial properties that will be set on the device twin."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InitialTwinProperties {
+    #[doc = "Represents a collection of properties within a Twin"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub desired: Option<TwinCollection>,
 }
@@ -408,10 +495,13 @@ impl InitialTwinProperties {
         Self::default()
     }
 }
+#[doc = "Metadata for the TwinCollection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Metadata {
+    #[doc = "Last time the TwinCollection was updated"]
     #[serde(rename = "lastUpdated", default, skip_serializing_if = "Option::is_none")]
     pub last_updated: Option<String>,
+    #[doc = "This is null for reported properties metadata and is not null for desired properties metadata."]
     #[serde(rename = "lastUpdatedVersion", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_version: Option<i64>,
 }
@@ -420,6 +510,7 @@ impl Metadata {
         Self::default()
     }
 }
+#[doc = "Contains the properties of an error returned by the Azure IoT Hub Provisioning Service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProvisioningServiceErrorDetails {
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
@@ -447,10 +538,13 @@ impl QuerySpecification {
         Self { query }
     }
 }
+#[doc = "The behavior of the service when a device is re-provisioned to an IoT hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReprovisionPolicy {
+    #[doc = "When set to true (default), the Device Provisioning Service will evaluate the device's IoT Hub assignment and update it if necessary for any provisioning requests beyond the first from a given device. If set to false, the device will stay assigned to its current IoT hub."]
     #[serde(rename = "updateHubAssignment")]
     pub update_hub_assignment: bool,
+    #[doc = "When set to true (default), the Device Provisioning Service will migrate the device's data (twin, device capabilities, and device ID) from one IoT hub to another during an IoT hub assignment update. If set to false, the Device Provisioning Service will reset the device's data to the initial desired configuration stored in the corresponding enrollment list."]
     #[serde(rename = "migrateDeviceData")]
     pub migrate_device_data: bool,
 }
@@ -462,10 +556,13 @@ impl ReprovisionPolicy {
         }
     }
 }
+#[doc = "Attestation via SymmetricKey."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SymmetricKeyAttestation {
+    #[doc = "Primary symmetric key."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "Secondary symmetric key."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
@@ -474,6 +571,7 @@ impl SymmetricKeyAttestation {
         Self::default()
     }
 }
+#[doc = "Attestation via TPM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
     #[serde(rename = "endorsementKey")]
@@ -489,12 +587,16 @@ impl TpmAttestation {
         }
     }
 }
+#[doc = "Represents a collection of properties within a Twin"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TwinCollection {
+    #[doc = "Version of the TwinCollection"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
+    #[doc = "Number of properties in the TwinCollection"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+    #[doc = "Metadata for the TwinCollection"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<Metadata>,
 }
@@ -503,12 +605,16 @@ impl TwinCollection {
         Self::default()
     }
 }
+#[doc = "Attestation via X509."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509Attestation {
+    #[doc = "Primary and secondary certificates"]
     #[serde(rename = "clientCertificates", default, skip_serializing_if = "Option::is_none")]
     pub client_certificates: Option<X509Certificates>,
+    #[doc = "Primary and secondary certificates"]
     #[serde(rename = "signingCertificates", default, skip_serializing_if = "Option::is_none")]
     pub signing_certificates: Option<X509Certificates>,
+    #[doc = "Primary and secondary CA references."]
     #[serde(rename = "caReferences", default, skip_serializing_if = "Option::is_none")]
     pub ca_references: Option<X509caReferences>,
 }
@@ -517,6 +623,7 @@ impl X509Attestation {
         Self::default()
     }
 }
+#[doc = "Primary and secondary CA references."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509caReferences {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -529,6 +636,7 @@ impl X509caReferences {
         Self::default()
     }
 }
+#[doc = "X509 certificate info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509CertificateInfo {
     #[serde(rename = "subjectName")]
@@ -570,10 +678,12 @@ impl X509CertificateInfo {
         }
     }
 }
+#[doc = "Certificate and Certificate info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509CertificateWithInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
+    #[doc = "X509 certificate info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<X509CertificateInfo>,
 }
@@ -582,10 +692,13 @@ impl X509CertificateWithInfo {
         Self::default()
     }
 }
+#[doc = "Primary and secondary certificates"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509Certificates {
+    #[doc = "Certificate and Certificate info"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<X509CertificateWithInfo>,
+    #[doc = "Certificate and Certificate info"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<X509CertificateWithInfo>,
 }

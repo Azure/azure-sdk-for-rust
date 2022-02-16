@@ -2,21 +2,30 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Information about an asset associated with the web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssetItem {
+    #[doc = "Asset's friendly name."]
     pub name: String,
+    #[doc = "Asset's Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Asset's type."]
     #[serde(rename = "type")]
     pub type_: asset_item::Type,
+    #[doc = "Describes the access location for a blob."]
     #[serde(rename = "locationInfo")]
     pub location_info: BlobLocation,
+    #[doc = "Information about the asset's input ports."]
     #[serde(rename = "inputPorts", default, skip_serializing_if = "Option::is_none")]
     pub input_ports: Option<serde_json::Value>,
+    #[doc = "Information about the asset's output ports."]
     #[serde(rename = "outputPorts", default, skip_serializing_if = "Option::is_none")]
     pub output_ports: Option<serde_json::Value>,
+    #[doc = "If the asset is a custom module, this holds the module's metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+    #[doc = "If the asset is a custom module, this holds the module's parameters."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ModuleAssetParameter>,
 }
@@ -36,20 +45,26 @@ impl AssetItem {
 }
 pub mod asset_item {
     use super::*;
+    #[doc = "Asset's type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Module,
         Resource,
     }
 }
+#[doc = "The error detail information for async operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AsyncOperationErrorInfo {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "An array containing error information."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<AsyncOperationErrorInfo>,
 }
@@ -58,20 +73,28 @@ impl AsyncOperationErrorInfo {
         Self::default()
     }
 }
+#[doc = "Azure async operation status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AsyncOperationStatus {
+    #[doc = "Async operation id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Async operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Read Only: The provisioning state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<async_operation_status::ProvisioningState>,
+    #[doc = "The date time that the async operation started."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The date time that the async operation finished."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "Async operation progress."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
     pub percent_complete: Option<f64>,
+    #[doc = "The error detail information for async operation"]
     #[serde(rename = "errorInfo", default, skip_serializing_if = "Option::is_none")]
     pub error_info: Option<AsyncOperationErrorInfo>,
 }
@@ -82,6 +105,7 @@ impl AsyncOperationStatus {
 }
 pub mod async_operation_status {
     use super::*;
+    #[doc = "Read Only: The provisioning state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Unknown,
@@ -90,9 +114,12 @@ pub mod async_operation_status {
         Failed,
     }
 }
+#[doc = "Describes the access location for a blob."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobLocation {
+    #[doc = "The URI from which the blob is accessible from. For example, aml://abc for system assets or https://xyz for user assets or payload."]
     pub uri: String,
+    #[doc = "Access credentials for the blob, if applicable (e.g. blob specified by storage account connection string + blob URI)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<String>,
 }
@@ -101,16 +128,22 @@ impl BlobLocation {
         Self { uri, credentials: None }
     }
 }
+#[doc = "Swagger 2.0 schema for a column within the data table representing a web service input or output. See Swagger specification: http://swagger.io/specification/"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ColumnSpecification {
+    #[doc = "Data type of the column."]
     #[serde(rename = "type")]
     pub type_: column_specification::Type,
+    #[doc = "Additional format information for the data type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<column_specification::Format>,
+    #[doc = "If the data type is categorical, this provides the list of accepted categories."]
     #[serde(rename = "enum", default, skip_serializing_if = "Vec::is_empty")]
     pub enum_: Vec<serde_json::Value>,
+    #[doc = "Flag indicating if the type supports null values or not."]
     #[serde(rename = "x-ms-isnullable", default, skip_serializing_if = "Option::is_none")]
     pub x_ms_isnullable: Option<bool>,
+    #[doc = "Flag indicating whether the categories are treated as an ordered set or not, if this is a categorical column."]
     #[serde(rename = "x-ms-isordered", default, skip_serializing_if = "Option::is_none")]
     pub x_ms_isordered: Option<bool>,
 }
@@ -127,6 +160,7 @@ impl ColumnSpecification {
 }
 pub mod column_specification {
     use super::*;
+    #[doc = "Data type of the column."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Boolean,
@@ -134,6 +168,7 @@ pub mod column_specification {
         Number,
         String,
     }
+    #[doc = "Additional format information for the data type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Format {
         Byte,
@@ -157,8 +192,10 @@ pub mod column_specification {
         Uint64,
     }
 }
+#[doc = "Information about the machine learning commitment plan associated with the web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommitmentPlan {
+    #[doc = "Specifies the Azure Resource Manager ID of the commitment plan associated with the web service."]
     pub id: String,
 }
 impl CommitmentPlan {
@@ -166,9 +203,12 @@ impl CommitmentPlan {
         Self { id }
     }
 }
+#[doc = "Diagnostics settings for an Azure ML web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsConfiguration {
+    #[doc = "Specifies the verbosity of the diagnostic output. Valid values are: None - disables tracing; Error - collects only error (stderr) traces; All - collects all traces (stdout and stderr)."]
     pub level: diagnostics_configuration::Level,
+    #[doc = "Specifies the date and time when the logging will cease. If null, diagnostic collection is not time limited."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
 }
@@ -179,6 +219,7 @@ impl DiagnosticsConfiguration {
 }
 pub mod diagnostics_configuration {
     use super::*;
+    #[doc = "Specifies the verbosity of the diagnostic output. Valid values are: None - disables tracing; Error - collects only error (stderr) traces; All - collects all traces (stdout and stderr)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Level {
         None,
@@ -186,10 +227,13 @@ pub mod diagnostics_configuration {
         All,
     }
 }
+#[doc = "Sample input data for the service's input(s)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExampleRequest {
+    #[doc = "Sample input data for the web service's input(s) given as an input name to sample input values matrix map."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inputs: Option<serde_json::Value>,
+    #[doc = "Sample input data for the web service's global parameters"]
     #[serde(rename = "globalParameters", default, skip_serializing_if = "Option::is_none")]
     pub global_parameters: Option<serde_json::Value>,
 }
@@ -198,14 +242,19 @@ impl ExampleRequest {
         Self::default()
     }
 }
+#[doc = "Defines an edge within the web service's graph."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphEdge {
+    #[doc = "The source graph node's identifier."]
     #[serde(rename = "sourceNodeId", default, skip_serializing_if = "Option::is_none")]
     pub source_node_id: Option<String>,
+    #[doc = "The identifier of the source node's port that the edge connects from."]
     #[serde(rename = "sourcePortId", default, skip_serializing_if = "Option::is_none")]
     pub source_port_id: Option<String>,
+    #[doc = "The destination graph node's identifier."]
     #[serde(rename = "targetNodeId", default, skip_serializing_if = "Option::is_none")]
     pub target_node_id: Option<String>,
+    #[doc = "The identifier of the destination node's port that the edge connects into."]
     #[serde(rename = "targetPortId", default, skip_serializing_if = "Option::is_none")]
     pub target_port_id: Option<String>,
 }
@@ -214,14 +263,19 @@ impl GraphEdge {
         Self::default()
     }
 }
+#[doc = "Specifies a node in the web service graph. The node can either be an input, output or asset node, so only one of the corresponding id properties is populated at any given time."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphNode {
+    #[doc = "The id of the asset represented by this node."]
     #[serde(rename = "assetId", default, skip_serializing_if = "Option::is_none")]
     pub asset_id: Option<String>,
+    #[doc = "The id of the input element represented by this node."]
     #[serde(rename = "inputId", default, skip_serializing_if = "Option::is_none")]
     pub input_id: Option<String>,
+    #[doc = "The id of the output element represented by this node."]
     #[serde(rename = "outputId", default, skip_serializing_if = "Option::is_none")]
     pub output_id: Option<String>,
+    #[doc = "If applicable, parameters of the node. Global graph parameters map into these, with values set at runtime."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
 }
@@ -230,12 +284,16 @@ impl GraphNode {
         Self::default()
     }
 }
+#[doc = "Defines the graph of modules making up the machine learning solution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphPackage {
+    #[doc = "The set of nodes making up the graph, provided as a nodeId to GraphNode map"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nodes: Option<serde_json::Value>,
+    #[doc = "The list of edges making up the graph."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub edges: Vec<GraphEdge>,
+    #[doc = "The collection of global parameters for the graph, given as a global parameter name to GraphParameter map. Each parameter here has a 1:1 match with the global parameters values map declared at the WebServiceProperties level."]
     #[serde(rename = "graphParameters", default, skip_serializing_if = "Option::is_none")]
     pub graph_parameters: Option<serde_json::Value>,
 }
@@ -244,12 +302,16 @@ impl GraphPackage {
         Self::default()
     }
 }
+#[doc = "Defines a global parameter in the graph."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GraphParameter {
+    #[doc = "Description of this graph parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Graph parameter's type."]
     #[serde(rename = "type")]
     pub type_: graph_parameter::Type,
+    #[doc = "Association links for this parameter to nodes in the graph."]
     pub links: Vec<GraphParameterLink>,
 }
 impl GraphParameter {
@@ -263,6 +325,7 @@ impl GraphParameter {
 }
 pub mod graph_parameter {
     use super::*;
+    #[doc = "Graph parameter's type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         String,
@@ -279,10 +342,13 @@ pub mod graph_parameter {
         DataGatewayName,
     }
 }
+#[doc = "Association link for a graph global parameter to a node in the graph."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GraphParameterLink {
+    #[doc = "The graph node's identifier"]
     #[serde(rename = "nodeId")]
     pub node_id: String,
+    #[doc = "The identifier of the node parameter that the global parameter maps to."]
     #[serde(rename = "parameterKey")]
     pub parameter_key: String,
 }
@@ -291,8 +357,10 @@ impl GraphParameterLink {
         Self { node_id, parameter_key }
     }
 }
+#[doc = "Asset input port"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputPort {
+    #[doc = "Port data type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<input_port::Type>,
 }
@@ -303,6 +371,7 @@ impl InputPort {
 }
 pub mod input_port {
     use super::*;
+    #[doc = "Port data type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Dataset,
@@ -313,8 +382,10 @@ pub mod input_port {
         }
     }
 }
+#[doc = "Information about the machine learning workspace containing the experiment that is source for the web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MachineLearningWorkspace {
+    #[doc = "Specifies the workspace ID of the machine learning workspace associated with the web service"]
     pub id: String,
 }
 impl MachineLearningWorkspace {
@@ -322,10 +393,13 @@ impl MachineLearningWorkspace {
         Self { id }
     }
 }
+#[doc = "Nested parameter definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModeValueInfo {
+    #[doc = "The interface string name for the nested parameter."]
     #[serde(rename = "interfaceString", default, skip_serializing_if = "Option::is_none")]
     pub interface_string: Option<String>,
+    #[doc = "The definition of the parameter."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<ModuleAssetParameter>,
 }
@@ -334,12 +408,16 @@ impl ModeValueInfo {
         Self::default()
     }
 }
+#[doc = "Parameter definition for a module asset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ModuleAssetParameter {
+    #[doc = "Parameter name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Parameter type."]
     #[serde(rename = "parameterType", default, skip_serializing_if = "Option::is_none")]
     pub parameter_type: Option<String>,
+    #[doc = "Definitions for nested interface parameters if this is a complex module parameter."]
     #[serde(rename = "modeValuesInfo", default, skip_serializing_if = "Option::is_none")]
     pub mode_values_info: Option<serde_json::Value>,
 }
@@ -348,14 +426,19 @@ impl ModuleAssetParameter {
         Self::default()
     }
 }
+#[doc = "The API operation info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayInfo {
+    #[doc = "The description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The action that users can perform, based on their permission level."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The service provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The resource on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
@@ -364,10 +447,13 @@ impl OperationDisplayInfo {
         Self::default()
     }
 }
+#[doc = "An API operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntity {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The API operation info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayInfo>,
 }
@@ -376,8 +462,10 @@ impl OperationEntity {
         Self::default()
     }
 }
+#[doc = "The list of REST API operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationEntityListResult {
+    #[doc = "The list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationEntity>,
 }
@@ -386,8 +474,10 @@ impl OperationEntityListResult {
         Self::default()
     }
 }
+#[doc = "Asset output port"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutputPort {
+    #[doc = "Port data type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<output_port::Type>,
 }
@@ -398,6 +488,7 @@ impl OutputPort {
 }
 pub mod output_port {
     use super::*;
+    #[doc = "Port data type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Dataset,
@@ -408,10 +499,13 @@ pub mod output_port {
         }
     }
 }
+#[doc = "Paginated list of web services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedWebServicesList {
+    #[doc = "An array of web service objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<WebService>,
+    #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -420,16 +514,22 @@ impl PaginatedWebServicesList {
         Self::default()
     }
 }
+#[doc = "Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchedResource {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Specifies the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Contains resource tags defined as key/value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -438,10 +538,12 @@ impl PatchedResource {
         Self::default()
     }
 }
+#[doc = "Instance of an Patched Azure ML web service resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchedWebService {
     #[serde(flatten)]
     pub patched_resource: PatchedResource,
+    #[doc = "The set of properties specific to the Azure ML web service resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebServiceProperties>,
 }
@@ -450,8 +552,10 @@ impl PatchedWebService {
         Self::default()
     }
 }
+#[doc = "Holds the available configuration options for an Azure ML web service endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RealtimeConfiguration {
+    #[doc = "Specifies the maximum concurrent calls that can be made to the web service. Minimum value: 4, Maximum value: 200."]
     #[serde(rename = "maxConcurrentCalls", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_calls: Option<i64>,
 }
@@ -460,15 +564,21 @@ impl RealtimeConfiguration {
         Self::default()
     }
 }
+#[doc = "Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the location of the resource."]
     pub location: String,
+    #[doc = "Specifies the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Contains resource tags defined as key/value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -483,14 +593,19 @@ impl Resource {
         }
     }
 }
+#[doc = "The swagger 2.0 schema describing the service's inputs or outputs. See Swagger specification: http://swagger.io/specification/"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceInputOutputSpecification {
+    #[doc = "The title of your Swagger schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[doc = "The description of the Swagger schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The type of the entity described in swagger. Always 'object'."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "Specifies a collection that contains the column schema for each input or output of the web service. For more information, see the Swagger specification."]
     pub properties: serde_json::Value,
 }
 impl ServiceInputOutputSpecification {
@@ -503,10 +618,13 @@ impl ServiceInputOutputSpecification {
         }
     }
 }
+#[doc = "Access information for a storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccount {
+    #[doc = "Specifies the name of the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the key used to access the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
@@ -515,16 +633,22 @@ impl StorageAccount {
         Self::default()
     }
 }
+#[doc = "The swagger 2.0 schema describing a single service input or output. See Swagger specification: http://swagger.io/specification/"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TableSpecification {
+    #[doc = "Swagger schema title."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[doc = "Swagger schema description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The type of the entity described in swagger."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "The format, if 'type' is not 'object'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<String>,
+    #[doc = "The set of columns within the data table."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -539,10 +663,12 @@ impl TableSpecification {
         }
     }
 }
+#[doc = "Instance of an Azure ML web service resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebService {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The set of properties specific to the Azure ML web service resource."]
     pub properties: WebServiceProperties,
 }
 impl WebService {
@@ -550,10 +676,13 @@ impl WebService {
         Self { resource, properties }
     }
 }
+#[doc = "Access keys for the web service calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebServiceKeys {
+    #[doc = "The primary access key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<String>,
+    #[doc = "The secondary access key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secondary: Option<String>,
 }
@@ -562,10 +691,13 @@ impl WebServiceKeys {
         Self::default()
     }
 }
+#[doc = "Web Service Parameter object for node and global parameter"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WebServiceParameter {
+    #[doc = "The parameter value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<serde_json::Value>,
+    #[doc = "If the parameter value in 'value' field is encrypted, the thumbprint of the certificate should be put here."]
     #[serde(rename = "certificateThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub certificate_thumbprint: Option<String>,
 }
@@ -574,50 +706,73 @@ impl WebServiceParameter {
         Self::default()
     }
 }
+#[doc = "The set of properties specific to the Azure ML web service resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebServiceProperties {
+    #[doc = "The title of the web service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[doc = "The description of the web service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Read Only: The date and time when the web service was created."]
     #[serde(rename = "createdOn", default, skip_serializing_if = "Option::is_none")]
     pub created_on: Option<String>,
+    #[doc = "Read Only: The date and time when the web service was last modified."]
     #[serde(rename = "modifiedOn", default, skip_serializing_if = "Option::is_none")]
     pub modified_on: Option<String>,
+    #[doc = "Read Only: The provision state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<web_service_properties::ProvisioningState>,
+    #[doc = "Access keys for the web service calls."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keys: Option<WebServiceKeys>,
+    #[doc = "When set to true, indicates that the web service is read-only and can no longer be updated or patched, only removed. Default, is false. Note: Once set to true, you cannot change its value."]
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
     pub read_only: Option<bool>,
+    #[doc = "Read Only: Contains the URI of the swagger spec associated with this web service."]
     #[serde(rename = "swaggerLocation", default, skip_serializing_if = "Option::is_none")]
     pub swagger_location: Option<String>,
+    #[doc = "When set to true, sample data is included in the web service's swagger definition. The default value is true."]
     #[serde(rename = "exposeSampleData", default, skip_serializing_if = "Option::is_none")]
     pub expose_sample_data: Option<bool>,
+    #[doc = "Holds the available configuration options for an Azure ML web service endpoint."]
     #[serde(rename = "realtimeConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub realtime_configuration: Option<RealtimeConfiguration>,
+    #[doc = "Diagnostics settings for an Azure ML web service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<DiagnosticsConfiguration>,
+    #[doc = "Access information for a storage account."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccount>,
+    #[doc = "Information about the machine learning workspace containing the experiment that is source for the web service."]
     #[serde(rename = "machineLearningWorkspace", default, skip_serializing_if = "Option::is_none")]
     pub machine_learning_workspace: Option<MachineLearningWorkspace>,
+    #[doc = "Information about the machine learning commitment plan associated with the web service."]
     #[serde(rename = "commitmentPlan", default, skip_serializing_if = "Option::is_none")]
     pub commitment_plan: Option<CommitmentPlan>,
+    #[doc = "The swagger 2.0 schema describing the service's inputs or outputs. See Swagger specification: http://swagger.io/specification/"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input: Option<ServiceInputOutputSpecification>,
+    #[doc = "The swagger 2.0 schema describing the service's inputs or outputs. See Swagger specification: http://swagger.io/specification/"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<ServiceInputOutputSpecification>,
+    #[doc = "Sample input data for the service's input(s)."]
     #[serde(rename = "exampleRequest", default, skip_serializing_if = "Option::is_none")]
     pub example_request: Option<ExampleRequest>,
+    #[doc = "Contains user defined properties describing web service assets. Properties are expressed as Key/Value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub assets: Option<serde_json::Value>,
+    #[doc = "The set of global parameters values defined for the web service, given as a global parameter name to default value map. If no default value is specified, the parameter is considered to be required."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Specifies the package type. Valid values are Graph (Specifies a web service published through the Machine Learning Studio) and Code (Specifies a web service published using code such as Python). Note: Code is not supported at this time."]
     #[serde(rename = "packageType")]
     pub package_type: web_service_properties::PackageType,
+    #[doc = "When set to true, indicates that the payload size is larger than 3 MB. Otherwise false. If the payload size exceed 3 MB, the payload is stored in a blob and the PayloadsLocation parameter contains the URI of the blob. Otherwise, this will be set to false and Assets, Input, Output, Package, Parameters, ExampleRequest are inline. The Payload sizes is determined by adding the size of the Assets, Input, Output, Package, Parameters, and the ExampleRequest."]
     #[serde(rename = "payloadsInBlobStorage", default, skip_serializing_if = "Option::is_none")]
     pub payloads_in_blob_storage: Option<bool>,
+    #[doc = "Describes the access location for a blob."]
     #[serde(rename = "payloadsLocation", default, skip_serializing_if = "Option::is_none")]
     pub payloads_location: Option<BlobLocation>,
 }
@@ -651,6 +806,7 @@ impl WebServiceProperties {
 }
 pub mod web_service_properties {
     use super::*;
+    #[doc = "Read Only: The provision state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Unknown,
@@ -658,15 +814,18 @@ pub mod web_service_properties {
         Succeeded,
         Failed,
     }
+    #[doc = "Specifies the package type. Valid values are Graph (Specifies a web service published through the Machine Learning Studio) and Code (Specifies a web service published using code such as Python). Note: Code is not supported at this time."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PackageType {
         Graph,
     }
 }
+#[doc = "Properties specific to a Graph based web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebServicePropertiesForGraph {
     #[serde(flatten)]
     pub web_service_properties: WebServiceProperties,
+    #[doc = "Defines the graph of modules making up the machine learning solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub package: Option<GraphPackage>,
 }

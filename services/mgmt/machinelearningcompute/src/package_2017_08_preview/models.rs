@@ -2,20 +2,28 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Information about the container service backing the cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcsClusterProperties {
+    #[doc = "The FQDN of the cluster. "]
     #[serde(rename = "clusterFqdn", default, skip_serializing_if = "Option::is_none")]
     pub cluster_fqdn: Option<String>,
+    #[doc = "Type of orchestrator. It cannot be changed once the cluster is created."]
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: acs_cluster_properties::OrchestratorType,
+    #[doc = "Kubernetes cluster specific properties"]
     #[serde(rename = "orchestratorProperties", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_properties: Option<KubernetesClusterProperties>,
+    #[doc = "The system services deployed to the cluster"]
     #[serde(rename = "systemServices", default, skip_serializing_if = "Vec::is_empty")]
     pub system_services: Vec<SystemService>,
+    #[doc = "The number of master nodes in the container service."]
     #[serde(rename = "masterCount", default, skip_serializing_if = "Option::is_none")]
     pub master_count: Option<i64>,
+    #[doc = "The number of agent nodes in the Container Service. This can be changed to scale the cluster."]
     #[serde(rename = "agentCount", default, skip_serializing_if = "Option::is_none")]
     pub agent_count: Option<i64>,
+    #[doc = "The Azure VM size of the agent VM nodes. This cannot be changed once the cluster is created. This list is non exhaustive; refer to https://docs.microsoft.com/en-us/azure/virtual-machines/windows/sizes for the possible VM sizes."]
     #[serde(rename = "agentVmSize", default, skip_serializing_if = "Option::is_none")]
     pub agent_vm_size: Option<acs_cluster_properties::AgentVmSize>,
 }
@@ -34,11 +42,13 @@ impl AcsClusterProperties {
 }
 pub mod acs_cluster_properties {
     use super::*;
+    #[doc = "Type of orchestrator. It cannot be changed once the cluster is created."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OrchestratorType {
         Kubernetes,
         None,
     }
+    #[doc = "The Azure VM size of the agent VM nodes. This cannot be changed once the cluster is created. This list is non exhaustive; refer to https://docs.microsoft.com/en-us/azure/virtual-machines/windows/sizes for the possible VM sizes."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AgentVmSize {
         #[serde(rename = "Standard_A0")]
@@ -142,10 +152,13 @@ pub mod acs_cluster_properties {
         }
     }
 }
+#[doc = "AppInsights credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppInsightsCredentials {
+    #[doc = "The AppInsights application ID."]
     #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
+    #[doc = "The AppInsights instrumentation key. This is not returned in response of GET/PUT on the resource. To see this please call listKeys API."]
     #[serde(rename = "instrumentationKey", default, skip_serializing_if = "Option::is_none")]
     pub instrumentation_key: Option<String>,
 }
@@ -154,8 +167,10 @@ impl AppInsightsCredentials {
         Self::default()
     }
 }
+#[doc = "Properties of App Insights."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppInsightsProperties {
+    #[doc = "ARM resource ID of the App Insights."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
@@ -164,16 +179,22 @@ impl AppInsightsProperties {
         Self::default()
     }
 }
+#[doc = "AutoScale configuration properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaleConfiguration {
+    #[doc = "If auto-scale is enabled for all services. Each service can turn it off individually."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<auto_scale_configuration::Status>,
+    #[doc = "The minimum number of replicas for each service."]
     #[serde(rename = "minReplicas", default, skip_serializing_if = "Option::is_none")]
     pub min_replicas: Option<i64>,
+    #[doc = "The maximum number of replicas for each service."]
     #[serde(rename = "maxReplicas", default, skip_serializing_if = "Option::is_none")]
     pub max_replicas: Option<i64>,
+    #[doc = "The target utilization."]
     #[serde(rename = "targetUtilization", default, skip_serializing_if = "Option::is_none")]
     pub target_utilization: Option<f64>,
+    #[doc = "Refresh period in seconds."]
     #[serde(rename = "refreshPeriodInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub refresh_period_in_seconds: Option<i64>,
 }
@@ -184,6 +205,7 @@ impl AutoScaleConfiguration {
 }
 pub mod auto_scale_configuration {
     use super::*;
+    #[doc = "If auto-scale is enabled for all services. Each service can turn it off individually."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Enabled,
@@ -195,8 +217,10 @@ pub mod auto_scale_configuration {
         }
     }
 }
+#[doc = "Available operation list."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableOperations {
+    #[doc = "An array of available operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceOperation>,
 }
@@ -205,8 +229,10 @@ impl AvailableOperations {
         Self::default()
     }
 }
+#[doc = "Information about updates available for system services in a cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckSystemServicesUpdatesAvailableResponse {
+    #[doc = "Yes if updates are available for the system services, No if not."]
     #[serde(rename = "updatesAvailable", default, skip_serializing_if = "Option::is_none")]
     pub updates_available: Option<check_system_services_updates_available_response::UpdatesAvailable>,
 }
@@ -217,20 +243,26 @@ impl CheckSystemServicesUpdatesAvailableResponse {
 }
 pub mod check_system_services_updates_available_response {
     use super::*;
+    #[doc = "Yes if updates are available for the system services, No if not."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdatesAvailable {
         Yes,
         No,
     }
 }
+#[doc = "Information about the Azure Container Registry which contains the images deployed to the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryCredentials {
+    #[doc = "The ACR login server name. User name is the first part of the FQDN."]
     #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
     pub login_server: Option<String>,
+    #[doc = "The ACR primary password."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "The ACR secondary password."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password2: Option<String>,
+    #[doc = "The ACR login username."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
 }
@@ -239,8 +271,10 @@ impl ContainerRegistryCredentials {
         Self::default()
     }
 }
+#[doc = "Properties of Azure Container Registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryProperties {
+    #[doc = "ARM resource ID of the Azure Container Registry used to store Docker images for web services in the cluster. If not provided one will be created. This cannot be changed once the cluster is created."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
@@ -249,12 +283,16 @@ impl ContainerRegistryProperties {
         Self::default()
     }
 }
+#[doc = "Information about the Azure Container Registry which contains the images deployed to the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceCredentials {
+    #[doc = "The ACS kube config file."]
     #[serde(rename = "acsKubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub acs_kube_config: Option<String>,
+    #[doc = "The Azure service principal used by Kubernetes for configuring load balancers"]
     #[serde(rename = "servicePrincipalConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_configuration: Option<ServicePrincipalProperties>,
+    #[doc = "The ACR image pull secret name which was created in Kubernetes."]
     #[serde(rename = "imagePullSecretName", default, skip_serializing_if = "Option::is_none")]
     pub image_pull_secret_name: Option<String>,
 }
@@ -263,9 +301,12 @@ impl ContainerServiceCredentials {
         Self::default()
     }
 }
+#[doc = "Error detail information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
+    #[doc = "Error code."]
     pub code: String,
+    #[doc = "Error message."]
     pub message: String,
 }
 impl ErrorDetail {
@@ -273,10 +314,14 @@ impl ErrorDetail {
         Self { code, message }
     }
 }
+#[doc = "Error response information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
+    #[doc = "Error code."]
     pub code: String,
+    #[doc = "Error message."]
     pub message: String,
+    #[doc = "An array of error detail objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
 }
@@ -289,8 +334,10 @@ impl ErrorResponse {
         }
     }
 }
+#[doc = "Wrapper for error response to follow ARM guidelines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseWrapper {
+    #[doc = "Error response information."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -299,14 +346,19 @@ impl ErrorResponseWrapper {
         Self::default()
     }
 }
+#[doc = "Global configuration for services in the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalServiceConfiguration {
+    #[doc = "The configuration ETag for updates."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "SSL configuration. If configured data-plane calls to user services will be exposed over SSL only."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ssl: Option<SslConfiguration>,
+    #[doc = "Global service auth configuration properties. These are the data-plane authorization keys and are used if a service doesn't define it's own."]
     #[serde(rename = "serviceAuth", default, skip_serializing_if = "Option::is_none")]
     pub service_auth: Option<ServiceAuthConfiguration>,
+    #[doc = "AutoScale configuration properties."]
     #[serde(rename = "autoScale", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale: Option<AutoScaleConfiguration>,
 }
@@ -315,8 +367,10 @@ impl GlobalServiceConfiguration {
         Self::default()
     }
 }
+#[doc = "Kubernetes cluster specific properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KubernetesClusterProperties {
+    #[doc = "The Azure service principal used by Kubernetes for configuring load balancers"]
     #[serde(rename = "servicePrincipal", default, skip_serializing_if = "Option::is_none")]
     pub service_principal: Option<ServicePrincipalProperties>,
 }
@@ -325,10 +379,12 @@ impl KubernetesClusterProperties {
         Self::default()
     }
 }
+#[doc = "Instance of an Azure ML Operationalization Cluster resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationalizationCluster {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of an operationalization cluster"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationalizationClusterProperties>,
 }
@@ -340,18 +396,25 @@ impl OperationalizationCluster {
         }
     }
 }
+#[doc = "Credentials to resources in the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationalizationClusterCredentials {
+    #[doc = "Access information for the storage account."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountCredentials>,
+    #[doc = "Information about the Azure Container Registry which contains the images deployed to the cluster."]
     #[serde(rename = "containerRegistry", default, skip_serializing_if = "Option::is_none")]
     pub container_registry: Option<ContainerRegistryCredentials>,
+    #[doc = "Information about the Azure Container Registry which contains the images deployed to the cluster."]
     #[serde(rename = "containerService", default, skip_serializing_if = "Option::is_none")]
     pub container_service: Option<ContainerServiceCredentials>,
+    #[doc = "AppInsights credentials."]
     #[serde(rename = "appInsights", default, skip_serializing_if = "Option::is_none")]
     pub app_insights: Option<AppInsightsCredentials>,
+    #[doc = "Global service auth configuration properties. These are the data-plane authorization keys and are used if a service doesn't define it's own."]
     #[serde(rename = "serviceAuthConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub service_auth_configuration: Option<ServiceAuthConfiguration>,
+    #[doc = "SSL configuration. If configured data-plane calls to user services will be exposed over SSL only."]
     #[serde(rename = "sslConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub ssl_configuration: Option<SslConfiguration>,
 }
@@ -360,28 +423,40 @@ impl OperationalizationClusterCredentials {
         Self::default()
     }
 }
+#[doc = "Properties of an operationalization cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationalizationClusterProperties {
+    #[doc = "The description of the cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The date and time when the cluster was created."]
     #[serde(rename = "createdOn", default, skip_serializing_if = "Option::is_none")]
     pub created_on: Option<String>,
+    #[doc = "The date and time when the cluster was last modified."]
     #[serde(rename = "modifiedOn", default, skip_serializing_if = "Option::is_none")]
     pub modified_on: Option<String>,
+    #[doc = "The provision state of the cluster. Valid values are Unknown, Updating, Provisioning, Succeeded, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<operationalization_cluster_properties::ProvisioningState>,
+    #[doc = "List of provisioning errors reported by the resource provider."]
     #[serde(rename = "provisioningErrors", default, skip_serializing_if = "Vec::is_empty")]
     pub provisioning_errors: Vec<ErrorResponseWrapper>,
+    #[doc = "The cluster type."]
     #[serde(rename = "clusterType")]
     pub cluster_type: operationalization_cluster_properties::ClusterType,
+    #[doc = "Properties of Storage Account."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountProperties>,
+    #[doc = "Properties of Azure Container Registry."]
     #[serde(rename = "containerRegistry", default, skip_serializing_if = "Option::is_none")]
     pub container_registry: Option<ContainerRegistryProperties>,
+    #[doc = "Information about the container service backing the cluster"]
     #[serde(rename = "containerService", default, skip_serializing_if = "Option::is_none")]
     pub container_service: Option<AcsClusterProperties>,
+    #[doc = "Properties of App Insights."]
     #[serde(rename = "appInsights", default, skip_serializing_if = "Option::is_none")]
     pub app_insights: Option<AppInsightsProperties>,
+    #[doc = "Global configuration for services in the cluster."]
     #[serde(rename = "globalServiceConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub global_service_configuration: Option<GlobalServiceConfiguration>,
 }
@@ -404,6 +479,7 @@ impl OperationalizationClusterProperties {
 }
 pub mod operationalization_cluster_properties {
     use super::*;
+    #[doc = "The provision state of the cluster. Valid values are Unknown, Updating, Provisioning, Succeeded, and Failed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Unknown,
@@ -414,6 +490,7 @@ pub mod operationalization_cluster_properties {
         Failed,
         Canceled,
     }
+    #[doc = "The cluster type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ClusterType {
         #[serde(rename = "ACS")]
@@ -421,8 +498,10 @@ pub mod operationalization_cluster_properties {
         Local,
     }
 }
+#[doc = "Parameters for PATCH operation on an operationalization cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationalizationClusterUpdateParameters {
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater in length than 128 characters and a value no greater in length than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -431,10 +510,13 @@ impl OperationalizationClusterUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Paginated list of operationalization clusters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaginatedOperationalizationClustersList {
+    #[doc = "An array of cluster objects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationalizationCluster>,
+    #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -443,15 +525,21 @@ impl PaginatedOperationalizationClustersList {
         Self::default()
     }
 }
+#[doc = "Azure resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Specifies the resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Specifies the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the location of the resource."]
     pub location: String,
+    #[doc = "Specifies the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Contains resource tags defined as key/value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -466,12 +554,16 @@ impl Resource {
         }
     }
 }
+#[doc = "Resource operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceOperation {
+    #[doc = "Name of this operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_operation::Display>,
+    #[doc = "The operation origin."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -482,14 +574,19 @@ impl ResourceOperation {
 }
 pub mod resource_operation {
     use super::*;
+    #[doc = "Display of the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "The resource provider name."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "The resource name."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "The operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "The description of the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -499,10 +596,13 @@ pub mod resource_operation {
         }
     }
 }
+#[doc = "Global service auth configuration properties. These are the data-plane authorization keys and are used if a service doesn't define it's own."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceAuthConfiguration {
+    #[doc = "The primary auth key hash. This is not returned in response of GET/PUT on the resource.. To see this please call listKeys API."]
     #[serde(rename = "primaryAuthKeyHash")]
     pub primary_auth_key_hash: String,
+    #[doc = "The secondary auth key hash. This is not returned in response of GET/PUT on the resource.. To see this please call listKeys API."]
     #[serde(rename = "secondaryAuthKeyHash")]
     pub secondary_auth_key_hash: String,
 }
@@ -514,10 +614,13 @@ impl ServiceAuthConfiguration {
         }
     }
 }
+#[doc = "The Azure service principal used by Kubernetes for configuring load balancers"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalProperties {
+    #[doc = "The service principal client ID"]
     #[serde(rename = "clientId")]
     pub client_id: String,
+    #[doc = "The service principal secret. This is not returned in response of GET/PUT on the resource. To see this please call listKeys."]
     pub secret: String,
 }
 impl ServicePrincipalProperties {
@@ -525,14 +628,19 @@ impl ServicePrincipalProperties {
         Self { client_id, secret }
     }
 }
+#[doc = "SSL configuration. If configured data-plane calls to user services will be exposed over SSL only."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SslConfiguration {
+    #[doc = "SSL status. Allowed values are Enabled and Disabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ssl_configuration::Status>,
+    #[doc = "The SSL cert data in PEM format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>,
+    #[doc = "The SSL key data in PEM format. This is not returned in response of GET/PUT on the resource. To see this please call listKeys API."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
+    #[doc = "The CName of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cname: Option<String>,
 }
@@ -543,6 +651,7 @@ impl SslConfiguration {
 }
 pub mod ssl_configuration {
     use super::*;
+    #[doc = "SSL status. Allowed values are Enabled and Disabled."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Enabled,
@@ -554,12 +663,16 @@ pub mod ssl_configuration {
         }
     }
 }
+#[doc = "Access information for the storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountCredentials {
+    #[doc = "The ARM resource ID of the storage account."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "The primary key of the storage account."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "The secondary key of the storage account."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
@@ -568,8 +681,10 @@ impl StorageAccountCredentials {
         Self::default()
     }
 }
+#[doc = "Properties of Storage Account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountProperties {
+    #[doc = "ARM resource ID of the Azure Storage Account to store CLI specific files. If not provided one will be created. This cannot be changed once the cluster is created."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }
@@ -578,12 +693,16 @@ impl StorageAccountProperties {
         Self::default()
     }
 }
+#[doc = "Information about a system service deployed in the cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemService {
+    #[doc = "The system service type"]
     #[serde(rename = "systemServiceType")]
     pub system_service_type: system_service::SystemServiceType,
+    #[doc = "The public IP address of the system service"]
     #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<String>,
+    #[doc = "The state of the system service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -598,6 +717,7 @@ impl SystemService {
 }
 pub mod system_service {
     use super::*;
+    #[doc = "The system service type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SystemServiceType {
         None,
@@ -605,12 +725,16 @@ pub mod system_service {
         BatchFrontEnd,
     }
 }
+#[doc = "Response of the update system services API"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateSystemServicesResponse {
+    #[doc = "Update status"]
     #[serde(rename = "updateStatus", default, skip_serializing_if = "Option::is_none")]
     pub update_status: Option<update_system_services_response::UpdateStatus>,
+    #[doc = "The date and time when the last system services update was started."]
     #[serde(rename = "updateStartedOn", default, skip_serializing_if = "Option::is_none")]
     pub update_started_on: Option<String>,
+    #[doc = "The date and time when the last system services update completed."]
     #[serde(rename = "updateCompletedOn", default, skip_serializing_if = "Option::is_none")]
     pub update_completed_on: Option<String>,
 }
@@ -621,6 +745,7 @@ impl UpdateSystemServicesResponse {
 }
 pub mod update_system_services_response {
     use super::*;
+    #[doc = "Update status"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateStatus {
         Unknown,

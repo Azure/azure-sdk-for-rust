@@ -2,14 +2,19 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Authorization tuple containing principal Id (of user/service principal/security group) and role definition id."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Authorization {
+    #[doc = "Principal Id of the security group/service principal/user that would be assigned permissions to the projected subscription"]
     #[serde(rename = "principalId")]
     pub principal_id: String,
+    #[doc = "Display name of the principal Id."]
     #[serde(rename = "principalIdDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub principal_id_display_name: Option<String>,
+    #[doc = "The role definition identifier. This role will define all the permissions that the security group/service principal/user must have on the projected subscription. This role cannot be an owner role."]
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
+    #[doc = "The delegatedRoleDefinitionIds field is required when the roleDefinitionId refers to the User Access Administrator Role. It is the list of role definition ids which define all the permissions that the user in the authorization can assign to other security groups/service principals/users."]
     #[serde(rename = "delegatedRoleDefinitionIds", default, skip_serializing_if = "Vec::is_empty")]
     pub delegated_role_definition_ids: Vec<String>,
 }
@@ -23,10 +28,14 @@ impl Authorization {
         }
     }
 }
+#[doc = "Error response indicates Azure Resource Manager is not able to process the incoming request. The reason is provided in the error message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDefinition {
+    #[doc = "Error code."]
     pub code: String,
+    #[doc = "Error message indicating why the operation failed."]
     pub message: String,
+    #[doc = "Internal error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
@@ -39,8 +48,10 @@ impl ErrorDefinition {
         }
     }
 }
+#[doc = "Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error response indicates Azure Resource Manager is not able to process the incoming request. The reason is provided in the error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
@@ -49,10 +60,13 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Object that describes a single Microsoft.ManagedServices operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -63,14 +77,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.ManagedServices"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Registration definition, registration assignment etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -80,8 +99,10 @@ pub mod operation {
         }
     }
 }
+#[doc = "List of the operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
+    #[doc = "List of Microsoft.ManagedServices operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -90,11 +111,16 @@ impl OperationList {
         Self::default()
     }
 }
+#[doc = "Plan details for the managed services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Plan {
+    #[doc = "The plan name."]
     pub name: String,
+    #[doc = "The publisher ID."]
     pub publisher: String,
+    #[doc = "The product code."]
     pub product: String,
+    #[doc = "The plan's version."]
     pub version: String,
 }
 impl Plan {
@@ -107,14 +133,19 @@ impl Plan {
         }
     }
 }
+#[doc = "Registration assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationAssignment {
+    #[doc = "Properties of a registration assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistrationAssignmentProperties>,
+    #[doc = "The fully qualified path of the registration assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Name of the registration assignment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -123,10 +154,13 @@ impl RegistrationAssignment {
         Self::default()
     }
 }
+#[doc = "List of registration assignments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationAssignmentList {
+    #[doc = "List of registration assignments."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegistrationAssignment>,
+    #[doc = "Link to next page of registration assignments."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -135,12 +169,16 @@ impl RegistrationAssignmentList {
         Self::default()
     }
 }
+#[doc = "Properties of a registration assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationAssignmentProperties {
+    #[doc = "Fully qualified path of the registration definition."]
     #[serde(rename = "registrationDefinitionId")]
     pub registration_definition_id: String,
+    #[doc = "Current state of the registration assignment."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registration_assignment_properties::ProvisioningState>,
+    #[doc = "Registration definition inside registration assignment."]
     #[serde(rename = "registrationDefinition", default, skip_serializing_if = "Option::is_none")]
     pub registration_definition: Option<registration_assignment_properties::RegistrationDefinition>,
 }
@@ -155,6 +193,7 @@ impl RegistrationAssignmentProperties {
 }
 pub mod registration_assignment_properties {
     use super::*;
+    #[doc = "Current state of the registration assignment."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         NotSpecified,
@@ -170,16 +209,22 @@ pub mod registration_assignment_properties {
         Succeeded,
         Updating,
     }
+    #[doc = "Registration definition inside registration assignment."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct RegistrationDefinition {
+        #[doc = "Properties of registration definition inside registration assignment."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub properties: Option<registration_definition::Properties>,
+        #[doc = "Plan details for the managed services."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub plan: Option<Plan>,
+        #[doc = "Fully qualified path of the registration definition."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub id: Option<String>,
+        #[doc = "Type of the resource (Microsoft.ManagedServices/registrationDefinitions)."]
         #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
         pub type_: Option<String>,
+        #[doc = "Name of the registration definition."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
     }
@@ -190,22 +235,31 @@ pub mod registration_assignment_properties {
     }
     pub mod registration_definition {
         use super::*;
+        #[doc = "Properties of registration definition inside registration assignment."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct Properties {
+            #[doc = "Description of the registration definition."]
             #[serde(default, skip_serializing_if = "Option::is_none")]
             pub description: Option<String>,
+            #[doc = "Authorization tuple containing principal id of the user/security group or service principal and id of the build-in role."]
             #[serde(default, skip_serializing_if = "Vec::is_empty")]
             pub authorizations: Vec<Authorization>,
+            #[doc = "Name of the registration definition."]
             #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
             pub registration_definition_name: Option<String>,
+            #[doc = "Current state of the registration definition."]
             #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
             pub provisioning_state: Option<properties::ProvisioningState>,
+            #[doc = "Id of the home tenant."]
             #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]
             pub managee_tenant_id: Option<String>,
+            #[doc = "Name of the home tenant."]
             #[serde(rename = "manageeTenantName", default, skip_serializing_if = "Option::is_none")]
             pub managee_tenant_name: Option<String>,
+            #[doc = "Id of the managedBy tenant."]
             #[serde(rename = "managedByTenantId", default, skip_serializing_if = "Option::is_none")]
             pub managed_by_tenant_id: Option<String>,
+            #[doc = "Name of the managedBy tenant."]
             #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
             pub managed_by_tenant_name: Option<String>,
         }
@@ -216,6 +270,7 @@ pub mod registration_assignment_properties {
         }
         pub mod properties {
             use super::*;
+            #[doc = "Current state of the registration definition."]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
             pub enum ProvisioningState {
                 NotSpecified,
@@ -234,16 +289,22 @@ pub mod registration_assignment_properties {
         }
     }
 }
+#[doc = "Registration definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationDefinition {
+    #[doc = "Properties of a registration definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistrationDefinitionProperties>,
+    #[doc = "Plan details for the managed services."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<Plan>,
+    #[doc = "Fully qualified path of the registration definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Name of the registration definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -252,10 +313,13 @@ impl RegistrationDefinition {
         Self::default()
     }
 }
+#[doc = "List of registration definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationDefinitionList {
+    #[doc = "List of registration definitions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RegistrationDefinition>,
+    #[doc = "Link to next page of registration definitions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -264,17 +328,24 @@ impl RegistrationDefinitionList {
         Self::default()
     }
 }
+#[doc = "Properties of a registration definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistrationDefinitionProperties {
+    #[doc = "Description of the registration definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Authorization tuple containing principal id of the user/security group or service principal and id of the build-in role."]
     pub authorizations: Vec<Authorization>,
+    #[doc = "Name of the registration definition."]
     #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
     pub registration_definition_name: Option<String>,
+    #[doc = "Id of the managedBy tenant."]
     #[serde(rename = "managedByTenantId")]
     pub managed_by_tenant_id: String,
+    #[doc = "Current state of the registration definition."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
+    #[doc = "Name of the managedBy tenant."]
     #[serde(rename = "managedByTenantName", default, skip_serializing_if = "Option::is_none")]
     pub managed_by_tenant_name: Option<String>,
 }
@@ -292,6 +363,7 @@ impl RegistrationDefinitionProperties {
 }
 pub mod registration_definition_properties {
     use super::*;
+    #[doc = "Current state of the registration definition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         NotSpecified,

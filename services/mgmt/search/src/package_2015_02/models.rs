@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Response containing the primary and secondary API keys for a given Azure Search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdminKeyResult {
+    #[doc = "The primary API key of the Search service."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "The secondary API key of the Search service."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
 }
@@ -14,8 +17,10 @@ impl AdminKeyResult {
         Self::default()
     }
 }
+#[doc = "Response containing the query API keys for a given Azure Search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListQueryKeysResult {
+    #[doc = "The query keys for the Azure Search service."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<QueryKey>,
 }
@@ -24,10 +29,13 @@ impl ListQueryKeysResult {
         Self::default()
     }
 }
+#[doc = "Describes an API key for a given Azure Search service that has permissions for query operations only."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryKey {
+    #[doc = "The name of the query API key; may be empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The value of the query API key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
@@ -38,13 +46,18 @@ impl QueryKey {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -59,12 +72,16 @@ impl Resource {
         }
     }
 }
+#[doc = "Properties that describe an Azure Search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchServiceCreateOrUpdateParameters {
+    #[doc = "The geographic location of the Search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Tags to help categorize the Search service in the Azure Portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Defines properties of an Azure Search service that can be modified."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SearchServiceProperties>,
 }
@@ -73,8 +90,10 @@ impl SearchServiceCreateOrUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Response containing a list of Azure Search services for a given resource group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchServiceListResult {
+    #[doc = "The Search services in the resource group."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SearchServiceResource>,
 }
@@ -83,12 +102,16 @@ impl SearchServiceListResult {
         Self::default()
     }
 }
+#[doc = "Defines properties of an Azure Search service that can be modified."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchServiceProperties {
+    #[doc = "Defines the SKU of an Azure Search Service, which determines price tier and capacity limits."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "The number of replicas in the Search service. If specified, it must be a value between 1 and 6 inclusive."]
     #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
     pub replica_count: Option<i32>,
+    #[doc = "The number of partitions in the Search service; if specified, it can be 1, 2, 3, 4, 6, or 12."]
     #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
     pub partition_count: Option<i32>,
 }
@@ -97,18 +120,25 @@ impl SearchServiceProperties {
         Self::default()
     }
 }
+#[doc = "Defines all the properties of an Azure Search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchServiceReadableProperties {
+    #[doc = "The status of the Search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<search_service_readable_properties::Status>,
+    #[doc = "The details of the Search service status."]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
+    #[doc = "The state of the last provisioning operation performed on the Search service."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<search_service_readable_properties::ProvisioningState>,
+    #[doc = "Defines the SKU of an Azure Search Service, which determines price tier and capacity limits."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "The number of replicas in the Search service. If specified, it must be a value between 1 and 6 inclusive."]
     #[serde(rename = "replicaCount", default, skip_serializing_if = "Option::is_none")]
     pub replica_count: Option<i32>,
+    #[doc = "The number of partitions in the Search service; if specified, it can be 1, 2, 3, 4, 6, or 12."]
     #[serde(rename = "partitionCount", default, skip_serializing_if = "Option::is_none")]
     pub partition_count: Option<i32>,
 }
@@ -119,6 +149,7 @@ impl SearchServiceReadableProperties {
 }
 pub mod search_service_readable_properties {
     use super::*;
+    #[doc = "The status of the Search service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "running")]
@@ -134,6 +165,7 @@ pub mod search_service_readable_properties {
         #[serde(rename = "error")]
         Error,
     }
+    #[doc = "The state of the last provisioning operation performed on the Search service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         #[serde(rename = "succeeded")]
@@ -144,16 +176,22 @@ pub mod search_service_readable_properties {
         Failed,
     }
 }
+#[doc = "Describes an Azure Search service and its current state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchServiceResource {
+    #[doc = "The resource Id of the Azure Search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the Search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The geographic location of the Search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Tags to help categorize the Search service in the Azure Portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Defines all the properties of an Azure Search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SearchServiceReadableProperties>,
 }
@@ -162,8 +200,10 @@ impl SearchServiceResource {
         Self::default()
     }
 }
+#[doc = "Defines the SKU of an Azure Search Service, which determines price tier and capacity limits."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
+    #[doc = "The SKU of the Search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
@@ -174,6 +214,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "The SKU of the Search service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "free")]
@@ -186,6 +227,7 @@ pub mod sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }

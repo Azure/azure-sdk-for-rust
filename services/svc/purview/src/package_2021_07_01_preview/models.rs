@@ -2,16 +2,22 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Attribute matcher for a rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttributeMatcher {
+    #[doc = "AttributeName"]
     #[serde(rename = "attributeName", default, skip_serializing_if = "Option::is_none")]
     pub attribute_name: Option<String>,
+    #[doc = "Value for attribute"]
     #[serde(rename = "attributeValueIncludes", default, skip_serializing_if = "Option::is_none")]
     pub attribute_value_includes: Option<String>,
+    #[doc = "List of values for attribute"]
     #[serde(rename = "attributeValueIncludedIn", default, skip_serializing_if = "Vec::is_empty")]
     pub attribute_value_included_in: Vec<String>,
+    #[doc = "Value excluded for attribute"]
     #[serde(rename = "attributeValueExcludes", default, skip_serializing_if = "Option::is_none")]
     pub attribute_value_excludes: Option<String>,
+    #[doc = "List of values excluded for attribute"]
     #[serde(rename = "attributeValueExcludedIn", default, skip_serializing_if = "Vec::is_empty")]
     pub attribute_value_excluded_in: Vec<String>,
 }
@@ -20,14 +26,19 @@ impl AttributeMatcher {
         Self::default()
     }
 }
+#[doc = "The attribute rule for a policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttributeRule {
+    #[doc = "The kind of rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<attribute_rule::Kind>,
+    #[doc = "The id for rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name for rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The dnf Condition for a rule"]
     #[serde(rename = "dnfCondition", default, skip_serializing_if = "Option::is_none")]
     pub dnf_condition: Option<DnfCondition>,
 }
@@ -38,6 +49,7 @@ impl AttributeRule {
 }
 pub mod attribute_rule {
     use super::*;
+    #[doc = "The kind of rule"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "attributerule")]
@@ -45,10 +57,13 @@ pub mod attribute_rule {
     }
 }
 pub type CnfCondition = Vec<Vec<AttributeMatcher>>;
+#[doc = "The collection reference for a policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CollectionReference {
+    #[doc = "The type of reference"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The name of reference"]
     #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
     pub reference_name: Option<String>,
 }
@@ -57,12 +72,16 @@ impl CollectionReference {
         Self::default()
     }
 }
+#[doc = "The decision rule for a policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DecisionRule {
+    #[doc = "The kind of rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<decision_rule::Kind>,
+    #[doc = "The effect for rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub effect: Option<decision_rule::Effect>,
+    #[doc = "The dnf Condition for a rule"]
     #[serde(rename = "dnfCondition", default, skip_serializing_if = "Option::is_none")]
     pub dnf_condition: Option<DnfCondition>,
 }
@@ -73,11 +92,13 @@ impl DecisionRule {
 }
 pub mod decision_rule {
     use super::*;
+    #[doc = "The kind of rule"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "decisionrule")]
         Decisionrule,
     }
+    #[doc = "The effect for rule"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Effect {
         Deny,
@@ -85,12 +106,17 @@ pub mod decision_rule {
     }
 }
 pub type DnfCondition = Vec<Vec<AttributeMatcher>>;
+#[doc = "The error model for metadata policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorModel {
+    #[doc = "The error code"]
     pub code: String,
+    #[doc = "The error message"]
     pub message: String,
+    #[doc = "The error target"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorModel>,
 }
@@ -104,8 +130,10 @@ impl ErrorModel {
         }
     }
 }
+#[doc = "The error response model for metadata policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponseModel {
+    #[doc = "The error model for metadata policy"]
     pub error: ErrorModel,
 }
 impl ErrorResponseModel {
@@ -115,10 +143,13 @@ impl ErrorResponseModel {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataPolicy {
+    #[doc = "The name of policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The id of policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The version of policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -129,6 +160,7 @@ impl MetadataPolicy {
         Self::default()
     }
 }
+#[doc = "List of Metadata Policies"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataPolicyList {
     pub values: Vec<MetadataPolicy>,
@@ -142,14 +174,19 @@ impl MetadataPolicyList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataPolicyProperties {
+    #[doc = "The description of policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The DecisionRules of policy"]
     #[serde(rename = "decisionRules", default, skip_serializing_if = "Vec::is_empty")]
     pub decision_rules: Vec<DecisionRule>,
+    #[doc = "The AttributeRules of policy"]
     #[serde(rename = "attributeRules", default, skip_serializing_if = "Vec::is_empty")]
     pub attribute_rules: Vec<AttributeRule>,
+    #[doc = "The collection reference for a policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub collection: Option<CollectionReference>,
+    #[doc = "The parent collection of the policy"]
     #[serde(rename = "parentCollectionName", default, skip_serializing_if = "Option::is_none")]
     pub parent_collection_name: Option<String>,
 }
@@ -160,10 +197,13 @@ impl MetadataPolicyProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataRole {
+    #[doc = "The Id of role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of role"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -174,6 +214,7 @@ impl MetadataRole {
         Self::default()
     }
 }
+#[doc = "List of Metadata roles"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataRoleList {
     pub values: Vec<MetadataRole>,
@@ -187,18 +228,25 @@ impl MetadataRoleList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataRoleProperties {
+    #[doc = "The provisioningState of role"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The type of role"]
     #[serde(rename = "roleType", default, skip_serializing_if = "Option::is_none")]
     pub role_type: Option<String>,
+    #[doc = "The friendly name of role"]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
+    #[doc = "The description of role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The cnf Condition for a rule"]
     #[serde(rename = "cnfCondition", default, skip_serializing_if = "Option::is_none")]
     pub cnf_condition: Option<CnfCondition>,
+    #[doc = "The dnf Condition for a rule"]
     #[serde(rename = "dnfCondition", default, skip_serializing_if = "Option::is_none")]
     pub dnf_condition: Option<DnfCondition>,
+    #[doc = "The version of role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }

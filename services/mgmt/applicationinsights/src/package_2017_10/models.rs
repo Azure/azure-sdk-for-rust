@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Application Insights component pricing plan"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationInsightsComponentPricingPlan {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "An Application Insights component daily data volume cap"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PricingPlanProperties>,
 }
@@ -14,8 +16,10 @@ impl ApplicationInsightsComponentPricingPlan {
         Self::default()
     }
 }
+#[doc = "An error response from the Batch service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "An error response from the Batch service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -24,14 +28,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "An error response from the Batch service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -40,10 +49,13 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Subscription migrate date information properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EaSubscriptionMigrationDate {
+    #[doc = "Is subscription in the grand fatherable subscription list."]
     #[serde(rename = "isGrandFatherableSubscription", default, skip_serializing_if = "Option::is_none")]
     pub is_grand_fatherable_subscription: Option<bool>,
+    #[doc = "Time to start using new pricing model."]
     #[serde(rename = "optedInDate", default, skip_serializing_if = "Option::is_none")]
     pub opted_in_date: Option<String>,
 }
@@ -52,20 +64,28 @@ impl EaSubscriptionMigrationDate {
         Self::default()
     }
 }
+#[doc = "An Application Insights component daily data volume cap"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PricingPlanProperties {
+    #[doc = "Pricing Plan Type Name."]
     #[serde(rename = "planType", default, skip_serializing_if = "Option::is_none")]
     pub plan_type: Option<String>,
+    #[doc = "Daily data volume cap in GB."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cap: Option<f64>,
+    #[doc = "Daily data volume cap UTC reset hour."]
     #[serde(rename = "resetHour", default, skip_serializing_if = "Option::is_none")]
     pub reset_hour: Option<i64>,
+    #[doc = "Reserved, not used for now."]
     #[serde(rename = "warningThreshold", default, skip_serializing_if = "Option::is_none")]
     pub warning_threshold: Option<i64>,
+    #[doc = "Reserved, not used for now."]
     #[serde(rename = "stopSendNotificationWhenHitThreshold", default, skip_serializing_if = "Option::is_none")]
     pub stop_send_notification_when_hit_threshold: Option<bool>,
+    #[doc = "Do not send a notification email when the daily data volume cap is met."]
     #[serde(rename = "stopSendNotificationWhenHitCap", default, skip_serializing_if = "Option::is_none")]
     pub stop_send_notification_when_hit_cap: Option<bool>,
+    #[doc = "Maximum daily data volume cap that the user can set for this component."]
     #[serde(rename = "maxHistoryCap", default, skip_serializing_if = "Option::is_none")]
     pub max_history_cap: Option<f64>,
 }
@@ -74,12 +94,16 @@ impl PricingPlanProperties {
         Self::default()
     }
 }
+#[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Azure resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

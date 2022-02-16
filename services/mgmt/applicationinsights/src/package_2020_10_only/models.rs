@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Error definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
+    #[doc = "Service specific error code which serves as the substatus for the HTTP error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Description of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Internal error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<serde_json::Value>,
 }
@@ -16,12 +20,16 @@ impl ErrorDefinition {
         Self::default()
     }
 }
+#[doc = "Error Field contract."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorFieldContract {
+    #[doc = "Property level error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Human-readable representation of property-level error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Property name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -30,12 +38,16 @@ impl ErrorFieldContract {
         Self::default()
     }
 }
+#[doc = "Error response indicates Insights service is not able to process the incoming request. The reason is provided in the error message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The list of invalid fields send in request, in case of validation error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
@@ -44,8 +56,10 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Error details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerErrorTrace {
+    #[doc = "detailed error trace"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub trace: Vec<String>,
 }
@@ -54,12 +68,15 @@ impl InnerErrorTrace {
         Self::default()
     }
 }
+#[doc = "An Application Insights private workbook definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MyWorkbook {
     #[serde(flatten)]
     pub my_workbook_resource: MyWorkbookResource,
+    #[doc = "The kind of workbook. Choices are user and shared."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<my_workbook::Kind>,
+    #[doc = "Properties that contain a private workbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MyWorkbookProperties>,
 }
@@ -70,6 +87,7 @@ impl MyWorkbook {
 }
 pub mod my_workbook {
     use super::*;
+    #[doc = "The kind of workbook. Choices are user and shared."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "user")]
@@ -78,8 +96,10 @@ pub mod my_workbook {
         Shared,
     }
 }
+#[doc = "Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MyWorkbookError {
+    #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
@@ -88,10 +108,13 @@ impl MyWorkbookError {
         Self::default()
     }
 }
+#[doc = "Customer Managed Identity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MyWorkbookManagedIdentity {
+    #[doc = "Customer Managed Identity"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<MyWorkbookUserAssignedIdentities>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<my_workbook_managed_identity::Type>,
 }
@@ -102,29 +125,40 @@ impl MyWorkbookManagedIdentity {
 }
 pub mod my_workbook_managed_identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         UserAssigned,
         None,
     }
 }
+#[doc = "Properties that contain a private workbook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MyWorkbookProperties {
+    #[doc = "The user-defined name of the private workbook."]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "Configuration of this particular private workbook. Configuration data is a string containing valid JSON"]
     #[serde(rename = "serializedData")]
     pub serialized_data: String,
+    #[doc = "This instance's version of the data model. This can change as new features are added that can be marked private workbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Date and time in UTC of the last modification that was made to this private workbook definition."]
     #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
+    #[doc = "Workbook category, as defined by the user at creation time."]
     pub category: String,
+    #[doc = "A list of 0 or more tags that are associated with this private workbook definition"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+    #[doc = "Unique user id of the specific user that owns this private workbook."]
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
+    #[doc = "Optional resourceId for a source resource."]
     #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_id: Option<String>,
+    #[doc = "BYOS Storage Account URI"]
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
 }
@@ -143,20 +177,28 @@ impl MyWorkbookProperties {
         }
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MyWorkbookResource {
+    #[doc = "Customer Managed Identity"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<MyWorkbookManagedIdentity>,
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Resource etag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<serde_json::Value>,
 }
@@ -165,10 +207,13 @@ impl MyWorkbookResource {
         Self::default()
     }
 }
+#[doc = "Customer Managed Identity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MyWorkbookUserAssignedIdentities {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -177,8 +222,10 @@ impl MyWorkbookUserAssignedIdentities {
         Self::default()
     }
 }
+#[doc = "Workbook list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MyWorkbooksListResult {
+    #[doc = "An array of private workbooks."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MyWorkbook>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
@@ -189,10 +236,13 @@ impl MyWorkbooksListResult {
         Self::default()
     }
 }
+#[doc = "Azure Workbooks REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -203,12 +253,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.Insights"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Profile, endpoint, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -218,10 +272,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list Azure Workbooks operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of Workbook operations supported by the Microsoft.Insights resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -230,20 +287,28 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Customer Managed Identity"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<WorkbookManagedIdentity>,
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Resource etag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<serde_json::Value>,
 }
@@ -252,12 +317,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "An Application Insights workbook definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workbook {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The kind of workbook. Choices are user and shared."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<workbook::Kind>,
+    #[doc = "Properties that contain a workbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkbookProperties>,
 }
@@ -268,6 +336,7 @@ impl Workbook {
 }
 pub mod workbook {
     use super::*;
+    #[doc = "The kind of workbook. Choices are user and shared."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "user")]
@@ -276,8 +345,10 @@ pub mod workbook {
         Shared,
     }
 }
+#[doc = "Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookError {
+    #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
@@ -286,10 +357,13 @@ impl WorkbookError {
         Self::default()
     }
 }
+#[doc = "Customer Managed Identity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookManagedIdentity {
+    #[doc = "Customer Managed Identity"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<WorkbookUserAssignedIdentities>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<workbook_managed_identity::Type>,
 }
@@ -300,29 +374,40 @@ impl WorkbookManagedIdentity {
 }
 pub mod workbook_managed_identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         UserAssigned,
         None,
     }
 }
+#[doc = "Properties that contain a workbook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkbookProperties {
+    #[doc = "The user-defined name (display name) of the workbook."]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "Configuration of this particular workbook. Configuration data is a string containing valid JSON"]
     #[serde(rename = "serializedData")]
     pub serialized_data: String,
+    #[doc = "Workbook version"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Date and time in UTC of the last modification that was made to this workbook definition."]
     #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
+    #[doc = "Workbook category, as defined by the user at creation time."]
     pub category: String,
+    #[doc = "A list of 0 or more tags that are associated with this workbook definition"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+    #[doc = "Unique user id of the specific user that owns this workbook."]
     #[serde(rename = "userId", default, skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
+    #[doc = "ResourceId for a source resource."]
     #[serde(rename = "sourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_id: Option<String>,
+    #[doc = "BYOS Storage Account URI"]
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
 }
@@ -341,14 +426,19 @@ impl WorkbookProperties {
         }
     }
 }
+#[doc = "Properties that contain a workbook for PATCH operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookPropertiesUpdateParameters {
+    #[doc = "The user-defined name (display name) of the workbook."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Configuration of this particular workbook. Configuration data is a string containing valid JSON"]
     #[serde(rename = "serializedData", default, skip_serializing_if = "Option::is_none")]
     pub serialized_data: Option<String>,
+    #[doc = "Workbook category, as defined by the user at creation time."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "A list of 0 or more tags that are associated with this workbook definition"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
 }
@@ -357,12 +447,16 @@ impl WorkbookPropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters that can be provided when updating workbook properties properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookUpdateParameters {
+    #[doc = "The kind of workbook. Choices are user and shared."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<workbook_update_parameters::Kind>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties that contain a workbook for PATCH operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkbookPropertiesUpdateParameters>,
 }
@@ -373,6 +467,7 @@ impl WorkbookUpdateParameters {
 }
 pub mod workbook_update_parameters {
     use super::*;
+    #[doc = "The kind of workbook. Choices are user and shared."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "user")]
@@ -381,12 +476,16 @@ pub mod workbook_update_parameters {
         Shared,
     }
 }
+#[doc = "Customer Managed Identity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookUserAssignedIdentities {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The client ID of resource."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
@@ -395,8 +494,10 @@ impl WorkbookUserAssignedIdentities {
         Self::default()
     }
 }
+#[doc = "Workbook list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbooksListResult {
+    #[doc = "An array of workbooks."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Workbook>,
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]

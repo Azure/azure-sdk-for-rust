@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Action descriptor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
+    #[doc = "Specifies the action. Supported values - AlertingAction, LogToMetricAction"]
     #[serde(rename = "odata.type")]
     pub odata_type: String,
 }
@@ -12,6 +14,7 @@ impl Action {
         Self { odata_type }
     }
 }
+#[doc = "Severity Level of Alert"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AlertSeverity {
     #[serde(rename = "0")]
@@ -25,15 +28,20 @@ pub enum AlertSeverity {
     #[serde(rename = "4")]
     N4,
 }
+#[doc = "Specify action need to be taken when rule type is Alert"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertingAction {
     #[serde(flatten)]
     pub action: Action,
+    #[doc = "Severity Level of Alert"]
     pub severity: AlertSeverity,
+    #[doc = "Azure action group"]
     #[serde(rename = "aznsAction", default, skip_serializing_if = "Option::is_none")]
     pub azns_action: Option<AzNsActionGroup>,
+    #[doc = "time (in minutes) for which Alerts should be throttled or suppressed."]
     #[serde(rename = "throttlingInMin", default, skip_serializing_if = "Option::is_none")]
     pub throttling_in_min: Option<i32>,
+    #[doc = "The condition that results in the Log Search rule."]
     pub trigger: TriggerCondition,
 }
 impl AlertingAction {
@@ -47,12 +55,16 @@ impl AlertingAction {
         }
     }
 }
+#[doc = "Azure action group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzNsActionGroup {
+    #[doc = "Azure Action Group reference."]
     #[serde(rename = "actionGroup", default, skip_serializing_if = "Vec::is_empty")]
     pub action_group: Vec<String>,
+    #[doc = "Custom subject override for all email ids in Azure action group"]
     #[serde(rename = "emailSubject", default, skip_serializing_if = "Option::is_none")]
     pub email_subject: Option<String>,
+    #[doc = "Custom payload to be sent for all webhook URI in Azure action group"]
     #[serde(rename = "customWebhookPayload", default, skip_serializing_if = "Option::is_none")]
     pub custom_webhook_payload: Option<String>,
 }
@@ -61,6 +73,7 @@ impl AzNsActionGroup {
         Self::default()
     }
 }
+#[doc = "Result Condition Evaluation criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConditionalOperator {
     GreaterThanOrEqual,
@@ -74,10 +87,13 @@ impl Default for ConditionalOperator {
         Self::GreaterThanOrEqual
     }
 }
+#[doc = "Specifies the criteria for converting log to metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Criteria {
+    #[doc = "Name of the metric"]
     #[serde(rename = "metricName")]
     pub metric_name: String,
+    #[doc = "List of Dimensions for creating metric"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<Dimension>,
 }
@@ -89,10 +105,14 @@ impl Criteria {
         }
     }
 }
+#[doc = "Specifies the criteria for converting log to metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dimension {
+    #[doc = "Name of the dimension"]
     pub name: String,
+    #[doc = "Operator for dimension values"]
     pub operator: dimension::Operator,
+    #[doc = "List of dimension values"]
     pub values: Vec<String>,
 }
 impl Dimension {
@@ -102,13 +122,16 @@ impl Dimension {
 }
 pub mod dimension {
     use super::*;
+    #[doc = "Operator for dimension values"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Include,
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
+    #[doc = "Describes the format of Error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -117,10 +140,13 @@ impl ErrorContract {
         Self::default()
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -129,14 +155,19 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "A log metrics trigger descriptor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogMetricTrigger {
+    #[doc = "Result Condition Evaluation criteria."]
     #[serde(rename = "thresholdOperator", default, skip_serializing_if = "Option::is_none")]
     pub threshold_operator: Option<ConditionalOperator>,
+    #[doc = "The threshold of the metric trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<f64>,
+    #[doc = "Metric Trigger Evaluation Type"]
     #[serde(rename = "metricTriggerType", default, skip_serializing_if = "Option::is_none")]
     pub metric_trigger_type: Option<MetricTriggerType>,
+    #[doc = "Evaluation of metric on a particular column"]
     #[serde(rename = "metricColumn", default, skip_serializing_if = "Option::is_none")]
     pub metric_column: Option<String>,
 }
@@ -145,27 +176,39 @@ impl LogMetricTrigger {
         Self::default()
     }
 }
+#[doc = "Log Search Rule Definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSearchRule {
+    #[doc = "The api-version used when creating this alert rule"]
     #[serde(rename = "createdWithApiVersion", default, skip_serializing_if = "Option::is_none")]
     pub created_with_api_version: Option<String>,
+    #[doc = "True if alert rule is legacy Log Analytic rule"]
     #[serde(rename = "isLegacyLogAnalyticsRule", default, skip_serializing_if = "Option::is_none")]
     pub is_legacy_log_analytics_rule: Option<bool>,
+    #[doc = "The description of the Log Search rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The display name of the alert rule"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The flag that indicates whether the alert should be automatically resolved or not. The default is false."]
     #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
     pub auto_mitigate: Option<bool>,
+    #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule::Enabled>,
+    #[doc = "Last time the rule was updated in IS08601 format."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "Provisioning state of the scheduled query rule"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<log_search_rule::ProvisioningState>,
+    #[doc = "Specifies the log search query."]
     pub source: Source,
+    #[doc = "Defines how often to run the search and the time interval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<Schedule>,
+    #[doc = "Action descriptor."]
     pub action: Action,
 }
 impl LogSearchRule {
@@ -187,6 +230,7 @@ impl LogSearchRule {
 }
 pub mod log_search_rule {
     use super::*;
+    #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Enabled {
         #[serde(rename = "true")]
@@ -194,6 +238,7 @@ pub mod log_search_rule {
         #[serde(rename = "false")]
         False,
     }
+    #[doc = "Provisioning state of the scheduled query rule"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
@@ -202,8 +247,10 @@ pub mod log_search_rule {
         Failed,
     }
 }
+#[doc = "Log Search Rule Definition for Patching"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSearchRulePatch {
+    #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<log_search_rule_patch::Enabled>,
 }
@@ -214,6 +261,7 @@ impl LogSearchRulePatch {
 }
 pub mod log_search_rule_patch {
     use super::*;
+    #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Enabled {
         #[serde(rename = "true")]
@@ -222,10 +270,12 @@ pub mod log_search_rule_patch {
         False,
     }
 }
+#[doc = "The Log Search Rule resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSearchRuleResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Log Search Rule Definition"]
     pub properties: LogSearchRule,
 }
 impl LogSearchRuleResource {
@@ -233,8 +283,10 @@ impl LogSearchRuleResource {
         Self { resource, properties }
     }
 }
+#[doc = "Represents a collection of Log Search rule resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSearchRuleResourceCollection {
+    #[doc = "The values for the Log Search Rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LogSearchRuleResource>,
 }
@@ -243,10 +295,13 @@ impl LogSearchRuleResourceCollection {
         Self::default()
     }
 }
+#[doc = "The log search rule resource for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSearchRuleResourcePatch {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Log Search Rule Definition for Patching"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogSearchRulePatch>,
 }
@@ -255,10 +310,12 @@ impl LogSearchRuleResourcePatch {
         Self::default()
     }
 }
+#[doc = "Specify action need to be taken when rule type is converting log to metric"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogToMetricAction {
     #[serde(flatten)]
     pub action: Action,
+    #[doc = "Criteria of Metric"]
     pub criteria: Vec<Criteria>,
 }
 impl LogToMetricAction {
@@ -266,6 +323,7 @@ impl LogToMetricAction {
         Self { action, criteria }
     }
 }
+#[doc = "Metric Trigger Evaluation Type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MetricTriggerType {
     Consecutive,
@@ -276,23 +334,32 @@ impl Default for MetricTriggerType {
         Self::Consecutive
     }
 }
+#[doc = "Set value to 'ResultAccount'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryType {
     ResultCount,
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "The etag field is *not* required. If it is provided in the response body, it must also be provided as a header per the normal etag convention.  Entity tags are used for comparing two or more entities from the same requested resource. HTTP/1.1 uses entity tags in the etag (section 14.19), If-Match (section 14.24), If-None-Match (section 14.26), and If-Range (section 14.27) header fields. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -309,10 +376,13 @@ impl Resource {
         }
     }
 }
+#[doc = "Defines how often to run the search and the time interval."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Schedule {
+    #[doc = "frequency (in minutes) at which rule condition should be evaluated."]
     #[serde(rename = "frequencyInMinutes")]
     pub frequency_in_minutes: i32,
+    #[doc = "Time window for which data needs to be fetched for query (should be greater than or equal to frequencyInMinutes)."]
     #[serde(rename = "timeWindowInMinutes")]
     pub time_window_in_minutes: i32,
 }
@@ -324,14 +394,19 @@ impl Schedule {
         }
     }
 }
+#[doc = "Specifies the log search query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Source {
+    #[doc = "Log search query. Required for action type - AlertingAction"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
+    #[doc = "List of  Resource referred into query"]
     #[serde(rename = "authorizedResources", default, skip_serializing_if = "Vec::is_empty")]
     pub authorized_resources: Vec<String>,
+    #[doc = "The resource uri over which log search query is to be run."]
     #[serde(rename = "dataSourceId")]
     pub data_source_id: String,
+    #[doc = "Set value to 'ResultAccount'"]
     #[serde(rename = "queryType", default, skip_serializing_if = "Option::is_none")]
     pub query_type: Option<QueryType>,
 }
@@ -345,11 +420,15 @@ impl Source {
         }
     }
 }
+#[doc = "The condition that results in the Log Search rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerCondition {
+    #[doc = "Result Condition Evaluation criteria."]
     #[serde(rename = "thresholdOperator")]
     pub threshold_operator: ConditionalOperator,
+    #[doc = "Result or count threshold based on which rule should be triggered."]
     pub threshold: f64,
+    #[doc = "A log metrics trigger descriptor."]
     #[serde(rename = "metricTrigger", default, skip_serializing_if = "Option::is_none")]
     pub metric_trigger: Option<LogMetricTrigger>,
 }

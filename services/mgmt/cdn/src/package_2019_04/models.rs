@@ -2,14 +2,18 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Defines the parameters for the cache expiration action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheExpirationActionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: cache_expiration_action_parameters::OdataType,
+    #[doc = "Caching behavior for the requests"]
     #[serde(rename = "cacheBehavior")]
     pub cache_behavior: cache_expiration_action_parameters::CacheBehavior,
+    #[doc = "The level at which the content needs to be cached."]
     #[serde(rename = "cacheType")]
     pub cache_type: cache_expiration_action_parameters::CacheType,
+    #[doc = "The duration for which the content needs to be cached. Allowed format is [d.]hh:mm:ss"]
     #[serde(rename = "cacheDuration", default, skip_serializing_if = "Option::is_none")]
     pub cache_duration: Option<String>,
 }
@@ -34,23 +38,28 @@ pub mod cache_expiration_action_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheExpirationActionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleCacheExpirationActionParameters,
     }
+    #[doc = "Caching behavior for the requests"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CacheBehavior {
         BypassCache,
         Override,
         SetIfMissing,
     }
+    #[doc = "The level at which the content needs to be cached."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CacheType {
         All,
     }
 }
+#[doc = "Defines the parameters for the cache-key query string action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CacheKeyQueryStringActionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: cache_key_query_string_action_parameters::OdataType,
+    #[doc = "Caching behavior for the requests"]
     #[serde(rename = "queryStringBehavior")]
     pub query_string_behavior: cache_key_query_string_action_parameters::QueryStringBehavior,
+    #[doc = "query parameters to include or exclude (comma separated)."]
     #[serde(rename = "queryParameters", default, skip_serializing_if = "Option::is_none")]
     pub query_parameters: Option<String>,
 }
@@ -73,6 +82,7 @@ pub mod cache_key_query_string_action_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCacheKeyQueryStringBehaviorActionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleCacheKeyQueryStringBehaviorActionParameters,
     }
+    #[doc = "Caching behavior for the requests"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum QueryStringBehavior {
         Include,
@@ -81,10 +91,12 @@ pub mod cache_key_query_string_action_parameters {
         ExcludeAll,
     }
 }
+#[doc = "Defines the parameters for using CDN managed certificate for securing custom domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CdnCertificateSourceParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: cdn_certificate_source_parameters::OdataType,
+    #[doc = "Type of certificate used"]
     #[serde(rename = "certificateType")]
     pub certificate_type: cdn_certificate_source_parameters::CertificateType,
 }
@@ -106,16 +118,19 @@ pub mod cdn_certificate_source_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.CdnCertificateSourceParameters")]
         MicrosoftAzureCdnModelsCdnCertificateSourceParameters,
     }
+    #[doc = "Type of certificate used"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateType {
         Shared,
         Dedicated,
     }
 }
+#[doc = "Defines the certificate source parameters using CDN managed certificate for enabling SSL."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CdnManagedHttpsParameters {
     #[serde(flatten)]
     pub custom_domain_https_parameters: CustomDomainHttpsParameters,
+    #[doc = "Defines the parameters for using CDN managed certificate for securing custom domain."]
     #[serde(rename = "certificateSourceParameters")]
     pub certificate_source_parameters: CdnCertificateSourceParameters,
 }
@@ -130,9 +145,12 @@ impl CdnManagedHttpsParameters {
         }
     }
 }
+#[doc = "Input of CheckNameAvailability API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityInput {
+    #[doc = "The resource name to validate."]
     pub name: String,
+    #[doc = "Type of CDN resource used in CheckNameAvailability."]
     #[serde(rename = "type")]
     pub type_: ResourceType,
 }
@@ -141,12 +159,16 @@ impl CheckNameAvailabilityInput {
         Self { name, type_ }
     }
 }
+#[doc = "Output of check name availability API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityOutput {
+    #[doc = "Indicates whether the name is available."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "The reason why the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "The detailed error message describing why the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -155,17 +177,23 @@ impl CheckNameAvailabilityOutput {
         Self::default()
     }
 }
+#[doc = "Defines the parameters for Cookies match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CookiesMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: cookies_match_condition_parameters::OdataType,
+    #[doc = "Name of Cookies to be matched"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
+    #[doc = "Describes operator to be matched"]
     pub operator: cookies_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -188,6 +216,7 @@ pub mod cookies_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleCookiesConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleCookiesConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -201,10 +230,12 @@ pub mod cookies_match_condition_parameters {
         GreaterThanOrEqual,
     }
 }
+#[doc = "Friendly domain name mapping to the endpoint hostname that the customer provides for branding purposes, e.g. www.contoso.com."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomain {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The JSON object that contains the properties of the custom domain to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomDomainProperties>,
 }
@@ -213,12 +244,16 @@ impl CustomDomain {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties to secure a custom domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainHttpsParameters {
+    #[doc = "Defines the source of the SSL certificate."]
     #[serde(rename = "certificateSource")]
     pub certificate_source: custom_domain_https_parameters::CertificateSource,
+    #[doc = "Defines the TLS extension protocol that is used for secure delivery."]
     #[serde(rename = "protocolType")]
     pub protocol_type: custom_domain_https_parameters::ProtocolType,
+    #[doc = "TLS protocol version that will be used for Https"]
     #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
     pub minimum_tls_version: Option<custom_domain_https_parameters::MinimumTlsVersion>,
 }
@@ -236,17 +271,20 @@ impl CustomDomainHttpsParameters {
 }
 pub mod custom_domain_https_parameters {
     use super::*;
+    #[doc = "Defines the source of the SSL certificate."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CertificateSource {
         AzureKeyVault,
         Cdn,
     }
+    #[doc = "Defines the TLS extension protocol that is used for secure delivery."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProtocolType {
         ServerNameIndication,
         #[serde(rename = "IPBased")]
         IpBased,
     }
+    #[doc = "TLS protocol version that will be used for Https"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MinimumTlsVersion {
         None,
@@ -256,10 +294,13 @@ pub mod custom_domain_https_parameters {
         Tls12,
     }
 }
+#[doc = "Result of the request to list custom domains. It contains a list of custom domain objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomainListResult {
+    #[doc = "List of CDN CustomDomains within an endpoint."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomDomain>,
+    #[doc = "URL to get the next set of custom domain objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -268,8 +309,10 @@ impl CustomDomainListResult {
         Self::default()
     }
 }
+#[doc = "The customDomain JSON object required for custom domain creation or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomainParameters {
+    #[doc = "The JSON object that contains the properties of the custom domain to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomDomainPropertiesParameters>,
 }
@@ -278,20 +321,28 @@ impl CustomDomainParameters {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties of the custom domain to create."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainProperties {
+    #[doc = "The host name of the custom domain. Must be a domain name."]
     #[serde(rename = "hostName")]
     pub host_name: String,
+    #[doc = "Resource status of the custom domain."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<custom_domain_properties::ResourceState>,
+    #[doc = "Provisioning status of Custom Https of the custom domain."]
     #[serde(rename = "customHttpsProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_provisioning_state: Option<custom_domain_properties::CustomHttpsProvisioningState>,
+    #[doc = "Provisioning substate shows the progress of custom HTTPS enabling/disabling process step by step."]
     #[serde(rename = "customHttpsProvisioningSubstate", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_provisioning_substate: Option<custom_domain_properties::CustomHttpsProvisioningSubstate>,
+    #[doc = "The JSON object that contains the properties to secure a custom domain."]
     #[serde(rename = "customHttpsParameters", default, skip_serializing_if = "Option::is_none")]
     pub custom_https_parameters: Option<CustomDomainHttpsParameters>,
+    #[doc = "Special validation or data may be required when delivering CDN to some regions due to local compliance reasons. E.g. ICP license number of a custom domain is required to deliver content in China."]
     #[serde(rename = "validationData", default, skip_serializing_if = "Option::is_none")]
     pub validation_data: Option<String>,
+    #[doc = "Provisioning status of the custom domain."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -310,12 +361,14 @@ impl CustomDomainProperties {
 }
 pub mod custom_domain_properties {
     use super::*;
+    #[doc = "Resource status of the custom domain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
         Active,
         Deleting,
     }
+    #[doc = "Provisioning status of Custom Https of the custom domain."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CustomHttpsProvisioningState {
         Enabling,
@@ -324,6 +377,7 @@ pub mod custom_domain_properties {
         Disabled,
         Failed,
     }
+    #[doc = "Provisioning substate shows the progress of custom HTTPS enabling/disabling process step by step."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CustomHttpsProvisioningSubstate {
         SubmittingDomainControlValidationRequest,
@@ -338,8 +392,10 @@ pub mod custom_domain_properties {
         CertificateDeleted,
     }
 }
+#[doc = "The JSON object that contains the properties of the custom domain to create."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainPropertiesParameters {
+    #[doc = "The host name of the custom domain. Must be a domain name."]
     #[serde(rename = "hostName")]
     pub host_name: String,
 }
@@ -348,9 +404,12 @@ impl CustomDomainPropertiesParameters {
         Self { host_name }
     }
 }
+#[doc = "The main origin of CDN content which is added when creating a CDN endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeepCreatedOrigin {
+    #[doc = "Origin name"]
     pub name: String,
+    #[doc = "Properties of the origin created on the CDN endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeepCreatedOriginProperties>,
 }
@@ -359,12 +418,16 @@ impl DeepCreatedOrigin {
         Self { name, properties: None }
     }
 }
+#[doc = "Properties of the origin created on the CDN endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeepCreatedOriginProperties {
+    #[doc = "The address of the origin. It can be a domain name, IPv4 address, or IPv6 address."]
     #[serde(rename = "hostName")]
     pub host_name: String,
+    #[doc = "The value of the HTTP port. Must be between 1 and 65535"]
     #[serde(rename = "httpPort", default, skip_serializing_if = "Option::is_none")]
     pub http_port: Option<i64>,
+    #[doc = "The value of the HTTPS port. Must be between 1 and 65535"]
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
 }
@@ -377,13 +440,18 @@ impl DeepCreatedOriginProperties {
         }
     }
 }
+#[doc = "A rule that specifies a set of actions and conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRule {
+    #[doc = "Name of the rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The order in which the rules are applied for the endpoint. Possible values {0,1,2,3,………}. A rule with a lesser order will be applied before a rule with a greater order. Rule with order 0 is a special rule. It does not require any condition and actions listed in it will always be applied."]
     pub order: i64,
+    #[doc = "A list of conditions that must be matched for the actions to be executed"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub conditions: Vec<DeliveryRuleCondition>,
+    #[doc = "A list of actions that are executed when all the conditions of a rule are satisfied."]
     pub actions: Vec<DeliveryRuleAction>,
 }
 impl DeliveryRule {
@@ -396,8 +464,10 @@ impl DeliveryRule {
         }
     }
 }
+#[doc = "An action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleAction {
+    #[doc = "The name of the action for the delivery rule."]
     pub name: delivery_rule_action::Name,
 }
 impl DeliveryRuleAction {
@@ -407,6 +477,7 @@ impl DeliveryRuleAction {
 }
 pub mod delivery_rule_action {
     use super::*;
+    #[doc = "The name of the action for the delivery rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         CacheExpiration,
@@ -417,10 +488,12 @@ pub mod delivery_rule_action {
         UrlRewrite,
     }
 }
+#[doc = "Defines the cache expiration action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleCacheExpirationAction {
     #[serde(flatten)]
     pub delivery_rule_action: DeliveryRuleAction,
+    #[doc = "Defines the parameters for the cache expiration action."]
     pub parameters: CacheExpirationActionParameters,
 }
 impl DeliveryRuleCacheExpirationAction {
@@ -431,10 +504,12 @@ impl DeliveryRuleCacheExpirationAction {
         }
     }
 }
+#[doc = "Defines the cache-key query string action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleCacheKeyQueryStringAction {
     #[serde(flatten)]
     pub delivery_rule_action: DeliveryRuleAction,
+    #[doc = "Defines the parameters for the cache-key query string action."]
     pub parameters: CacheKeyQueryStringActionParameters,
 }
 impl DeliveryRuleCacheKeyQueryStringAction {
@@ -445,8 +520,10 @@ impl DeliveryRuleCacheKeyQueryStringAction {
         }
     }
 }
+#[doc = "A condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleCondition {
+    #[doc = "The name of the condition for the delivery rule."]
     pub name: delivery_rule_condition::Name,
 }
 impl DeliveryRuleCondition {
@@ -456,6 +533,7 @@ impl DeliveryRuleCondition {
 }
 pub mod delivery_rule_condition {
     use super::*;
+    #[doc = "The name of the condition for the delivery rule."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         RemoteAddress,
@@ -474,10 +552,12 @@ pub mod delivery_rule_condition {
         IsDevice,
     }
 }
+#[doc = "Defines the Cookies condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleCookiesCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for Cookies match conditions"]
     pub parameters: CookiesMatchConditionParameters,
 }
 impl DeliveryRuleCookiesCondition {
@@ -488,10 +568,12 @@ impl DeliveryRuleCookiesCondition {
         }
     }
 }
+#[doc = "Defines the HttpVersion condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleHttpVersionCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for HttpVersion match conditions"]
     pub parameters: HttpVersionMatchConditionParameters,
 }
 impl DeliveryRuleHttpVersionCondition {
@@ -502,10 +584,12 @@ impl DeliveryRuleHttpVersionCondition {
         }
     }
 }
+#[doc = "Defines the IsDevice condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleIsDeviceCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for IsDevice match conditions"]
     pub parameters: IsDeviceMatchConditionParameters,
 }
 impl DeliveryRuleIsDeviceCondition {
@@ -516,10 +600,12 @@ impl DeliveryRuleIsDeviceCondition {
         }
     }
 }
+#[doc = "Defines the PostArgs condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRulePostArgsCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for PostArgs match conditions"]
     pub parameters: PostArgsMatchConditionParameters,
 }
 impl DeliveryRulePostArgsCondition {
@@ -530,10 +616,12 @@ impl DeliveryRulePostArgsCondition {
         }
     }
 }
+#[doc = "Defines the QueryString condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleQueryStringCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for QueryString match conditions"]
     pub parameters: QueryStringMatchConditionParameters,
 }
 impl DeliveryRuleQueryStringCondition {
@@ -544,10 +632,12 @@ impl DeliveryRuleQueryStringCondition {
         }
     }
 }
+#[doc = "Defines the RemoteAddress condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRemoteAddressCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for RemoteAddress match conditions"]
     pub parameters: RemoteAddressMatchConditionParameters,
 }
 impl DeliveryRuleRemoteAddressCondition {
@@ -558,10 +648,12 @@ impl DeliveryRuleRemoteAddressCondition {
         }
     }
 }
+#[doc = "Defines the RequestBody condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestBodyCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for RequestBody match conditions"]
     pub parameters: RequestBodyMatchConditionParameters,
 }
 impl DeliveryRuleRequestBodyCondition {
@@ -572,10 +664,12 @@ impl DeliveryRuleRequestBodyCondition {
         }
     }
 }
+#[doc = "Defines the request header action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestHeaderAction {
     #[serde(flatten)]
     pub delivery_rule_action: DeliveryRuleAction,
+    #[doc = "Defines the parameters for the request header action."]
     pub parameters: HeaderActionParameters,
 }
 impl DeliveryRuleRequestHeaderAction {
@@ -586,10 +680,12 @@ impl DeliveryRuleRequestHeaderAction {
         }
     }
 }
+#[doc = "Defines the RequestHeader condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestHeaderCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for RequestHeader match conditions"]
     pub parameters: RequestHeaderMatchConditionParameters,
 }
 impl DeliveryRuleRequestHeaderCondition {
@@ -600,10 +696,12 @@ impl DeliveryRuleRequestHeaderCondition {
         }
     }
 }
+#[doc = "Defines the RequestMethod condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestMethodCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for RequestMethod match conditions"]
     pub parameters: RequestMethodMatchConditionParameters,
 }
 impl DeliveryRuleRequestMethodCondition {
@@ -614,10 +712,12 @@ impl DeliveryRuleRequestMethodCondition {
         }
     }
 }
+#[doc = "Defines the RequestScheme condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestSchemeCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for RequestScheme match conditions "]
     pub parameters: RequestSchemeMatchConditionParameters,
 }
 impl DeliveryRuleRequestSchemeCondition {
@@ -628,10 +728,12 @@ impl DeliveryRuleRequestSchemeCondition {
         }
     }
 }
+#[doc = "Defines the RequestUri condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestUriCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for RequestUri match conditions"]
     pub parameters: RequestUriMatchConditionParameters,
 }
 impl DeliveryRuleRequestUriCondition {
@@ -642,10 +744,12 @@ impl DeliveryRuleRequestUriCondition {
         }
     }
 }
+#[doc = "Defines the response header action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleResponseHeaderAction {
     #[serde(flatten)]
     pub delivery_rule_action: DeliveryRuleAction,
+    #[doc = "Defines the parameters for the request header action."]
     pub parameters: HeaderActionParameters,
 }
 impl DeliveryRuleResponseHeaderAction {
@@ -656,10 +760,12 @@ impl DeliveryRuleResponseHeaderAction {
         }
     }
 }
+#[doc = "Defines the UrlFileExtension condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleUrlFileExtensionCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for UrlFileExtension match conditions"]
     pub parameters: UrlFileExtensionMatchConditionParameters,
 }
 impl DeliveryRuleUrlFileExtensionCondition {
@@ -670,10 +776,12 @@ impl DeliveryRuleUrlFileExtensionCondition {
         }
     }
 }
+#[doc = "Defines the UrlFileName condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleUrlFileNameCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for UrlFilename match conditions"]
     pub parameters: UrlFileNameMatchConditionParameters,
 }
 impl DeliveryRuleUrlFileNameCondition {
@@ -684,10 +792,12 @@ impl DeliveryRuleUrlFileNameCondition {
         }
     }
 }
+#[doc = "Defines the UrlPath condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleUrlPathCondition {
     #[serde(flatten)]
     pub delivery_rule_condition: DeliveryRuleCondition,
+    #[doc = "Defines the parameters for UrlPath match conditions"]
     pub parameters: UrlPathMatchConditionParameters,
 }
 impl DeliveryRuleUrlPathCondition {
@@ -698,10 +808,12 @@ impl DeliveryRuleUrlPathCondition {
         }
     }
 }
+#[doc = "Edgenode is a global Point of Presence (POP) location used to deliver CDN content to end users."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeNode {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The JSON object that contains the properties required to create an edgenode."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EdgeNodeProperties>,
 }
@@ -710,8 +822,10 @@ impl EdgeNode {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties required to create an edgenode."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdgeNodeProperties {
+    #[doc = "List of ip address groups."]
     #[serde(rename = "ipAddressGroups")]
     pub ip_address_groups: Vec<IpAddressGroup>,
 }
@@ -720,10 +834,13 @@ impl EdgeNodeProperties {
         Self { ip_address_groups }
     }
 }
+#[doc = "Result of the request to list CDN edgenodes. It contains a list of ip address group and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgenodeResult {
+    #[doc = "Edge node of CDN service."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EdgeNode>,
+    #[doc = "URL to get the next set of edgenode list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -732,10 +849,12 @@ impl EdgenodeResult {
         Self::default()
     }
 }
+#[doc = "CDN endpoint is the entity within a CDN profile containing configuration information such as origin, protocol, content caching and delivery behavior. The CDN endpoint uses the URL format <endpointname>.azureedge.net."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Endpoint {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The JSON object that contains the properties required to create an endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointProperties>,
 }
@@ -747,10 +866,13 @@ impl Endpoint {
         }
     }
 }
+#[doc = "Result of the request to list endpoints. It contains a list of endpoint objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointListResult {
+    #[doc = "List of CDN endpoints within a profile"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Endpoint>,
+    #[doc = "URL to get the next set of endpoint objects if there is any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -759,15 +881,20 @@ impl EndpointListResult {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties required to create an endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointProperties {
     #[serde(flatten)]
     pub endpoint_properties_update_parameters: EndpointPropertiesUpdateParameters,
+    #[doc = "The host name of the endpoint structured as {endpointName}.{DNSZone}, e.g. contoso.azureedge.net"]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "The source of the content being delivered via CDN."]
     pub origins: Vec<DeepCreatedOrigin>,
+    #[doc = "Resource status of the endpoint."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<endpoint_properties::ResourceState>,
+    #[doc = "Provisioning status of the endpoint."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -784,6 +911,7 @@ impl EndpointProperties {
 }
 pub mod endpoint_properties {
     use super::*;
+    #[doc = "Resource status of the endpoint."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
@@ -794,28 +922,40 @@ pub mod endpoint_properties {
         Stopping,
     }
 }
+#[doc = "The JSON object containing endpoint update parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointPropertiesUpdateParameters {
+    #[doc = "The host header value sent to the origin with each request. If you leave this blank, the request hostname determines this value. Azure CDN origins, such as Web Apps, Blob Storage, and Cloud Services require this host header value to match the origin hostname by default."]
     #[serde(rename = "originHostHeader", default, skip_serializing_if = "Option::is_none")]
     pub origin_host_header: Option<String>,
+    #[doc = "A directory path on the origin that CDN can use to retrieve content from, e.g. contoso.cloudapp.net/originpath."]
     #[serde(rename = "originPath", default, skip_serializing_if = "Option::is_none")]
     pub origin_path: Option<String>,
+    #[doc = "List of content types on which compression applies. The value should be a valid MIME type."]
     #[serde(rename = "contentTypesToCompress", default, skip_serializing_if = "Vec::is_empty")]
     pub content_types_to_compress: Vec<String>,
+    #[doc = "Indicates whether content compression is enabled on CDN. Default value is false. If compression is enabled, content will be served as compressed if user requests for a compressed version. Content won't be compressed on CDN when requested content is smaller than 1 byte or larger than 1 MB."]
     #[serde(rename = "isCompressionEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_compression_enabled: Option<bool>,
+    #[doc = "Indicates whether HTTP traffic is allowed on the endpoint. Default value is true. At least one protocol (HTTP or HTTPS) must be allowed."]
     #[serde(rename = "isHttpAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_http_allowed: Option<bool>,
+    #[doc = "Indicates whether HTTPS traffic is allowed on the endpoint. Default value is true. At least one protocol (HTTP or HTTPS) must be allowed."]
     #[serde(rename = "isHttpsAllowed", default, skip_serializing_if = "Option::is_none")]
     pub is_https_allowed: Option<bool>,
+    #[doc = "Defines how CDN caches requests that include query strings. You can ignore any query strings when caching, bypass caching to prevent requests that contain query strings from being cached, or cache every request with a unique URL."]
     #[serde(rename = "queryStringCachingBehavior", default, skip_serializing_if = "Option::is_none")]
     pub query_string_caching_behavior: Option<QueryStringCachingBehavior>,
+    #[doc = "Specifies what scenario the customer wants this CDN endpoint to optimize, e.g. Download, Media services. With this information we can apply scenario driven optimization."]
     #[serde(rename = "optimizationType", default, skip_serializing_if = "Option::is_none")]
     pub optimization_type: Option<OptimizationType>,
+    #[doc = "Path to a file hosted on the origin which helps accelerate delivery of the dynamic content and calculate the most optimal routes for the CDN. This is relative to the origin path."]
     #[serde(rename = "probePath", default, skip_serializing_if = "Option::is_none")]
     pub probe_path: Option<String>,
+    #[doc = "List of rules defining the user's geo access within a CDN endpoint. Each geo filter defines an access rule to a specified path or content, e.g. block APAC for path /pictures/"]
     #[serde(rename = "geoFilters", default, skip_serializing_if = "Vec::is_empty")]
     pub geo_filters: Vec<GeoFilter>,
+    #[doc = "A policy that specifies the delivery rules to be used for an endpoint."]
     #[serde(rename = "deliveryPolicy", default, skip_serializing_if = "Option::is_none")]
     pub delivery_policy: Option<endpoint_properties_update_parameters::DeliveryPolicy>,
 }
@@ -826,10 +966,13 @@ impl EndpointPropertiesUpdateParameters {
 }
 pub mod endpoint_properties_update_parameters {
     use super::*;
+    #[doc = "A policy that specifies the delivery rules to be used for an endpoint."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct DeliveryPolicy {
+        #[doc = "User-friendly description of the policy."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
+        #[doc = "A list of the delivery rules."]
         pub rules: Vec<DeliveryRule>,
     }
     impl DeliveryPolicy {
@@ -838,10 +981,13 @@ pub mod endpoint_properties_update_parameters {
         }
     }
 }
+#[doc = "Properties required to create or update an endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointUpdateParameters {
+    #[doc = "Endpoint tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The JSON object containing endpoint update parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointPropertiesUpdateParameters>,
 }
@@ -850,10 +996,13 @@ impl EndpointUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Error response indicates CDN service is not able to process the incoming request. The reason is provided in the error message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -862,11 +1011,15 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Rules defining user's geo access within a CDN endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoFilter {
+    #[doc = "Relative path applicable to geo filter. (e.g. '/mypictures', '/mypicture/kitty.jpg', and etc.)"]
     #[serde(rename = "relativePath")]
     pub relative_path: String,
+    #[doc = "Action of the geo filter, i.e. allow or block access."]
     pub action: geo_filter::Action,
+    #[doc = "Two letter country codes defining user country access in a geo filter, e.g. AU, MX, US."]
     #[serde(rename = "countryCodes")]
     pub country_codes: Vec<String>,
 }
@@ -881,20 +1034,25 @@ impl GeoFilter {
 }
 pub mod geo_filter {
     use super::*;
+    #[doc = "Action of the geo filter, i.e. allow or block access."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Action {
         Block,
         Allow,
     }
 }
+#[doc = "Defines the parameters for the request header action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HeaderActionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: header_action_parameters::OdataType,
+    #[doc = "Action to perform"]
     #[serde(rename = "headerAction")]
     pub header_action: header_action_parameters::HeaderAction,
+    #[doc = "Name of the header to modify"]
     #[serde(rename = "headerName")]
     pub header_name: String,
+    #[doc = "Value for the specified action"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -919,6 +1077,7 @@ pub mod header_action_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleHeaderActionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleHeaderActionParameters,
     }
+    #[doc = "Action to perform"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HeaderAction {
         Append,
@@ -926,13 +1085,17 @@ pub mod header_action_parameters {
         Delete,
     }
 }
+#[doc = "Defines the parameters for HttpVersion match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpVersionMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: http_version_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: http_version_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
 }
@@ -956,17 +1119,22 @@ pub mod http_version_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleHttpVersionConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleHttpVersionConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equal,
     }
 }
+#[doc = "CDN Ip address group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAddressGroup {
+    #[doc = "The delivery region of the ip address group"]
     #[serde(rename = "deliveryRegion", default, skip_serializing_if = "Option::is_none")]
     pub delivery_region: Option<String>,
+    #[doc = "The list of ip v4 addresses."]
     #[serde(rename = "ipv4Addresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ipv4_addresses: Vec<CidrIpAddress>,
+    #[doc = "The list of ip v6 addresses."]
     #[serde(rename = "ipv6Addresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ipv6_addresses: Vec<CidrIpAddress>,
 }
@@ -975,15 +1143,20 @@ impl IpAddressGroup {
         Self::default()
     }
 }
+#[doc = "Defines the parameters for IsDevice match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IsDeviceMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: is_device_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: is_device_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1008,27 +1181,36 @@ pub mod is_device_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleIsDeviceConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleIsDeviceConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equal,
     }
 }
+#[doc = "Describes the parameters for using a user's KeyVault certificate for securing custom domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultCertificateSourceParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: key_vault_certificate_source_parameters::OdataType,
+    #[doc = "Subscription Id of the user's Key Vault containing the SSL certificate"]
     #[serde(rename = "subscriptionId")]
     pub subscription_id: String,
+    #[doc = "Resource group of the user's Key Vault containing the SSL certificate"]
     #[serde(rename = "resourceGroupName")]
     pub resource_group_name: String,
+    #[doc = "The name of the user's Key Vault containing the SSL certificate"]
     #[serde(rename = "vaultName")]
     pub vault_name: String,
+    #[doc = "The name of Key Vault Secret (representing the full certificate PFX) in Key Vault."]
     #[serde(rename = "secretName")]
     pub secret_name: String,
+    #[doc = "The version(GUID) of Key Vault Secret in Key Vault."]
     #[serde(rename = "secretVersion", default, skip_serializing_if = "Option::is_none")]
     pub secret_version: Option<String>,
+    #[doc = "Describes the action that shall be taken when the certificate is updated in Key Vault."]
     #[serde(rename = "updateRule")]
     pub update_rule: key_vault_certificate_source_parameters::UpdateRule,
+    #[doc = "Describes the action that shall be taken when the certificate is removed from Key Vault."]
     #[serde(rename = "deleteRule")]
     pub delete_rule: key_vault_certificate_source_parameters::DeleteRule,
 }
@@ -1061,17 +1243,21 @@ pub mod key_vault_certificate_source_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.KeyVaultCertificateSourceParameters")]
         MicrosoftAzureCdnModelsKeyVaultCertificateSourceParameters,
     }
+    #[doc = "Describes the action that shall be taken when the certificate is updated in Key Vault."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UpdateRule {
         NoAction,
     }
+    #[doc = "Describes the action that shall be taken when the certificate is removed from Key Vault."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeleteRule {
         NoAction,
     }
 }
+#[doc = "Parameters required for content load."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoadParameters {
+    #[doc = "The path to the content to be loaded. Path should be a relative file URL of the origin."]
     #[serde(rename = "contentPaths")]
     pub content_paths: Vec<String>,
 }
@@ -1080,10 +1266,13 @@ impl LoadParameters {
         Self { content_paths }
     }
 }
+#[doc = "CDN REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -1094,12 +1283,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.Cdn"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Profile, endpoint, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -1109,10 +1302,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list CDN operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsListResult {
+    #[doc = "List of CDN operations supported by the CDN resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1121,6 +1317,7 @@ impl OperationsListResult {
         Self::default()
     }
 }
+#[doc = "Specifies what scenario the customer wants this CDN endpoint to optimize, e.g. Download, Media services. With this information we can apply scenario driven optimization."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OptimizationType {
     GeneralWebDelivery,
@@ -1129,10 +1326,12 @@ pub enum OptimizationType {
     LargeFileDownload,
     DynamicSiteAcceleration,
 }
+#[doc = "CDN origin is the source of the content being delivered via CDN. When the edge nodes represented by an endpoint do not have the requested content cached, they attempt to fetch it from one or more of the configured origins."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Origin {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The JSON object that contains the properties of the origin."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OriginProperties>,
 }
@@ -1144,10 +1343,13 @@ impl Origin {
         }
     }
 }
+#[doc = "Result of the request to list origins. It contains a list of origin objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OriginListResult {
+    #[doc = "List of CDN origins within an endpoint"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Origin>,
+    #[doc = "URL to get the next set of origin objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1156,16 +1358,22 @@ impl OriginListResult {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties of the origin."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OriginProperties {
+    #[doc = "The address of the origin. Domain names, IPv4 addresses, and IPv6 addresses are supported."]
     #[serde(rename = "hostName")]
     pub host_name: String,
+    #[doc = "The value of the HTTP port. Must be between 1 and 65535."]
     #[serde(rename = "httpPort", default, skip_serializing_if = "Option::is_none")]
     pub http_port: Option<i64>,
+    #[doc = "The value of the https port. Must be between 1 and 65535."]
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
+    #[doc = "Resource status of the origin."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<origin_properties::ResourceState>,
+    #[doc = "Provisioning status of the origin."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1182,6 +1390,7 @@ impl OriginProperties {
 }
 pub mod origin_properties {
     use super::*;
+    #[doc = "Resource status of the origin."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
@@ -1189,12 +1398,16 @@ pub mod origin_properties {
         Deleting,
     }
 }
+#[doc = "The JSON object that contains the properties of the origin."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OriginPropertiesParameters {
+    #[doc = "The address of the origin. Domain names, IPv4 addresses, and IPv6 addresses are supported."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "The value of the HTTP port. Must be between 1 and 65535."]
     #[serde(rename = "httpPort", default, skip_serializing_if = "Option::is_none")]
     pub http_port: Option<i64>,
+    #[doc = "The value of the HTTPS port. Must be between 1 and 65535."]
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
 }
@@ -1203,8 +1416,10 @@ impl OriginPropertiesParameters {
         Self::default()
     }
 }
+#[doc = "Origin properties needed for origin creation or update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OriginUpdateParameters {
+    #[doc = "The JSON object that contains the properties of the origin."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OriginPropertiesParameters>,
 }
@@ -1213,17 +1428,23 @@ impl OriginUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Defines the parameters for PostArgs match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PostArgsMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: post_args_match_condition_parameters::OdataType,
+    #[doc = "Name of PostArg to be matched"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
+    #[doc = "Describes operator to be matched"]
     pub operator: post_args_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1249,6 +1470,7 @@ pub mod post_args_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRulePostArgsConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRulePostArgsConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1262,11 +1484,14 @@ pub mod post_args_match_condition_parameters {
         GreaterThanOrEqual,
     }
 }
+#[doc = "CDN profile is a logical grouping of endpoints that share the same settings, such as CDN provider and pricing tier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Profile {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The pricing tier (defines a CDN provider, feature list and rate) of the CDN profile."]
     pub sku: Sku,
+    #[doc = "The JSON object that contains the properties required to create a profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProfileProperties>,
 }
@@ -1279,10 +1504,13 @@ impl Profile {
         }
     }
 }
+#[doc = "Result of the request to list profiles. It contains a list of profile objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileListResult {
+    #[doc = "List of CDN profiles within a resource group."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Profile>,
+    #[doc = "URL to get the next set of profile objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1291,10 +1519,13 @@ impl ProfileListResult {
         Self::default()
     }
 }
+#[doc = "The JSON object that contains the properties required to create a profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileProperties {
+    #[doc = "Resource status of the profile."]
     #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
     pub resource_state: Option<profile_properties::ResourceState>,
+    #[doc = "Provisioning status of the profile."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1305,6 +1536,7 @@ impl ProfileProperties {
 }
 pub mod profile_properties {
     use super::*;
+    #[doc = "Resource status of the profile."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResourceState {
         Creating,
@@ -1313,8 +1545,10 @@ pub mod profile_properties {
         Disabled,
     }
 }
+#[doc = "Properties required to update a profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileUpdateParameters {
+    #[doc = "Profile tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1323,6 +1557,7 @@ impl ProfileUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -1333,8 +1568,10 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Parameters required for content purge."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PurgeParameters {
+    #[doc = "The path to the content to be purged. Can describe a file path or a wild card directory."]
     #[serde(rename = "contentPaths")]
     pub content_paths: Vec<String>,
 }
@@ -1343,6 +1580,7 @@ impl PurgeParameters {
         Self { content_paths }
     }
 }
+#[doc = "Defines how CDN caches requests that include query strings. You can ignore any query strings when caching, bypass caching to prevent requests that contain query strings from being cached, or cache every request with a unique URL."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum QueryStringCachingBehavior {
     IgnoreQueryString,
@@ -1350,15 +1588,20 @@ pub enum QueryStringCachingBehavior {
     UseQueryString,
     NotSet,
 }
+#[doc = "Defines the parameters for QueryString match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryStringMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: query_string_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: query_string_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1383,6 +1626,7 @@ pub mod query_string_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleQueryStringConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleQueryStringConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1396,15 +1640,20 @@ pub mod query_string_match_condition_parameters {
         GreaterThanOrEqual,
     }
 }
+#[doc = "Defines the parameters for RemoteAddress match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemoteAddressMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: remote_address_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: remote_address_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "Match values to match against. The operator will apply to each value in here with OR semantics. If any of them match the variable with the given operator this match condition is considered a match."]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1429,6 +1678,7 @@ pub mod remote_address_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRemoteAddressConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleRemoteAddressConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1437,15 +1687,20 @@ pub mod remote_address_match_condition_parameters {
         GeoMatch,
     }
 }
+#[doc = "Defines the parameters for RequestBody match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestBodyMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: request_body_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: request_body_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1470,6 +1725,7 @@ pub mod request_body_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestBodyConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleRequestBodyConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1483,17 +1739,23 @@ pub mod request_body_match_condition_parameters {
         GreaterThanOrEqual,
     }
 }
+#[doc = "Defines the parameters for RequestHeader match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestHeaderMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: request_header_match_condition_parameters::OdataType,
+    #[doc = "Name of Header to be matched"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
+    #[doc = "Describes operator to be matched"]
     pub operator: request_header_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1519,6 +1781,7 @@ pub mod request_header_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestHeaderConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleRequestHeaderConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1532,13 +1795,17 @@ pub mod request_header_match_condition_parameters {
         GreaterThanOrEqual,
     }
 }
+#[doc = "Defines the parameters for RequestMethod match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestMethodMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: request_method_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: request_method_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
 }
@@ -1562,18 +1829,23 @@ pub mod request_method_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestMethodConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleRequestMethodConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equal,
     }
 }
+#[doc = "Defines the parameters for RequestScheme match conditions "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestSchemeMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: request_scheme_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: request_scheme_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
 }
@@ -1597,20 +1869,26 @@ pub mod request_scheme_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestSchemeConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleRequestSchemeConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equal,
     }
 }
+#[doc = "Defines the parameters for RequestUri match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RequestUriMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: request_uri_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: request_uri_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1635,6 +1913,7 @@ pub mod request_uri_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleRequestUriConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleRequestUriConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1648,12 +1927,16 @@ pub mod request_uri_match_condition_parameters {
         GreaterThanOrEqual,
     }
 }
+#[doc = "The core properties of ARM resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1662,19 +1945,25 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Type of CDN resource used in CheckNameAvailability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ResourceType {
     #[serde(rename = "Microsoft.Cdn/Profiles/Endpoints")]
     MicrosoftCdnProfilesEndpoints,
 }
+#[doc = "Output of check resource usage API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceUsage {
+    #[doc = "Resource type for which the usage is provided."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Unit of the usage. e.g. Count."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Actual value of usage on the specified resource type."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i64>,
+    #[doc = "Quota of the specified resource type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
 }
@@ -1683,10 +1972,13 @@ impl ResourceUsage {
         Self::default()
     }
 }
+#[doc = "Output of check resource usage API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceUsageListResult {
+    #[doc = "List of resource usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceUsage>,
+    #[doc = "URL to get the next set of custom domain objects if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1695,8 +1987,10 @@ impl ResourceUsageListResult {
         Self::default()
     }
 }
+#[doc = "The pricing tier (defines a CDN provider, feature list and rate) of the CDN profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
+    #[doc = "Name of the pricing tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
 }
@@ -1707,6 +2001,7 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Name of the pricing tier."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "Standard_Verizon")]
@@ -1725,8 +2020,10 @@ pub mod sku {
         PremiumChinaCdn,
     }
 }
+#[doc = "The URI required to login to the supplemental portal from the Azure portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SsoUri {
+    #[doc = "The URI used to login to the supplemental portal."]
     #[serde(rename = "ssoUriValue", default, skip_serializing_if = "Option::is_none")]
     pub sso_uri_value: Option<String>,
 }
@@ -1735,8 +2032,10 @@ impl SsoUri {
         Self::default()
     }
 }
+#[doc = "The result of the GetSupportedOptimizationTypes API"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedOptimizationTypesListResult {
+    #[doc = "Supported optimization types for a profile."]
     #[serde(rename = "supportedOptimizationTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_optimization_types: Vec<OptimizationType>,
 }
@@ -1745,11 +2044,14 @@ impl SupportedOptimizationTypesListResult {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a ARM tracked top level resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource location."]
     pub location: String,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1762,15 +2064,20 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "Defines the parameters for UrlFileExtension match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileExtensionMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: url_file_extension_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: url_file_extension_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1795,6 +2102,7 @@ pub mod url_file_extension_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFileExtensionMatchConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleUrlFileExtensionMatchConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1808,15 +2116,20 @@ pub mod url_file_extension_match_condition_parameters {
         GreaterThanOrEqual,
     }
 }
+#[doc = "Defines the parameters for UrlFilename match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlFileNameMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: url_file_name_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: url_file_name_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1841,6 +2154,7 @@ pub mod url_file_name_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlFilenameConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleUrlFilenameConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1854,15 +2168,20 @@ pub mod url_file_name_match_condition_parameters {
         GreaterThanOrEqual,
     }
 }
+#[doc = "Defines the parameters for UrlPath match conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlPathMatchConditionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: url_path_match_condition_parameters::OdataType,
+    #[doc = "Describes operator to be matched"]
     pub operator: url_path_match_condition_parameters::Operator,
+    #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
     pub negate_condition: Option<bool>,
+    #[doc = "The match value for the condition of the delivery rule"]
     #[serde(rename = "matchValues", default, skip_serializing_if = "Vec::is_empty")]
     pub match_values: Vec<String>,
+    #[doc = "List of transforms"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transforms: Vec<Transform>,
 }
@@ -1887,6 +2206,7 @@ pub mod url_path_match_condition_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlPathMatchConditionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleUrlPathMatchConditionParameters,
     }
+    #[doc = "Describes operator to be matched"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Any,
@@ -1901,10 +2221,12 @@ pub mod url_path_match_condition_parameters {
         Wildcard,
     }
 }
+#[doc = "Defines the url redirect action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRedirectAction {
     #[serde(flatten)]
     pub delivery_rule_action: DeliveryRuleAction,
+    #[doc = "Defines the parameters for the url redirect action."]
     pub parameters: UrlRedirectActionParameters,
 }
 impl UrlRedirectAction {
@@ -1915,20 +2237,27 @@ impl UrlRedirectAction {
         }
     }
 }
+#[doc = "Defines the parameters for the url redirect action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRedirectActionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: url_redirect_action_parameters::OdataType,
+    #[doc = "The redirect type the rule will use when redirecting traffic."]
     #[serde(rename = "redirectType")]
     pub redirect_type: url_redirect_action_parameters::RedirectType,
+    #[doc = "Protocol to use for the redirect. The default value is MatchRequest"]
     #[serde(rename = "destinationProtocol", default, skip_serializing_if = "Option::is_none")]
     pub destination_protocol: Option<url_redirect_action_parameters::DestinationProtocol>,
+    #[doc = "The full path to redirect. Path cannot be empty and must start with /. Leave empty to use the incoming path as destination path."]
     #[serde(rename = "customPath", default, skip_serializing_if = "Option::is_none")]
     pub custom_path: Option<String>,
+    #[doc = "Host to redirect. Leave empty to use the incoming host as the destination host."]
     #[serde(rename = "customHostname", default, skip_serializing_if = "Option::is_none")]
     pub custom_hostname: Option<String>,
+    #[doc = "The set of query strings to be placed in the redirect URL. Setting this value would replace any existing query string; leave empty to preserve the incoming query string. Query string must be in <key>=<value> format. ? and & will be added automatically so do not include them."]
     #[serde(rename = "customQueryString", default, skip_serializing_if = "Option::is_none")]
     pub custom_query_string: Option<String>,
+    #[doc = "Fragment to add to the redirect URL. Fragment is the part of the URL that comes after #. Do not include the #."]
     #[serde(rename = "customFragment", default, skip_serializing_if = "Option::is_none")]
     pub custom_fragment: Option<String>,
 }
@@ -1952,6 +2281,7 @@ pub mod url_redirect_action_parameters {
         #[serde(rename = "#Microsoft.Azure.Cdn.Models.DeliveryRuleUrlRedirectActionParameters")]
         MicrosoftAzureCdnModelsDeliveryRuleUrlRedirectActionParameters,
     }
+    #[doc = "The redirect type the rule will use when redirecting traffic."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RedirectType {
         Moved,
@@ -1959,6 +2289,7 @@ pub mod url_redirect_action_parameters {
         TemporaryRedirect,
         PermanentRedirect,
     }
+    #[doc = "Protocol to use for the redirect. The default value is MatchRequest"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DestinationProtocol {
         MatchRequest,
@@ -1966,10 +2297,12 @@ pub mod url_redirect_action_parameters {
         Https,
     }
 }
+#[doc = "Defines the url rewrite action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRewriteAction {
     #[serde(flatten)]
     pub delivery_rule_action: DeliveryRuleAction,
+    #[doc = "Defines the parameters for the url rewrite action."]
     pub parameters: UrlRewriteActionParameters,
 }
 impl UrlRewriteAction {
@@ -1980,13 +2313,17 @@ impl UrlRewriteAction {
         }
     }
 }
+#[doc = "Defines the parameters for the url rewrite action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRewriteActionParameters {
     #[serde(rename = "@odata.type")]
     pub odata_type: url_rewrite_action_parameters::OdataType,
+    #[doc = "define a request URI pattern that identifies the type of requests that may be rewritten. Currently, source pattern uses a prefix-based match. To match all URL paths, use \"/\" as the source pattern value. To match only the root directory and re-write this path, use the origin path field"]
     #[serde(rename = "sourcePattern")]
     pub source_pattern: String,
+    #[doc = "Define the destination path for be used in the rewrite. This will overwrite the source pattern "]
     pub destination: String,
+    #[doc = "If True, the remaining path after the source pattern will be appended to the new destination path.  "]
     #[serde(rename = "preserveUnmatchedPath", default, skip_serializing_if = "Option::is_none")]
     pub preserve_unmatched_path: Option<bool>,
 }
@@ -2008,10 +2345,12 @@ pub mod url_rewrite_action_parameters {
         MicrosoftAzureCdnModelsDeliveryRuleUrlRewriteActionParameters,
     }
 }
+#[doc = "Defines the certificate source parameters using user's keyvault certificate for enabling SSL."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserManagedHttpsParameters {
     #[serde(flatten)]
     pub custom_domain_https_parameters: CustomDomainHttpsParameters,
+    #[doc = "Describes the parameters for using a user's KeyVault certificate for securing custom domain."]
     #[serde(rename = "certificateSourceParameters")]
     pub certificate_source_parameters: KeyVaultCertificateSourceParameters,
 }
@@ -2026,8 +2365,10 @@ impl UserManagedHttpsParameters {
         }
     }
 }
+#[doc = "Input of the custom domain to be validated for DNS mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateCustomDomainInput {
+    #[doc = "The host name of the custom domain. Must be a domain name."]
     #[serde(rename = "hostName")]
     pub host_name: String,
 }
@@ -2036,12 +2377,16 @@ impl ValidateCustomDomainInput {
         Self { host_name }
     }
 }
+#[doc = "Output of custom domain validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateCustomDomainOutput {
+    #[doc = "Indicates whether the custom domain is valid or not."]
     #[serde(rename = "customDomainValidated", default, skip_serializing_if = "Option::is_none")]
     pub custom_domain_validated: Option<bool>,
+    #[doc = "The reason why the custom domain is not valid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "Error message describing why the custom domain is not valid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -2050,8 +2395,10 @@ impl ValidateCustomDomainOutput {
         Self::default()
     }
 }
+#[doc = "Input of the validate probe API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateProbeInput {
+    #[doc = "The probe URL to validate."]
     #[serde(rename = "probeURL")]
     pub probe_url: String,
 }
@@ -2060,12 +2407,16 @@ impl ValidateProbeInput {
         Self { probe_url }
     }
 }
+#[doc = "Output of the validate probe API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateProbeOutput {
+    #[doc = "Indicates whether the probe URL is accepted or not."]
     #[serde(rename = "isValid", default, skip_serializing_if = "Option::is_none")]
     pub is_valid: Option<bool>,
+    #[doc = "Specifies the error code when the probe url is not accepted."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[doc = "The detailed error message describing why the probe URL is not accepted."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -2074,10 +2425,13 @@ impl ValidateProbeOutput {
         Self::default()
     }
 }
+#[doc = "CIDR Ip address"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CidrIpAddress {
+    #[doc = "Ip address itself."]
     #[serde(rename = "baseIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub base_ip_address: Option<String>,
+    #[doc = "The length of the prefix of the ip address."]
     #[serde(rename = "prefixLength", default, skip_serializing_if = "Option::is_none")]
     pub prefix_length: Option<i64>,
 }
@@ -2086,6 +2440,7 @@ impl CidrIpAddress {
         Self::default()
     }
 }
+#[doc = "Describes what transforms are applied before matching"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Transform {
     Lowercase,

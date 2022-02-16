@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The action that will be executed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Action {
+    #[doc = "The type of the action."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<action::ActionType>,
 }
@@ -14,20 +16,26 @@ impl Action {
 }
 pub mod action {
     use super::*;
+    #[doc = "The type of the action."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActionType {
         EmailContacts,
         AutoRenew,
     }
 }
+#[doc = "Details of the organization administrator of the certificate issuer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdministratorDetails {
+    #[doc = "First name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub first_name: Option<String>,
+    #[doc = "Last name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_name: Option<String>,
+    #[doc = "Email address."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    #[doc = "Phone number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub phone: Option<String>,
 }
@@ -36,16 +44,22 @@ impl AdministratorDetails {
         Self::default()
     }
 }
+#[doc = "The object attributes managed by the KeyVault service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Attributes {
+    #[doc = "Determines whether the object is enabled"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "Not before date in seconds since 1970-01-01T00:00:00Z"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nbf: Option<i64>,
+    #[doc = "Expiry date in seconds since 1970-01-01T00:00:00Z"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exp: Option<i64>,
+    #[doc = "Creation time in seconds since 1970-01-01T00:00:00Z"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<i64>,
+    #[doc = "Last updated time in seconds since 1970-01-01T00:00:00Z"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated: Option<i64>,
 }
@@ -54,8 +68,10 @@ impl Attributes {
         Self::default()
     }
 }
+#[doc = "The backup key result, containing the backup blob"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupKeyResult {
+    #[doc = "The backup blob containing the backed up key"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -64,6 +80,7 @@ impl BackupKeyResult {
         Self::default()
     }
 }
+#[doc = "The certificate management attributes"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateAttributes {
     #[serde(flatten)]
@@ -74,24 +91,34 @@ impl CertificateAttributes {
         Self::default()
     }
 }
+#[doc = "A certificate bundle consists of a certificate (X509) plus its attributes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateBundle {
+    #[doc = "The certificate id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The key id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
+    #[doc = "The secret id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sid: Option<String>,
+    #[doc = "Thumbprint of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x5t: Option<String>,
+    #[doc = "Management policy for a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<CertificatePolicy>,
+    #[doc = "CER contents of x509 certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cer: Option<String>,
+    #[doc = "The content type of the secret"]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
+    #[doc = "The certificate management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<CertificateAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -100,12 +127,16 @@ impl CertificateBundle {
         Self::default()
     }
 }
+#[doc = "The certificate create parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateCreateParameters {
+    #[doc = "Management policy for a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<CertificatePolicy>,
+    #[doc = "The certificate management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<CertificateAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -114,15 +145,21 @@ impl CertificateCreateParameters {
         Self::default()
     }
 }
+#[doc = "The certificate import parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateImportParameters {
+    #[doc = "Base64 encoded representation of the certificate object to import. This certificate needs to contain the private key."]
     pub value: String,
+    #[doc = "If the private key in base64EncodedCertificate is encrypted, the password used for encryption"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pwd: Option<String>,
+    #[doc = "Management policy for a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<CertificatePolicy>,
+    #[doc = "The certificate management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<CertificateAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -137,10 +174,13 @@ impl CertificateImportParameters {
         }
     }
 }
+#[doc = "The certificate issuer item containing certificate issuer metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateIssuerItem {
+    #[doc = "Certificate Identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The issuer provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
 }
@@ -149,10 +189,13 @@ impl CertificateIssuerItem {
         Self::default()
     }
 }
+#[doc = "The certificate issuer list result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateIssuerListResult {
+    #[doc = "A response message containing a list of certificate issuers in the vault along with a link to the next page of certificate issuers"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CertificateIssuerItem>,
+    #[doc = "The URL to get the next set of certificate issuers."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -161,13 +204,18 @@ impl CertificateIssuerListResult {
         Self::default()
     }
 }
+#[doc = "The certificate issuer set parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateIssuerSetParameters {
+    #[doc = "The issuer provider."]
     pub provider: String,
+    #[doc = "The credentials to be used for the certificate issuer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<IssuerCredentials>,
+    #[doc = "Details of the organization of the certificate issuer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub org_details: Option<OrganizationDetails>,
+    #[doc = "The attributes of an issuer managed by the KeyVault service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<IssuerAttributes>,
 }
@@ -181,14 +229,19 @@ impl CertificateIssuerSetParameters {
         }
     }
 }
+#[doc = "The certificate issuer update parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateIssuerUpdateParameters {
+    #[doc = "The issuer provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The credentials to be used for the certificate issuer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<IssuerCredentials>,
+    #[doc = "Details of the organization of the certificate issuer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub org_details: Option<OrganizationDetails>,
+    #[doc = "The attributes of an issuer managed by the KeyVault service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<IssuerAttributes>,
 }
@@ -197,14 +250,19 @@ impl CertificateIssuerUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The certificate item containing certificate metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateItem {
+    #[doc = "Certificate Identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The certificate management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<CertificateAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Thumbprint of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x5t: Option<String>,
 }
@@ -213,10 +271,13 @@ impl CertificateItem {
         Self::default()
     }
 }
+#[doc = "The certificate list result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateListResult {
+    #[doc = "A response message containing a list of certificates in the vault along with a link to the next page of certificates"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CertificateItem>,
+    #[doc = "The URL to get the next set of certificates."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -225,11 +286,15 @@ impl CertificateListResult {
         Self::default()
     }
 }
+#[doc = "The certificate merge parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateMergeParameters {
+    #[doc = "The certificate or the certificate chain to merge"]
     pub x5c: Vec<String>,
+    #[doc = "The certificate management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<CertificateAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -242,24 +307,34 @@ impl CertificateMergeParameters {
         }
     }
 }
+#[doc = "A certificate operation is returned in case of async requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateOperation {
+    #[doc = "The certificate id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Parameters for the issuer of the X509 component of a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub issuer: Option<IssuerParameters>,
+    #[doc = "The Certificate Signing Request (CSR) that is being used in the certificate operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub csr: Option<String>,
+    #[doc = "Indicates if cancellation was requested on the certificate operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cancellation_requested: Option<bool>,
+    #[doc = "Status of the certificate operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The status details of the certificate operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_details: Option<String>,
+    #[doc = "The key vault server error"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
+    #[doc = "Location which contains the result of the certificate operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Identifier for the certificate operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
 }
@@ -268,8 +343,10 @@ impl CertificateOperation {
         Self::default()
     }
 }
+#[doc = "The certificate operation update parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateOperationUpdateParameter {
+    #[doc = "Indicates if cancellation was requested on the certificate operation."]
     pub cancellation_requested: bool,
 }
 impl CertificateOperationUpdateParameter {
@@ -277,20 +354,28 @@ impl CertificateOperationUpdateParameter {
         Self { cancellation_requested }
     }
 }
+#[doc = "Management policy for a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificatePolicy {
+    #[doc = "The certificate id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Properties of the key pair backing a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key_props: Option<KeyProperties>,
+    #[doc = "Properties of the key backing a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret_props: Option<SecretProperties>,
+    #[doc = "Properties of the X509 component of a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x509_props: Option<X509CertificateProperties>,
+    #[doc = "Actions that will be performed by Key Vault over the lifetime of a certificate."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub lifetime_actions: Vec<LifetimeAction>,
+    #[doc = "Parameters for the issuer of the X509 component of a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub issuer: Option<IssuerParameters>,
+    #[doc = "The certificate management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<CertificateAttributes>,
 }
@@ -299,12 +384,16 @@ impl CertificatePolicy {
         Self::default()
     }
 }
+#[doc = "The certificate update parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateUpdateParameters {
+    #[doc = "Management policy for a certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<CertificatePolicy>,
+    #[doc = "The certificate management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<CertificateAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -313,12 +402,16 @@ impl CertificateUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The contact information for the vault certificates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Contact {
+    #[doc = "Email address."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    #[doc = "Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Phone number."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub phone: Option<String>,
 }
@@ -327,10 +420,13 @@ impl Contact {
         Self::default()
     }
 }
+#[doc = "The contacts for the vault certificates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Contacts {
+    #[doc = "Identifier for the contacts collection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The contact list for the vault certificates."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contacts: Vec<Contact>,
 }
@@ -339,10 +435,13 @@ impl Contacts {
         Self::default()
     }
 }
+#[doc = "The key vault server error"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -351,12 +450,16 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "The attributes of an issuer managed by the KeyVault service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssuerAttributes {
+    #[doc = "Determines whether the issuer is enabled"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "Creation time in seconds since 1970-01-01T00:00:00Z"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created: Option<i64>,
+    #[doc = "Last updated time in seconds since 1970-01-01T00:00:00Z"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated: Option<i64>,
 }
@@ -365,16 +468,22 @@ impl IssuerAttributes {
         Self::default()
     }
 }
+#[doc = "The issuer for Key Vault certificate"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssuerBundle {
+    #[doc = "Identifier for the issuer object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The issuer provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The credentials to be used for the certificate issuer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<IssuerCredentials>,
+    #[doc = "Details of the organization of the certificate issuer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub org_details: Option<OrganizationDetails>,
+    #[doc = "The attributes of an issuer managed by the KeyVault service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<IssuerAttributes>,
 }
@@ -383,10 +492,13 @@ impl IssuerBundle {
         Self::default()
     }
 }
+#[doc = "The credentials to be used for the certificate issuer."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssuerCredentials {
+    #[doc = "The user name/account name/account id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
+    #[doc = "The password/secret/account key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pwd: Option<String>,
 }
@@ -395,10 +507,13 @@ impl IssuerCredentials {
         Self::default()
     }
 }
+#[doc = "Parameters for the issuer of the X509 component of a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssuerParameters {
+    #[doc = "Name of the referenced issuer object or reserved names e.g. 'Self', 'Unknown'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of certificate to be requested from the issuer provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cty: Option<String>,
 }
@@ -407,32 +522,45 @@ impl IssuerParameters {
         Self::default()
     }
 }
+#[doc = "As of http://tools.ietf.org/html/draft-ietf-jose-json-web-key-18"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonWebKey {
+    #[doc = "Key Identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
+    #[doc = "Supported JsonWebKey key types (kty) for Elliptic Curve, RSA, HSM, Octet, usually RSA"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kty: Option<json_web_key::Kty>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub key_ops: Vec<String>,
+    #[doc = "RSA modulus"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub n: Option<String>,
+    #[doc = "RSA public exponent"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub e: Option<String>,
+    #[doc = "RSA private exponent"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub d: Option<String>,
+    #[doc = "RSA Private Key Parameter"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dp: Option<String>,
+    #[doc = "RSA Private Key Parameter"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dq: Option<String>,
+    #[doc = "RSA Private Key Parameter"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub qi: Option<String>,
+    #[doc = "RSA secret prime"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub p: Option<String>,
+    #[doc = "RSA secret prime, with p < q"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub q: Option<String>,
+    #[doc = "Symmetric key"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub k: Option<String>,
+    #[doc = "HSM Token, used with Bring Your Own Key"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key_hsm: Option<String>,
 }
@@ -443,6 +571,7 @@ impl JsonWebKey {
 }
 pub mod json_web_key {
     use super::*;
+    #[doc = "Supported JsonWebKey key types (kty) for Elliptic Curve, RSA, HSM, Octet, usually RSA"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kty {
         #[serde(rename = "EC")]
@@ -455,6 +584,7 @@ pub mod json_web_key {
         Oct,
     }
 }
+#[doc = "The attributes of a key managed by the KeyVault service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyAttributes {
     #[serde(flatten)]
@@ -465,14 +595,19 @@ impl KeyAttributes {
         Self::default()
     }
 }
+#[doc = "A KeyBundle consisting of a WebKey plus its Attributes"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyBundle {
+    #[doc = "As of http://tools.ietf.org/html/draft-ietf-jose-json-web-key-18"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<JsonWebKey>,
+    #[doc = "The attributes of a key managed by the KeyVault service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<KeyAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "True if the key's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 }
@@ -481,15 +616,20 @@ impl KeyBundle {
         Self::default()
     }
 }
+#[doc = "The key create parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyCreateParameters {
+    #[doc = "The type of key to create. Valid key types, see JsonWebKeyType. Supported JsonWebKey key types (kty) for Elliptic Curve, RSA, HSM, Octet"]
     pub kty: key_create_parameters::Kty,
+    #[doc = "The key size in bits. e.g. 1024 or 2048."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key_size: Option<i32>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub key_ops: Vec<String>,
+    #[doc = "The attributes of a key managed by the KeyVault service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<KeyAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -506,6 +646,7 @@ impl KeyCreateParameters {
 }
 pub mod key_create_parameters {
     use super::*;
+    #[doc = "The type of key to create. Valid key types, see JsonWebKeyType. Supported JsonWebKey key types (kty) for Elliptic Curve, RSA, HSM, Octet"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kty {
         #[serde(rename = "EC")]
@@ -518,13 +659,18 @@ pub mod key_create_parameters {
         Oct,
     }
 }
+#[doc = "The key import parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyImportParameters {
+    #[doc = "Whether to import as a hardware key (HSM) or software key"]
     #[serde(rename = "Hsm", default, skip_serializing_if = "Option::is_none")]
     pub hsm: Option<bool>,
+    #[doc = "As of http://tools.ietf.org/html/draft-ietf-jose-json-web-key-18"]
     pub key: JsonWebKey,
+    #[doc = "The attributes of a key managed by the KeyVault service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<KeyAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -538,14 +684,19 @@ impl KeyImportParameters {
         }
     }
 }
+#[doc = "The key item containing key metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyItem {
+    #[doc = "Key Identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
+    #[doc = "The attributes of a key managed by the KeyVault service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<KeyAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "True if the key's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 }
@@ -554,10 +705,13 @@ impl KeyItem {
         Self::default()
     }
 }
+#[doc = "The key list result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyListResult {
+    #[doc = "A response message containing a list of keys in the vault along with a link to the next page of keys"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<KeyItem>,
+    #[doc = "The URL to get the next set of keys."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -566,8 +720,10 @@ impl KeyListResult {
         Self::default()
     }
 }
+#[doc = "The key operation result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyOperationResult {
+    #[doc = "Key identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -578,8 +734,10 @@ impl KeyOperationResult {
         Self::default()
     }
 }
+#[doc = "The key operations parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyOperationsParameters {
+    #[doc = "algorithm identifier"]
     pub alg: key_operations_parameters::Alg,
     pub value: String,
 }
@@ -590,6 +748,7 @@ impl KeyOperationsParameters {
 }
 pub mod key_operations_parameters {
     use super::*;
+    #[doc = "algorithm identifier"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Alg {
         #[serde(rename = "RSA-OAEP")]
@@ -600,14 +759,19 @@ pub mod key_operations_parameters {
         Rsa15,
     }
 }
+#[doc = "Properties of the key pair backing a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyProperties {
+    #[doc = "Indicates if the private key can be exported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exportable: Option<bool>,
+    #[doc = "The key type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kty: Option<String>,
+    #[doc = "The key size in bits. e.g. 2048."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key_size: Option<i32>,
+    #[doc = "Indicates if the same key pair will be used on certificate renewal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reuse_key: Option<bool>,
 }
@@ -616,8 +780,10 @@ impl KeyProperties {
         Self::default()
     }
 }
+#[doc = "The key restore parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyRestoreParameters {
+    #[doc = "the backup blob associated with a key bundle"]
     pub value: String,
 }
 impl KeyRestoreParameters {
@@ -625,8 +791,10 @@ impl KeyRestoreParameters {
         Self { value }
     }
 }
+#[doc = "The key operations parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeySignParameters {
+    #[doc = "The signing/verification algorithm identifier. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm."]
     pub alg: key_sign_parameters::Alg,
     pub value: String,
 }
@@ -637,6 +805,7 @@ impl KeySignParameters {
 }
 pub mod key_sign_parameters {
     use super::*;
+    #[doc = "The signing/verification algorithm identifier. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Alg {
         #[serde(rename = "PS256")]
@@ -655,12 +824,16 @@ pub mod key_sign_parameters {
         Rsnull,
     }
 }
+#[doc = "The key update parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyUpdateParameters {
+    #[doc = "Json web key operations. For more information on possible key operations, see JsonWebKeyOperation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub key_ops: Vec<String>,
+    #[doc = "The attributes of a key managed by the KeyVault service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<KeyAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -669,8 +842,10 @@ impl KeyUpdateParameters {
         Self::default()
     }
 }
+#[doc = "the key vault error exception"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVaultError {
+    #[doc = "The key vault server error"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
 }
@@ -679,10 +854,14 @@ impl KeyVaultError {
         Self::default()
     }
 }
+#[doc = "The key verify parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVerifyParameters {
+    #[doc = "The signing/verification algorithm. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm."]
     pub alg: key_verify_parameters::Alg,
+    #[doc = "The digest used for signing"]
     pub digest: String,
+    #[doc = "The signature to be verified"]
     pub value: String,
 }
 impl KeyVerifyParameters {
@@ -692,6 +871,7 @@ impl KeyVerifyParameters {
 }
 pub mod key_verify_parameters {
     use super::*;
+    #[doc = "The signing/verification algorithm. For more information on possible algorithm types, see JsonWebKeySignatureAlgorithm."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Alg {
         #[serde(rename = "PS256")]
@@ -710,8 +890,10 @@ pub mod key_verify_parameters {
         Rsnull,
     }
 }
+#[doc = "The key verify result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KeyVerifyResult {
+    #[doc = "true if the signature is verified, false otherwise."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<bool>,
 }
@@ -720,10 +902,13 @@ impl KeyVerifyResult {
         Self::default()
     }
 }
+#[doc = "Action and its trigger that will be performed by Key Vault over the lifetime of a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LifetimeAction {
+    #[doc = "A condition to be satisfied for an action to be executed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trigger: Option<Trigger>,
+    #[doc = "The action that will be executed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<Action>,
 }
@@ -732,10 +917,13 @@ impl LifetimeAction {
         Self::default()
     }
 }
+#[doc = "Details of the organization of the certificate issuer."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OrganizationDetails {
+    #[doc = "Id of the organization."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Details of the organization administrator."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub admin_details: Vec<AdministratorDetails>,
 }
@@ -744,8 +932,10 @@ impl OrganizationDetails {
         Self::default()
     }
 }
+#[doc = "The pending certificate signing request result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PendingCertificateSigningRequestResult {
+    #[doc = "The pending certificate signing request as Base64 encoded string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -754,6 +944,7 @@ impl PendingCertificateSigningRequestResult {
         Self::default()
     }
 }
+#[doc = "The secret management attributes"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretAttributes {
     #[serde(flatten)]
@@ -764,20 +955,28 @@ impl SecretAttributes {
         Self::default()
     }
 }
+#[doc = "A Secret consisting of a value, id and its attributes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretBundle {
+    #[doc = "The secret value "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "The secret id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The content type of the secret"]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
+    #[doc = "The secret management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<SecretAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "If this is a secret backing a KV certificate, then this field specifies the corresponding key backing the KV certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kid: Option<String>,
+    #[doc = "True if the secret's lifetime is managed by key vault i.e. if this is a secret backing a certificate, then managed will be true."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 }
@@ -786,16 +985,22 @@ impl SecretBundle {
         Self::default()
     }
 }
+#[doc = "The secret item containing secret metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretItem {
+    #[doc = "Secret Identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The secret management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<SecretAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Type of the secret value such as a password"]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
+    #[doc = "True if the secret's lifetime is managed by key vault i.e. if this is a key backing a certificate, then managed will be true."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
 }
@@ -804,10 +1009,13 @@ impl SecretItem {
         Self::default()
     }
 }
+#[doc = "The secret list result"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretListResult {
+    #[doc = "A response message containing a list of secrets in the vault along with a link to the next page of secrets"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecretItem>,
+    #[doc = "The URL to get the next set of secrets."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -816,8 +1024,10 @@ impl SecretListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the key backing a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretProperties {
+    #[doc = "The media type (MIME type)."]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
 }
@@ -826,13 +1036,18 @@ impl SecretProperties {
         Self::default()
     }
 }
+#[doc = "The secret set parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretSetParameters {
+    #[doc = "The value of the secret"]
     pub value: String,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Type of the secret value such as a password"]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
+    #[doc = "The secret management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<SecretAttributes>,
 }
@@ -846,12 +1061,16 @@ impl SecretSetParameters {
         }
     }
 }
+#[doc = "The secret update parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretUpdateParameters {
+    #[doc = "Type of the secret value such as a password"]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
+    #[doc = "The secret management attributes"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<SecretAttributes>,
+    #[doc = "Application-specific metadata in the form of key-value pairs"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -860,12 +1079,16 @@ impl SecretUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The subject alternate names of a X509 object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubjectAlternativeNames {
+    #[doc = "Email addresses."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub emails: Vec<String>,
+    #[doc = "Domain names."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dns_names: Vec<String>,
+    #[doc = "User principal names."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upns: Vec<String>,
 }
@@ -874,10 +1097,13 @@ impl SubjectAlternativeNames {
         Self::default()
     }
 }
+#[doc = "A condition to be satisfied for an action to be executed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Trigger {
+    #[doc = "Percentage of lifetime as which to trigger. Value should be between 1 and 99."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lifetime_percentage: Option<i32>,
+    #[doc = "Days before expiry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub days_before_expiry: Option<i32>,
 }
@@ -886,16 +1112,22 @@ impl Trigger {
         Self::default()
     }
 }
+#[doc = "Properties of the X509 component of a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct X509CertificateProperties {
+    #[doc = "The subject name. Should be a valid X509 Distinguished Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subject: Option<String>,
+    #[doc = "The enhanced key usage."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ekus: Vec<String>,
+    #[doc = "The subject alternate names of a X509 object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sans: Option<SubjectAlternativeNames>,
+    #[doc = "List of key usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub key_usage: Vec<String>,
+    #[doc = "The duration that the certificate is valid in months."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub validity_months: Option<i32>,
 }

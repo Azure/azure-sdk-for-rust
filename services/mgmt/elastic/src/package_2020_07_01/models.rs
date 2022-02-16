@@ -2,16 +2,22 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Company information of the user to be passed to partners."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CompanyInfo {
+    #[doc = "Domain of the company"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub domain: Option<String>,
+    #[doc = "Business of the company"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub business: Option<String>,
+    #[doc = "Number of employees in the company"]
     #[serde(rename = "employeesNumber", default, skip_serializing_if = "Option::is_none")]
     pub employees_number: Option<String>,
+    #[doc = "State of the company location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
+    #[doc = "Country of the company location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
 }
@@ -20,14 +26,19 @@ impl CompanyInfo {
         Self::default()
     }
 }
+#[doc = "The properties of deployment in Elastic cloud corresponding to the Elastic monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentInfoResponse {
+    #[doc = "Flag specifying if the Elastic deployment status is healthy or not."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ElasticDeploymentStatus>,
+    #[doc = "Version of the elasticsearch in Elastic cloud deployment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "RAM capacity of the elasticsearch in Elastic cloud deployment."]
     #[serde(rename = "memoryCapacity", default, skip_serializing_if = "Option::is_none")]
     pub memory_capacity: Option<String>,
+    #[doc = "Disk capacity of the elasticsearch in Elastic cloud deployment."]
     #[serde(rename = "diskCapacity", default, skip_serializing_if = "Option::is_none")]
     pub disk_capacity: Option<String>,
 }
@@ -36,20 +47,28 @@ impl DeploymentInfoResponse {
         Self::default()
     }
 }
+#[doc = "Details of the user's elastic deployment associated with the monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticCloudDeployment {
+    #[doc = "Elastic deployment name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Elastic deployment Id"]
     #[serde(rename = "deploymentId", default, skip_serializing_if = "Option::is_none")]
     pub deployment_id: Option<String>,
+    #[doc = "Associated Azure subscription Id for the elastic deployment."]
     #[serde(rename = "azureSubscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub azure_subscription_id: Option<String>,
+    #[doc = "Region where Deployment at Elastic side took place."]
     #[serde(rename = "elasticsearchRegion", default, skip_serializing_if = "Option::is_none")]
     pub elasticsearch_region: Option<String>,
+    #[doc = "Elasticsearch ingestion endpoint of the Elastic deployment."]
     #[serde(rename = "elasticsearchServiceUrl", default, skip_serializing_if = "Option::is_none")]
     pub elasticsearch_service_url: Option<String>,
+    #[doc = "Kibana endpoint of the Elastic deployment."]
     #[serde(rename = "kibanaServiceUrl", default, skip_serializing_if = "Option::is_none")]
     pub kibana_service_url: Option<String>,
+    #[doc = "Kibana dashboard sso URL of the Elastic deployment."]
     #[serde(rename = "kibanaSsoUrl", default, skip_serializing_if = "Option::is_none")]
     pub kibana_sso_url: Option<String>,
 }
@@ -58,12 +77,16 @@ impl ElasticCloudDeployment {
         Self::default()
     }
 }
+#[doc = "Details of the user's elastic account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticCloudUser {
+    #[doc = "Email of the Elastic User Account."]
     #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
     pub email_address: Option<String>,
+    #[doc = "User Id of the elastic account of the User."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Elastic cloud default dashboard sso URL of the Elastic user account."]
     #[serde(rename = "elasticCloudSsoDefaultUrl", default, skip_serializing_if = "Option::is_none")]
     pub elastic_cloud_sso_default_url: Option<String>,
 }
@@ -72,28 +95,39 @@ impl ElasticCloudUser {
         Self::default()
     }
 }
+#[doc = "Flag specifying if the Elastic deployment status is healthy or not."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ElasticDeploymentStatus {
     Healthy,
     Unhealthy,
 }
+#[doc = "Monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ElasticMonitorResource {
+    #[doc = "ARM id of the monitor resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the monitor resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the monitor resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Microsoft.Elastic SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ResourceSku>,
+    #[doc = "Properties specific to the monitor resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MonitorProperties>,
+    #[doc = "Identity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<IdentityProperties>,
+    #[doc = "The tags of the monitor resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The location of the monitor resource"]
     pub location: String,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -112,10 +146,13 @@ impl ElasticMonitorResource {
         }
     }
 }
+#[doc = "Response of a list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticMonitorResourceListResponse {
+    #[doc = "Results of a list operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ElasticMonitorResource>,
+    #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -124,8 +161,10 @@ impl ElasticMonitorResourceListResponse {
         Self::default()
     }
 }
+#[doc = "Monitor resource update parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticMonitorResourceUpdateParameters {
+    #[doc = "elastic monitor resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -134,10 +173,13 @@ impl ElasticMonitorResourceUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Elastic Resource Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticProperties {
+    #[doc = "Details of the user's elastic account."]
     #[serde(rename = "elasticCloudUser", default, skip_serializing_if = "Option::is_none")]
     pub elastic_cloud_user: Option<ElasticCloudUser>,
+    #[doc = "Details of the user's elastic deployment associated with the monitor resource."]
     #[serde(rename = "elasticCloudDeployment", default, skip_serializing_if = "Option::is_none")]
     pub elastic_cloud_deployment: Option<ElasticCloudDeployment>,
 }
@@ -146,14 +188,19 @@ impl ElasticProperties {
         Self::default()
     }
 }
+#[doc = "Error response body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseBody {
+    #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseBody>,
 }
@@ -162,12 +209,16 @@ impl ErrorResponseBody {
         Self::default()
     }
 }
+#[doc = "The definition of a filtering tag. Filtering tags are used for capturing resources and include/exclude them from being monitored."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FilteringTag {
+    #[doc = "The name (also known as the key) of the tag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The value of the tag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Valid actions for a filtering tag. Exclusion takes priority over inclusion."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<TagAction>,
 }
@@ -176,12 +227,16 @@ impl FilteringTag {
         Self::default()
     }
 }
+#[doc = "Identity properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProperties {
+    #[doc = "The identity ID."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Managed Identity types."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ManagedIdentityTypes>,
 }
@@ -195,14 +250,19 @@ pub enum LiftrResourceCategories {
     Unknown,
     MonitorLogs,
 }
+#[doc = "Set of rules for sending logs for the Monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogRules {
+    #[doc = "Flag specifying if AAD logs should be sent for the Monitor resource."]
     #[serde(rename = "sendAadLogs", default, skip_serializing_if = "Option::is_none")]
     pub send_aad_logs: Option<bool>,
+    #[doc = "Flag specifying if subscription logs should be sent for the Monitor resource."]
     #[serde(rename = "sendSubscriptionLogs", default, skip_serializing_if = "Option::is_none")]
     pub send_subscription_logs: Option<bool>,
+    #[doc = "Flag specifying if activity logs from Azure resources should be sent for the Monitor resource."]
     #[serde(rename = "sendActivityLogs", default, skip_serializing_if = "Option::is_none")]
     pub send_activity_logs: Option<bool>,
+    #[doc = "List of filtering tags to be used for capturing logs. This only takes effect if SendActivityLogs flag is enabled. If empty, all resources will be captured. If only Exclude action is specified, the rules will apply to the list of all available resources. If Include actions are specified, the rules will only include resources with the associated tags."]
     #[serde(rename = "filteringTags", default, skip_serializing_if = "Vec::is_empty")]
     pub filtering_tags: Vec<FilteringTag>,
 }
@@ -211,22 +271,29 @@ impl LogRules {
         Self::default()
     }
 }
+#[doc = "Managed Identity types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ManagedIdentityTypes {
     SystemAssigned,
 }
+#[doc = "Properties specific to the monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorProperties {
+    #[doc = "Provisioning state of Elastic resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
     #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
     pub monitoring_status: Option<MonitoringStatus>,
+    #[doc = "Elastic Resource Properties."]
     #[serde(rename = "elasticProperties", default, skip_serializing_if = "Option::is_none")]
     pub elastic_properties: Option<ElasticProperties>,
+    #[doc = "User Information to be passed to partners."]
     #[serde(rename = "userInfo", default, skip_serializing_if = "Option::is_none")]
     pub user_info: Option<UserInfo>,
     #[serde(rename = "liftrResourceCategory", default, skip_serializing_if = "Option::is_none")]
     pub liftr_resource_category: Option<LiftrResourceCategories>,
+    #[doc = "The priority of the resource."]
     #[serde(rename = "liftrResourcePreference", default, skip_serializing_if = "Option::is_none")]
     pub liftr_resource_preference: Option<i32>,
 }
@@ -235,12 +302,16 @@ impl MonitorProperties {
         Self::default()
     }
 }
+#[doc = "The properties of a resource currently being monitored by the Elastic monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoredResource {
+    #[doc = "The ARM id of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Flag indicating the status of the resource for sending logs operation to Elastic."]
     #[serde(rename = "sendingLogs", default, skip_serializing_if = "Option::is_none")]
     pub sending_logs: Option<SendingLogs>,
+    #[doc = "Reason for why the resource is sending logs (or why it is not sending)."]
     #[serde(rename = "reasonForLogsStatus", default, skip_serializing_if = "Option::is_none")]
     pub reason_for_logs_status: Option<String>,
 }
@@ -249,10 +320,13 @@ impl MonitoredResource {
         Self::default()
     }
 }
+#[doc = "Response of a list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoredResourceListResponse {
+    #[doc = "Results of a list operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MonitoredResource>,
+    #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -261,21 +335,28 @@ impl MonitoredResourceListResponse {
         Self::default()
     }
 }
+#[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MonitoringStatus {
     Enabled,
     Disabled,
 }
+#[doc = "Capture logs and metrics of Azure resources based on ARM tags."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringTagRules {
+    #[doc = "Name of the rule set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The id of the rule set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The type of the rule set."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Definition of the properties for a TagRules resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MonitoringTagRulesProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -284,10 +365,13 @@ impl MonitoringTagRules {
         Self::default()
     }
 }
+#[doc = "Response of a list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringTagRulesListResponse {
+    #[doc = "Results of a list operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MonitoringTagRules>,
+    #[doc = "Link to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -296,10 +380,13 @@ impl MonitoringTagRulesListResponse {
         Self::default()
     }
 }
+#[doc = "Definition of the properties for a TagRules resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringTagRulesProperties {
+    #[doc = "Provisioning state of Elastic resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Set of rules for sending logs for the Monitor resource."]
     #[serde(rename = "logRules", default, skip_serializing_if = "Option::is_none")]
     pub log_rules: Option<LogRules>,
 }
@@ -308,14 +395,19 @@ impl MonitoringTagRulesProperties {
         Self::default()
     }
 }
+#[doc = "The object that represents the operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Service provider, i.e., Microsoft.Elastic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Type on which the operation is performed, e.g., 'monitors'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Operation type, e.g., read, write, delete, etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Description of the operation, e.g., 'Write monitors'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -324,10 +416,13 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "Result of GET request to list the Microsoft.Elastic operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of operations supported by the Microsoft.Elastic provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationResult>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -336,19 +431,25 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Operation to be performed on the given vm resource id."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperationName {
     Add,
     Delete,
 }
+#[doc = "A Microsoft.Elastic REST API operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResult {
+    #[doc = "Operation name, i.e., {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -357,6 +458,7 @@ impl OperationResult {
         Self::default()
     }
 }
+#[doc = "Provisioning state of Elastic resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
     Accepted,
@@ -369,8 +471,10 @@ pub enum ProvisioningState {
     Deleted,
     NotSpecified,
 }
+#[doc = "RP default error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderDefaultErrorResponse {
+    #[doc = "Error response body."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
 }
@@ -379,8 +483,10 @@ impl ResourceProviderDefaultErrorResponse {
         Self::default()
     }
 }
+#[doc = "Microsoft.Elastic SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
+    #[doc = "Name of the SKU."]
     pub name: String,
 }
 impl ResourceSku {
@@ -388,26 +494,34 @@ impl ResourceSku {
         Self { name }
     }
 }
+#[doc = "Flag indicating the status of the resource for sending logs operation to Elastic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SendingLogs {
     True,
     False,
 }
+#[doc = "Valid actions for a filtering tag. Exclusion takes priority over inclusion."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TagAction {
     Include,
     Exclude,
 }
+#[doc = "User Information to be passed to partners."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserInfo {
+    #[doc = "First name of the user"]
     #[serde(rename = "firstName", default, skip_serializing_if = "Option::is_none")]
     pub first_name: Option<String>,
+    #[doc = "Last name of the user"]
     #[serde(rename = "lastName", default, skip_serializing_if = "Option::is_none")]
     pub last_name: Option<String>,
+    #[doc = "Company name of the user"]
     #[serde(rename = "companyName", default, skip_serializing_if = "Option::is_none")]
     pub company_name: Option<String>,
+    #[doc = "Email of the user used by Elastic for contacting them if needed"]
     #[serde(rename = "emailAddress", default, skip_serializing_if = "Option::is_none")]
     pub email_address: Option<String>,
+    #[doc = "Company information of the user to be passed to partners."]
     #[serde(rename = "companyInfo", default, skip_serializing_if = "Option::is_none")]
     pub company_info: Option<CompanyInfo>,
 }
@@ -416,10 +530,13 @@ impl UserInfo {
         Self::default()
     }
 }
+#[doc = "Update VM resource collection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmCollectionUpdate {
+    #[doc = "ARM id of the VM resource."]
     #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
     pub vm_resource_id: Option<String>,
+    #[doc = "Operation to be performed on the given vm resource id."]
     #[serde(rename = "operationName", default, skip_serializing_if = "Option::is_none")]
     pub operation_name: Option<OperationName>,
 }
@@ -428,10 +545,13 @@ impl VmCollectionUpdate {
         Self::default()
     }
 }
+#[doc = "Response of a list operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmHostListResponse {
+    #[doc = "Results of a list operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VmResources>,
+    #[doc = "Link to the next Vm resource Id, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -440,10 +560,13 @@ impl VmHostListResponse {
         Self::default()
     }
 }
+#[doc = "The vm ingestion details to install an agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmIngestionDetailsResponse {
+    #[doc = "The cloudId of given Elastic monitor resource."]
     #[serde(rename = "cloudId", default, skip_serializing_if = "Option::is_none")]
     pub cloud_id: Option<String>,
+    #[doc = "Ingestion details to install agent on given VM."]
     #[serde(rename = "ingestionKey", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_key: Option<String>,
 }
@@ -452,8 +575,10 @@ impl VmIngestionDetailsResponse {
         Self::default()
     }
 }
+#[doc = "The vm resource properties that is currently being monitored by the Elastic monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmResources {
+    #[doc = "The ARM id of the VM resource."]
     #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
     pub vm_resource_id: Option<String>,
 }
@@ -462,18 +587,25 @@ impl VmResources {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -484,6 +616,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -491,6 +624,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

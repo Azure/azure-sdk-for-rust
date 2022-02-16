@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The asset conversion error code."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConversionErrorCode {
     #[serde(rename = "UNKNOWN")]
@@ -33,14 +34,19 @@ pub enum ConversionErrorCode {
     #[serde(rename = "ASSET_CANNOT_BE_CONVERTED")]
     AssetCannotBeConverted,
 }
+#[doc = "Represents an error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     pub code: String,
+    #[doc = "The error message."]
     pub message: String,
+    #[doc = "The target of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "Inner error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
 }
@@ -55,8 +61,10 @@ impl ErrorDetail {
         }
     }
 }
+#[doc = "Represents an error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
+    #[doc = "Represents an error."]
     pub error: ErrorDetail,
 }
 impl ErrorResponse {
@@ -64,22 +72,32 @@ impl ErrorResponse {
         Self { error }
     }
 }
+#[doc = "Represents an ingestion configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IngestionConfiguration {
+    #[doc = "Represents a vector with three single-precision floating-point values."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimensions: Option<Vector3>,
+    #[doc = "Represents a vector with three single-precision floating-point values."]
     #[serde(rename = "boundingBoxCenter", default, skip_serializing_if = "Option::is_none")]
     pub bounding_box_center: Option<Vector3>,
+    #[doc = "Represents a vector with three single-precision floating-point values."]
     pub gravity: Vector3,
+    #[doc = "Indices of Key Frames."]
     #[serde(rename = "keyFrameIndexes", default, skip_serializing_if = "Vec::is_empty")]
     pub key_frame_indexes: Vec<i32>,
+    #[doc = "Ground truth trajectory."]
     #[serde(rename = "gtTrajectory", default, skip_serializing_if = "Vec::is_empty")]
     pub gt_trajectory: Vec<Pose>,
+    #[doc = "Represents a vector that is used to encode three-dimensional physical rotations."]
     #[serde(rename = "principalAxis", default, skip_serializing_if = "Option::is_none")]
     pub principal_axis: Option<Quaternion>,
+    #[doc = "Scale of transformation of asset units into meter space."]
     pub scale: f32,
+    #[doc = "Represents a vector with four single-precision floating-point values."]
     #[serde(rename = "supportingPlane", default, skip_serializing_if = "Option::is_none")]
     pub supporting_plane: Option<Vector4>,
+    #[doc = "Test Trajectory."]
     #[serde(rename = "testTrajectory", default, skip_serializing_if = "Vec::is_empty")]
     pub test_trajectory: Vec<Pose>,
 }
@@ -98,26 +116,37 @@ impl IngestionConfiguration {
         }
     }
 }
+#[doc = "Represents the status of an AOA asset conversion job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionProperties {
+    #[doc = "Information about the cause of a ClientError JobStatus."]
     #[serde(rename = "clientErrorDetails", default, skip_serializing_if = "Option::is_none")]
     pub client_error_details: Option<String>,
+    #[doc = "Information about the cause of a ServerError JobStatus."]
     #[serde(rename = "serverErrorDetails", default, skip_serializing_if = "Option::is_none")]
     pub server_error_details: Option<String>,
+    #[doc = "The asset conversion error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<ConversionErrorCode>,
+    #[doc = "Identifier for the AOA asset conversion job."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
+    #[doc = "The URI for downloading the generated AOA Model"]
     #[serde(rename = "outputModelUri", default, skip_serializing_if = "Option::is_none")]
     pub output_model_uri: Option<String>,
+    #[doc = "Represents job status state."]
     #[serde(rename = "jobStatus", default, skip_serializing_if = "Option::is_none")]
     pub job_status: Option<JobStatus>,
+    #[doc = "The file type of the original 3D asset. Examples include: \"ply\", \"obj\", \"fbx\", \"glb\", \"gltf\", etc."]
     #[serde(rename = "assetFileType", default, skip_serializing_if = "Option::is_none")]
     pub asset_file_type: Option<String>,
+    #[doc = "The Uri to the Asset to be ingested by the AOA asset conversion service. This asset needs to have been uploaded to the service using an endpoint provided from a call to the GetUploadUri API."]
     #[serde(rename = "inputAssetUri", default, skip_serializing_if = "Option::is_none")]
     pub input_asset_uri: Option<String>,
+    #[doc = "Identifier for the Account owning the asset conversion job."]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
+    #[doc = "Represents an ingestion configuration."]
     #[serde(rename = "ingestionConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_configuration: Option<IngestionConfiguration>,
 }
@@ -126,10 +155,13 @@ impl IngestionProperties {
         Self::default()
     }
 }
+#[doc = "Inner error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
+    #[doc = "A more specific error code than was provided by the containing error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Inner error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<InnerError>>,
 }
@@ -138,6 +170,7 @@ impl InnerError {
         Self::default()
     }
 }
+#[doc = "Represents job status state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum JobStatus {
     NotStarted,
@@ -146,9 +179,12 @@ pub enum JobStatus {
     Failed,
     Cancelled,
 }
+#[doc = "Represents a pose."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Pose {
+    #[doc = "Represents a vector that is used to encode three-dimensional physical rotations."]
     pub rotation: Quaternion,
+    #[doc = "Represents a vector with three single-precision floating-point values."]
     pub translation: Vector3,
 }
 impl Pose {
@@ -156,12 +192,18 @@ impl Pose {
         Self { rotation, translation }
     }
 }
+#[doc = "Represents a vector that is used to encode three-dimensional physical rotations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Quaternion {
+    #[doc = "The x value of the vector component of the quaternion."]
     pub x: f32,
+    #[doc = "The y value of the vector component of the quaternion."]
     pub y: f32,
+    #[doc = "The z value of the vector component of the quaternion."]
     pub z: f32,
+    #[doc = "The rotation component of the quaternion."]
     pub w: f32,
+    #[doc = "Gets a value that indicates whether the current instance is the identity quaternion"]
     #[serde(rename = "isIdentity", default, skip_serializing_if = "Option::is_none")]
     pub is_identity: Option<bool>,
 }
@@ -176,8 +218,10 @@ impl Quaternion {
         }
     }
 }
+#[doc = "Represents an upload location for model ingestion."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UploadLocation {
+    #[doc = "The blob upload URI where a model should be uploaded to the service for ingestion."]
     #[serde(rename = "inputAssetUri")]
     pub input_asset_uri: String,
 }
@@ -186,10 +230,14 @@ impl UploadLocation {
         Self { input_asset_uri }
     }
 }
+#[doc = "Represents a vector with three single-precision floating-point values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Vector3 {
+    #[doc = "The x component of the vector."]
     pub x: f32,
+    #[doc = "The y component of the vector."]
     pub y: f32,
+    #[doc = "The z component of the vector."]
     pub z: f32,
 }
 impl Vector3 {
@@ -197,11 +245,16 @@ impl Vector3 {
         Self { x, y, z }
     }
 }
+#[doc = "Represents a vector with four single-precision floating-point values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Vector4 {
+    #[doc = "The x component of the vector."]
     pub x: f32,
+    #[doc = "The y component of the vector."]
     pub y: f32,
+    #[doc = "The z component of the vector."]
     pub z: f32,
+    #[doc = "The w component of the vector."]
     pub w: f32,
 }
 impl Vector4 {

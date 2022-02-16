@@ -2,16 +2,22 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Api error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiError {
+    #[doc = "The Api error details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ApiErrorBase>,
+    #[doc = "Inner error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Option<InnerError>,
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -20,12 +26,16 @@ impl ApiError {
         Self::default()
     }
 }
+#[doc = "Api error base."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiErrorBase {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -34,8 +44,10 @@ impl ApiErrorBase {
         Self::default()
     }
 }
+#[doc = "An error response from the Compute service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "Api error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ApiError>,
 }
@@ -44,17 +56,24 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "Describes the cloud service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudService {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location."]
     pub location: String,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Cloud service properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudServiceProperties>,
 }
@@ -70,8 +89,10 @@ impl CloudService {
         }
     }
 }
+#[doc = "Describes a cloud service extension profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceExtensionProfile {
+    #[doc = "List of extensions for the cloud service."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<Extension>,
 }
@@ -80,26 +101,36 @@ impl CloudServiceExtensionProfile {
         Self::default()
     }
 }
+#[doc = "Extension Properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceExtensionProperties {
+    #[doc = "The name of the extension handler publisher."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "Specifies the type of the extension."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Specifies the version of the extension. Specifies the version of the extension. If this element is not specified or an asterisk (*) is used as the value, the latest version of the extension is used. If the value is specified with a major version number and an asterisk as the minor version number (X.), the latest minor version of the specified major version is selected. If a major version number and a minor version number are specified (X.Y), the specific extension version is selected. If a version is specified, an auto-upgrade is performed on the role instance."]
     #[serde(rename = "typeHandlerVersion", default, skip_serializing_if = "Option::is_none")]
     pub type_handler_version: Option<String>,
+    #[doc = "Explicitly specify whether platform can automatically upgrade typeHandlerVersion to higher minor versions when they become available."]
     #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
     pub auto_upgrade_minor_version: Option<bool>,
+    #[doc = "Public settings for the extension. For JSON extensions, this is the JSON settings for the extension. For XML Extension (like RDP), this is the XML setting for the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<String>,
+    #[doc = "Protected settings for the extension which are encrypted before sent to the role instance."]
     #[serde(rename = "protectedSettings", default, skip_serializing_if = "Option::is_none")]
     pub protected_settings: Option<String>,
     #[serde(rename = "protectedSettingsFromKeyVault", default, skip_serializing_if = "Option::is_none")]
     pub protected_settings_from_key_vault: Option<CloudServiceVaultAndSecretReference>,
+    #[doc = "Tag to force apply the provided public and protected settings.\r\nChanging the tag value allows for re-running the extension without changing any of the public or protected settings.\r\nIf forceUpdateTag is not changed, updates to public or protected settings would still be applied by the handler.\r\nIf neither forceUpdateTag nor any of public or protected settings change, extension would flow to the role instance with the same sequence-number, and\r\nit is up to handler implementation whether to re-run it or not"]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Optional list of roles to apply this extension. If property is not specified or '*' is specified, extension is applied to all roles in the cloud service."]
     #[serde(rename = "rolesAppliedTo", default, skip_serializing_if = "Vec::is_empty")]
     pub roles_applied_to: Vec<String>,
 }
@@ -108,10 +139,13 @@ impl CloudServiceExtensionProperties {
         Self::default()
     }
 }
+#[doc = "InstanceView of CloudService as a whole"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceInstanceView {
+    #[doc = "Instance view statuses."]
     #[serde(rename = "roleInstance", default, skip_serializing_if = "Option::is_none")]
     pub role_instance: Option<InstanceViewStatusesSummary>,
+    #[doc = "The version of the SDK that was used to generate the package for the cloud service."]
     #[serde(rename = "sdkVersion", default, skip_serializing_if = "Option::is_none")]
     pub sdk_version: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -133,8 +167,10 @@ impl CloudServiceListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Network Profile for the cloud service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceNetworkProfile {
+    #[doc = "The list of load balancer configurations for the cloud service."]
     #[serde(rename = "loadBalancerConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancer_configurations: Vec<LoadBalancerConfiguration>,
     #[serde(rename = "swappableCloudService", default, skip_serializing_if = "Option::is_none")]
@@ -145,8 +181,10 @@ impl CloudServiceNetworkProfile {
         Self::default()
     }
 }
+#[doc = "Describes the OS profile for the cloud service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceOsProfile {
+    #[doc = "Specifies set of certificates that should be installed onto the role instances."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub secrets: Vec<CloudServiceVaultSecretGroup>,
 }
@@ -155,28 +193,40 @@ impl CloudServiceOsProfile {
         Self::default()
     }
 }
+#[doc = "Cloud service properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceProperties {
+    #[doc = "Specifies a URL that refers to the location of the service package in the Blob service. The service package URL can be Shared Access Signature (SAS) URI from any storage account.\r\nThis is a write-only property and is not returned in GET calls."]
     #[serde(rename = "packageUrl", default, skip_serializing_if = "Option::is_none")]
     pub package_url: Option<String>,
+    #[doc = "Specifies the XML service configuration (.cscfg) for the cloud service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configuration: Option<String>,
+    #[doc = "Specifies a URL that refers to the location of the service configuration in the Blob service. The service package URL  can be Shared Access Signature (SAS) URI from any storage account.\r\nThis is a write-only property and is not returned in GET calls."]
     #[serde(rename = "configurationUrl", default, skip_serializing_if = "Option::is_none")]
     pub configuration_url: Option<String>,
+    #[doc = "(Optional) Indicates whether to start the cloud service immediately after it is created. The default value is `true`.\r\nIf false, the service model is still deployed, but the code is not run immediately. Instead, the service is PoweredOff until you call Start, at which time the service will be started. A deployed service still incurs charges, even if it is poweredoff."]
     #[serde(rename = "startCloudService", default, skip_serializing_if = "Option::is_none")]
     pub start_cloud_service: Option<bool>,
+    #[doc = "Update mode for the cloud service. Role instances are allocated to update domains when the service is deployed. Updates can be initiated manually in each update domain or initiated automatically in all update domains.\r\nPossible Values are <br /><br />**Auto**<br /><br />**Manual** <br /><br />**Simultaneous**<br /><br />\r\nIf not specified, the default value is Auto. If set to Manual, PUT UpdateDomain must be called to apply the update. If set to Auto, the update is automatically applied to each update domain in sequence."]
     #[serde(rename = "upgradeMode", default, skip_serializing_if = "Option::is_none")]
     pub upgrade_mode: Option<CloudServiceUpgradeMode>,
+    #[doc = "Describes the role profile for the cloud service."]
     #[serde(rename = "roleProfile", default, skip_serializing_if = "Option::is_none")]
     pub role_profile: Option<CloudServiceRoleProfile>,
+    #[doc = "Describes the OS profile for the cloud service."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
     pub os_profile: Option<CloudServiceOsProfile>,
+    #[doc = "Network Profile for the cloud service."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<CloudServiceNetworkProfile>,
+    #[doc = "Describes a cloud service extension profile."]
     #[serde(rename = "extensionProfile", default, skip_serializing_if = "Option::is_none")]
     pub extension_profile: Option<CloudServiceExtensionProfile>,
+    #[doc = "The provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The unique identifier for the cloud service."]
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
     pub unique_id: Option<String>,
 }
@@ -185,18 +235,25 @@ impl CloudServiceProperties {
         Self::default()
     }
 }
+#[doc = "Describes a role of the cloud service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceRole {
+    #[doc = "Resource id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Describes the cloud service role sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<CloudServiceRoleSku>,
+    #[doc = ""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudServiceRoleProperties>,
 }
@@ -216,8 +273,10 @@ impl CloudServiceRoleListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the role profile for the cloud service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceRoleProfile {
+    #[doc = "List of roles for the cloud service."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub roles: Vec<CloudServiceRoleProfileProperties>,
 }
@@ -226,10 +285,13 @@ impl CloudServiceRoleProfile {
         Self::default()
     }
 }
+#[doc = "Describes the role properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceRoleProfileProperties {
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Describes the cloud service role sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<CloudServiceRoleSku>,
 }
@@ -238,8 +300,10 @@ impl CloudServiceRoleProfileProperties {
         Self::default()
     }
 }
+#[doc = ""]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceRoleProperties {
+    #[doc = "Specifies the ID which uniquely identifies a cloud service role."]
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
     pub unique_id: Option<String>,
 }
@@ -248,12 +312,16 @@ impl CloudServiceRoleProperties {
         Self::default()
     }
 }
+#[doc = "Describes the cloud service role sku."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceRoleSku {
+    #[doc = "The sku name. NOTE: If the new SKU is not supported on the hardware the cloud service is currently on, you need to delete and recreate the cloud service or move back to the old sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the tier of the cloud service. Possible Values are <br /><br /> **Standard** <br /><br /> **Basic**"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "Specifies the number of role instances in the cloud service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i64>,
 }
@@ -264,6 +332,7 @@ impl CloudServiceRoleSku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceUpdate {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -272,6 +341,7 @@ impl CloudServiceUpdate {
         Self::default()
     }
 }
+#[doc = "Update mode for the cloud service. Role instances are allocated to update domains when the service is deployed. Updates can be initiated manually in each update domain or initiated automatically in all update domains.\r\nPossible Values are <br /><br />**Auto**<br /><br />**Manual** <br /><br />**Simultaneous**<br /><br />\r\nIf not specified, the default value is Auto. If set to Manual, PUT UpdateDomain must be called to apply the update. If set to Auto, the update is automatically applied to each update domain in sequence."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum CloudServiceUpgradeMode {
     Auto,
@@ -290,8 +360,10 @@ impl CloudServiceVaultAndSecretReference {
         Self::default()
     }
 }
+#[doc = "Describes a single certificate reference in a Key Vault, and where the certificate should reside on the role instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceVaultCertificate {
+    #[doc = "This is the URL of a certificate that has been uploaded to Key Vault as a secret."]
     #[serde(rename = "certificateUrl", default, skip_serializing_if = "Option::is_none")]
     pub certificate_url: Option<String>,
 }
@@ -300,10 +372,12 @@ impl CloudServiceVaultCertificate {
         Self::default()
     }
 }
+#[doc = "Describes a set of certificates which are all in the same Key Vault."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudServiceVaultSecretGroup {
     #[serde(rename = "sourceVault", default, skip_serializing_if = "Option::is_none")]
     pub source_vault: Option<SubResource>,
+    #[doc = "The list of key vault references in SourceVault which contain certificates."]
     #[serde(rename = "vaultCertificates", default, skip_serializing_if = "Vec::is_empty")]
     pub vault_certificates: Vec<CloudServiceVaultCertificate>,
 }
@@ -312,10 +386,13 @@ impl CloudServiceVaultSecretGroup {
         Self::default()
     }
 }
+#[doc = "Describes a cloud service Extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Extension {
+    #[doc = "The name of the extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Extension Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudServiceExtensionProperties>,
 }
@@ -324,10 +401,13 @@ impl Extension {
         Self::default()
     }
 }
+#[doc = "Inner error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
+    #[doc = "The exception type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exceptiontype: Option<String>,
+    #[doc = "The internal error message or exception dump."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errordetail: Option<String>,
 }
@@ -338,8 +418,10 @@ impl InnerError {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceSku {
+    #[doc = "The sku name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The tier of the cloud service role instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }
@@ -348,6 +430,7 @@ impl InstanceSku {
         Self::default()
     }
 }
+#[doc = "Instance view statuses."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceViewStatusesSummary {
     #[serde(rename = "statusesSummary", default, skip_serializing_if = "Vec::is_empty")]
@@ -358,8 +441,10 @@ impl InstanceViewStatusesSummary {
         Self::default()
     }
 }
+#[doc = "Describes the load balancer configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerConfiguration {
+    #[doc = "Resource Name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -372,6 +457,7 @@ impl LoadBalancerConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerConfigurationProperties {
+    #[doc = "List of IP"]
     #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub frontend_ip_configurations: Vec<LoadBalancerFrontendIpConfiguration>,
 }
@@ -384,6 +470,7 @@ impl LoadBalancerConfigurationProperties {
 pub struct LoadBalancerFrontendIpConfiguration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Describes a cloud service IP Configuration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LoadBalancerFrontendIpConfigurationProperties>,
 }
@@ -392,12 +479,14 @@ impl LoadBalancerFrontendIpConfiguration {
         Self::default()
     }
 }
+#[doc = "Describes a cloud service IP Configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerFrontendIpConfigurationProperties {
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<SubResource>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
+    #[doc = "The private IP address referenced by the cloud service."]
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
 }
@@ -406,16 +495,22 @@ impl LoadBalancerFrontendIpConfigurationProperties {
         Self::default()
     }
 }
+#[doc = "Instance view status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceInstanceViewStatus {
+    #[doc = "The status code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The short localizable label for the status."]
     #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
+    #[doc = "The detailed status message, including for alerts and error messages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The time of the status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
+    #[doc = "The level code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<resource_instance_view_status::Level>,
 }
@@ -426,6 +521,7 @@ impl ResourceInstanceViewStatus {
 }
 pub mod resource_instance_view_status {
     use super::*;
+    #[doc = "The level code."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Level {
         Info,
@@ -435,14 +531,19 @@ pub mod resource_instance_view_status {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleInstance {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource Type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource Location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -455,12 +556,16 @@ impl RoleInstance {
         Self::default()
     }
 }
+#[doc = "The instance view of the role instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleInstanceInstanceView {
+    #[doc = "The Update Domain."]
     #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
     pub platform_update_domain: Option<i32>,
+    #[doc = "The Fault Domain."]
     #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
     pub platform_fault_domain: Option<i32>,
+    #[doc = "Specifies a unique identifier generated internally for the cloud service associated with this role instance. <br /><br /> NOTE: If you are using Azure Diagnostics extension, this property can be used as 'DeploymentId' for querying details."]
     #[serde(rename = "privateId", default, skip_serializing_if = "Option::is_none")]
     pub private_id: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -482,8 +587,10 @@ impl RoleInstanceListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Describes the network profile for the role instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleInstanceNetworkProfile {
+    #[doc = "Specifies the list of resource Ids for the network interfaces associated with the role instance."]
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<SubResource>,
 }
@@ -494,8 +601,10 @@ impl RoleInstanceNetworkProfile {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleInstanceProperties {
+    #[doc = "Describes the network profile for the role instance."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<RoleInstanceNetworkProfile>,
+    #[doc = "The instance view of the role instance."]
     #[serde(rename = "instanceView", default, skip_serializing_if = "Option::is_none")]
     pub instance_view: Option<RoleInstanceInstanceView>,
 }
@@ -504,8 +613,10 @@ impl RoleInstanceProperties {
         Self::default()
     }
 }
+#[doc = "Specifies a list of role instances from the cloud service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleInstances {
+    #[doc = "List of cloud service role instance names. Value of '*' will signify all role instances of the cloud service."]
     #[serde(rename = "roleInstances")]
     pub role_instances: Vec<String>,
 }
@@ -516,8 +627,10 @@ impl RoleInstances {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StatusCodeCount {
+    #[doc = "The instance view status code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Number of instances having this status code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
 }
@@ -528,6 +641,7 @@ impl StatusCodeCount {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -536,10 +650,13 @@ impl SubResource {
         Self::default()
     }
 }
+#[doc = "Defines an update domain for the cloud service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateDomain {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource Name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
