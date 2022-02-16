@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The details of the error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
+    #[doc = "One of a server-defined set of error codes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A human-readable representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "(Optional) The target of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -16,8 +20,10 @@ impl ErrorDetails {
         Self::default()
     }
 }
+#[doc = "The error object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The details of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetails>,
 }
@@ -26,14 +32,19 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The management group details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroup {
+    #[doc = "The ID of the management group. E.g. /providers/Microsoft.Management/managementGroups/20000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The type of the resource. E.g. /providers/Microsoft.Management/managementGroups"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The name of the management group. E.g. 20000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The generic properties of a management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupProperties>,
 }
@@ -42,14 +53,19 @@ impl ManagementGroup {
         Self::default()
     }
 }
+#[doc = "The unique identifier (ID) of a management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupChildInfo {
+    #[doc = "(Optional) The type of the management group."]
     #[serde(rename = "childType", default, skip_serializing_if = "Option::is_none")]
     pub child_type: Option<ManagementGroupType>,
+    #[doc = "The ID of the child resource (management group or subscription). E.g. /providers/Microsoft.Management/managementGroups/40000000-0000-0000-0000-000000000000"]
     #[serde(rename = "childId", default, skip_serializing_if = "Option::is_none")]
     pub child_id: Option<String>,
+    #[doc = "The friendly name of the child resource."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "(Optional) The AAD Tenant ID associated with the child resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -58,16 +74,22 @@ impl ManagementGroupChildInfo {
         Self::default()
     }
 }
+#[doc = "The details properties of a management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupDetailsProperties {
+    #[doc = "The version number of the object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<f64>,
+    #[doc = "The date and time when this object was last updated."]
     #[serde(rename = "updatedTime", default, skip_serializing_if = "Option::is_none")]
     pub updated_time: Option<String>,
+    #[doc = "The identity of the principal or process that updated the object."]
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
+    #[doc = "(Optional) The ID of the parent management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<ParentGroupInfo>,
+    #[doc = "(Optional) The type of the management group."]
     #[serde(rename = "managementGroupType", default, skip_serializing_if = "Option::is_none")]
     pub management_group_type: Option<ManagementGroupType>,
 }
@@ -76,14 +98,19 @@ impl ManagementGroupDetailsProperties {
         Self::default()
     }
 }
+#[doc = "The management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupInfo {
+    #[doc = "The ID of the management group. E.g. /providers/Microsoft.Management/managementGroups/20000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The type of the resource. E.g. /providers/Microsoft.Management/managementGroups"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The name of the management group. E.g. 20000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The generic properties of a management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupInfoProperties>,
 }
@@ -92,10 +119,13 @@ impl ManagementGroupInfo {
         Self::default()
     }
 }
+#[doc = "The generic properties of a management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupInfoProperties {
+    #[doc = "The AAD Tenant ID associated with the management group. E.g. 10000000-0000-0000-0000-000000000000"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The friendly name of the management group."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
@@ -104,10 +134,13 @@ impl ManagementGroupInfoProperties {
         Self::default()
     }
 }
+#[doc = "The result of listing management groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupListResult {
+    #[doc = "The list of management groups."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagementGroupInfo>,
+    #[doc = "The URL to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -116,12 +149,16 @@ impl ManagementGroupListResult {
         Self::default()
     }
 }
+#[doc = "The generic properties of a management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupProperties {
+    #[doc = "The AAD Tenant ID associated with the management group. E.g. 10000000-0000-0000-0000-000000000000"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The friendly name of the management group."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The details properties of a management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<ManagementGroupDetailsProperties>,
 }
@@ -130,14 +167,19 @@ impl ManagementGroupProperties {
         Self::default()
     }
 }
+#[doc = "The generic properties of a management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupPropertiesWithChildren {
+    #[doc = "The AAD Tenant ID associated with the management group. E.g. 10000000-0000-0000-0000-000000000000"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The friendly name of the management group."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The details properties of a management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<ManagementGroupDetailsProperties>,
+    #[doc = "The list of children."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<ManagementGroupChildInfo>,
 }
@@ -146,14 +188,19 @@ impl ManagementGroupPropertiesWithChildren {
         Self::default()
     }
 }
+#[doc = "The generic properties of a management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupPropertiesWithHierarchy {
+    #[doc = "The AAD Tenant ID associated with the management group. E.g. 10000000-0000-0000-0000-000000000000"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The friendly name of the management group."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The details properties of a management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<ManagementGroupDetailsProperties>,
+    #[doc = "The list of children."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<ManagementGroupRecursiveChildInfo>,
 }
@@ -162,16 +209,22 @@ impl ManagementGroupPropertiesWithHierarchy {
         Self::default()
     }
 }
+#[doc = "The unique identifier (ID) of a management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupRecursiveChildInfo {
+    #[doc = "(Optional) The type of the management group."]
     #[serde(rename = "childType", default, skip_serializing_if = "Option::is_none")]
     pub child_type: Option<ManagementGroupType>,
+    #[doc = "The ID of the child resource (management group or subscription). E.g. /providers/Microsoft.Management/managementGroups/40000000-0000-0000-0000-000000000000"]
     #[serde(rename = "childId", default, skip_serializing_if = "Option::is_none")]
     pub child_id: Option<String>,
+    #[doc = "The friendly name of the child resource."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "(Optional) The AAD Tenant ID associated with the child resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The list of children."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<ManagementGroupRecursiveChildInfo>,
 }
@@ -180,6 +233,7 @@ impl ManagementGroupRecursiveChildInfo {
         Self::default()
     }
 }
+#[doc = "(Optional) The type of the management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ManagementGroupType {
     Enrollment,
@@ -187,14 +241,19 @@ pub enum ManagementGroupType {
     Account,
     Subscription,
 }
+#[doc = "The management group details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupWithChildren {
+    #[doc = "The ID of the management group. E.g. /providers/Microsoft.Management/managementGroups/20000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The type of the resource. E.g. /providers/Microsoft.Management/managementGroups"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The name of the management group. E.g. 20000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The generic properties of a management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupPropertiesWithChildren>,
 }
@@ -203,14 +262,19 @@ impl ManagementGroupWithChildren {
         Self::default()
     }
 }
+#[doc = "The management group details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupWithHierarchy {
+    #[doc = "The ID of the management group. E.g. /providers/Microsoft.Management/managementGroups/20000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The type of the resource. E.g. /providers/Microsoft.Management/managementGroups"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The name of the management group. E.g. 20000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The generic properties of a management group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagementGroupPropertiesWithHierarchy>,
 }
@@ -219,10 +283,13 @@ impl ManagementGroupWithHierarchy {
         Self::default()
     }
 }
+#[doc = "A Management REST API operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -233,12 +300,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.Management."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Invoice, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -248,10 +319,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result listing  operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of management operations supported by the Microsoft.Management resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -260,10 +334,13 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "(Optional) The ID of the parent management group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParentGroupInfo {
+    #[doc = "The ID of the parent management group. E.g. /providers/Microsoft.Management/managementGroups/30000000-0000-0000-0000-000000000000"]
     #[serde(rename = "parentId", default, skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
+    #[doc = "The friendly name of the management group."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }

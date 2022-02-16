@@ -12,38 +12,55 @@ impl ApplyClause {
         Self::default()
     }
 }
+#[doc = "Assessment properties that can be shared by various publishers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessmentDetails {
+    #[doc = "Gets or sets the id of the assessment done on the machine."]
     #[serde(rename = "assessmentId", default, skip_serializing_if = "Option::is_none")]
     pub assessment_id: Option<String>,
+    #[doc = "Gets or sets the target VM size."]
     #[serde(rename = "targetVMSize", default, skip_serializing_if = "Option::is_none")]
     pub target_vm_size: Option<String>,
+    #[doc = "Gets or sets the target VM location."]
     #[serde(rename = "targetVMLocation", default, skip_serializing_if = "Option::is_none")]
     pub target_vm_location: Option<String>,
+    #[doc = "Gets or sets the target storage type."]
     #[serde(rename = "targetStorageType", default, skip_serializing_if = "Option::is_none")]
     pub target_storage_type: Option<serde_json::Value>,
+    #[doc = "Gets or sets the time the message was enqueued."]
     #[serde(rename = "enqueueTime", default, skip_serializing_if = "Option::is_none")]
     pub enqueue_time: Option<String>,
+    #[doc = "Gets or sets the name of the solution that sent the data."]
     #[serde(rename = "solutionName", default, skip_serializing_if = "Option::is_none")]
     pub solution_name: Option<String>,
+    #[doc = "Gets or sets the unique identifier of the machine."]
     #[serde(rename = "machineId", default, skip_serializing_if = "Option::is_none")]
     pub machine_id: Option<String>,
+    #[doc = "Gets or sets the unique identifier of the virtual machine manager(vCenter/VMM)."]
     #[serde(rename = "machineManagerId", default, skip_serializing_if = "Option::is_none")]
     pub machine_manager_id: Option<String>,
+    #[doc = "Gets or sets the fabric type."]
     #[serde(rename = "fabricType", default, skip_serializing_if = "Option::is_none")]
     pub fabric_type: Option<String>,
+    #[doc = "Gets or sets the time of the last modification of the machine details."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
+    #[doc = "Gets or sets the list of IP addresses of the machine. IP addresses could be IP V4 or IP V6."]
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
+    #[doc = "Gets or sets the FQDN of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Gets or sets the BIOS ID of the machine."]
     #[serde(rename = "biosId", default, skip_serializing_if = "Option::is_none")]
     pub bios_id: Option<String>,
+    #[doc = "Gets or sets the list of MAC addresses of the machine."]
     #[serde(rename = "macAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub mac_addresses: Vec<String>,
+    #[doc = "Gets or sets the ISV specific extended information."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<serde_json::Value>,
 }
@@ -52,14 +69,19 @@ impl AssessmentDetails {
         Self::default()
     }
 }
+#[doc = "Database REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Database {
+    #[doc = "Gets or sets the relative URL to get to this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the name of this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets the type of this REST resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of the database resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
 }
@@ -68,34 +90,49 @@ impl Database {
         Self::default()
     }
 }
+#[doc = "Assessment properties that can be shared by various publishers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseAssessmentDetails {
+    #[doc = "Gets or sets the database assessment scope/Id."]
     #[serde(rename = "assessmentId", default, skip_serializing_if = "Option::is_none")]
     pub assessment_id: Option<String>,
+    #[doc = "Gets or sets the number of blocking changes found."]
     #[serde(rename = "migrationBlockersCount", default, skip_serializing_if = "Option::is_none")]
     pub migration_blockers_count: Option<i32>,
+    #[doc = "Gets or sets the number of breaking changes found."]
     #[serde(rename = "breakingChangesCount", default, skip_serializing_if = "Option::is_none")]
     pub breaking_changes_count: Option<i32>,
+    #[doc = "Gets or sets a value indicating whether the database is ready for migration."]
     #[serde(rename = "isReadyForMigration", default, skip_serializing_if = "Option::is_none")]
     pub is_ready_for_migration: Option<bool>,
+    #[doc = "Gets or sets the assessed target database type."]
     #[serde(rename = "assessmentTargetType", default, skip_serializing_if = "Option::is_none")]
     pub assessment_target_type: Option<String>,
+    #[doc = "Gets or sets the time when the database was last assessed."]
     #[serde(rename = "lastAssessedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_assessed_time: Option<String>,
+    #[doc = "Gets or sets the compatibility level of the database."]
     #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
     pub compatibility_level: Option<String>,
+    #[doc = "Gets or sets the database size."]
     #[serde(rename = "databaseSizeInMB", default, skip_serializing_if = "Option::is_none")]
     pub database_size_in_mb: Option<String>,
+    #[doc = "Gets or sets the time of the last modification of the database details."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "Gets or sets the time the message was enqueued."]
     #[serde(rename = "enqueueTime", default, skip_serializing_if = "Option::is_none")]
     pub enqueue_time: Option<String>,
+    #[doc = "Gets or sets the name of the solution that sent the data."]
     #[serde(rename = "solutionName", default, skip_serializing_if = "Option::is_none")]
     pub solution_name: Option<String>,
+    #[doc = "Gets or sets the database server instance Id."]
     #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
+    #[doc = "Gets or sets the database name."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
+    #[doc = "Gets or sets the extended properties of the database."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<serde_json::Value>,
 }
@@ -104,10 +141,13 @@ impl DatabaseAssessmentDetails {
         Self::default()
     }
 }
+#[doc = "Collection of databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseCollection {
+    #[doc = "Gets or sets the databases."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Database>,
+    #[doc = "Gets or sets the value of nextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -116,14 +156,19 @@ impl DatabaseCollection {
         Self::default()
     }
 }
+#[doc = "DatabaseInstance REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseInstance {
+    #[doc = "Gets or sets the relative URL to get to this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the name of this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets the type of this REST resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of the database instance resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseInstanceProperties>,
 }
@@ -132,10 +177,13 @@ impl DatabaseInstance {
         Self::default()
     }
 }
+#[doc = "Collection of database instances."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseInstanceCollection {
+    #[doc = "Gets or sets the database instances."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DatabaseInstance>,
+    #[doc = "Gets or sets the value of nextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -144,28 +192,40 @@ impl DatabaseInstanceCollection {
         Self::default()
     }
 }
+#[doc = "Discovery properties that can be shared by various publishers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseInstanceDiscoveryDetails {
+    #[doc = "Gets or sets the time of the last modification of the database instance details."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "Gets or sets the database instance Id."]
     #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
+    #[doc = "Gets or sets the time the message was enqueued."]
     #[serde(rename = "enqueueTime", default, skip_serializing_if = "Option::is_none")]
     pub enqueue_time: Option<String>,
+    #[doc = "Gets or sets the name of the solution that sent the data."]
     #[serde(rename = "solutionName", default, skip_serializing_if = "Option::is_none")]
     pub solution_name: Option<String>,
+    #[doc = "Gets or sets the database instance name."]
     #[serde(rename = "instanceName", default, skip_serializing_if = "Option::is_none")]
     pub instance_name: Option<String>,
+    #[doc = "Gets or sets the database instance version."]
     #[serde(rename = "instanceVersion", default, skip_serializing_if = "Option::is_none")]
     pub instance_version: Option<String>,
+    #[doc = "Gets or sets the database instance type."]
     #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
+    #[doc = "Gets or sets the host name of the database server."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "Gets or sets the IP addresses of the database server. IP addresses could be IP V4 or IP V6."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
+    #[doc = "Gets or sets the port number of the database server."]
     #[serde(rename = "portNumber", default, skip_serializing_if = "Option::is_none")]
     pub port_number: Option<i32>,
+    #[doc = "Gets or sets the extended properties of the database server."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<serde_json::Value>,
 }
@@ -174,12 +234,16 @@ impl DatabaseInstanceDiscoveryDetails {
         Self::default()
     }
 }
+#[doc = "Properties of the database instance resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseInstanceProperties {
+    #[doc = "Gets or sets the assessment details of the database instance published by various sources."]
     #[serde(rename = "discoveryData", default, skip_serializing_if = "Vec::is_empty")]
     pub discovery_data: Vec<DatabaseInstanceDiscoveryDetails>,
+    #[doc = "Gets or sets the database instances summary per solution. The key of dictionary is the solution name and value is the corresponding database instance summary object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<serde_json::Value>,
+    #[doc = "Gets or sets the time of the last modification of the database."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
 }
@@ -188,10 +252,13 @@ impl DatabaseInstanceProperties {
         Self::default()
     }
 }
+#[doc = "Class representing the database instance summary object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseInstanceSummary {
+    #[doc = "Gets or sets the count of databases assessed."]
     #[serde(rename = "databasesAssessedCount", default, skip_serializing_if = "Option::is_none")]
     pub databases_assessed_count: Option<i32>,
+    #[doc = "Gets or sets the count of databases ready for migration."]
     #[serde(rename = "migrationReadyCount", default, skip_serializing_if = "Option::is_none")]
     pub migration_ready_count: Option<i32>,
 }
@@ -200,12 +267,15 @@ impl DatabaseInstanceSummary {
         Self::default()
     }
 }
+#[doc = "Properties of the database error resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseMigrateEventProperties {
     #[serde(flatten)]
     pub migrate_event_properties: MigrateEventProperties,
+    #[doc = "Gets or sets the database for which the error is being reported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub database: Option<String>,
+    #[doc = "Gets or sets the database instance for which the error is being reported."]
     #[serde(rename = "databaseInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub database_instance_id: Option<String>,
 }
@@ -214,6 +284,7 @@ impl DatabaseMigrateEventProperties {
         Self::default()
     }
 }
+#[doc = "The database project summary class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseProjectSummary {
     #[serde(flatten)]
@@ -224,10 +295,13 @@ impl DatabaseProjectSummary {
         Self::default()
     }
 }
+#[doc = "Properties of the database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseProperties {
+    #[doc = "Gets or sets the assessment details of the database published by various sources."]
     #[serde(rename = "assessmentData", default, skip_serializing_if = "Vec::is_empty")]
     pub assessment_data: Vec<DatabaseAssessmentDetails>,
+    #[doc = "Gets or sets the time of the last modification of the database."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
 }
@@ -236,14 +310,18 @@ impl DatabaseProperties {
         Self::default()
     }
 }
+#[doc = "Class representing the databases solution summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabasesSolutionSummary {
     #[serde(flatten)]
     pub solution_summary: SolutionSummary,
+    #[doc = "Gets or sets the count of databases assessed."]
     #[serde(rename = "databasesAssessedCount", default, skip_serializing_if = "Option::is_none")]
     pub databases_assessed_count: Option<i32>,
+    #[doc = "Gets or sets the count of database instances assessed."]
     #[serde(rename = "databaseInstancesAssessedCount", default, skip_serializing_if = "Option::is_none")]
     pub database_instances_assessed_count: Option<i32>,
+    #[doc = "Gets or sets the count of databases ready for migration."]
     #[serde(rename = "migrationReadyCount", default, skip_serializing_if = "Option::is_none")]
     pub migration_ready_count: Option<i32>,
 }
@@ -272,36 +350,52 @@ impl DefaultQuerySettings {
         Self::default()
     }
 }
+#[doc = "Discovery properties that can be published by various ISVs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiscoveryDetails {
+    #[doc = "Gets or sets the OS type."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
+    #[doc = "Gets or sets the OS name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
     pub os_name: Option<String>,
+    #[doc = "Gets or sets the OS version."]
     #[serde(rename = "osVersion", default, skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
+    #[doc = "Gets or sets the time the message was enqueued."]
     #[serde(rename = "enqueueTime", default, skip_serializing_if = "Option::is_none")]
     pub enqueue_time: Option<String>,
+    #[doc = "Gets or sets the name of the solution that sent the data."]
     #[serde(rename = "solutionName", default, skip_serializing_if = "Option::is_none")]
     pub solution_name: Option<String>,
+    #[doc = "Gets or sets the unique identifier of the machine."]
     #[serde(rename = "machineId", default, skip_serializing_if = "Option::is_none")]
     pub machine_id: Option<String>,
+    #[doc = "Gets or sets the unique identifier of the virtual machine manager(vCenter/VMM)."]
     #[serde(rename = "machineManagerId", default, skip_serializing_if = "Option::is_none")]
     pub machine_manager_id: Option<String>,
+    #[doc = "Gets or sets the fabric type."]
     #[serde(rename = "fabricType", default, skip_serializing_if = "Option::is_none")]
     pub fabric_type: Option<String>,
+    #[doc = "Gets or sets the time of the last modification of the machine details."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
+    #[doc = "Gets or sets the list of IP addresses of the machine. IP addresses could be IP V4 or IP V6."]
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
+    #[doc = "Gets or sets the FQDN of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Gets or sets the BIOS ID of the machine."]
     #[serde(rename = "biosId", default, skip_serializing_if = "Option::is_none")]
     pub bios_id: Option<String>,
+    #[doc = "Gets or sets the list of MAC addresses of the machine."]
     #[serde(rename = "macAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub mac_addresses: Vec<String>,
+    #[doc = "Gets or sets the ISV specific extended information."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<serde_json::Value>,
 }
@@ -322,10 +416,13 @@ impl EdmReferentialConstraintPropertyPair {
         Self::default()
     }
 }
+#[doc = "Collection of events."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventCollection {
+    #[doc = "Gets or sets the machines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MigrateEvent>,
+    #[doc = "Gets or sets the value of nextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -829,14 +926,19 @@ impl IServiceProvider {
         Self::default()
     }
 }
+#[doc = "Machine REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Machine {
+    #[doc = "Gets or sets the relative URL to get to this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the name of this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets the type of this REST resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of the machine resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachineProperties>,
 }
@@ -845,10 +947,13 @@ impl Machine {
         Self::default()
     }
 }
+#[doc = "Collection of machines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineCollection {
+    #[doc = "Gets or sets the machines."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Machine>,
+    #[doc = "Gets or sets the value of nextLink."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -857,10 +962,12 @@ impl MachineCollection {
         Self::default()
     }
 }
+#[doc = "Properties of the machine error resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineMigrateEventProperties {
     #[serde(flatten)]
     pub migrate_event_properties: MigrateEventProperties,
+    #[doc = "Gets or sets the machine for which the error is being reported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub machine: Option<String>,
 }
@@ -869,14 +976,19 @@ impl MachineMigrateEventProperties {
         Self::default()
     }
 }
+#[doc = "Properties of the machine resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineProperties {
+    #[doc = "Gets or sets the discovery details of the machine published by various sources."]
     #[serde(rename = "discoveryData", default, skip_serializing_if = "Vec::is_empty")]
     pub discovery_data: Vec<DiscoveryDetails>,
+    #[doc = "Gets or sets the assessment details of the machine published by various sources."]
     #[serde(rename = "assessmentData", default, skip_serializing_if = "Vec::is_empty")]
     pub assessment_data: Vec<AssessmentDetails>,
+    #[doc = "Gets or sets the migration details of the machine published by various sources."]
     #[serde(rename = "migrationData", default, skip_serializing_if = "Vec::is_empty")]
     pub migration_data: Vec<MigrationDetails>,
+    #[doc = "Gets or sets the time of the last modification of the machine."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
 }
@@ -885,14 +997,19 @@ impl MachineProperties {
         Self::default()
     }
 }
+#[doc = "MigrateEvent REST resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrateEvent {
+    #[doc = "Gets or sets the relative URL to get to this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the name of this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets the type of this REST resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of the error resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MigrateEventProperties>,
 }
@@ -901,20 +1018,28 @@ impl MigrateEvent {
         Self::default()
     }
 }
+#[doc = "Properties of the error resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrateEventProperties {
+    #[doc = "Gets the Instance type."]
     #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
+    #[doc = "Gets or sets the error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[doc = "Gets or sets the error message."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "Gets or sets the recommendation for the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommendation: Option<String>,
+    #[doc = "Gets or sets the possible causes for the error."]
     #[serde(rename = "possibleCauses", default, skip_serializing_if = "Option::is_none")]
     pub possible_causes: Option<String>,
+    #[doc = "Gets or sets the solution for which the error is being reported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub solution: Option<String>,
+    #[doc = "Gets or sets the client request Id of the payload for which the event is being reported."]
     #[serde(rename = "clientRequestId", default, skip_serializing_if = "Option::is_none")]
     pub client_request_id: Option<String>,
 }
@@ -923,20 +1048,28 @@ impl MigrateEventProperties {
         Self::default()
     }
 }
+#[doc = "Migrate Project REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrateProject {
+    #[doc = "Gets or sets the eTag for concurrency control."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
+    #[doc = "Gets or sets the Azure location in which migrate project is created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Class for migrate project properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MigrateProjectProperties>,
+    #[doc = "Gets the relative URL to get this migrate project."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets the name of the migrate project."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Handled by resource provider. Type = Microsoft.Migrate/MigrateProject."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Gets or sets the tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<migrate_project::Tags>,
 }
@@ -947,6 +1080,7 @@ impl MigrateProject {
 }
 pub mod migrate_project {
     use super::*;
+    #[doc = "Gets or sets the tags."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Tags {
         #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
@@ -958,16 +1092,22 @@ pub mod migrate_project {
         }
     }
 }
+#[doc = "Class for migrate project properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrateProjectProperties {
+    #[doc = "Gets or sets the list of tools registered with the migrate project."]
     #[serde(rename = "registeredTools", default, skip_serializing_if = "Vec::is_empty")]
     pub registered_tools: Vec<String>,
+    #[doc = "Gets the summary of the migrate project."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<serde_json::Value>,
+    #[doc = "Gets the last time the project summary was refreshed."]
     #[serde(rename = "lastSummaryRefreshedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_summary_refreshed_time: Option<String>,
+    #[doc = "Gets the refresh summary state."]
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<migrate_project_properties::RefreshSummaryState>,
+    #[doc = "Provisioning state of the migrate project."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<migrate_project_properties::ProvisioningState>,
 }
@@ -978,6 +1118,7 @@ impl MigrateProjectProperties {
 }
 pub mod migrate_project_properties {
     use super::*;
+    #[doc = "Gets the refresh summary state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RefreshSummaryState {
         Started,
@@ -985,6 +1126,7 @@ pub mod migrate_project_properties {
         Completed,
         Failed,
     }
+    #[doc = "Provisioning state of the migrate project."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Accepted,
@@ -995,38 +1137,55 @@ pub mod migrate_project_properties {
         Succeeded,
     }
 }
+#[doc = "Migration properties that can be shared by various publishers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrationDetails {
+    #[doc = "Gets or sets the phase of migration of the machine."]
     #[serde(rename = "migrationPhase", default, skip_serializing_if = "Option::is_none")]
     pub migration_phase: Option<String>,
+    #[doc = "Gets or sets a value indicating whether migration was tested on the machine."]
     #[serde(rename = "migrationTested", default, skip_serializing_if = "Option::is_none")]
     pub migration_tested: Option<bool>,
+    #[doc = "Gets or sets the progress percentage of migration on the machine."]
     #[serde(rename = "replicationProgressPercentage", default, skip_serializing_if = "Option::is_none")]
     pub replication_progress_percentage: Option<i32>,
+    #[doc = "Gets or sets the ARM id the migrated VM."]
     #[serde(rename = "targetVMArmId", default, skip_serializing_if = "Option::is_none")]
     pub target_vm_arm_id: Option<String>,
+    #[doc = "Gets or sets the time the message was enqueued."]
     #[serde(rename = "enqueueTime", default, skip_serializing_if = "Option::is_none")]
     pub enqueue_time: Option<String>,
+    #[doc = "Gets or sets the name of the solution that sent the data."]
     #[serde(rename = "solutionName", default, skip_serializing_if = "Option::is_none")]
     pub solution_name: Option<String>,
+    #[doc = "Gets or sets the unique identifier of the machine."]
     #[serde(rename = "machineId", default, skip_serializing_if = "Option::is_none")]
     pub machine_id: Option<String>,
+    #[doc = "Gets or sets the unique identifier of the virtual machine manager(vCenter/VMM)."]
     #[serde(rename = "machineManagerId", default, skip_serializing_if = "Option::is_none")]
     pub machine_manager_id: Option<String>,
+    #[doc = "Gets or sets the fabric type."]
     #[serde(rename = "fabricType", default, skip_serializing_if = "Option::is_none")]
     pub fabric_type: Option<String>,
+    #[doc = "Gets or sets the time of the last modification of the machine details."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
+    #[doc = "Gets or sets the name of the machine."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
+    #[doc = "Gets or sets the list of IP addresses of the machine. IP addresses could be IP V4 or IP V6."]
     #[serde(rename = "ipAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_addresses: Vec<String>,
+    #[doc = "Gets or sets the FQDN of the machine."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Gets or sets the BIOS ID of the machine."]
     #[serde(rename = "biosId", default, skip_serializing_if = "Option::is_none")]
     pub bios_id: Option<String>,
+    #[doc = "Gets or sets the list of MAC addresses of the machine."]
     #[serde(rename = "macAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub mac_addresses: Vec<String>,
+    #[doc = "Gets or sets the ISV specific extended information."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<serde_json::Value>,
 }
@@ -1121,12 +1280,16 @@ impl Object {
         Self::default()
     }
 }
+#[doc = "A REST API operation supported by the provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Displayable properties of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Origin of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -1135,14 +1298,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "Displayable properties of the operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Provider of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource operated on by the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Operation Type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -1151,8 +1319,10 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "List of API operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultList {
+    #[doc = "List of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -1161,14 +1331,19 @@ impl OperationResultList {
         Self::default()
     }
 }
+#[doc = "The project summary class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProjectSummary {
+    #[doc = "Gets the Instance type."]
     #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
+    #[doc = "Gets or sets the state of refresh summary."]
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<project_summary::RefreshSummaryState>,
+    #[doc = "Gets or sets the time when summary was last refreshed."]
     #[serde(rename = "lastSummaryRefreshedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_summary_refreshed_time: Option<String>,
+    #[doc = "Gets or sets the extended summary."]
     #[serde(rename = "extendedSummary", default, skip_serializing_if = "Option::is_none")]
     pub extended_summary: Option<serde_json::Value>,
 }
@@ -1179,6 +1354,7 @@ impl ProjectSummary {
 }
 pub mod project_summary {
     use super::*;
+    #[doc = "Gets or sets the state of refresh summary."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RefreshSummaryState {
         Started,
@@ -1201,8 +1377,10 @@ impl RangeVariable {
         Self::default()
     }
 }
+#[doc = "Class representing the refresh summary input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RefreshSummaryInput {
+    #[doc = "Gets or sets the goal for which summary needs to be refreshed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goal: Option<refresh_summary_input::Goal>,
 }
@@ -1213,14 +1391,17 @@ impl RefreshSummaryInput {
 }
 pub mod refresh_summary_input {
     use super::*;
+    #[doc = "Gets or sets the goal for which summary needs to be refreshed."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Goal {
         Servers,
         Databases,
     }
 }
+#[doc = "Class representing the refresh summary status of the migrate project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RefreshSummaryResult {
+    #[doc = "Gets or sets a value indicating whether the migrate project summary is refreshed."]
     #[serde(rename = "isRefreshed", default, skip_serializing_if = "Option::is_none")]
     pub is_refreshed: Option<bool>,
 }
@@ -1229,8 +1410,10 @@ impl RefreshSummaryResult {
         Self::default()
     }
 }
+#[doc = "Class representing the register tool input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegisterToolInput {
+    #[doc = "Gets or sets the tool to be registered."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool: Option<register_tool_input::Tool>,
 }
@@ -1241,6 +1424,7 @@ impl RegisterToolInput {
 }
 pub mod register_tool_input {
     use super::*;
+    #[doc = "Gets or sets the tool to be registered."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tool {
         ServerDiscovery,
@@ -1258,8 +1442,10 @@ pub mod register_tool_input {
         DatabaseMigrationService,
     }
 }
+#[doc = "Class representing the registration status of a tool with the migrate project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistrationResult {
+    #[doc = "Gets or sets a value indicating whether the tool is registered or not."]
     #[serde(rename = "isRegistered", default, skip_serializing_if = "Option::is_none")]
     pub is_registered: Option<bool>,
 }
@@ -1294,18 +1480,24 @@ impl SelectItem {
         Self::default()
     }
 }
+#[doc = "Class representing the servers project summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServersProjectSummary {
     #[serde(flatten)]
     pub project_summary: ProjectSummary,
+    #[doc = "Gets or sets the count of entities discovered."]
     #[serde(rename = "discoveredCount", default, skip_serializing_if = "Option::is_none")]
     pub discovered_count: Option<i32>,
+    #[doc = "Gets or sets the count of entities assessed."]
     #[serde(rename = "assessedCount", default, skip_serializing_if = "Option::is_none")]
     pub assessed_count: Option<i32>,
+    #[doc = "Gets or sets the count of entities being replicated."]
     #[serde(rename = "replicatingCount", default, skip_serializing_if = "Option::is_none")]
     pub replicating_count: Option<i32>,
+    #[doc = "Gets or sets the count of entities test migrated."]
     #[serde(rename = "testMigratedCount", default, skip_serializing_if = "Option::is_none")]
     pub test_migrated_count: Option<i32>,
+    #[doc = "Gets or sets the count of entities migrated."]
     #[serde(rename = "migratedCount", default, skip_serializing_if = "Option::is_none")]
     pub migrated_count: Option<i32>,
 }
@@ -1314,18 +1506,24 @@ impl ServersProjectSummary {
         Self::default()
     }
 }
+#[doc = "Class representing the servers solution summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServersSolutionSummary {
     #[serde(flatten)]
     pub solution_summary: SolutionSummary,
+    #[doc = "Gets or sets the count of servers discovered."]
     #[serde(rename = "discoveredCount", default, skip_serializing_if = "Option::is_none")]
     pub discovered_count: Option<i32>,
+    #[doc = "Gets or sets the count of servers assessed."]
     #[serde(rename = "assessedCount", default, skip_serializing_if = "Option::is_none")]
     pub assessed_count: Option<i32>,
+    #[doc = "Gets or sets the count of servers being replicated."]
     #[serde(rename = "replicatingCount", default, skip_serializing_if = "Option::is_none")]
     pub replicating_count: Option<i32>,
+    #[doc = "Gets or sets the count of servers test migrated."]
     #[serde(rename = "testMigratedCount", default, skip_serializing_if = "Option::is_none")]
     pub test_migrated_count: Option<i32>,
+    #[doc = "Gets or sets the count of servers migrated."]
     #[serde(rename = "migratedCount", default, skip_serializing_if = "Option::is_none")]
     pub migrated_count: Option<i32>,
 }
@@ -1386,16 +1584,22 @@ pub mod single_value_node {
         CollectionConstant,
     }
 }
+#[doc = "Solution REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Solution {
+    #[doc = "Gets the relative URL to get to this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets the name of this REST resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets the type of this REST resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Gets or sets the ETAG for optimistic concurrency control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Class for solution properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SolutionProperties>,
 }
@@ -1404,8 +1608,10 @@ impl Solution {
         Self::default()
     }
 }
+#[doc = "Class representing the config for the solution in the migrate project."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionConfig {
+    #[doc = "Gets or sets the publisher sas uri for the solution."]
     #[serde(rename = "publisherSasUri", default, skip_serializing_if = "Option::is_none")]
     pub publisher_sas_uri: Option<String>,
 }
@@ -1414,12 +1620,16 @@ impl SolutionConfig {
         Self::default()
     }
 }
+#[doc = "Class representing the details of the solution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionDetails {
+    #[doc = "Gets or sets the count of groups reported by the solution."]
     #[serde(rename = "groupCount", default, skip_serializing_if = "Option::is_none")]
     pub group_count: Option<i32>,
+    #[doc = "Gets or sets the count of assessments reported by the solution."]
     #[serde(rename = "assessmentCount", default, skip_serializing_if = "Option::is_none")]
     pub assessment_count: Option<i32>,
+    #[doc = "Gets or sets the extended details reported by the solution."]
     #[serde(rename = "extendedDetails", default, skip_serializing_if = "Option::is_none")]
     pub extended_details: Option<serde_json::Value>,
 }
@@ -1428,20 +1638,28 @@ impl SolutionDetails {
         Self::default()
     }
 }
+#[doc = "Class for solution properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionProperties {
+    #[doc = "Gets or sets the tool being used in the solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool: Option<solution_properties::Tool>,
+    #[doc = "Gets or sets the purpose of the solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub purpose: Option<solution_properties::Purpose>,
+    #[doc = "Gets or sets the goal of the solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goal: Option<solution_properties::Goal>,
+    #[doc = "Gets or sets the current status of the solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<solution_properties::Status>,
+    #[doc = "Gets or sets the cleanup state of the solution."]
     #[serde(rename = "cleanupState", default, skip_serializing_if = "Option::is_none")]
     pub cleanup_state: Option<solution_properties::CleanupState>,
+    #[doc = "The solution summary class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub summary: Option<SolutionSummary>,
+    #[doc = "Class representing the details of the solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<SolutionDetails>,
 }
@@ -1452,6 +1670,7 @@ impl SolutionProperties {
 }
 pub mod solution_properties {
     use super::*;
+    #[doc = "Gets or sets the tool being used in the solution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tool {
         ServerDiscovery,
@@ -1468,22 +1687,26 @@ pub mod solution_properties {
         DataMigrationAssistant,
         DatabaseMigrationService,
     }
+    #[doc = "Gets or sets the purpose of the solution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Purpose {
         Discovery,
         Assessment,
         Migration,
     }
+    #[doc = "Gets or sets the goal of the solution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Goal {
         Servers,
         Databases,
     }
+    #[doc = "Gets or sets the current status of the solution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Inactive,
         Active,
     }
+    #[doc = "Gets or sets the cleanup state of the solution."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CleanupState {
         None,
@@ -1493,8 +1716,10 @@ pub mod solution_properties {
         Failed,
     }
 }
+#[doc = "The solution summary class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionSummary {
+    #[doc = "Gets the Instance type."]
     #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
 }
@@ -1503,10 +1728,13 @@ impl SolutionSummary {
         Self::default()
     }
 }
+#[doc = "Collection of solutions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionsCollection {
+    #[doc = "Gets or sets the list of solutions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Solution>,
+    #[doc = "Gets or sets the value of next link."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

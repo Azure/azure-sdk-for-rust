@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Action to be applied."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
+    #[doc = "Action that should be applied."]
     #[serde(rename = "actionType")]
     pub action_type: action::ActionType,
 }
@@ -14,16 +16,19 @@ impl Action {
 }
 pub mod action {
     use super::*;
+    #[doc = "Action that should be applied."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ActionType {
         AddActionGroups,
         RemoveAllActionGroups,
     }
 }
+#[doc = "Add action groups to alert processing rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddActionGroups {
     #[serde(flatten)]
     pub action: Action,
+    #[doc = "List of action group Ids to add to alert processing rule."]
     #[serde(rename = "actionGroupIds")]
     pub action_group_ids: Vec<String>,
 }
@@ -32,12 +37,15 @@ impl AddActionGroups {
         Self { action, action_group_ids }
     }
 }
+#[doc = "Alert processing rule object containing target scopes, conditions and scheduling logic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertProcessingRule {
     #[serde(flatten)]
     pub managed_resource: ManagedResource,
+    #[doc = "Alert processing rule properties defining scopes, conditions and scheduling logic for alert processing rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertProcessingRuleProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -50,16 +58,23 @@ impl AlertProcessingRule {
         }
     }
 }
+#[doc = "Alert processing rule properties defining scopes, conditions and scheduling logic for alert processing rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertProcessingRuleProperties {
+    #[doc = "List of ARM IDs which will be the target of the given alert processing rule."]
     pub scopes: Scopes,
+    #[doc = "Conditions in alert instance to be matched for a given alert processing rule. Default value is all. Multiple values could be provided with comma separation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conditions: Option<Conditions>,
+    #[doc = "Scheduling configuration for a given alert processing rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<Schedule>,
+    #[doc = "Actions to be applied."]
     pub actions: Vec<Action>,
+    #[doc = "Description of alert processing rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Indicates if the given alert processing rule is enabled or disabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -75,10 +90,13 @@ impl AlertProcessingRuleProperties {
         }
     }
 }
+#[doc = "List of alert processing rules."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertProcessingRulesList {
+    #[doc = "URL to fetch the next set of alert processing rules."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "List of alert processing rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AlertProcessingRule>,
 }
@@ -87,12 +105,16 @@ impl AlertProcessingRulesList {
         Self::default()
     }
 }
+#[doc = "Condition to trigger an alert processing rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Condition {
+    #[doc = "Field for a given condition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub field: Option<condition::Field>,
+    #[doc = "Operator for a given condition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operator: Option<condition::Operator>,
+    #[doc = "List of values to match for a given condition."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
 }
@@ -103,6 +125,7 @@ impl Condition {
 }
 pub mod condition {
     use super::*;
+    #[doc = "Field for a given condition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Field {
         Severity,
@@ -117,6 +140,7 @@ pub mod condition {
         Description,
         AlertContext,
     }
+    #[doc = "Operator for a given condition."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equals,
@@ -126,6 +150,7 @@ pub mod condition {
     }
 }
 pub type Conditions = Vec<Condition>;
+#[doc = "Daily recurrence object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DailyRecurrence {
     #[serde(flatten)]
@@ -136,6 +161,7 @@ impl DailyRecurrence {
         Self { recurrence }
     }
 }
+#[doc = "Days of week."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DaysOfWeek {
     Sunday,
@@ -146,11 +172,14 @@ pub enum DaysOfWeek {
     Friday,
     Saturday,
 }
+#[doc = "An azure managed resource object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -163,10 +192,13 @@ impl ManagedResource {
         }
     }
 }
+#[doc = "Details of a monitor service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorServiceDetails {
+    #[doc = "Monitor service name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Monitor service display name"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
@@ -175,10 +207,12 @@ impl MonitorServiceDetails {
         Self::default()
     }
 }
+#[doc = "Monitor service details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorServiceList {
     #[serde(flatten)]
     pub alerts_meta_data_properties: AlertsMetaDataProperties,
+    #[doc = "Array of operations"]
     pub data: Vec<MonitorServiceDetails>,
 }
 impl MonitorServiceList {
@@ -189,10 +223,12 @@ impl MonitorServiceList {
         }
     }
 }
+#[doc = "Monthly recurrence object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonthlyRecurrence {
     #[serde(flatten)]
     pub recurrence: Recurrence,
+    #[doc = "Specifies the values for monthly recurrence pattern."]
     #[serde(rename = "daysOfMonth")]
     pub days_of_month: Vec<i32>,
 }
@@ -201,10 +237,13 @@ impl MonthlyRecurrence {
         Self { recurrence, days_of_month }
     }
 }
+#[doc = "Data contract for patch."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchObject {
+    #[doc = "Alert processing rule properties supported by patch."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PatchProperties>,
+    #[doc = "Tags to be updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -213,8 +252,10 @@ impl PatchObject {
         Self::default()
     }
 }
+#[doc = "Alert processing rule properties supported by patch."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchProperties {
+    #[doc = "Indicates if the given alert processing rule is enabled or disabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -223,12 +264,16 @@ impl PatchProperties {
         Self::default()
     }
 }
+#[doc = "Recurrence object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Recurrence {
+    #[doc = "Specifies when the recurrence should be applied."]
     #[serde(rename = "recurrenceType")]
     pub recurrence_type: recurrence::RecurrenceType,
+    #[doc = "Start time for recurrence."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "End time for recurrence."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
 }
@@ -243,6 +288,7 @@ impl Recurrence {
 }
 pub mod recurrence {
     use super::*;
+    #[doc = "Specifies when the recurrence should be applied."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RecurrenceType {
         Daily,
@@ -250,6 +296,7 @@ pub mod recurrence {
         Monthly,
     }
 }
+#[doc = "Indicates if all action groups should be removed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemoveAllActionGroups {
     #[serde(flatten)]
@@ -260,12 +307,16 @@ impl RemoveAllActionGroups {
         Self { action }
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -274,14 +325,19 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Scheduling configuration for a given alert processing rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Schedule {
+    #[doc = "Scheduling effective from time. Date-Time in ISO-8601 format without timezone suffix."]
     #[serde(rename = "effectiveFrom", default, skip_serializing_if = "Option::is_none")]
     pub effective_from: Option<String>,
+    #[doc = "Scheduling effective until time. Date-Time in ISO-8601 format without timezone suffix."]
     #[serde(rename = "effectiveUntil", default, skip_serializing_if = "Option::is_none")]
     pub effective_until: Option<String>,
+    #[doc = "Scheduling time zone."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
+    #[doc = "List of recurrences."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub recurrences: Vec<Recurrence>,
 }
@@ -291,10 +347,12 @@ impl Schedule {
     }
 }
 pub type Scopes = Vec<String>;
+#[doc = "Weekly recurrence object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WeeklyRecurrence {
     #[serde(flatten)]
     pub recurrence: Recurrence,
+    #[doc = "Specifies the values for weekly recurrence pattern."]
     #[serde(rename = "daysOfWeek")]
     pub days_of_week: Vec<DaysOfWeek>,
 }
@@ -303,10 +361,12 @@ impl WeeklyRecurrence {
         Self { recurrence, days_of_week }
     }
 }
+#[doc = "An alert created in alert management service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Alert {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Alert property bag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertProperties>,
 }
@@ -315,6 +375,7 @@ impl Alert {
         Self::default()
     }
 }
+#[doc = "Information specific to the monitor service that gives more contextual details about the alert."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertContext {}
 impl AlertContext {
@@ -322,10 +383,12 @@ impl AlertContext {
         Self::default()
     }
 }
+#[doc = "Alert Modification details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertModification {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the alert modification item."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertModificationProperties>,
 }
@@ -334,20 +397,28 @@ impl AlertModification {
         Self::default()
     }
 }
+#[doc = "Alert modification item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertModificationItem {
+    #[doc = "Reason for the modification"]
     #[serde(rename = "modificationEvent", default, skip_serializing_if = "Option::is_none")]
     pub modification_event: Option<alert_modification_item::ModificationEvent>,
+    #[doc = "Old value"]
     #[serde(rename = "oldValue", default, skip_serializing_if = "Option::is_none")]
     pub old_value: Option<String>,
+    #[doc = "New value"]
     #[serde(rename = "newValue", default, skip_serializing_if = "Option::is_none")]
     pub new_value: Option<String>,
+    #[doc = "Modified date and time"]
     #[serde(rename = "modifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub modified_at: Option<String>,
+    #[doc = "Modified user details (Principal client name)"]
     #[serde(rename = "modifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub modified_by: Option<String>,
+    #[doc = "Modification comments"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comments: Option<String>,
+    #[doc = "Description of the modification"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -358,6 +429,7 @@ impl AlertModificationItem {
 }
 pub mod alert_modification_item {
     use super::*;
+    #[doc = "Reason for the modification"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ModificationEvent {
         AlertCreated,
@@ -371,10 +443,13 @@ pub mod alert_modification_item {
         ActionsFailed,
     }
 }
+#[doc = "Properties of the alert modification item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertModificationProperties {
+    #[doc = "Unique Id of the alert for which the history is being retrieved"]
     #[serde(rename = "alertId", default, skip_serializing_if = "Option::is_none")]
     pub alert_id: Option<String>,
+    #[doc = "Modification details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub modifications: Vec<AlertModificationItem>,
 }
@@ -383,12 +458,16 @@ impl AlertModificationProperties {
         Self::default()
     }
 }
+#[doc = "Alert property bag"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertProperties {
+    #[doc = "This object contains consistent fields across different monitor services."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub essentials: Option<Essentials>,
+    #[doc = "Information specific to the monitor service that gives more contextual details about the alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub context: Option<AlertContext>,
+    #[doc = "Config which would be used for displaying the data in portal."]
     #[serde(rename = "egressConfig", default, skip_serializing_if = "Option::is_none")]
     pub egress_config: Option<EgressConfig>,
 }
@@ -397,10 +476,13 @@ impl AlertProperties {
         Self::default()
     }
 }
+#[doc = "List the alerts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsList {
+    #[doc = "URL to fetch the next set of alerts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "List of alerts"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Alert>,
 }
@@ -409,8 +491,10 @@ impl AlertsList {
         Self::default()
     }
 }
+#[doc = "alert meta data information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsMetaData {
+    #[doc = "alert meta data property bag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertsMetaDataProperties>,
 }
@@ -419,8 +503,10 @@ impl AlertsMetaData {
         Self::default()
     }
 }
+#[doc = "alert meta data property bag"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsMetaDataProperties {
+    #[doc = "Identification of the information to be retrieved by API call"]
     #[serde(rename = "metadataIdentifier")]
     pub metadata_identifier: alerts_meta_data_properties::MetadataIdentifier,
 }
@@ -431,15 +517,18 @@ impl AlertsMetaDataProperties {
 }
 pub mod alerts_meta_data_properties {
     use super::*;
+    #[doc = "Identification of the information to be retrieved by API call"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MetadataIdentifier {
         MonitorServiceList,
     }
 }
+#[doc = "Summary of alerts based on the input filters and 'groupby' parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSummary {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Group the result set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertsSummaryGroup>,
 }
@@ -448,14 +537,19 @@ impl AlertsSummary {
         Self::default()
     }
 }
+#[doc = "Group the result set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSummaryGroup {
+    #[doc = "Total count of the result set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
+    #[doc = "Total count of the smart groups."]
     #[serde(rename = "smartGroupsCount", default, skip_serializing_if = "Option::is_none")]
     pub smart_groups_count: Option<i64>,
+    #[doc = "Name of the field aggregated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub groupedby: Option<String>,
+    #[doc = "List of the items"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<AlertsSummaryGroupItem>,
 }
@@ -464,14 +558,19 @@ impl AlertsSummaryGroup {
         Self::default()
     }
 }
+#[doc = "Alerts summary group item"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSummaryGroupItem {
+    #[doc = "Value of the aggregated field"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Count of the aggregated field"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+    #[doc = "Name of the field aggregated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub groupedby: Option<String>,
+    #[doc = "List of the items"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<AlertsSummaryGroupItem>,
 }
@@ -480,6 +579,7 @@ impl AlertsSummaryGroupItem {
         Self::default()
     }
 }
+#[doc = "Config which would be used for displaying the data in portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EgressConfig {}
 impl EgressConfig {
@@ -487,8 +587,10 @@ impl EgressConfig {
         Self::default()
     }
 }
+#[doc = "An error response from the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Details of error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
 }
@@ -497,14 +599,19 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Details of error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseBody {
+    #[doc = "Error code, intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Description of the error, intended for display in user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Target of the particular error, for example name of the property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseBody>,
 }
@@ -513,40 +620,58 @@ impl ErrorResponseBody {
         Self::default()
     }
 }
+#[doc = "This object contains consistent fields across different monitor services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Essentials {
+    #[doc = "Severity of alert Sev0 being highest and Sev4 being lowest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<essentials::Severity>,
+    #[doc = "The type of signal the alert is based on, which could be metrics, logs or activity logs."]
     #[serde(rename = "signalType", default, skip_serializing_if = "Option::is_none")]
     pub signal_type: Option<essentials::SignalType>,
+    #[doc = "Alert object state, which can be modified by the user."]
     #[serde(rename = "alertState", default, skip_serializing_if = "Option::is_none")]
     pub alert_state: Option<essentials::AlertState>,
+    #[doc = "Condition of the rule at the monitor service. It represents whether the underlying conditions have crossed the defined alert rule thresholds."]
     #[serde(rename = "monitorCondition", default, skip_serializing_if = "Option::is_none")]
     pub monitor_condition: Option<essentials::MonitorCondition>,
+    #[doc = "Target ARM resource, on which alert got created."]
     #[serde(rename = "targetResource", default, skip_serializing_if = "Option::is_none")]
     pub target_resource: Option<String>,
+    #[doc = "Name of the target ARM resource name, on which alert got created."]
     #[serde(rename = "targetResourceName", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_name: Option<String>,
+    #[doc = "Resource group of target ARM resource, on which alert got created."]
     #[serde(rename = "targetResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_group: Option<String>,
+    #[doc = "Resource type of target ARM resource, on which alert got created."]
     #[serde(rename = "targetResourceType", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_type: Option<String>,
+    #[doc = "Monitor service on which the rule(monitor) is set."]
     #[serde(rename = "monitorService", default, skip_serializing_if = "Option::is_none")]
     pub monitor_service: Option<essentials::MonitorService>,
+    #[doc = "Rule(monitor) which fired alert instance. Depending on the monitor service,  this would be ARM id or name of the rule."]
     #[serde(rename = "alertRule", default, skip_serializing_if = "Option::is_none")]
     pub alert_rule: Option<String>,
+    #[doc = "Unique Id created by monitor service for each alert instance. This could be used to track the issue at the monitor service, in case of Nagios, Zabbix, SCOM etc."]
     #[serde(rename = "sourceCreatedId", default, skip_serializing_if = "Option::is_none")]
     pub source_created_id: Option<String>,
+    #[doc = "Unique Id of the smart group"]
     #[serde(rename = "smartGroupId", default, skip_serializing_if = "Option::is_none")]
     pub smart_group_id: Option<String>,
+    #[doc = "Verbose reason describing the reason why this alert instance is added to a smart group"]
     #[serde(rename = "smartGroupingReason", default, skip_serializing_if = "Option::is_none")]
     pub smart_grouping_reason: Option<String>,
+    #[doc = "Creation time(ISO-8601 format) of alert instance."]
     #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
     pub start_date_time: Option<String>,
+    #[doc = "Last modification time(ISO-8601 format) of alert instance."]
     #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_date_time: Option<String>,
+    #[doc = "Resolved time(ISO-8601 format) of alert instance. This will be updated when monitor service resolves the alert instance because the rule condition is no longer met."]
     #[serde(rename = "monitorConditionResolvedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub monitor_condition_resolved_date_time: Option<String>,
+    #[doc = "User who last modified the alert, in case of monitor service updates user would be 'system', otherwise name of the user."]
     #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_user_name: Option<String>,
 }
@@ -557,6 +682,7 @@ impl Essentials {
 }
 pub mod essentials {
     use super::*;
+    #[doc = "Severity of alert Sev0 being highest and Sev4 being lowest."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         Sev0,
@@ -565,23 +691,27 @@ pub mod essentials {
         Sev3,
         Sev4,
     }
+    #[doc = "The type of signal the alert is based on, which could be metrics, logs or activity logs."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SignalType {
         Metric,
         Log,
         Unknown,
     }
+    #[doc = "Alert object state, which can be modified by the user."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AlertState {
         New,
         Acknowledged,
         Closed,
     }
+    #[doc = "Condition of the rule at the monitor service. It represents whether the underlying conditions have crossed the defined alert rule thresholds."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MonitorCondition {
         Fired,
         Resolved,
     }
+    #[doc = "Monitor service on which the rule(monitor) is set."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MonitorService {
         #[serde(rename = "Application Insights")]
@@ -609,10 +739,13 @@ pub mod essentials {
         Zabbix,
     }
 }
+#[doc = "Operation provided by provider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -623,14 +756,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Properties of the operation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Provider name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of the operation"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -640,10 +778,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Lists the operations available in the AlertsManagement RP."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
+    #[doc = "URL to fetch the next set of alerts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
 impl OperationsList {
@@ -651,10 +792,12 @@ impl OperationsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "Set of related alerts grouped together smartly by AMS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroup {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of smart group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SmartGroupProperties>,
 }
@@ -663,10 +806,13 @@ impl SmartGroup {
         Self::default()
     }
 }
+#[doc = "Aggregated property of each type"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupAggregatedProperty {
+    #[doc = "Name of the type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Total number of items of type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
@@ -675,10 +821,12 @@ impl SmartGroupAggregatedProperty {
         Self::default()
     }
 }
+#[doc = "Alert Modification details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupModification {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the smartGroup modification item."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SmartGroupModificationProperties>,
 }
@@ -687,20 +835,28 @@ impl SmartGroupModification {
         Self::default()
     }
 }
+#[doc = "smartGroup modification item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupModificationItem {
+    #[doc = "Reason for the modification"]
     #[serde(rename = "modificationEvent", default, skip_serializing_if = "Option::is_none")]
     pub modification_event: Option<smart_group_modification_item::ModificationEvent>,
+    #[doc = "Old value"]
     #[serde(rename = "oldValue", default, skip_serializing_if = "Option::is_none")]
     pub old_value: Option<String>,
+    #[doc = "New value"]
     #[serde(rename = "newValue", default, skip_serializing_if = "Option::is_none")]
     pub new_value: Option<String>,
+    #[doc = "Modified date and time"]
     #[serde(rename = "modifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub modified_at: Option<String>,
+    #[doc = "Modified user details (Principal client name)"]
     #[serde(rename = "modifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub modified_by: Option<String>,
+    #[doc = "Modification comments"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comments: Option<String>,
+    #[doc = "Description of the modification"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -711,6 +867,7 @@ impl SmartGroupModificationItem {
 }
 pub mod smart_group_modification_item {
     use super::*;
+    #[doc = "Reason for the modification"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ModificationEvent {
         SmartGroupCreated,
@@ -719,12 +876,16 @@ pub mod smart_group_modification_item {
         AlertRemoved,
     }
 }
+#[doc = "Properties of the smartGroup modification item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupModificationProperties {
+    #[doc = "Unique Id of the smartGroup for which the history is being retrieved"]
     #[serde(rename = "smartGroupId", default, skip_serializing_if = "Option::is_none")]
     pub smart_group_id: Option<String>,
+    #[doc = "Modification details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub modifications: Vec<SmartGroupModificationItem>,
+    #[doc = "URL to fetch the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -733,34 +894,49 @@ impl SmartGroupModificationProperties {
         Self::default()
     }
 }
+#[doc = "Properties of smart group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupProperties {
+    #[doc = "Total number of alerts in smart group"]
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i64>,
+    #[doc = "Smart group state"]
     #[serde(rename = "smartGroupState", default, skip_serializing_if = "Option::is_none")]
     pub smart_group_state: Option<smart_group_properties::SmartGroupState>,
+    #[doc = "Severity of smart group is the highest(Sev0 >... > Sev4) severity of all the alerts in the group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub severity: Option<smart_group_properties::Severity>,
+    #[doc = "Creation time of smart group. Date-Time in ISO-8601 format."]
     #[serde(rename = "startDateTime", default, skip_serializing_if = "Option::is_none")]
     pub start_date_time: Option<String>,
+    #[doc = "Last updated time of smart group. Date-Time in ISO-8601 format."]
     #[serde(rename = "lastModifiedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_date_time: Option<String>,
+    #[doc = "Last modified by user name."]
     #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_user_name: Option<String>,
+    #[doc = "Summary of target resources in the smart group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<SmartGroupAggregatedProperty>,
+    #[doc = "Summary of target resource types in the smart group"]
     #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_types: Vec<SmartGroupAggregatedProperty>,
+    #[doc = "Summary of target resource groups in the smart group"]
     #[serde(rename = "resourceGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub resource_groups: Vec<SmartGroupAggregatedProperty>,
+    #[doc = "Summary of monitorServices in the smart group"]
     #[serde(rename = "monitorServices", default, skip_serializing_if = "Vec::is_empty")]
     pub monitor_services: Vec<SmartGroupAggregatedProperty>,
+    #[doc = "Summary of monitorConditions in the smart group"]
     #[serde(rename = "monitorConditions", default, skip_serializing_if = "Vec::is_empty")]
     pub monitor_conditions: Vec<SmartGroupAggregatedProperty>,
+    #[doc = "Summary of alertStates in the smart group"]
     #[serde(rename = "alertStates", default, skip_serializing_if = "Vec::is_empty")]
     pub alert_states: Vec<SmartGroupAggregatedProperty>,
+    #[doc = "Summary of alertSeverities in the smart group"]
     #[serde(rename = "alertSeverities", default, skip_serializing_if = "Vec::is_empty")]
     pub alert_severities: Vec<SmartGroupAggregatedProperty>,
+    #[doc = "The URI to fetch the next page of alerts. Call ListNext() with this URI to fetch the next page alerts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -771,12 +947,14 @@ impl SmartGroupProperties {
 }
 pub mod smart_group_properties {
     use super::*;
+    #[doc = "Smart group state"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SmartGroupState {
         New,
         Acknowledged,
         Closed,
     }
+    #[doc = "Severity of smart group is the highest(Sev0 >... > Sev4) severity of all the alerts in the group."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         Sev0,
@@ -786,10 +964,13 @@ pub mod smart_group_properties {
         Sev4,
     }
 }
+#[doc = "List the alerts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupsList {
+    #[doc = "URL to fetch the next set of alerts."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "List of alerts"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SmartGroup>,
 }
@@ -798,18 +979,25 @@ impl SmartGroupsList {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -820,6 +1008,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -827,6 +1016,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

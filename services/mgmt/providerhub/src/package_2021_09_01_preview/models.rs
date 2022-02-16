@@ -61,7 +61,9 @@ impl CheckinManifestInfo {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckinManifestParams {
+    #[doc = "The environment supplied to the checkin manifest operation."]
     pub environment: String,
+    #[doc = "The baseline ARM manifest location supplied to the checkin manifest operation."]
     #[serde(rename = "baselineArmManifestLocation")]
     pub baseline_arm_manifest_location: String,
 }
@@ -73,11 +75,14 @@ impl CheckinManifestParams {
         }
     }
 }
+#[doc = "Rollout details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRollout {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of the rollout."]
     pub properties: serde_json::Value,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -94,6 +99,7 @@ impl CustomRollout {
 pub struct CustomRolloutArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CustomRollout>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -148,12 +154,15 @@ impl CustomRolloutStatus {
         Self::default()
     }
 }
+#[doc = "Default rollout definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRollout {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of the rollout."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -166,6 +175,7 @@ impl DefaultRollout {
 pub struct DefaultRolloutArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DefaultRollout>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -251,16 +261,22 @@ pub mod default_rollout_status {
         Failed,
     }
 }
+#[doc = "Standard error object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
+    #[doc = "Server-defined set of error codes."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Human-readable representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Target of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Array of details about specific errors that led to this reported error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<Error>,
+    #[doc = "Object containing more specific information than  the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<serde_json::Value>,
 }
@@ -269,8 +285,10 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "Standard error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Standard error object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
 }
@@ -279,8 +297,10 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Expedited rollout configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpeditedRolloutDefinition {
+    #[doc = "Indicates whether expedited rollout is enabled/disabled"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -393,10 +413,13 @@ pub mod identity_management_properties {
         DelegatedResourceIdentity,
     }
 }
+#[doc = "Inner error containing list of errors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerError {
+    #[doc = "Specific error code than was provided by the containing error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Object containing more specific information than the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<serde_json::Value>,
 }
@@ -471,11 +494,14 @@ pub mod linked_operation_rule {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizedOperationDefinition {
+    #[doc = "Name of the operation."]
     pub name: String,
+    #[doc = "Indicates whether the operation applies to data-plane."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<localized_operation_definition::Origin>,
+    #[doc = "Display information of the operation."]
     pub display: serde_json::Value,
     #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<localized_operation_definition::ActionType>,
@@ -510,39 +536,57 @@ pub mod localized_operation_definition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizedOperationDisplayDefinition {
+    #[doc = "Display information of the operation."]
     pub default: serde_json::Value,
+    #[doc = "Display information of the operation for en locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub en: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for cs locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cs: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for de locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub de: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for es locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub es: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for fr locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fr: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for hu locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hu: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for it locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub it: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for ja locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ja: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for ko locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ko: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for nl locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nl: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for pl locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pl: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for pt-BR locale."]
     #[serde(rename = "ptBR", default, skip_serializing_if = "Option::is_none")]
     pub pt_br: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for pt-PT locale."]
     #[serde(rename = "ptPT", default, skip_serializing_if = "Option::is_none")]
     pub pt_pt: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for ru locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ru: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for sv locale."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sv: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for zh-Hans locale."]
     #[serde(rename = "zhHans", default, skip_serializing_if = "Option::is_none")]
     pub zh_hans: Option<serde_json::Value>,
+    #[doc = "Display information of the operation for zh-Hant locale."]
     #[serde(rename = "zhHant", default, skip_serializing_if = "Option::is_none")]
     pub zh_hant: Option<serde_json::Value>,
 }
@@ -627,12 +671,14 @@ impl NotificationEndpoint {
         Self::default()
     }
 }
+#[doc = "The notification registration definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationRegistration {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -645,6 +691,7 @@ impl NotificationRegistration {
 pub struct NotificationRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NotificationRegistration>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -697,6 +744,7 @@ impl OpenApiConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenApiValidation {
+    #[doc = "Indicates whether a non compliance response is allowed for a LIST call"]
     #[serde(rename = "allowNoncompliantCollectionResponse", default, skip_serializing_if = "Option::is_none")]
     pub allow_noncompliant_collection_response: Option<bool>,
 }
@@ -709,6 +757,7 @@ impl OpenApiValidation {
 pub struct OperationsContent {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of an Operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationsDefinition>,
 }
@@ -719,6 +768,7 @@ impl OperationsContent {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsContentProperties {
+    #[doc = "Operations content."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contents: Vec<LocalizedOperationDefinition>,
 }
@@ -727,13 +777,17 @@ impl OperationsContentProperties {
         Self::default()
     }
 }
+#[doc = "Properties of an Operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsDefinition {
+    #[doc = "Name of the operation."]
     pub name: String,
+    #[doc = "Indicates whether the operation applies to data-plane."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<operations_definition::Origin>,
+    #[doc = "Display information of the operation."]
     pub display: serde_json::Value,
     #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<operations_definition::ActionType>,
@@ -770,6 +824,7 @@ pub mod operations_definition {
 pub struct OperationsDefinitionArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationsDefinition>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -827,6 +882,7 @@ pub struct ProviderRegistration {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -839,6 +895,7 @@ impl ProviderRegistration {
 pub struct ProviderRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ProviderRegistration>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -883,6 +940,7 @@ pub enum ProvisioningState {
     TransientFailure,
     RolloutInProgress,
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -928,12 +986,16 @@ pub mod request_header_options {
         UnboundedClientGroupMembership,
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -974,6 +1036,7 @@ impl ResourceGraphConfiguration {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceManagementAction {
+    #[doc = "resource management action content."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<ResourceManagementEntity>,
 }
@@ -984,12 +1047,16 @@ impl ResourceManagementAction {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceManagementEntity {
+    #[doc = "The resource id."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
+    #[doc = "The home tenant id."]
     #[serde(rename = "homeTenantId", default, skip_serializing_if = "Option::is_none")]
     pub home_tenant_id: Option<String>,
+    #[doc = "The location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The operation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
@@ -1384,6 +1451,7 @@ pub struct ResourceTypeRegistration {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1396,6 +1464,7 @@ impl ResourceTypeRegistration {
 pub struct ResourceTypeRegistrationArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceTypeRegistration>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1669,6 +1738,7 @@ pub struct SkuResource {
     pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1681,6 +1751,7 @@ impl SkuResource {
 pub struct SkuResourceArrayResponseWithContinuation {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SkuResource>,
+    #[doc = "The URL to get to the next set of results, if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1964,18 +2035,25 @@ impl TypedErrorInfo {
         Self { type_, info: None }
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -1986,6 +2064,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -1993,6 +2072,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

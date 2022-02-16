@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Application Insights component linked storage accounts"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComponentLinkedStorageAccounts {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "An Application Insights component linked storage account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LinkedStorageAccountsProperties>,
 }
@@ -14,8 +16,10 @@ impl ComponentLinkedStorageAccounts {
         Self::default()
     }
 }
+#[doc = "An Application Insights component linked storage accounts patch"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComponentLinkedStorageAccountsPatch {
+    #[doc = "An Application Insights component linked storage account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LinkedStorageAccountsProperties>,
 }
@@ -26,6 +30,7 @@ impl ComponentLinkedStorageAccountsPatch {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponseLinkedStorage {
+    #[doc = "Error response indicates Insights service is not able to process the incoming request. The reason is provided in the error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response_linked_storage::Error>,
 }
@@ -36,10 +41,13 @@ impl ErrorResponseLinkedStorage {
 }
 pub mod error_response_linked_storage {
     use super::*;
+    #[doc = "Error response indicates Insights service is not able to process the incoming request. The reason is provided in the error message."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
+        #[doc = "Error code."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
+        #[doc = "Error message indicating why the operation failed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
     }
@@ -49,8 +57,10 @@ pub mod error_response_linked_storage {
         }
     }
 }
+#[doc = "An Application Insights component linked storage account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkedStorageAccountsProperties {
+    #[doc = "Linked storage account resource ID"]
     #[serde(rename = "linkedStorageAccount", default, skip_serializing_if = "Option::is_none")]
     pub linked_storage_account: Option<String>,
 }
@@ -59,6 +69,7 @@ impl LinkedStorageAccountsProperties {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -69,12 +80,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

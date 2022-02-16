@@ -2,26 +2,37 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Network base admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveBaseSecurityAdminRule {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Deployment time string."]
     #[serde(rename = "commitTime", default, skip_serializing_if = "Option::is_none")]
     pub commit_time: Option<String>,
+    #[doc = "Deployment region."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
+    #[doc = "A display name of the security admin configuration."]
     #[serde(rename = "configurationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub configuration_display_name: Option<String>,
+    #[doc = "A description of the security admin configuration."]
     #[serde(rename = "configurationDescription", default, skip_serializing_if = "Option::is_none")]
     pub configuration_description: Option<String>,
+    #[doc = "A display name of the rule collection."]
     #[serde(rename = "ruleCollectionDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub rule_collection_display_name: Option<String>,
+    #[doc = "A description of the rule collection."]
     #[serde(rename = "ruleCollectionDescription", default, skip_serializing_if = "Option::is_none")]
     pub rule_collection_description: Option<String>,
+    #[doc = "Groups for rule collection"]
     #[serde(rename = "ruleCollectionAppliesToGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub rule_collection_applies_to_groups: Vec<NetworkManagerSecurityGroupItem>,
+    #[doc = "Effective configuration groups."]
     #[serde(rename = "ruleGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub rule_groups: Vec<ConfigurationGroup>,
+    #[doc = "Whether the rule is custom or default."]
     pub kind: active_base_security_admin_rule::Kind,
 }
 impl ActiveBaseSecurityAdminRule {
@@ -42,32 +53,44 @@ impl ActiveBaseSecurityAdminRule {
 }
 pub mod active_base_security_admin_rule {
     use super::*;
+    #[doc = "Whether the rule is custom or default."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Custom,
         Default,
     }
 }
+#[doc = "Network base rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveBaseSecurityUserRule {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Deployment time string."]
     #[serde(rename = "commitTime", default, skip_serializing_if = "Option::is_none")]
     pub commit_time: Option<String>,
+    #[doc = "Deployment region."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
+    #[doc = "A display name of the security user configuration."]
     #[serde(rename = "configurationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub configuration_display_name: Option<String>,
+    #[doc = "A description of the security user configuration."]
     #[serde(rename = "configurationDescription", default, skip_serializing_if = "Option::is_none")]
     pub configuration_description: Option<String>,
+    #[doc = "A display name of the rule collection."]
     #[serde(rename = "ruleCollectionDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub rule_collection_display_name: Option<String>,
+    #[doc = "A description of the rule collection."]
     #[serde(rename = "ruleCollectionDescription", default, skip_serializing_if = "Option::is_none")]
     pub rule_collection_description: Option<String>,
+    #[doc = "Groups for rule collection"]
     #[serde(rename = "ruleCollectionAppliesToGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub rule_collection_applies_to_groups: Vec<NetworkManagerSecurityGroupItem>,
+    #[doc = "Effective configuration groups."]
     #[serde(rename = "ruleGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub rule_groups: Vec<ConfigurationGroup>,
+    #[doc = "Whether the rule is custom or default."]
     pub kind: active_base_security_user_rule::Kind,
 }
 impl ActiveBaseSecurityUserRule {
@@ -88,16 +111,20 @@ impl ActiveBaseSecurityUserRule {
 }
 pub mod active_base_security_user_rule {
     use super::*;
+    #[doc = "Whether the rule is custom or default."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Custom,
         Default,
     }
 }
+#[doc = "Effective Virtual Networks Parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveConfigurationParameter {
+    #[doc = "List of regions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<String>,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -106,12 +133,15 @@ impl ActiveConfigurationParameter {
         Self::default()
     }
 }
+#[doc = "Active connectivity configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveConnectivityConfiguration {
     #[serde(flatten)]
     pub effective_connectivity_configuration: EffectiveConnectivityConfiguration,
+    #[doc = "Deployment time string."]
     #[serde(rename = "commitTime", default, skip_serializing_if = "Option::is_none")]
     pub commit_time: Option<String>,
+    #[doc = "Deployment region."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
 }
@@ -120,10 +150,13 @@ impl ActiveConnectivityConfiguration {
         Self::default()
     }
 }
+#[doc = "Result of the request to list active connectivity configurations. It contains a list of active connectivity configurations and a skiptoken to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveConnectivityConfigurationsListResult {
+    #[doc = "Gets a page of active connectivity configurations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActiveConnectivityConfiguration>,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -132,10 +165,12 @@ impl ActiveConnectivityConfigurationsListResult {
         Self::default()
     }
 }
+#[doc = "Network default admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDefaultSecurityAdminRule {
     #[serde(flatten)]
     pub active_base_security_admin_rule: ActiveBaseSecurityAdminRule,
+    #[doc = "Security default admin rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DefaultAdminPropertiesFormat>,
 }
@@ -147,10 +182,12 @@ impl ActiveDefaultSecurityAdminRule {
         }
     }
 }
+#[doc = "Network security default user rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDefaultSecurityUserRule {
     #[serde(flatten)]
     pub active_base_security_user_rule: ActiveBaseSecurityUserRule,
+    #[doc = "Security default user rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DefaultUserRulePropertiesFormat>,
 }
@@ -162,10 +199,12 @@ impl ActiveDefaultSecurityUserRule {
         }
     }
 }
+#[doc = "Network admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveSecurityAdminRule {
     #[serde(flatten)]
     pub active_base_security_admin_rule: ActiveBaseSecurityAdminRule,
+    #[doc = "Security admin rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdminPropertiesFormat>,
 }
@@ -177,10 +216,13 @@ impl ActiveSecurityAdminRule {
         }
     }
 }
+#[doc = "Result of the request to list active security admin rules. It contains a list of active security admin rules and a skiptoken to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveSecurityAdminRulesListResult {
+    #[doc = "Gets a page of active security admin rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActiveBaseSecurityAdminRule>,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -189,10 +231,12 @@ impl ActiveSecurityAdminRulesListResult {
         Self::default()
     }
 }
+#[doc = "Network security user rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveSecurityUserRule {
     #[serde(flatten)]
     pub active_base_security_user_rule: ActiveBaseSecurityUserRule,
+    #[doc = "Security rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserRulePropertiesFormat>,
 }
@@ -204,10 +248,13 @@ impl ActiveSecurityUserRule {
         }
     }
 }
+#[doc = "Result of the request to list active security user rules. It contains a list of active security user rules and a skiptoken to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveSecurityUserRulesListResult {
+    #[doc = "Gets a page of active security user rules."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ActiveBaseSecurityUserRule>,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -216,10 +263,13 @@ impl ActiveSecurityUserRulesListResult {
         Self::default()
     }
 }
+#[doc = "Address prefix item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddressPrefixItem {
+    #[doc = "Address prefix."]
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
+    #[doc = "Address prefix type."]
     #[serde(rename = "addressPrefixType", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix_type: Option<address_prefix_item::AddressPrefixType>,
 }
@@ -230,6 +280,7 @@ impl AddressPrefixItem {
 }
 pub mod address_prefix_item {
     use super::*;
+    #[doc = "Address prefix type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AddressPrefixType {
         #[serde(rename = "IPPrefix")]
@@ -237,25 +288,37 @@ pub mod address_prefix_item {
         ServiceTag,
     }
 }
+#[doc = "Security admin rule resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdminPropertiesFormat {
+    #[doc = "A friendly name for the rule."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description for this rule. Restricted to 140 chars."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Network protocol this rule applies to."]
     pub protocol: RuleProtocol,
+    #[doc = "The CIDR or source IP ranges."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sources: Vec<AddressPrefixItem>,
+    #[doc = "The destination address prefixes. CIDR or destination IP ranges."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub destinations: Vec<AddressPrefixItem>,
+    #[doc = "The source port ranges."]
     #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub source_port_ranges: Vec<String>,
+    #[doc = "The destination port ranges."]
     #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub destination_port_ranges: Vec<String>,
+    #[doc = "Whether network traffic is allowed or denied."]
     pub access: SecurityConfigurationRuleAccess,
+    #[doc = "The priority of the rule. The value can be between 1 and 4096. The priority number must be unique for each rule in the collection. The lower the priority number, the higher the priority of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
+    #[doc = "The direction of the rule. The direction specifies if the rule will be evaluated on incoming or outgoing traffic."]
     pub direction: SecurityConfigurationRuleDirection,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -276,10 +339,12 @@ impl AdminPropertiesFormat {
         }
     }
 }
+#[doc = "Network admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdminRule {
     #[serde(flatten)]
     pub base_admin_rule: BaseAdminRule,
+    #[doc = "Security admin rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdminPropertiesFormat>,
 }
@@ -291,10 +356,13 @@ impl AdminRule {
         }
     }
 }
+#[doc = "security configuration admin rule list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdminRuleListResult {
+    #[doc = "A list of admin rules"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BaseAdminRule>,
+    #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -303,11 +371,14 @@ impl AdminRuleListResult {
         Self::default()
     }
 }
+#[doc = "Network base admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseAdminRule {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Whether the rule is custom or default."]
     pub kind: base_admin_rule::Kind,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -322,17 +393,21 @@ impl BaseAdminRule {
 }
 pub mod base_admin_rule {
     use super::*;
+    #[doc = "Whether the rule is custom or default."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Custom,
         Default,
     }
 }
+#[doc = "Network base rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BaseUserRule {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Whether the rule is custom or default."]
     pub kind: base_user_rule::Kind,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -347,14 +422,17 @@ impl BaseUserRule {
 }
 pub mod base_user_rule {
     use super::*;
+    #[doc = "Whether the rule is custom or default."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Custom,
         Default,
     }
 }
+#[doc = "An error response from the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "An error response from the service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -363,14 +441,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "An error response from the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -379,10 +462,13 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "The network configuration group resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationGroup {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Properties of network group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkGroupProperties>,
 }
@@ -391,18 +477,22 @@ impl ConfigurationGroup {
         Self::default()
     }
 }
+#[doc = "Configuration Deployment Type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConfigurationType {
     SecurityAdmin,
     SecurityUser,
     Connectivity,
 }
+#[doc = "The network manager connectivity configuration resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityConfiguration {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of network manager connectivity configuration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectivityConfigurationProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -411,10 +501,13 @@ impl ConnectivityConfiguration {
         Self::default()
     }
 }
+#[doc = "Result of the request to list network manager connectivity configurations. It contains a list of configurations and a link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityConfigurationListResult {
+    #[doc = "Gets a page of Connectivity Configurations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ConnectivityConfiguration>,
+    #[doc = "Gets the URL to get the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -423,22 +516,31 @@ impl ConnectivityConfigurationListResult {
         Self::default()
     }
 }
+#[doc = "Properties of network manager connectivity configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectivityConfigurationProperties {
+    #[doc = "A friendly name for the resource."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description of the connectivity configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Connectivity topology type."]
     #[serde(rename = "connectivityTopology")]
     pub connectivity_topology: connectivity_configuration_properties::ConnectivityTopology,
+    #[doc = "List of hubItems"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub hubs: Vec<Hub>,
+    #[doc = "Flag if global mesh is supported."]
     #[serde(rename = "isGlobal", default, skip_serializing_if = "Option::is_none")]
     pub is_global: Option<connectivity_configuration_properties::IsGlobal>,
+    #[doc = "Groups for configuration"]
     #[serde(rename = "appliesToGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub applies_to_groups: Vec<ConnectivityGroupItem>,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Flag if need to remove current existing peerings."]
     #[serde(rename = "deleteExistingPeering", default, skip_serializing_if = "Option::is_none")]
     pub delete_existing_peering: Option<connectivity_configuration_properties::DeleteExistingPeering>,
 }
@@ -458,46 +560,62 @@ impl ConnectivityConfigurationProperties {
 }
 pub mod connectivity_configuration_properties {
     use super::*;
+    #[doc = "Connectivity topology type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectivityTopology {
         HubAndSpoke,
         Mesh,
     }
+    #[doc = "Flag if global mesh is supported."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IsGlobal {
         False,
         True,
     }
+    #[doc = "Flag if need to remove current existing peerings."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeleteExistingPeering {
         False,
         True,
     }
 }
+#[doc = "Security default admin rule resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultAdminPropertiesFormat {
+    #[doc = "A friendly name for the rule."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description for this rule. Restricted to 140 chars."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Default rule flag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub flag: Option<String>,
+    #[doc = "Network protocol this rule applies to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<RuleProtocol>,
+    #[doc = "The CIDR or source IP ranges."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sources: Vec<AddressPrefixItem>,
+    #[doc = "The destination address prefixes. CIDR or destination IP ranges."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub destinations: Vec<AddressPrefixItem>,
+    #[doc = "The source port ranges."]
     #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub source_port_ranges: Vec<String>,
+    #[doc = "The destination port ranges."]
     #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub destination_port_ranges: Vec<String>,
+    #[doc = "Whether network traffic is allowed or denied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access: Option<SecurityConfigurationRuleAccess>,
+    #[doc = "The priority of the rule. The value can be between 1 and 4096. The priority number must be unique for each rule in the collection. The lower the priority number, the higher the priority of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
+    #[doc = "The direction of the rule. The direction specifies if the rule will be evaluated on incoming or outgoing traffic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<SecurityConfigurationRuleDirection>,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -506,10 +624,12 @@ impl DefaultAdminPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Network default admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefaultAdminRule {
     #[serde(flatten)]
     pub base_admin_rule: BaseAdminRule,
+    #[doc = "Security default admin rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DefaultAdminPropertiesFormat>,
 }
@@ -521,10 +641,12 @@ impl DefaultAdminRule {
         }
     }
 }
+#[doc = "Network security default user rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefaultUserRule {
     #[serde(flatten)]
     pub base_user_rule: BaseUserRule,
+    #[doc = "Security default user rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DefaultUserRulePropertiesFormat>,
 }
@@ -536,26 +658,37 @@ impl DefaultUserRule {
         }
     }
 }
+#[doc = "Security default user rule resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultUserRulePropertiesFormat {
+    #[doc = "A friendly name for the rule."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description for this rule. Restricted to 140 chars."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Default rule flag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub flag: Option<String>,
+    #[doc = "Network protocol this rule applies to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<RuleProtocol>,
+    #[doc = "The CIDR or source IP ranges."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sources: Vec<AddressPrefixItem>,
+    #[doc = "The destination address prefixes. CIDR or destination IP ranges."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub destinations: Vec<AddressPrefixItem>,
+    #[doc = "The source port ranges."]
     #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub source_port_ranges: Vec<String>,
+    #[doc = "The destination port ranges."]
     #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub destination_port_ranges: Vec<String>,
+    #[doc = "The direction of the rule. The direction specifies if the rule will be evaluated on incoming or outgoing traffic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub direction: Option<SecurityConfigurationRuleDirection>,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -564,22 +697,31 @@ impl DefaultUserRulePropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Network base admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EffectiveBaseSecurityAdminRule {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "A display name of the security admin configuration."]
     #[serde(rename = "configurationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub configuration_display_name: Option<String>,
+    #[doc = "A description of the security admin configuration."]
     #[serde(rename = "configurationDescription", default, skip_serializing_if = "Option::is_none")]
     pub configuration_description: Option<String>,
+    #[doc = "A display name of the rule collection."]
     #[serde(rename = "ruleCollectionDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub rule_collection_display_name: Option<String>,
+    #[doc = "A description of the rule collection."]
     #[serde(rename = "ruleCollectionDescription", default, skip_serializing_if = "Option::is_none")]
     pub rule_collection_description: Option<String>,
+    #[doc = "Groups for rule collection"]
     #[serde(rename = "ruleCollectionAppliesToGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub rule_collection_applies_to_groups: Vec<NetworkManagerSecurityGroupItem>,
+    #[doc = "Effective configuration groups."]
     #[serde(rename = "ruleGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub rule_groups: Vec<ConfigurationGroup>,
+    #[doc = "Whether the rule is custom or default."]
     pub kind: effective_base_security_admin_rule::Kind,
 }
 impl EffectiveBaseSecurityAdminRule {
@@ -598,18 +740,23 @@ impl EffectiveBaseSecurityAdminRule {
 }
 pub mod effective_base_security_admin_rule {
     use super::*;
+    #[doc = "Whether the rule is custom or default."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         Custom,
         Default,
     }
 }
+#[doc = "The network manager effective connectivity configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveConnectivityConfiguration {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Properties of network manager connectivity configuration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectivityConfigurationProperties>,
+    #[doc = "Effective configuration groups."]
     #[serde(rename = "configurationGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub configuration_groups: Vec<ConfigurationGroup>,
 }
@@ -618,10 +765,12 @@ impl EffectiveConnectivityConfiguration {
         Self::default()
     }
 }
+#[doc = "Network default admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EffectiveDefaultSecurityAdminRule {
     #[serde(flatten)]
     pub effective_base_security_admin_rule: EffectiveBaseSecurityAdminRule,
+    #[doc = "Security default admin rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DefaultAdminPropertiesFormat>,
 }
@@ -633,10 +782,12 @@ impl EffectiveDefaultSecurityAdminRule {
         }
     }
 }
+#[doc = "Network admin rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EffectiveSecurityAdminRule {
     #[serde(flatten)]
     pub effective_base_security_admin_rule: EffectiveBaseSecurityAdminRule,
+    #[doc = "Security admin rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdminPropertiesFormat>,
 }
@@ -648,12 +799,16 @@ impl EffectiveSecurityAdminRule {
         }
     }
 }
+#[doc = "Effective Virtual Network"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveVirtualNetwork {
+    #[doc = "Effective vnet Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Location of vnet."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Membership Type."]
     #[serde(rename = "membershipType", default, skip_serializing_if = "Option::is_none")]
     pub membership_type: Option<effective_virtual_network::MembershipType>,
 }
@@ -664,16 +819,20 @@ impl EffectiveVirtualNetwork {
 }
 pub mod effective_virtual_network {
     use super::*;
+    #[doc = "Membership Type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum MembershipType {
         Static,
         Dynamic,
     }
 }
+#[doc = "Result of the request to list Effective Virtual Network. It contains a list of groups and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveVirtualNetworksListResult {
+    #[doc = "Gets a page of EffectiveVirtualNetwork"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EffectiveVirtualNetwork>,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -682,10 +841,13 @@ impl EffectiveVirtualNetworksListResult {
         Self::default()
     }
 }
+#[doc = "Effective Virtual Networks Parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveVirtualNetworksParameter {
+    #[doc = "Conditional Members."]
     #[serde(rename = "conditionalMembers", default, skip_serializing_if = "Option::is_none")]
     pub conditional_members: Option<String>,
+    #[doc = "Continuation token for pagination, capturing the next page size and offset, as well as the context of the query."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -694,10 +856,13 @@ impl EffectiveVirtualNetworksParameter {
         Self::default()
     }
 }
+#[doc = "Hub Item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Hub {
+    #[doc = "Resource Id."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "Resource Type."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
 }
@@ -706,12 +871,15 @@ impl Hub {
         Self::default()
     }
 }
+#[doc = "The network group resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkGroup {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of network group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkGroupProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -720,10 +888,13 @@ impl NetworkGroup {
         Self::default()
     }
 }
+#[doc = "Result of the request to list NetworkGroup. It contains a list of groups and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkGroupListResult {
+    #[doc = "Gets a page of NetworkGroup"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkGroup>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -732,18 +903,25 @@ impl NetworkGroupListResult {
         Self::default()
     }
 }
+#[doc = "Properties of network group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkGroupProperties {
+    #[doc = "A friendly name for the network group."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description of the network group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Group member type."]
     #[serde(rename = "memberType", default, skip_serializing_if = "Option::is_none")]
     pub member_type: Option<String>,
+    #[doc = "Group members of network group."]
     #[serde(rename = "groupMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub group_members: Vec<GroupMembersItem>,
+    #[doc = "Network group conditional filter."]
     #[serde(rename = "conditionalMembership", default, skip_serializing_if = "Option::is_none")]
     pub conditional_membership: Option<String>,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -752,14 +930,18 @@ impl NetworkGroupProperties {
         Self::default()
     }
 }
+#[doc = "The Managed Network resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManager {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of Managed Network"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkManagerProperties>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -768,14 +950,19 @@ impl NetworkManager {
         Self::default()
     }
 }
+#[doc = "Network Manager Commit."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerCommit {
+    #[doc = "Commit Id."]
     #[serde(rename = "commitId", default, skip_serializing_if = "Option::is_none")]
     pub commit_id: Option<String>,
+    #[doc = "List of target locations."]
     #[serde(rename = "targetLocations", default, skip_serializing_if = "Vec::is_empty")]
     pub target_locations: Vec<String>,
+    #[doc = "List of configuration ids."]
     #[serde(rename = "configurationIds", default, skip_serializing_if = "Vec::is_empty")]
     pub configuration_ids: Vec<String>,
+    #[doc = "Configuration Deployment Type."]
     #[serde(rename = "commitType", default, skip_serializing_if = "Option::is_none")]
     pub commit_type: Option<ConfigurationType>,
 }
@@ -784,18 +971,25 @@ impl NetworkManagerCommit {
         Self::default()
     }
 }
+#[doc = "Network Manager Deployment Status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerDeploymentStatus {
+    #[doc = "Commit Time."]
     #[serde(rename = "commitTime", default, skip_serializing_if = "Option::is_none")]
     pub commit_time: Option<String>,
+    #[doc = "Region Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
+    #[doc = "Deployment Status."]
     #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
     pub deployment_status: Option<network_manager_deployment_status::DeploymentStatus>,
+    #[doc = "List of configuration ids."]
     #[serde(rename = "configurationIds", default, skip_serializing_if = "Vec::is_empty")]
     pub configuration_ids: Vec<String>,
+    #[doc = "Configuration Deployment Type."]
     #[serde(rename = "deploymentType", default, skip_serializing_if = "Option::is_none")]
     pub deployment_type: Option<ConfigurationType>,
+    #[doc = "Error Message."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
 }
@@ -806,6 +1000,7 @@ impl NetworkManagerDeploymentStatus {
 }
 pub mod network_manager_deployment_status {
     use super::*;
+    #[doc = "Deployment Status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeploymentStatus {
         NotStarted,
@@ -814,10 +1009,13 @@ pub mod network_manager_deployment_status {
         Failed,
     }
 }
+#[doc = "A list of Network Manager Deployment Status"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerDeploymentStatusListResult {
+    #[doc = "Gets a page of Network Manager Deployment Status"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkManagerDeploymentStatus>,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -826,12 +1024,16 @@ impl NetworkManagerDeploymentStatusListResult {
         Self::default()
     }
 }
+#[doc = "Network Manager Deployment Status Parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerDeploymentStatusParameter {
+    #[doc = "List of locations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub regions: Vec<String>,
+    #[doc = "List of deployment types."]
     #[serde(rename = "deploymentTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub deployment_types: Vec<ConfigurationType>,
+    #[doc = "Continuation token for pagination, capturing the next page size and offset, as well as the context of the query."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -840,10 +1042,13 @@ impl NetworkManagerDeploymentStatusParameter {
         Self::default()
     }
 }
+#[doc = "Result of the request to list networkManagerEffectiveConnectivityConfiguration. It contains a list of groups and a skiptoken to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerEffectiveConnectivityConfigurationListResult {
+    #[doc = "Gets a page of NetworkManagerEffectiveConnectivityConfiguration"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EffectiveConnectivityConfiguration>,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -852,10 +1057,13 @@ impl NetworkManagerEffectiveConnectivityConfigurationListResult {
         Self::default()
     }
 }
+#[doc = "Result of the request to list networkManagerEffectiveSecurityAdminRules. It contains a list of groups and a skiptoken to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerEffectiveSecurityAdminRulesListResult {
+    #[doc = "Gets a page of NetworkManagerEffectiveSecurityAdminRules"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<EffectiveBaseSecurityAdminRule>,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -864,10 +1072,13 @@ impl NetworkManagerEffectiveSecurityAdminRulesListResult {
         Self::default()
     }
 }
+#[doc = "Result of the request to list NetworkManager. It contains a list of network managers and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerListResult {
+    #[doc = "Gets a page of NetworkManager"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkManager>,
+    #[doc = "Gets the URL to get the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -876,16 +1087,22 @@ impl NetworkManagerListResult {
         Self::default()
     }
 }
+#[doc = "Properties of Managed Network"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerProperties {
+    #[doc = "A friendly name for the network manager."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description of the network manager."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Scope of Network Manager."]
     #[serde(rename = "networkManagerScopes", default, skip_serializing_if = "Option::is_none")]
     pub network_manager_scopes: Option<network_manager_properties::NetworkManagerScopes>,
+    #[doc = "Scope Access."]
     #[serde(rename = "networkManagerScopeAccesses", default, skip_serializing_if = "Vec::is_empty")]
     pub network_manager_scope_accesses: Vec<ConfigurationType>,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -896,10 +1113,13 @@ impl NetworkManagerProperties {
 }
 pub mod network_manager_properties {
     use super::*;
+    #[doc = "Scope of Network Manager."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct NetworkManagerScopes {
+        #[doc = "List of management groups."]
         #[serde(rename = "managementGroups", default, skip_serializing_if = "Vec::is_empty")]
         pub management_groups: Vec<String>,
+        #[doc = "List of subscriptions."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub subscriptions: Vec<String>,
     }
@@ -909,8 +1129,10 @@ pub mod network_manager_properties {
         }
     }
 }
+#[doc = "Network manager security group item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkManagerSecurityGroupItem {
+    #[doc = "Network manager group Id."]
     #[serde(rename = "networkGroupId", default, skip_serializing_if = "Option::is_none")]
     pub network_group_id: Option<String>,
 }
@@ -919,18 +1141,24 @@ impl NetworkManagerSecurityGroupItem {
         Self::default()
     }
 }
+#[doc = "The Network Security Perimeter resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityPerimeter {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of network security perimeter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkSecurityPerimeterProperties>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "The name of the resource that is unique within a resource group. This name can be used to access the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Network security perimeter identifier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -939,10 +1167,13 @@ impl NetworkSecurityPerimeter {
         Self::default()
     }
 }
+#[doc = "Result of the request to list NetworkSecurityPerimeter. It contains a list of network security perimeters and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityPerimeterListResult {
+    #[doc = "Gets a page of NetworkSecurityPerimeter"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkSecurityPerimeter>,
+    #[doc = "Gets the URL to get the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -951,12 +1182,16 @@ impl NetworkSecurityPerimeterListResult {
         Self::default()
     }
 }
+#[doc = "Properties of network security perimeter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityPerimeterProperties {
+    #[doc = "A friendly name for the network security perimeter."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description of the network security perimeter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -965,16 +1200,21 @@ impl NetworkSecurityPerimeterProperties {
         Self::default()
     }
 }
+#[doc = "Resource that is onboarded to use network security perimeter. Also referred as perimeter associable resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PerimeterAssociableResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the perimeter associable resources."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PerimeterAssociableResourceProperties>,
+    #[doc = "The name of the resource that is unique within a resource group. This name can be used to access the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Identifier of the perimeter associable resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -983,12 +1223,16 @@ impl PerimeterAssociableResource {
         Self::default()
     }
 }
+#[doc = "Properties of the perimeter associable resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PerimeterAssociableResourceProperties {
+    #[doc = "A friendly name for the properties of perimeter associable resources."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Resource type/provider name."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Public DNS zone names of the resources."]
     #[serde(rename = "publicDnsZones", default, skip_serializing_if = "Vec::is_empty")]
     pub public_dns_zones: Vec<String>,
 }
@@ -997,10 +1241,13 @@ impl PerimeterAssociableResourceProperties {
         Self::default()
     }
 }
+#[doc = "Paged list of perimeter associable resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PerimeterAssociableResourcesListResult {
+    #[doc = "Gets paged list of perimeter associable resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PerimeterAssociableResource>,
+    #[doc = "Gets the URL to get the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1009,6 +1256,7 @@ impl PerimeterAssociableResourcesListResult {
         Self::default()
     }
 }
+#[doc = "The current provisioning state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
     Succeeded,
@@ -1016,14 +1264,19 @@ pub enum ProvisioningState {
     Deleting,
     Failed,
 }
+#[doc = "Proxy resource representation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1032,8 +1285,10 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Query Request Options"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryRequestOptions {
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
 }
@@ -1042,16 +1297,22 @@ impl QueryRequestOptions {
         Self::default()
     }
 }
+#[doc = "Common resource representation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1060,12 +1321,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Defines the rule collection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuleCollection {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Defines the rule collection properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RuleCollectionPropertiesFormat>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1074,10 +1338,13 @@ impl RuleCollection {
         Self::default()
     }
 }
+#[doc = "Security configuration rule collection list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuleCollectionListResult {
+    #[doc = "A list of network manager security configuration rule collections"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RuleCollection>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1086,14 +1353,19 @@ impl RuleCollectionListResult {
         Self::default()
     }
 }
+#[doc = "Defines the rule collection properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuleCollectionPropertiesFormat {
+    #[doc = "A display name of the rule collection."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description of the rule collection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Groups for configuration"]
     #[serde(rename = "appliesToGroups", default, skip_serializing_if = "Vec::is_empty")]
     pub applies_to_groups: Vec<NetworkManagerSecurityGroupItem>,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -1102,6 +1374,7 @@ impl RuleCollectionPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Network protocol this rule applies to."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RuleProtocol {
     Tcp,
@@ -1111,12 +1384,15 @@ pub enum RuleProtocol {
     Any,
     Ah,
 }
+#[doc = "Defines the security configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConfiguration {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Defines the security Configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityConfigurationPropertiesFormat>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -1125,10 +1401,13 @@ impl SecurityConfiguration {
         Self::default()
     }
 }
+#[doc = "A list of network manager security configurations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConfigurationListResult {
+    #[doc = "Gets a page of security configurations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityConfiguration>,
+    #[doc = "Gets the URL to get the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1137,16 +1416,22 @@ impl SecurityConfigurationListResult {
         Self::default()
     }
 }
+#[doc = "Defines the security Configuration properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConfigurationPropertiesFormat {
+    #[doc = "A display name of the security configuration."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description of the security configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Security Type."]
     #[serde(rename = "securityType", default, skip_serializing_if = "Option::is_none")]
     pub security_type: Option<security_configuration_properties_format::SecurityType>,
+    #[doc = "Flag if need to delete existing network security groups."]
     #[serde(rename = "deleteExistingNSGs", default, skip_serializing_if = "Option::is_none")]
     pub delete_existing_ns_gs: Option<security_configuration_properties_format::DeleteExistingNsGs>,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -1157,40 +1442,51 @@ impl SecurityConfigurationPropertiesFormat {
 }
 pub mod security_configuration_properties_format {
     use super::*;
+    #[doc = "Security Type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SecurityType {
         AdminPolicy,
         UserPolicy,
     }
+    #[doc = "Flag if need to delete existing network security groups."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeleteExistingNsGs {
         False,
         True,
     }
 }
+#[doc = "Whether network traffic is allowed or denied."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SecurityConfigurationRuleAccess {
     Allow,
     Deny,
     AlwaysAllow,
 }
+#[doc = "The direction of the rule. The direction specifies if the rule will be evaluated on incoming or outgoing traffic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SecurityConfigurationRuleDirection {
     Inbound,
     Outbound,
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -1201,6 +1497,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -1208,6 +1505,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,
@@ -1216,8 +1514,10 @@ pub mod system_data {
         Key,
     }
 }
+#[doc = "Tags object for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1226,10 +1526,12 @@ impl TagsObject {
         Self::default()
     }
 }
+#[doc = "Network security user rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserRule {
     #[serde(flatten)]
     pub base_user_rule: BaseUserRule,
+    #[doc = "Security rule resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserRulePropertiesFormat>,
 }
@@ -1241,10 +1543,13 @@ impl UserRule {
         }
     }
 }
+#[doc = "security user rule list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserRuleListResult {
+    #[doc = "A list of user rules"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BaseUserRule>,
+    #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1253,22 +1558,32 @@ impl UserRuleListResult {
         Self::default()
     }
 }
+#[doc = "Security rule resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserRulePropertiesFormat {
+    #[doc = "A friendly name for the rule."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "A description for this rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Network protocol this rule applies to."]
     pub protocol: RuleProtocol,
+    #[doc = "The CIDR or source IP ranges."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sources: Vec<AddressPrefixItem>,
+    #[doc = "The destination address prefixes. CIDR or destination IP ranges."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub destinations: Vec<AddressPrefixItem>,
+    #[doc = "The source port ranges."]
     #[serde(rename = "sourcePortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub source_port_ranges: Vec<String>,
+    #[doc = "The destination port ranges."]
     #[serde(rename = "destinationPortRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub destination_port_ranges: Vec<String>,
+    #[doc = "The direction of the rule. The direction specifies if the rule will be evaluated on incoming or outgoing traffic."]
     pub direction: SecurityConfigurationRuleDirection,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
@@ -1289,12 +1604,16 @@ impl UserRulePropertiesFormat {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityGroupItem {
+    #[doc = "Network group Id."]
     #[serde(rename = "networkGroupId", default, skip_serializing_if = "Option::is_none")]
     pub network_group_id: Option<String>,
+    #[doc = "Flag if need to use hub gateway."]
     #[serde(rename = "useHubGateway", default, skip_serializing_if = "Option::is_none")]
     pub use_hub_gateway: Option<connectivity_group_item::UseHubGateway>,
+    #[doc = "Flag if global is supported."]
     #[serde(rename = "isGlobal", default, skip_serializing_if = "Option::is_none")]
     pub is_global: Option<connectivity_group_item::IsGlobal>,
+    #[doc = "Group connectivity type."]
     #[serde(rename = "groupConnectivity", default, skip_serializing_if = "Option::is_none")]
     pub group_connectivity: Option<connectivity_group_item::GroupConnectivity>,
 }
@@ -1305,24 +1624,29 @@ impl ConnectivityGroupItem {
 }
 pub mod connectivity_group_item {
     use super::*;
+    #[doc = "Flag if need to use hub gateway."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UseHubGateway {
         False,
         True,
     }
+    #[doc = "Flag if global is supported."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum IsGlobal {
         False,
         True,
     }
+    #[doc = "Group connectivity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GroupConnectivity {
         None,
         DirectlyConnected,
     }
 }
+#[doc = "GroupMembers Item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupMembersItem {
+    #[doc = "Resource Id."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
 }

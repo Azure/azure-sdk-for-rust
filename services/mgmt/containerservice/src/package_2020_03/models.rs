@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Profile for enabling a user to access a managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessProfile {
+    #[doc = "Base64-encoded Kubernetes configuration file."]
     #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub kube_config: Option<String>,
 }
@@ -12,10 +14,12 @@ impl AccessProfile {
         Self::default()
     }
 }
+#[doc = "Agent Pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties for the container service agent pool profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedClusterAgentPoolProfileProperties>,
 }
@@ -24,14 +28,19 @@ impl AgentPool {
         Self::default()
     }
 }
+#[doc = "The list of available versions for an agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPoolAvailableVersions {
+    #[doc = "Id of the agent pool available versions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the agent pool available versions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the agent pool  available versions."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The list of available agent pool versions."]
     pub properties: AgentPoolAvailableVersionsProperties,
 }
 impl AgentPoolAvailableVersions {
@@ -44,8 +53,10 @@ impl AgentPoolAvailableVersions {
         }
     }
 }
+#[doc = "The list of available agent pool versions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolAvailableVersionsProperties {
+    #[doc = "List of versions available for agent pool."]
     #[serde(rename = "agentPoolVersions", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_versions: Vec<serde_json::Value>,
 }
@@ -54,10 +65,13 @@ impl AgentPoolAvailableVersionsProperties {
         Self::default()
     }
 }
+#[doc = "The response from the List Agent Pools operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolListResult {
+    #[doc = "The list of agent pools."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AgentPool>,
+    #[doc = "The URL to get the next set of agent pool results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -66,24 +80,31 @@ impl AgentPoolListResult {
         Self::default()
     }
 }
+#[doc = "AgentPoolMode represents mode of an agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AgentPoolMode {
     System,
     User,
 }
+#[doc = "AgentPoolType represents types of an agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AgentPoolType {
     VirtualMachineScaleSets,
     AvailabilitySet,
 }
+#[doc = "The list of available upgrades for an agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPoolUpgradeProfile {
+    #[doc = "Id of the agent pool upgrade profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the agent pool upgrade profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the agent pool upgrade profile."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The list of available upgrade versions."]
     pub properties: AgentPoolUpgradeProfileProperties,
 }
 impl AgentPoolUpgradeProfile {
@@ -96,12 +117,16 @@ impl AgentPoolUpgradeProfile {
         }
     }
 }
+#[doc = "The list of available upgrade versions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AgentPoolUpgradeProfileProperties {
+    #[doc = "Kubernetes version (major, minor, patch)."]
     #[serde(rename = "kubernetesVersion")]
     pub kubernetes_version: String,
+    #[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
     #[serde(rename = "osType")]
     pub os_type: OsType,
+    #[doc = "List of orchestrator types and versions available for upgrade."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<serde_json::Value>,
 }
@@ -114,8 +139,10 @@ impl AgentPoolUpgradeProfileProperties {
         }
     }
 }
+#[doc = "An error response from the Container service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "An error response from the Container service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -124,14 +151,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "An error response from the Container service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "An identifier for the error. Codes are invariant and are intended to be consumed programmatically."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A message describing the error, intended to be suitable for display in a user interface."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error. For example, the name of the property in error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -140,10 +172,12 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Container service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerService {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the container service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContainerServiceProperties>,
 }
@@ -155,25 +189,36 @@ impl ContainerService {
         }
     }
 }
+#[doc = "Profile for the container service agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceAgentPoolProfile {
+    #[doc = "Unique name of the agent pool profile in the context of the subscription and resource group."]
     pub name: String,
+    #[doc = "Number of agents (VMs) to host docker containers. Allowed values must be in the range of 1 to 100 (inclusive). The default value is 1. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
+    #[doc = "Size of agent VMs."]
     #[serde(rename = "vmSize")]
     pub vm_size: ContainerServiceVmSize,
+    #[doc = "OS Disk Size in GB to be used to specify the disk size for every machine in this master/agent pool. If you specify 0, it will apply the default osDisk size according to the vmSize specified."]
     #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
+    #[doc = "DNS prefix to be used to create the FQDN for the agent pool."]
     #[serde(rename = "dnsPrefix", default, skip_serializing_if = "Option::is_none")]
     pub dns_prefix: Option<String>,
+    #[doc = "FQDN for the agent pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Ports number array used to expose on this agent pool. The default opened ports are different based on your choice of orchestrator."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ports: Vec<i64>,
+    #[doc = "Storage profile specifies what kind of storage used. Choose from StorageAccount and ManagedDisks. Leave it empty, we will choose for you based on the orchestrator choice."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<ContainerServiceStorageProfile>,
+    #[doc = "VNet SubnetID specifies the VNet's subnet identifier."]
     #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
     pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
+    #[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
@@ -193,8 +238,10 @@ impl ContainerServiceAgentPoolProfile {
         }
     }
 }
+#[doc = "Properties to configure a custom container service cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceCustomProfile {
+    #[doc = "The name of the custom orchestrator to use."]
     pub orchestrator: String,
 }
 impl ContainerServiceCustomProfile {
@@ -202,8 +249,10 @@ impl ContainerServiceCustomProfile {
         Self { orchestrator }
     }
 }
+#[doc = "Profile for diagnostics on the container service cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceDiagnosticsProfile {
+    #[doc = "Profile for diagnostics on the container service VMs."]
     #[serde(rename = "vmDiagnostics")]
     pub vm_diagnostics: ContainerServiceVmDiagnostics,
 }
@@ -212,10 +261,13 @@ impl ContainerServiceDiagnosticsProfile {
         Self { vm_diagnostics }
     }
 }
+#[doc = "Profile for Linux VMs in the container service cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceLinuxProfile {
+    #[doc = "The administrator username to use for Linux VMs."]
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
+    #[doc = "SSH configuration for Linux-based VMs running on Azure."]
     pub ssh: ContainerServiceSshConfiguration,
 }
 impl ContainerServiceLinuxProfile {
@@ -223,10 +275,13 @@ impl ContainerServiceLinuxProfile {
         Self { admin_username, ssh }
     }
 }
+#[doc = "The response from the List Container Services operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceListResult {
+    #[doc = "The list of container services."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ContainerService>,
+    #[doc = "The URL to get the next set of container service results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -235,22 +290,31 @@ impl ContainerServiceListResult {
         Self::default()
     }
 }
+#[doc = "Profile for the container service master."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceMasterProfile {
+    #[doc = "Number of masters (VMs) in the container service cluster. Allowed values are 1, 3, and 5. The default value is 1."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<container_service_master_profile::Count>,
+    #[doc = "DNS prefix to be used to create the FQDN for the master pool."]
     #[serde(rename = "dnsPrefix")]
     pub dns_prefix: String,
+    #[doc = "Size of agent VMs."]
     #[serde(rename = "vmSize")]
     pub vm_size: ContainerServiceVmSize,
+    #[doc = "OS Disk Size in GB to be used to specify the disk size for every machine in this master/agent pool. If you specify 0, it will apply the default osDisk size according to the vmSize specified."]
     #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
+    #[doc = "VNet SubnetID specifies the VNet's subnet identifier."]
     #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
     pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
+    #[doc = "FirstConsecutiveStaticIP used to specify the first static ip of masters."]
     #[serde(rename = "firstConsecutiveStaticIP", default, skip_serializing_if = "Option::is_none")]
     pub first_consecutive_static_ip: Option<String>,
+    #[doc = "Storage profile specifies what kind of storage used. Choose from StorageAccount and ManagedDisks. Leave it empty, we will choose for you based on the orchestrator choice."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<ContainerServiceStorageProfile>,
+    #[doc = "FQDN for the master pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
@@ -270,29 +334,41 @@ impl ContainerServiceMasterProfile {
 }
 pub mod container_service_master_profile {
     use super::*;
+    #[doc = "Number of masters (VMs) in the container service cluster. Allowed values are 1, 3, and 5. The default value is 1."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Count {}
 }
+#[doc = "Profile of network configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerServiceNetworkProfile {
+    #[doc = "Network plugin used for building Kubernetes network."]
     #[serde(rename = "networkPlugin", default, skip_serializing_if = "Option::is_none")]
     pub network_plugin: Option<container_service_network_profile::NetworkPlugin>,
+    #[doc = "Network policy used for building Kubernetes network."]
     #[serde(rename = "networkPolicy", default, skip_serializing_if = "Option::is_none")]
     pub network_policy: Option<container_service_network_profile::NetworkPolicy>,
+    #[doc = "Network mode used for building Kubernetes network."]
     #[serde(rename = "networkMode", default, skip_serializing_if = "Option::is_none")]
     pub network_mode: Option<container_service_network_profile::NetworkMode>,
+    #[doc = "A CIDR notation IP range from which to assign pod IPs when kubenet is used."]
     #[serde(rename = "podCidr", default, skip_serializing_if = "Option::is_none")]
     pub pod_cidr: Option<String>,
+    #[doc = "A CIDR notation IP range from which to assign service cluster IPs. It must not overlap with any Subnet IP ranges."]
     #[serde(rename = "serviceCidr", default, skip_serializing_if = "Option::is_none")]
     pub service_cidr: Option<String>,
+    #[doc = "An IP address assigned to the Kubernetes DNS service. It must be within the Kubernetes service address range specified in serviceCidr."]
     #[serde(rename = "dnsServiceIP", default, skip_serializing_if = "Option::is_none")]
     pub dns_service_ip: Option<String>,
+    #[doc = "A CIDR notation IP range assigned to the Docker bridge network. It must not overlap with any Subnet IP ranges or the Kubernetes service address range."]
     #[serde(rename = "dockerBridgeCidr", default, skip_serializing_if = "Option::is_none")]
     pub docker_bridge_cidr: Option<String>,
+    #[doc = "The outbound (egress) routing method."]
     #[serde(rename = "outboundType", default, skip_serializing_if = "Option::is_none")]
     pub outbound_type: Option<container_service_network_profile::OutboundType>,
+    #[doc = "The load balancer sku for the managed cluster."]
     #[serde(rename = "loadBalancerSku", default, skip_serializing_if = "Option::is_none")]
     pub load_balancer_sku: Option<container_service_network_profile::LoadBalancerSku>,
+    #[doc = "Profile of the managed cluster load balancer."]
     #[serde(rename = "loadBalancerProfile", default, skip_serializing_if = "Option::is_none")]
     pub load_balancer_profile: Option<ManagedClusterLoadBalancerProfile>,
 }
@@ -303,6 +379,7 @@ impl ContainerServiceNetworkProfile {
 }
 pub mod container_service_network_profile {
     use super::*;
+    #[doc = "Network plugin used for building Kubernetes network."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkPlugin {
         #[serde(rename = "azure")]
@@ -315,6 +392,7 @@ pub mod container_service_network_profile {
             Self::Kubenet
         }
     }
+    #[doc = "Network policy used for building Kubernetes network."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkPolicy {
         #[serde(rename = "calico")]
@@ -322,6 +400,7 @@ pub mod container_service_network_profile {
         #[serde(rename = "azure")]
         Azure,
     }
+    #[doc = "Network mode used for building Kubernetes network."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NetworkMode {
         #[serde(rename = "transparent")]
@@ -329,6 +408,7 @@ pub mod container_service_network_profile {
         #[serde(rename = "bridge")]
         Bridge,
     }
+    #[doc = "The outbound (egress) routing method."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OutboundType {
         #[serde(rename = "loadBalancer")]
@@ -341,6 +421,7 @@ pub mod container_service_network_profile {
             Self::LoadBalancer
         }
     }
+    #[doc = "The load balancer sku for the managed cluster."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LoadBalancerSku {
         #[serde(rename = "standard")]
@@ -350,10 +431,13 @@ pub mod container_service_network_profile {
     }
 }
 pub type ContainerServiceOsDisk = i32;
+#[doc = "Profile for the container service orchestrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceOrchestratorProfile {
+    #[doc = "The orchestrator to use to manage container service cluster resources. Valid values are Kubernetes, Swarm, DCOS, DockerCE and Custom."]
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: container_service_orchestrator_profile::OrchestratorType,
+    #[doc = "The version of the orchestrator to use. You can specify the major.minor.patch part of the actual version.For example, you can specify version as \"1.6.11\"."]
     #[serde(rename = "orchestratorVersion", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_version: Option<String>,
 }
@@ -367,6 +451,7 @@ impl ContainerServiceOrchestratorProfile {
 }
 pub mod container_service_orchestrator_profile {
     use super::*;
+    #[doc = "The orchestrator to use to manage container service cluster resources. Valid values are Kubernetes, Swarm, DCOS, DockerCE and Custom."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OrchestratorType {
         Kubernetes,
@@ -378,24 +463,34 @@ pub mod container_service_orchestrator_profile {
         Custom,
     }
 }
+#[doc = "Properties of the container service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceProperties {
+    #[doc = "The current deployment or provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Profile for the container service orchestrator."]
     #[serde(rename = "orchestratorProfile")]
     pub orchestrator_profile: ContainerServiceOrchestratorProfile,
+    #[doc = "Properties to configure a custom container service cluster."]
     #[serde(rename = "customProfile", default, skip_serializing_if = "Option::is_none")]
     pub custom_profile: Option<ContainerServiceCustomProfile>,
+    #[doc = "Information about a service principal identity for the cluster to use for manipulating Azure APIs. Either secret or keyVaultSecretRef must be specified."]
     #[serde(rename = "servicePrincipalProfile", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_profile: Option<ContainerServiceServicePrincipalProfile>,
+    #[doc = "Profile for the container service master."]
     #[serde(rename = "masterProfile")]
     pub master_profile: ContainerServiceMasterProfile,
+    #[doc = "Properties of the agent pool."]
     #[serde(rename = "agentPoolProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_profiles: Vec<ContainerServiceAgentPoolProfile>,
+    #[doc = "Profile for Windows VMs in the container service cluster."]
     #[serde(rename = "windowsProfile", default, skip_serializing_if = "Option::is_none")]
     pub windows_profile: Option<ContainerServiceWindowsProfile>,
+    #[doc = "Profile for Linux VMs in the container service cluster."]
     #[serde(rename = "linuxProfile")]
     pub linux_profile: ContainerServiceLinuxProfile,
+    #[doc = "Profile for diagnostics on the container service cluster."]
     #[serde(rename = "diagnosticsProfile", default, skip_serializing_if = "Option::is_none")]
     pub diagnostics_profile: Option<ContainerServiceDiagnosticsProfile>,
 }
@@ -418,12 +513,16 @@ impl ContainerServiceProperties {
         }
     }
 }
+#[doc = "Information about a service principal identity for the cluster to use for manipulating Azure APIs. Either secret or keyVaultSecretRef must be specified."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceServicePrincipalProfile {
+    #[doc = "The ID for the service principal."]
     #[serde(rename = "clientId")]
     pub client_id: String,
+    #[doc = "The secret password associated with the service principal in plain text."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
+    #[doc = "Reference to a secret stored in Azure Key Vault."]
     #[serde(rename = "keyVaultSecretRef", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_secret_ref: Option<KeyVaultSecretRef>,
 }
@@ -436,8 +535,10 @@ impl ContainerServiceServicePrincipalProfile {
         }
     }
 }
+#[doc = "SSH configuration for Linux-based VMs running on Azure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshConfiguration {
+    #[doc = "The list of SSH public keys used to authenticate with Linux-based VMs. Only expect one key specified."]
     #[serde(rename = "publicKeys")]
     pub public_keys: Vec<ContainerServiceSshPublicKey>,
 }
@@ -446,8 +547,10 @@ impl ContainerServiceSshConfiguration {
         Self { public_keys }
     }
 }
+#[doc = "Contains information about SSH certificate public key data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceSshPublicKey {
+    #[doc = "Certificate public key used to authenticate with VMs through SSH. The certificate must be in PEM format with or without headers."]
     #[serde(rename = "keyData")]
     pub key_data: String,
 }
@@ -456,14 +559,18 @@ impl ContainerServiceSshPublicKey {
         Self { key_data }
     }
 }
+#[doc = "Storage profile specifies what kind of storage used. Choose from StorageAccount and ManagedDisks. Leave it empty, we will choose for you based on the orchestrator choice."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceStorageProfile {
     StorageAccount,
     ManagedDisks,
 }
+#[doc = "Profile for diagnostics on the container service VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceVmDiagnostics {
+    #[doc = "Whether the VM diagnostic agent is provisioned on the VM."]
     pub enabled: bool,
+    #[doc = "The URI of the storage account where diagnostics are stored."]
     #[serde(rename = "storageUri", default, skip_serializing_if = "Option::is_none")]
     pub storage_uri: Option<String>,
 }
@@ -475,6 +582,7 @@ impl ContainerServiceVmDiagnostics {
         }
     }
 }
+#[doc = "Size of agent VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ContainerServiceVmSize {
     #[serde(rename = "Standard_A1")]
@@ -827,10 +935,13 @@ pub enum ContainerServiceVmSize {
     StandardNv6,
 }
 pub type ContainerServiceVnetSubnetId = String;
+#[doc = "Profile for Windows VMs in the container service cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerServiceWindowsProfile {
+    #[doc = "The administrator username to use for Windows VMs."]
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
+    #[doc = "The administrator password to use for Windows VMs."]
     #[serde(rename = "adminPassword")]
     pub admin_password: String,
 }
@@ -842,10 +953,13 @@ impl ContainerServiceWindowsProfile {
         }
     }
 }
+#[doc = "The credential result response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialResult {
+    #[doc = "The name of the credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Base64-encoded Kubernetes configuration file."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -854,8 +968,10 @@ impl CredentialResult {
         Self::default()
     }
 }
+#[doc = "The list of credential result response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CredentialResults {
+    #[doc = "Base64-encoded Kubernetes configuration file."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub kubeconfigs: Vec<CredentialResult>,
 }
@@ -864,12 +980,16 @@ impl CredentialResults {
         Self::default()
     }
 }
+#[doc = "Reference to a secret stored in Azure Key Vault."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSecretRef {
+    #[doc = "Key vault identifier."]
     #[serde(rename = "vaultID")]
     pub vault_id: String,
+    #[doc = "The secret name."]
     #[serde(rename = "secretName")]
     pub secret_name: String,
+    #[doc = "The secret version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
@@ -882,12 +1002,15 @@ impl KeyVaultSecretRef {
         }
     }
 }
+#[doc = "Managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedCluster {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the managed cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedClusterProperties>,
+    #[doc = "Identity for the managed cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedClusterIdentity>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -903,18 +1026,25 @@ impl ManagedCluster {
         }
     }
 }
+#[doc = "AADProfile specifies attributes for Azure Active Directory integration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterAadProfile {
+    #[doc = "Whether to enable managed AAD."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub managed: Option<bool>,
+    #[doc = "AAD group object IDs that will have admin role of the cluster."]
     #[serde(rename = "adminGroupObjectIDs", default, skip_serializing_if = "Vec::is_empty")]
     pub admin_group_object_i_ds: Vec<String>,
+    #[doc = "The client AAD application ID."]
     #[serde(rename = "clientAppID", default, skip_serializing_if = "Option::is_none")]
     pub client_app_id: Option<String>,
+    #[doc = "The server AAD application ID."]
     #[serde(rename = "serverAppID", default, skip_serializing_if = "Option::is_none")]
     pub server_app_id: Option<String>,
+    #[doc = "The server AAD application secret."]
     #[serde(rename = "serverAppSecret", default, skip_serializing_if = "Option::is_none")]
     pub server_app_secret: Option<String>,
+    #[doc = "The AAD tenant ID to use for authentication. If not specified, will use the tenant of the deployment subscription."]
     #[serde(rename = "tenantID", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -923,10 +1053,13 @@ impl ManagedClusterAadProfile {
         Self::default()
     }
 }
+#[doc = "Access profile for managed cluster API server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterApiServerAccessProfile {
+    #[doc = "Authorized IP Ranges to kubernetes API server."]
     #[serde(rename = "authorizedIPRanges", default, skip_serializing_if = "Vec::is_empty")]
     pub authorized_ip_ranges: Vec<String>,
+    #[doc = "Whether to create the cluster as a private cluster or not."]
     #[serde(rename = "enablePrivateCluster", default, skip_serializing_if = "Option::is_none")]
     pub enable_private_cluster: Option<bool>,
 }
@@ -935,10 +1068,12 @@ impl ManagedClusterApiServerAccessProfile {
         Self::default()
     }
 }
+#[doc = "Managed cluster Access Profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAccessProfile {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Profile for enabling a user to access a managed cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessProfile>,
 }
@@ -950,11 +1085,15 @@ impl ManagedClusterAccessProfile {
         }
     }
 }
+#[doc = "A Kubernetes add-on profile for a managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAddonProfile {
+    #[doc = "Whether the add-on is enabled or not."]
     pub enabled: bool,
+    #[doc = "Key-value pairs for configuring an add-on."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<serde_json::Value>,
+    #[doc = "Information of user assigned identity used by this add-on."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<serde_json::Value>,
 }
@@ -967,10 +1106,12 @@ impl ManagedClusterAddonProfile {
         }
     }
 }
+#[doc = "Profile for the container service agent pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterAgentPoolProfile {
     #[serde(flatten)]
     pub managed_cluster_agent_pool_profile_properties: ManagedClusterAgentPoolProfileProperties,
+    #[doc = "Unique name of the agent pool profile in the context of the subscription and resource group."]
     pub name: String,
 }
 impl ManagedClusterAgentPoolProfile {
@@ -981,48 +1122,70 @@ impl ManagedClusterAgentPoolProfile {
         }
     }
 }
+#[doc = "Properties for the container service agent pool profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterAgentPoolProfileProperties {
+    #[doc = "Number of agents (VMs) to host docker containers. Allowed values must be in the range of 0 to 100 (inclusive) for user pools and in the range of 1 to 100 (inclusive) for system pools. The default value is 1."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
+    #[doc = "Size of agent VMs."]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<ContainerServiceVmSize>,
+    #[doc = "OS Disk Size in GB to be used to specify the disk size for every machine in this master/agent pool. If you specify 0, it will apply the default osDisk size according to the vmSize specified."]
     #[serde(rename = "osDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub os_disk_size_gb: Option<ContainerServiceOsDisk>,
+    #[doc = "VNet SubnetID specifies the VNet's subnet identifier."]
     #[serde(rename = "vnetSubnetID", default, skip_serializing_if = "Option::is_none")]
     pub vnet_subnet_id: Option<ContainerServiceVnetSubnetId>,
+    #[doc = "Maximum number of pods that can run on a node."]
     #[serde(rename = "maxPods", default, skip_serializing_if = "Option::is_none")]
     pub max_pods: Option<i32>,
+    #[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
+    #[doc = "Maximum number of nodes for auto-scaling"]
     #[serde(rename = "maxCount", default, skip_serializing_if = "Option::is_none")]
     pub max_count: Option<i32>,
+    #[doc = "Minimum number of nodes for auto-scaling"]
     #[serde(rename = "minCount", default, skip_serializing_if = "Option::is_none")]
     pub min_count: Option<i32>,
+    #[doc = "Whether to enable auto-scaler"]
     #[serde(rename = "enableAutoScaling", default, skip_serializing_if = "Option::is_none")]
     pub enable_auto_scaling: Option<bool>,
+    #[doc = "AgentPoolType represents types of an agent pool."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<AgentPoolType>,
+    #[doc = "AgentPoolMode represents mode of an agent pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<AgentPoolMode>,
+    #[doc = "Version of orchestrator specified when creating the managed cluster."]
     #[serde(rename = "orchestratorVersion", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_version: Option<String>,
+    #[doc = "The current deployment or provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Availability zones for nodes. Must use VirtualMachineScaleSets AgentPoolType."]
     #[serde(rename = "availabilityZones", default, skip_serializing_if = "Vec::is_empty")]
     pub availability_zones: Vec<String>,
+    #[doc = "Enable public IP for nodes"]
     #[serde(rename = "enableNodePublicIP", default, skip_serializing_if = "Option::is_none")]
     pub enable_node_public_ip: Option<bool>,
+    #[doc = "ScaleSetPriority to be used to specify virtual machine scale set priority. Default to regular."]
     #[serde(rename = "scaleSetPriority", default, skip_serializing_if = "Option::is_none")]
     pub scale_set_priority: Option<ScaleSetPriority>,
+    #[doc = "ScaleSetEvictionPolicy to be used to specify eviction policy for Spot or low priority virtual machine scale set. Default to Delete."]
     #[serde(rename = "scaleSetEvictionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub scale_set_eviction_policy: Option<ScaleSetEvictionPolicy>,
+    #[doc = "SpotMaxPrice to be used to specify the maximum price you are willing to pay in US Dollars. Possible values are any decimal value greater than zero or -1 which indicates default price to be up-to on-demand."]
     #[serde(rename = "spotMaxPrice", default, skip_serializing_if = "Option::is_none")]
     pub spot_max_price: Option<SpotMaxPrice>,
+    #[doc = "Agent pool tags to be persisted on the agent pool virtual machine scale set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Agent pool node labels to be persisted across all nodes in agent pool."]
     #[serde(rename = "nodeLabels", default, skip_serializing_if = "Option::is_none")]
     pub node_labels: Option<serde_json::Value>,
+    #[doc = "Taints added to new nodes during node pool create and scale. For example, key=value:NoSchedule."]
     #[serde(rename = "nodeTaints", default, skip_serializing_if = "Vec::is_empty")]
     pub node_taints: Vec<String>,
 }
@@ -1031,12 +1194,16 @@ impl ManagedClusterAgentPoolProfileProperties {
         Self::default()
     }
 }
+#[doc = "Identity for the managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterIdentity {
+    #[doc = "The principal id of the system assigned identity which is used by master components."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant id of the system assigned identity which is used by master components."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The type of identity used for the managed cluster. Type 'SystemAssigned' will use an implicitly created identity in master components and an auto-created user assigned identity in MC_ resource group in agent nodes. Type 'None' will not use MSI for the managed cluster, service principal will be used instead."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<managed_cluster_identity::Type>,
 }
@@ -1047,16 +1214,20 @@ impl ManagedClusterIdentity {
 }
 pub mod managed_cluster_identity {
     use super::*;
+    #[doc = "The type of identity used for the managed cluster. Type 'SystemAssigned' will use an implicitly created identity in master components and an auto-created user assigned identity in MC_ resource group in agent nodes. Type 'None' will not use MSI for the managed cluster, service principal will be used instead."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
         None,
     }
 }
+#[doc = "The response from the List Managed Clusters operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterListResult {
+    #[doc = "The list of managed clusters."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ManagedCluster>,
+    #[doc = "The URL to get the next set of managed cluster results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1065,18 +1236,25 @@ impl ManagedClusterListResult {
         Self::default()
     }
 }
+#[doc = "Profile of the managed cluster load balancer."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterLoadBalancerProfile {
+    #[doc = "Desired managed outbound IPs for the cluster load balancer."]
     #[serde(rename = "managedOutboundIPs", default, skip_serializing_if = "Option::is_none")]
     pub managed_outbound_i_ps: Option<managed_cluster_load_balancer_profile::ManagedOutboundIPs>,
+    #[doc = "Desired outbound IP Prefix resources for the cluster load balancer."]
     #[serde(rename = "outboundIPPrefixes", default, skip_serializing_if = "Option::is_none")]
     pub outbound_ip_prefixes: Option<managed_cluster_load_balancer_profile::OutboundIpPrefixes>,
+    #[doc = "Desired outbound IP resources for the cluster load balancer."]
     #[serde(rename = "outboundIPs", default, skip_serializing_if = "Option::is_none")]
     pub outbound_i_ps: Option<managed_cluster_load_balancer_profile::OutboundIPs>,
+    #[doc = "The effective outbound IP resources of the cluster load balancer."]
     #[serde(rename = "effectiveOutboundIPs", default, skip_serializing_if = "Vec::is_empty")]
     pub effective_outbound_i_ps: Vec<ResourceReference>,
+    #[doc = "Desired number of allocated SNAT ports per VM. Allowed values must be in the range of 0 to 64000 (inclusive). The default value is 0 which results in Azure dynamically allocating ports."]
     #[serde(rename = "allocatedOutboundPorts", default, skip_serializing_if = "Option::is_none")]
     pub allocated_outbound_ports: Option<i32>,
+    #[doc = "Desired outbound flow idle timeout in minutes. Allowed values must be in the range of 4 to 120 (inclusive). The default value is 30 minutes."]
     #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub idle_timeout_in_minutes: Option<i32>,
 }
@@ -1087,8 +1265,10 @@ impl ManagedClusterLoadBalancerProfile {
 }
 pub mod managed_cluster_load_balancer_profile {
     use super::*;
+    #[doc = "Desired managed outbound IPs for the cluster load balancer."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ManagedOutboundIPs {
+        #[doc = "Desired number of outbound IP created/managed by Azure for the cluster load balancer. Allowed values must be in the range of 1 to 100 (inclusive). The default value is 1. "]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub count: Option<i32>,
     }
@@ -1097,8 +1277,10 @@ pub mod managed_cluster_load_balancer_profile {
             Self::default()
         }
     }
+    #[doc = "Desired outbound IP Prefix resources for the cluster load balancer."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct OutboundIpPrefixes {
+        #[doc = "A list of public IP prefix resources."]
         #[serde(rename = "publicIPPrefixes", default, skip_serializing_if = "Vec::is_empty")]
         pub public_ip_prefixes: Vec<ResourceReference>,
     }
@@ -1107,8 +1289,10 @@ pub mod managed_cluster_load_balancer_profile {
             Self::default()
         }
     }
+    #[doc = "Desired outbound IP resources for the cluster load balancer."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct OutboundIPs {
+        #[doc = "A list of public IP resources."]
         #[serde(rename = "publicIPs", default, skip_serializing_if = "Vec::is_empty")]
         pub public_i_ps: Vec<ResourceReference>,
     }
@@ -1118,14 +1302,19 @@ pub mod managed_cluster_load_balancer_profile {
         }
     }
 }
+#[doc = "The list of available upgrade versions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterPoolUpgradeProfile {
+    #[doc = "Kubernetes version (major, minor, patch)."]
     #[serde(rename = "kubernetesVersion")]
     pub kubernetes_version: String,
+    #[doc = "Pool name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
     #[serde(rename = "osType")]
     pub os_type: OsType,
+    #[doc = "List of orchestrator types and versions available for upgrade."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<serde_json::Value>,
 }
@@ -1139,46 +1328,67 @@ impl ManagedClusterPoolUpgradeProfile {
         }
     }
 }
+#[doc = "Properties of the managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterProperties {
+    #[doc = "The current deployment or provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The max number of agent pools for the managed cluster."]
     #[serde(rename = "maxAgentPools", default, skip_serializing_if = "Option::is_none")]
     pub max_agent_pools: Option<i32>,
+    #[doc = "Version of Kubernetes specified when creating the managed cluster."]
     #[serde(rename = "kubernetesVersion", default, skip_serializing_if = "Option::is_none")]
     pub kubernetes_version: Option<String>,
+    #[doc = "DNS prefix specified when creating the managed cluster."]
     #[serde(rename = "dnsPrefix", default, skip_serializing_if = "Option::is_none")]
     pub dns_prefix: Option<String>,
+    #[doc = "FQDN for the master pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "FQDN of private cluster."]
     #[serde(rename = "privateFQDN", default, skip_serializing_if = "Option::is_none")]
     pub private_fqdn: Option<String>,
+    #[doc = "Properties of the agent pool."]
     #[serde(rename = "agentPoolProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_profiles: Vec<ManagedClusterAgentPoolProfile>,
+    #[doc = "Profile for Linux VMs in the container service cluster."]
     #[serde(rename = "linuxProfile", default, skip_serializing_if = "Option::is_none")]
     pub linux_profile: Option<ContainerServiceLinuxProfile>,
+    #[doc = "Profile for Windows VMs in the container service cluster."]
     #[serde(rename = "windowsProfile", default, skip_serializing_if = "Option::is_none")]
     pub windows_profile: Option<ManagedClusterWindowsProfile>,
+    #[doc = "Information about a service principal identity for the cluster to use for manipulating Azure APIs."]
     #[serde(rename = "servicePrincipalProfile", default, skip_serializing_if = "Option::is_none")]
     pub service_principal_profile: Option<ManagedClusterServicePrincipalProfile>,
+    #[doc = "Profile of managed cluster add-on."]
     #[serde(rename = "addonProfiles", default, skip_serializing_if = "Option::is_none")]
     pub addon_profiles: Option<serde_json::Value>,
+    #[doc = "Name of the resource group containing agent pool nodes."]
     #[serde(rename = "nodeResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub node_resource_group: Option<String>,
+    #[doc = "Whether to enable Kubernetes Role-Based Access Control."]
     #[serde(rename = "enableRBAC", default, skip_serializing_if = "Option::is_none")]
     pub enable_rbac: Option<bool>,
+    #[doc = "(DEPRECATING) Whether to enable Kubernetes pod security policy (preview). This feature is set for removal on October 15th, 2020. Learn more at aka.ms/aks/azpodpolicy."]
     #[serde(rename = "enablePodSecurityPolicy", default, skip_serializing_if = "Option::is_none")]
     pub enable_pod_security_policy: Option<bool>,
+    #[doc = "Profile of network configuration."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<ContainerServiceNetworkProfile>,
+    #[doc = "AADProfile specifies attributes for Azure Active Directory integration."]
     #[serde(rename = "aadProfile", default, skip_serializing_if = "Option::is_none")]
     pub aad_profile: Option<ManagedClusterAadProfile>,
+    #[doc = "Parameters to be applied to the cluster-autoscaler when enabled"]
     #[serde(rename = "autoScalerProfile", default, skip_serializing_if = "Option::is_none")]
     pub auto_scaler_profile: Option<managed_cluster_properties::AutoScalerProfile>,
+    #[doc = "Access profile for managed cluster API server."]
     #[serde(rename = "apiServerAccessProfile", default, skip_serializing_if = "Option::is_none")]
     pub api_server_access_profile: Option<ManagedClusterApiServerAccessProfile>,
+    #[doc = "ResourceId of the disk encryption set to use for enabling encryption at rest."]
     #[serde(rename = "diskEncryptionSetID", default, skip_serializing_if = "Option::is_none")]
     pub disk_encryption_set_id: Option<String>,
+    #[doc = "Identities associated with the cluster."]
     #[serde(rename = "identityProfile", default, skip_serializing_if = "Option::is_none")]
     pub identity_profile: Option<serde_json::Value>,
 }
@@ -1189,6 +1399,7 @@ impl ManagedClusterProperties {
 }
 pub mod managed_cluster_properties {
     use super::*;
+    #[doc = "Parameters to be applied to the cluster-autoscaler when enabled"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct AutoScalerProfile {
         #[serde(rename = "balance-similar-node-groups", default, skip_serializing_if = "Option::is_none")]
@@ -1218,8 +1429,10 @@ pub mod managed_cluster_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedClusterSku {
+    #[doc = "Name of a managed cluster SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<managed_cluster_sku::Name>,
+    #[doc = "Tier of a managed cluster SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<managed_cluster_sku::Tier>,
 }
@@ -1230,20 +1443,25 @@ impl ManagedClusterSku {
 }
 pub mod managed_cluster_sku {
     use super::*;
+    #[doc = "Name of a managed cluster SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         Basic,
     }
+    #[doc = "Tier of a managed cluster SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Paid,
         Free,
     }
 }
+#[doc = "Information about a service principal identity for the cluster to use for manipulating Azure APIs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterServicePrincipalProfile {
+    #[doc = "The ID for the service principal."]
     #[serde(rename = "clientId")]
     pub client_id: String,
+    #[doc = "The secret password associated with the service principal in plain text."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
 }
@@ -1252,14 +1470,19 @@ impl ManagedClusterServicePrincipalProfile {
         Self { client_id, secret: None }
     }
 }
+#[doc = "The list of available upgrades for compute pools."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterUpgradeProfile {
+    #[doc = "Id of upgrade profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of upgrade profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of upgrade profile."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Control plane and agent pool upgrade profiles."]
     pub properties: ManagedClusterUpgradeProfileProperties,
 }
 impl ManagedClusterUpgradeProfile {
@@ -1272,10 +1495,13 @@ impl ManagedClusterUpgradeProfile {
         }
     }
 }
+#[doc = "Control plane and agent pool upgrade profiles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterUpgradeProfileProperties {
+    #[doc = "The list of available upgrade versions."]
     #[serde(rename = "controlPlaneProfile")]
     pub control_plane_profile: ManagedClusterPoolUpgradeProfile,
+    #[doc = "The list of available upgrade versions for agent pools."]
     #[serde(rename = "agentPoolProfiles")]
     pub agent_pool_profiles: Vec<ManagedClusterPoolUpgradeProfile>,
 }
@@ -1290,10 +1516,13 @@ impl ManagedClusterUpgradeProfileProperties {
         }
     }
 }
+#[doc = "Profile for Windows VMs in the container service cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedClusterWindowsProfile {
+    #[doc = "Specifies the name of the administrator account. <br><br> **restriction:** Cannot end in \".\" <br><br> **Disallowed values:** \"administrator\", \"admin\", \"user\", \"user1\", \"test\", \"user2\", \"test1\", \"user3\", \"admin1\", \"1\", \"123\", \"a\", \"actuser\", \"adm\", \"admin2\", \"aspnet\", \"backup\", \"console\", \"david\", \"guest\", \"john\", \"owner\", \"root\", \"server\", \"sql\", \"support\", \"support_388945a0\", \"sys\", \"test2\", \"test3\", \"user4\", \"user5\". <br><br> **Minimum-length:** 1 character <br><br> **Max-length:** 20 characters"]
     #[serde(rename = "adminUsername")]
     pub admin_username: String,
+    #[doc = "Specifies the password of the administrator account. <br><br> **Minimum-length:** 8 characters <br><br> **Max-length:** 123 characters <br><br> **Complexity requirements:** 3 out of 4 conditions below need to be fulfilled <br> Has lower characters <br>Has upper characters <br> Has a digit <br> Has a special character (Regex match [\\W_]) <br><br> **Disallowed values:** \"abc@123\", \"P@$$w0rd\", \"P@ssw0rd\", \"P@ssword123\", \"Pa$$word\", \"pass@word1\", \"Password!\", \"Password1\", \"Password22\", \"iloveyou!\""]
     #[serde(rename = "adminPassword", default, skip_serializing_if = "Option::is_none")]
     pub admin_password: Option<String>,
 }
@@ -1305,12 +1534,16 @@ impl ManagedClusterWindowsProfile {
         }
     }
 }
+#[doc = "Represents the OpenShift networking configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
+    #[doc = "CIDR for the OpenShift Vnet."]
     #[serde(rename = "vnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub vnet_cidr: Option<String>,
+    #[doc = "CIDR of the Vnet to peer."]
     #[serde(rename = "peerVnetId", default, skip_serializing_if = "Option::is_none")]
     pub peer_vnet_id: Option<String>,
+    #[doc = "ID of the Vnet created for OSA cluster."]
     #[serde(rename = "vnetId", default, skip_serializing_if = "Option::is_none")]
     pub vnet_id: Option<String>,
 }
@@ -1319,6 +1552,7 @@ impl NetworkProfile {
         Self::default()
     }
 }
+#[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OsType {
     Linux,
@@ -1329,6 +1563,7 @@ impl Default for OsType {
         Self::Linux
     }
 }
+#[doc = "OpenShiftAgentPoolProfileRole represents the role of the AgentPoolProfile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OpenShiftAgentPoolProfileRole {
     #[serde(rename = "compute")]
@@ -1336,6 +1571,7 @@ pub enum OpenShiftAgentPoolProfileRole {
     #[serde(rename = "infra")]
     Infra,
 }
+#[doc = "Size of OpenShift VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OpenShiftContainerServiceVmSize {
     #[serde(rename = "Standard_D2s_v3")]
@@ -1405,12 +1641,15 @@ pub enum OpenShiftContainerServiceVmSize {
     #[serde(rename = "Standard_L32s")]
     StandardL32s,
 }
+#[doc = "OpenShift Managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedCluster {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<PurchasePlan>,
+    #[doc = "Properties of the OpenShift managed cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OpenShiftManagedClusterProperties>,
 }
@@ -1423,16 +1662,21 @@ impl OpenShiftManagedCluster {
         }
     }
 }
+#[doc = "Defines the Identity provider for MS AAD."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAadIdentityProvider {
     #[serde(flatten)]
     pub open_shift_managed_cluster_base_identity_provider: OpenShiftManagedClusterBaseIdentityProvider,
+    #[doc = "The clientId password associated with the provider."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+    #[doc = "The secret password associated with the provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
+    #[doc = "The tenantId associated with the provider."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The groupId to be granted cluster admin role."]
     #[serde(rename = "customerAdminGroupId", default, skip_serializing_if = "Option::is_none")]
     pub customer_admin_group_id: Option<String>,
 }
@@ -1447,16 +1691,23 @@ impl OpenShiftManagedClusterAadIdentityProvider {
         }
     }
 }
+#[doc = "Defines the configuration of the OpenShift cluster VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterAgentPoolProfile {
+    #[doc = "Unique name of the pool profile in the context of the subscription and resource group."]
     pub name: String,
+    #[doc = "Number of agents (VMs) to host docker containers."]
     pub count: i32,
+    #[doc = "Size of OpenShift VMs."]
     #[serde(rename = "vmSize")]
     pub vm_size: OpenShiftContainerServiceVmSize,
+    #[doc = "Subnet CIDR for the peering."]
     #[serde(rename = "subnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub subnet_cidr: Option<String>,
+    #[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
+    #[doc = "OpenShiftAgentPoolProfileRole represents the role of the AgentPoolProfile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<OpenShiftAgentPoolProfileRole>,
 }
@@ -1472,8 +1723,10 @@ impl OpenShiftManagedClusterAgentPoolProfile {
         }
     }
 }
+#[doc = "Defines all possible authentication profiles for the OpenShift cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterAuthProfile {
+    #[doc = "Type of authentication profile to use."]
     #[serde(rename = "identityProviders", default, skip_serializing_if = "Vec::is_empty")]
     pub identity_providers: Vec<OpenShiftManagedClusterIdentityProvider>,
 }
@@ -1482,8 +1735,10 @@ impl OpenShiftManagedClusterAuthProfile {
         Self::default()
     }
 }
+#[doc = "Structure for any Identity provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterBaseIdentityProvider {
+    #[doc = "The kind of the provider."]
     pub kind: String,
 }
 impl OpenShiftManagedClusterBaseIdentityProvider {
@@ -1491,10 +1746,13 @@ impl OpenShiftManagedClusterBaseIdentityProvider {
         Self { kind }
     }
 }
+#[doc = "Defines the configuration of the identity providers to be used in the OpenShift cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterIdentityProvider {
+    #[doc = "Name of the provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Structure for any Identity provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<OpenShiftManagedClusterBaseIdentityProvider>,
 }
@@ -1503,10 +1761,13 @@ impl OpenShiftManagedClusterIdentityProvider {
         Self::default()
     }
 }
+#[doc = "The response from the List OpenShift Managed Clusters operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftManagedClusterListResult {
+    #[doc = "The list of OpenShift managed clusters."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OpenShiftManagedCluster>,
+    #[doc = "The URL to get the next set of OpenShift managed cluster results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1515,15 +1776,21 @@ impl OpenShiftManagedClusterListResult {
         Self::default()
     }
 }
+#[doc = "OpenShiftManagedClusterMaterPoolProfile contains configuration for OpenShift master VMs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterMasterPoolProfile {
+    #[doc = "Unique name of the master pool profile in the context of the subscription and resource group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Number of masters (VMs) to host docker containers. The default value is 3."]
     pub count: i32,
+    #[doc = "Size of OpenShift VMs."]
     #[serde(rename = "vmSize")]
     pub vm_size: OpenShiftContainerServiceVmSize,
+    #[doc = "Subnet CIDR for the peering."]
     #[serde(rename = "subnetCidr", default, skip_serializing_if = "Option::is_none")]
     pub subnet_cidr: Option<String>,
+    #[doc = "OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<OsType>,
 }
@@ -1538,26 +1805,37 @@ impl OpenShiftManagedClusterMasterPoolProfile {
         }
     }
 }
+#[doc = "Properties of the OpenShift managed cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OpenShiftManagedClusterProperties {
+    #[doc = "The current deployment or provisioning state, which only appears in the response."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Version of OpenShift specified when creating the cluster."]
     #[serde(rename = "openShiftVersion")]
     pub open_shift_version: String,
+    #[doc = "Version of OpenShift specified when creating the cluster."]
     #[serde(rename = "clusterVersion", default, skip_serializing_if = "Option::is_none")]
     pub cluster_version: Option<String>,
+    #[doc = "Service generated FQDN for OpenShift API server."]
     #[serde(rename = "publicHostname", default, skip_serializing_if = "Option::is_none")]
     pub public_hostname: Option<String>,
+    #[doc = "Service generated FQDN for OpenShift API server loadbalancer internal hostname."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Represents the OpenShift networking configuration"]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
+    #[doc = "Configuration for OpenShift router(s)."]
     #[serde(rename = "routerProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub router_profiles: Vec<OpenShiftRouterProfile>,
+    #[doc = "OpenShiftManagedClusterMaterPoolProfile contains configuration for OpenShift master VMs."]
     #[serde(rename = "masterPoolProfile", default, skip_serializing_if = "Option::is_none")]
     pub master_pool_profile: Option<OpenShiftManagedClusterMasterPoolProfile>,
+    #[doc = "Configuration of OpenShift cluster VMs."]
     #[serde(rename = "agentPoolProfiles", default, skip_serializing_if = "Vec::is_empty")]
     pub agent_pool_profiles: Vec<OpenShiftManagedClusterAgentPoolProfile>,
+    #[doc = "Defines all possible authentication profiles for the OpenShift cluster."]
     #[serde(rename = "authProfile", default, skip_serializing_if = "Option::is_none")]
     pub auth_profile: Option<OpenShiftManagedClusterAuthProfile>,
 }
@@ -1577,12 +1855,16 @@ impl OpenShiftManagedClusterProperties {
         }
     }
 }
+#[doc = "Represents an OpenShift router"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftRouterProfile {
+    #[doc = "Name of the router profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "DNS subdomain for OpenShift router."]
     #[serde(rename = "publicSubdomain", default, skip_serializing_if = "Option::is_none")]
     pub public_subdomain: Option<String>,
+    #[doc = "Auto-allocated FQDN for the OpenShift router."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
 }
@@ -1591,8 +1873,10 @@ impl OpenShiftRouterProfile {
         Self::default()
     }
 }
+#[doc = "The List Compute Operation operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "The list of compute operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationValue>,
 }
@@ -1601,12 +1885,16 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a Compute Operation value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationValue {
+    #[doc = "The origin of the compute operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "The name of the compute operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Describes the properties of a Compute Operation Value Display."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationValueDisplay>,
 }
@@ -1615,14 +1903,19 @@ impl OperationValue {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a Compute Operation Value Display."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationValueDisplay {
+    #[doc = "The display name of the compute operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The display name of the resource the operation applies to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The description of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The resource provider for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
 }
@@ -1631,12 +1924,16 @@ impl OperationValueDisplay {
         Self::default()
     }
 }
+#[doc = "Contains information about orchestrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorProfile {
+    #[doc = "Orchestrator type."]
     #[serde(rename = "orchestratorType", default, skip_serializing_if = "Option::is_none")]
     pub orchestrator_type: Option<String>,
+    #[doc = "Orchestrator version (major, minor, patch)."]
     #[serde(rename = "orchestratorVersion")]
     pub orchestrator_version: String,
+    #[doc = "Whether Kubernetes version is currently in preview."]
     #[serde(rename = "isPreview", default, skip_serializing_if = "Option::is_none")]
     pub is_preview: Option<bool>,
 }
@@ -1649,16 +1946,22 @@ impl OrchestratorProfile {
         }
     }
 }
+#[doc = "The profile of an orchestrator and its available versions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfile {
+    #[doc = "Orchestrator type."]
     #[serde(rename = "orchestratorType")]
     pub orchestrator_type: String,
+    #[doc = "Orchestrator version (major, minor, patch)."]
     #[serde(rename = "orchestratorVersion")]
     pub orchestrator_version: String,
+    #[doc = "Installed by default if version is not specified."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<bool>,
+    #[doc = "Whether Kubernetes version is currently in preview."]
     #[serde(rename = "isPreview", default, skip_serializing_if = "Option::is_none")]
     pub is_preview: Option<bool>,
+    #[doc = "The list of available upgrade versions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub upgrades: Vec<OrchestratorProfile>,
 }
@@ -1673,14 +1976,19 @@ impl OrchestratorVersionProfile {
         }
     }
 }
+#[doc = "The list of versions for supported orchestrators."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileListResult {
+    #[doc = "Id of the orchestrator version profile list result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the orchestrator version profile list result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of the orchestrator version profile list result."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The properties of an orchestrator version profile."]
     pub properties: OrchestratorVersionProfileProperties,
 }
 impl OrchestratorVersionProfileListResult {
@@ -1693,8 +2001,10 @@ impl OrchestratorVersionProfileListResult {
         }
     }
 }
+#[doc = "The properties of an orchestrator version profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrchestratorVersionProfileProperties {
+    #[doc = "List of orchestrator version profiles."]
     pub orchestrators: Vec<OrchestratorVersionProfile>,
 }
 impl OrchestratorVersionProfileProperties {
@@ -1702,14 +2012,19 @@ impl OrchestratorVersionProfileProperties {
         Self { orchestrators }
     }
 }
+#[doc = "Used for establishing the purchase context of any 3rd Party artifact through MarketPlace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PurchasePlan {
+    #[doc = "The plan ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the product of the image from the marketplace. This is the same value as Offer under the imageReference element."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
+    #[doc = "The promotion code."]
     #[serde(rename = "promotionCode", default, skip_serializing_if = "Option::is_none")]
     pub promotion_code: Option<String>,
+    #[doc = "The plan ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
 }
@@ -1718,15 +2033,21 @@ impl PurchasePlan {
         Self::default()
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1741,8 +2062,10 @@ impl Resource {
         }
     }
 }
+#[doc = "A reference to an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceReference {
+    #[doc = "The fully qualified Azure resource id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1751,6 +2074,7 @@ impl ResourceReference {
         Self::default()
     }
 }
+#[doc = "ScaleSetEvictionPolicy to be used to specify eviction policy for Spot or low priority virtual machine scale set. Default to Delete."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScaleSetEvictionPolicy {
     Delete,
@@ -1761,6 +2085,7 @@ impl Default for ScaleSetEvictionPolicy {
         Self::Delete
     }
 }
+#[doc = "ScaleSetPriority to be used to specify virtual machine scale set priority. Default to regular."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ScaleSetPriority {
     Spot,
@@ -1773,12 +2098,16 @@ impl Default for ScaleSetPriority {
     }
 }
 pub type SpotMaxPrice = f64;
+#[doc = "Reference to another subresource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
+    #[doc = "Resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource that is unique within a resource group. This name can be used to access the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -1787,8 +2116,10 @@ impl SubResource {
         Self::default()
     }
 }
+#[doc = "Tags object for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsObject {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1799,10 +2130,13 @@ impl TagsObject {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentity {
+    #[doc = "The resource id of the user assigned identity."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "The client id of the user assigned identity."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+    #[doc = "The object id of the user assigned identity."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
 }

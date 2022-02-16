@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Error definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
+    #[doc = "Service specific error code which serves as the substatus for the HTTP error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Description of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Internal error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
@@ -16,8 +20,10 @@ impl ErrorDefinition {
         Self::default()
     }
 }
+#[doc = "Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
@@ -26,10 +32,12 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "MAK key details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultipleActivationKey {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "MAK key specific properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<multiple_activation_key::Properties>,
 }
@@ -43,20 +51,28 @@ impl MultipleActivationKey {
 }
 pub mod multiple_activation_key {
     use super::*;
+    #[doc = "MAK key specific properties."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "MAK 5x5 key."]
         #[serde(rename = "multipleActivationKey", default, skip_serializing_if = "Option::is_none")]
         pub multiple_activation_key: Option<String>,
+        #[doc = "End of support of security updates activated by the MAK key."]
         #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
         pub expiration_date: Option<String>,
+        #[doc = "Type of OS for which the key is requested."]
         #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
         pub os_type: Option<properties::OsType>,
+        #[doc = "Type of support"]
         #[serde(rename = "supportType", default, skip_serializing_if = "Option::is_none")]
         pub support_type: Option<properties::SupportType>,
+        #[doc = "Number of activations/servers using the MAK key."]
         #[serde(rename = "installedServerNumber", default, skip_serializing_if = "Option::is_none")]
         pub installed_server_number: Option<i64>,
+        #[doc = "Agreement number under which the key is requested."]
         #[serde(rename = "agreementNumber", default, skip_serializing_if = "Option::is_none")]
         pub agreement_number: Option<String>,
+        #[doc = "<code> true </code> if user has eligible on-premises Windows physical or virtual machines, and that the requested key will only be used in their organization; <code> false </code> otherwise."]
         #[serde(rename = "isEligible", default, skip_serializing_if = "Option::is_none")]
         pub is_eligible: Option<bool>,
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -69,12 +85,14 @@ pub mod multiple_activation_key {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Type of OS for which the key is requested."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum OsType {
             Windows7,
             WindowsServer2008,
             WindowsServer2008R2,
         }
+        #[doc = "Type of support"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum SupportType {
             SupplementalServicing,
@@ -95,10 +113,13 @@ pub mod multiple_activation_key {
         }
     }
 }
+#[doc = "List of MAK keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MultipleActivationKeyList {
+    #[doc = "List of MAK keys."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<MultipleActivationKey>,
+    #[doc = "Link to the next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -107,8 +128,10 @@ impl MultipleActivationKeyList {
         Self::default()
     }
 }
+#[doc = "MAK key details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MultipleActivationKeyUpdate {
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -117,10 +140,13 @@ impl MultipleActivationKeyUpdate {
         Self::default()
     }
 }
+#[doc = "REST API operation details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Meta data about operation used for display in portal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
 }
@@ -129,6 +155,7 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "Meta data about operation used for display in portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -145,10 +172,13 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "List of available REST API operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
+    #[doc = "List of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "Link to the next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -157,12 +187,16 @@ impl OperationList {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -171,12 +205,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
     pub location: String,
 }
 impl TrackedResource {

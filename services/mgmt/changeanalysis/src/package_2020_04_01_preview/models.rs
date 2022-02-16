@@ -2,12 +2,16 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Configuration properties of an Azure Monitor workspace that receives change notifications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureMonitorWorkspaceProperties {
+    #[doc = "The Azure Monitor workspace ID - the unique identifier for the Log Analytics workspace."]
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
+    #[doc = "The Azure Monitor workspace ARM Resource ID. The resource ID should be in the following format: /subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}"]
     #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
+    #[doc = "The mode of includeChangeDetails feature. The flag configures whether to include or exclude content of the change before and after values."]
     #[serde(rename = "includeChangeDetails", default, skip_serializing_if = "Option::is_none")]
     pub include_change_details: Option<ChangeDetailsMode>,
 }
@@ -16,20 +20,25 @@ impl AzureMonitorWorkspaceProperties {
         Self::default()
     }
 }
+#[doc = "The mode of includeChangeDetails feature. The flag configures whether to include or exclude content of the change before and after values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ChangeDetailsMode {
     None,
     Include,
     Exclude,
 }
+#[doc = "A profile object that contains change analysis configuration, such as notification settings, for this subscription"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileResource {
     #[serde(flatten)]
     pub extended_proxy_resource: ExtendedProxyResource,
+    #[doc = "The identity block returned by ARM resource that supports managed identity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
+    #[doc = "The properties of a configuration profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfileResourceProperties>,
+    #[doc = "The location where the resource is to be deployed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -38,8 +47,10 @@ impl ConfigurationProfileResource {
         Self::default()
     }
 }
+#[doc = "The properties of a configuration profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileResourceProperties {
+    #[doc = "Settings of change notification configuration for a subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notifications: Option<NotificationSettings>,
 }
@@ -48,10 +59,13 @@ impl ConfigurationProfileResourceProperties {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -60,16 +74,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -78,8 +98,10 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -88,10 +110,12 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedProxyResource {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Top level metadata https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/common-api-contracts.md#system-metadata-for-all-azure-resources"]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -100,10 +124,13 @@ impl ExtendedProxyResource {
         Self::default()
     }
 }
+#[doc = "Settings of change notification configuration for a subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationSettings {
+    #[doc = "Configuration properties of an Azure Monitor workspace that receives change notifications."]
     #[serde(rename = "azureMonitorWorkspaceProperties", default, skip_serializing_if = "Option::is_none")]
     pub azure_monitor_workspace_properties: Option<AzureMonitorWorkspaceProperties>,
+    #[doc = "The state of notifications feature."]
     #[serde(rename = "activationState", default, skip_serializing_if = "Option::is_none")]
     pub activation_state: Option<NotificationsState>,
 }
@@ -112,12 +139,14 @@ impl NotificationSettings {
         Self::default()
     }
 }
+#[doc = "The state of notifications feature."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum NotificationsState {
     None,
     Enabled,
     Disabled,
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -128,12 +157,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -142,12 +175,16 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The identity block returned by ARM resource that supports managed identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceIdentity {
+    #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identities."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<resource_identity::Type>,
+    #[doc = "The principal id of the identity. This property will only be provided for a system-assigned identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant id associated with the resource's identity. This property will only be provided for a system-assigned identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -158,16 +195,20 @@ impl ResourceIdentity {
 }
 pub mod resource_identity {
     use super::*;
+    #[doc = "The type of managed identity used. The type 'SystemAssigned, UserAssigned' includes both an implicitly created identity and a set of user-assigned identities. The type 'None' will remove any identities."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         None,
         SystemAssigned,
     }
 }
+#[doc = "The resource provider operation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationDefinition {
+    #[doc = "The resource provider operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource provider operation details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<ResourceProviderOperationDisplay>,
 }
@@ -176,14 +217,19 @@ impl ResourceProviderOperationDefinition {
         Self::default()
     }
 }
+#[doc = "The resource provider operation details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationDisplay {
+    #[doc = "Name of the resource provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Name of the resource type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Name of the resource provider operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Description of the resource provider operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -192,10 +238,13 @@ impl ResourceProviderOperationDisplay {
         Self::default()
     }
 }
+#[doc = "The resource provider operation list."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
+    #[doc = "Resource provider operations list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperationDefinition>,
+    #[doc = "The URI that can be used to request the next page for list of Azure operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -204,18 +253,25 @@ impl ResourceProviderOperationList {
         Self::default()
     }
 }
+#[doc = "Top level metadata https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/common-api-contracts.md#system-metadata-for-all-azure-resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "A string identifier for the identity that created the resource"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource: user, application, managedIdentity, key"]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<String>,
+    #[doc = "The timestamp of resource creation (UTC)"]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "A string identifier for the identity that last modified the resource"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource: user, application, managedIdentity, key"]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<String>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }

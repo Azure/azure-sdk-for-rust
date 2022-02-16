@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "SSL certificate for an app."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Certificate {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Certificate resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<certificate::Properties>,
 }
@@ -19,43 +21,63 @@ impl Certificate {
 }
 pub mod certificate {
     use super::*;
+    #[doc = "Certificate resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
+        #[doc = "Friendly name of the certificate."]
         #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
         pub friendly_name: Option<String>,
+        #[doc = "Subject name of the certificate."]
         #[serde(rename = "subjectName", default, skip_serializing_if = "Option::is_none")]
         pub subject_name: Option<String>,
+        #[doc = "Host names the certificate applies to."]
         #[serde(rename = "hostNames", default, skip_serializing_if = "Vec::is_empty")]
         pub host_names: Vec<String>,
+        #[doc = "Pfx blob."]
         #[serde(rename = "pfxBlob", default, skip_serializing_if = "Option::is_none")]
         pub pfx_blob: Option<String>,
+        #[doc = "App name."]
         #[serde(rename = "siteName", default, skip_serializing_if = "Option::is_none")]
         pub site_name: Option<String>,
+        #[doc = "Self link."]
         #[serde(rename = "selfLink", default, skip_serializing_if = "Option::is_none")]
         pub self_link: Option<String>,
+        #[doc = "Certificate issuer."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub issuer: Option<String>,
+        #[doc = "Certificate issue Date."]
         #[serde(rename = "issueDate", default, skip_serializing_if = "Option::is_none")]
         pub issue_date: Option<String>,
+        #[doc = "Certificate expiration date."]
         #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
         pub expiration_date: Option<String>,
+        #[doc = "Certificate password."]
         pub password: String,
+        #[doc = "Certificate thumbprint."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub thumbprint: Option<String>,
+        #[doc = "Is the certificate valid?."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub valid: Option<bool>,
+        #[doc = "Raw bytes of .cer file"]
         #[serde(rename = "cerBlob", default, skip_serializing_if = "Option::is_none")]
         pub cer_blob: Option<String>,
+        #[doc = "Public key hash."]
         #[serde(rename = "publicKeyHash", default, skip_serializing_if = "Option::is_none")]
         pub public_key_hash: Option<String>,
+        #[doc = "Specification for an App Service Environment to use for this resource."]
         #[serde(rename = "hostingEnvironmentProfile", default, skip_serializing_if = "Option::is_none")]
         pub hosting_environment_profile: Option<HostingEnvironmentProfile>,
+        #[doc = "Key Vault Csm resource Id."]
         #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
         pub key_vault_id: Option<String>,
+        #[doc = "Key Vault secret name."]
         #[serde(rename = "keyVaultSecretName", default, skip_serializing_if = "Option::is_none")]
         pub key_vault_secret_name: Option<String>,
+        #[doc = "Status of the Key Vault secret."]
         #[serde(rename = "keyVaultSecretStatus", default, skip_serializing_if = "Option::is_none")]
         pub key_vault_secret_status: Option<properties::KeyVaultSecretStatus>,
+        #[doc = "Resource ID of the associated App Service plan, formatted as: \"/subscriptions/{subscriptionID}/resourceGroups/{groupName}/providers/Microsoft.Web/serverfarms/{appServicePlanName}\"."]
         #[serde(rename = "serverFarmId", default, skip_serializing_if = "Option::is_none")]
         pub server_farm_id: Option<String>,
     }
@@ -86,6 +108,7 @@ pub mod certificate {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Status of the Key Vault secret."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum KeyVaultSecretStatus {
             Initialized,
@@ -102,9 +125,12 @@ pub mod certificate {
         }
     }
 }
+#[doc = "Collection of certificates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateCollection {
+    #[doc = "Collection of resources."]
     pub value: Vec<Certificate>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -113,10 +139,12 @@ impl CertificateCollection {
         Self { value, next_link: None }
     }
 }
+#[doc = "ARM resource for a certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificatePatchResource {
     #[serde(flatten)]
     pub proxy_only_resource: ProxyOnlyResource,
+    #[doc = "CertificatePatchResource resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<certificate_patch_resource::Properties>,
 }
@@ -127,43 +155,63 @@ impl CertificatePatchResource {
 }
 pub mod certificate_patch_resource {
     use super::*;
+    #[doc = "CertificatePatchResource resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
+        #[doc = "Friendly name of the certificate."]
         #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
         pub friendly_name: Option<String>,
+        #[doc = "Subject name of the certificate."]
         #[serde(rename = "subjectName", default, skip_serializing_if = "Option::is_none")]
         pub subject_name: Option<String>,
+        #[doc = "Host names the certificate applies to."]
         #[serde(rename = "hostNames", default, skip_serializing_if = "Vec::is_empty")]
         pub host_names: Vec<String>,
+        #[doc = "Pfx blob."]
         #[serde(rename = "pfxBlob", default, skip_serializing_if = "Option::is_none")]
         pub pfx_blob: Option<String>,
+        #[doc = "App name."]
         #[serde(rename = "siteName", default, skip_serializing_if = "Option::is_none")]
         pub site_name: Option<String>,
+        #[doc = "Self link."]
         #[serde(rename = "selfLink", default, skip_serializing_if = "Option::is_none")]
         pub self_link: Option<String>,
+        #[doc = "Certificate issuer."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub issuer: Option<String>,
+        #[doc = "Certificate issue Date."]
         #[serde(rename = "issueDate", default, skip_serializing_if = "Option::is_none")]
         pub issue_date: Option<String>,
+        #[doc = "Certificate expiration date."]
         #[serde(rename = "expirationDate", default, skip_serializing_if = "Option::is_none")]
         pub expiration_date: Option<String>,
+        #[doc = "Certificate password."]
         pub password: String,
+        #[doc = "Certificate thumbprint."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub thumbprint: Option<String>,
+        #[doc = "Is the certificate valid?."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub valid: Option<bool>,
+        #[doc = "Raw bytes of .cer file"]
         #[serde(rename = "cerBlob", default, skip_serializing_if = "Option::is_none")]
         pub cer_blob: Option<String>,
+        #[doc = "Public key hash."]
         #[serde(rename = "publicKeyHash", default, skip_serializing_if = "Option::is_none")]
         pub public_key_hash: Option<String>,
+        #[doc = "Specification for an App Service Environment to use for this resource."]
         #[serde(rename = "hostingEnvironmentProfile", default, skip_serializing_if = "Option::is_none")]
         pub hosting_environment_profile: Option<HostingEnvironmentProfile>,
+        #[doc = "Key Vault Csm resource Id."]
         #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
         pub key_vault_id: Option<String>,
+        #[doc = "Key Vault secret name."]
         #[serde(rename = "keyVaultSecretName", default, skip_serializing_if = "Option::is_none")]
         pub key_vault_secret_name: Option<String>,
+        #[doc = "Status of the Key Vault secret."]
         #[serde(rename = "keyVaultSecretStatus", default, skip_serializing_if = "Option::is_none")]
         pub key_vault_secret_status: Option<properties::KeyVaultSecretStatus>,
+        #[doc = "Resource ID of the associated App Service plan, formatted as: \"/subscriptions/{subscriptionID}/resourceGroups/{groupName}/providers/Microsoft.Web/serverfarms/{appServicePlanName}\"."]
         #[serde(rename = "serverFarmId", default, skip_serializing_if = "Option::is_none")]
         pub server_farm_id: Option<String>,
     }
@@ -194,6 +242,7 @@ pub mod certificate_patch_resource {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Status of the Key Vault secret."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum KeyVaultSecretStatus {
             Initialized,
@@ -210,8 +259,10 @@ pub mod certificate_patch_resource {
         }
     }
 }
+#[doc = "App Service error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultErrorResponse {
+    #[doc = "Error model."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<default_error_response::Error>,
 }
@@ -222,16 +273,21 @@ impl DefaultErrorResponse {
 }
 pub mod default_error_response {
     use super::*;
+    #[doc = "Error model."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
+        #[doc = "Standardized string to programmatically identify the error."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
+        #[doc = "Detailed error description and debugging information."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
+        #[doc = "Detailed error description and debugging information."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub target: Option<String>,
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub details: Vec<serde_json::Value>,
+        #[doc = "More information to debug error."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub innererror: Option<String>,
     }
@@ -241,12 +297,16 @@ pub mod default_error_response {
         }
     }
 }
+#[doc = "Specification for an App Service Environment to use for this resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HostingEnvironmentProfile {
+    #[doc = "Resource ID of the App Service Environment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the App Service Environment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type of the App Service Environment."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -255,14 +315,19 @@ impl HostingEnvironmentProfile {
         Self::default()
     }
 }
+#[doc = "Azure proxy only resource. This resource is not tracked by Azure Resource Manager."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyOnlyResource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Kind of resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -271,17 +336,24 @@ impl ProxyOnlyResource {
         Self::default()
     }
 }
+#[doc = "Azure resource. This resource is tracked in Azure Resource Manager"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource Name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Kind of resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
+    #[doc = "Resource Location."]
     pub location: String,
+    #[doc = "Resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

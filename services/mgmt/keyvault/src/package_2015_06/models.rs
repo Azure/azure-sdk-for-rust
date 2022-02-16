@@ -2,14 +2,19 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An identity that have access to the key vault. All identities in the array must use the same tenant ID as the key vault's tenant ID."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessPolicyEntry {
+    #[doc = "The Azure Active Directory tenant ID that should be used for authenticating requests to the key vault."]
     #[serde(rename = "tenantId")]
     pub tenant_id: String,
+    #[doc = "The object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. The object ID must be unique for the list of access policies."]
     #[serde(rename = "objectId")]
     pub object_id: String,
+    #[doc = " Application ID of the client making request on behalf of a principal"]
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
+    #[doc = "Permissions the identity has for keys, secrets and certificates."]
     pub permissions: Permissions,
 }
 impl AccessPolicyEntry {
@@ -22,12 +27,16 @@ impl AccessPolicyEntry {
         }
     }
 }
+#[doc = "Permissions the identity has for keys, secrets and certificates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Permissions {
+    #[doc = "Permissions to keys"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub keys: Vec<String>,
+    #[doc = "Permissions to secrets"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub secrets: Vec<String>,
+    #[doc = "Permissions to certificates"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub certificates: Vec<String>,
 }
@@ -36,14 +45,20 @@ impl Permissions {
         Self::default()
     }
 }
+#[doc = "Key Vault resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "The Azure Resource Manager resource ID for the key vault."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the key vault."]
     pub name: String,
+    #[doc = "The resource type of the key vault."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The supported Azure location where the key vault should be created."]
     pub location: String,
+    #[doc = "The tags that will be assigned to the key vault. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -58,10 +73,13 @@ impl Resource {
         }
     }
 }
+#[doc = "List of vault resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceListResult {
+    #[doc = "Gets the list of vault resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Resource>,
+    #[doc = "Gets the URL to get the next set of vault resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -70,9 +88,12 @@ impl ResourceListResult {
         Self::default()
     }
 }
+#[doc = "SKU details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "SKU family name"]
     pub family: sku::Family,
+    #[doc = "SKU name to specify whether the key vault is a standard vault or a premium vault."]
     pub name: sku::Name,
 }
 impl Sku {
@@ -82,10 +103,12 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "SKU family name"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Family {
         A,
     }
+    #[doc = "SKU name to specify whether the key vault is a standard vault or a premium vault."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "standard")]
@@ -94,10 +117,12 @@ pub mod sku {
         Premium,
     }
 }
+#[doc = "Resource information with extended details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Vault {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the vault"]
     pub properties: VaultProperties,
 }
 impl Vault {
@@ -105,11 +130,15 @@ impl Vault {
         Self { resource, properties }
     }
 }
+#[doc = "Parameters for creating or updating a vault"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultCreateOrUpdateParameters {
+    #[doc = "The supported Azure location where the key vault should be created."]
     pub location: String,
+    #[doc = "The tags that will be assigned to the key vault. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties of the vault"]
     pub properties: VaultProperties,
 }
 impl VaultCreateOrUpdateParameters {
@@ -121,10 +150,13 @@ impl VaultCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "List of vaults"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VaultListResult {
+    #[doc = "Gets or sets the list of vaults."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Vault>,
+    #[doc = "Gets or sets the URL to get the next set of vaults."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -133,21 +165,30 @@ impl VaultListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the vault"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VaultProperties {
+    #[doc = "The URI of the vault for performing operations on keys and secrets."]
     #[serde(rename = "vaultUri", default, skip_serializing_if = "Option::is_none")]
     pub vault_uri: Option<String>,
+    #[doc = "The Azure Active Directory tenant ID that should be used for authenticating requests to the key vault."]
     #[serde(rename = "tenantId")]
     pub tenant_id: String,
+    #[doc = "SKU details"]
     pub sku: Sku,
+    #[doc = "An array of 0 to 16 identities that have access to the key vault. All identities in the array must use the same tenant ID as the key vault's tenant ID."]
     #[serde(rename = "accessPolicies")]
     pub access_policies: Vec<AccessPolicyEntry>,
+    #[doc = "Property to specify whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault."]
     #[serde(rename = "enabledForDeployment", default, skip_serializing_if = "Option::is_none")]
     pub enabled_for_deployment: Option<bool>,
+    #[doc = "Property to specify whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys."]
     #[serde(rename = "enabledForDiskEncryption", default, skip_serializing_if = "Option::is_none")]
     pub enabled_for_disk_encryption: Option<bool>,
+    #[doc = "Property to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault."]
     #[serde(rename = "enabledForTemplateDeployment", default, skip_serializing_if = "Option::is_none")]
     pub enabled_for_template_deployment: Option<bool>,
+    #[doc = "Property to specify whether the 'soft delete' functionality is enabled for this key vault."]
     #[serde(rename = "enableSoftDelete", default, skip_serializing_if = "Option::is_none")]
     pub enable_soft_delete: Option<bool>,
 }

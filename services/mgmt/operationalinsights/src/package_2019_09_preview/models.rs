@@ -2,14 +2,19 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An Azure resource QueryPack-Query object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureResourceProperties {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Read only system data"]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -20,14 +25,20 @@ impl AzureResourceProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
+    #[doc = "The error's code."]
     pub code: String,
+    #[doc = "A human readable error message."]
     pub message: String,
+    #[doc = "Indicates which property in the request is responsible for the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Indicates which value in 'target' is responsible for the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Indicates resources which were responsible for the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub resources: Vec<String>,
+    #[doc = "Additional properties that can be provided on the error details object"]
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
@@ -45,12 +56,16 @@ impl ErrorDetail {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorInfo {
+    #[doc = "A machine readable error code."]
     pub code: String,
+    #[doc = "A human readable error message."]
     pub message: String,
+    #[doc = "error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub innererror: Box<Option<ErrorInfo>>,
+    #[doc = "Additional properties that can be provided on the error info object"]
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
@@ -65,6 +80,7 @@ impl ErrorInfo {
         }
     }
 }
+#[doc = "Describe the format of an Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -75,6 +91,7 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The type of identity that creates/modifies resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IdentityType {
     #[serde(rename = "user")]
@@ -86,10 +103,12 @@ pub enum IdentityType {
     #[serde(rename = "key")]
     Key,
 }
+#[doc = "An Log Analytics QueryPack definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPack {
     #[serde(flatten)]
     pub query_packs_resource: QueryPacksResource,
+    #[doc = "Properties that define a Log Analytics QueryPack resource."]
     pub properties: LogAnalyticsQueryPackProperties,
 }
 impl LogAnalyticsQueryPack {
@@ -100,9 +119,12 @@ impl LogAnalyticsQueryPack {
         }
     }
 }
+#[doc = "Describes the list of Log Analytics QueryPack resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackListResult {
+    #[doc = "List of Log Analytics QueryPack definitions."]
     pub value: Vec<LogAnalyticsQueryPack>,
+    #[doc = "The URI to get the next set of Log Analytics QueryPack definitions if too many QueryPacks where returned in the result set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -111,14 +133,19 @@ impl LogAnalyticsQueryPackListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Properties that define a Log Analytics QueryPack resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackProperties {
+    #[doc = "The unique ID of your application. This field cannot be changed."]
     #[serde(rename = "queryPackId", default, skip_serializing_if = "Option::is_none")]
     pub query_pack_id: Option<String>,
+    #[doc = "Creation Date for the Log Analytics QueryPack, in ISO 8601 format."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "Last modified date of the Log Analytics QueryPack, in ISO 8601 format."]
     #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
+    #[doc = "Current state of this QueryPack: whether or not is has been provisioned within the resource group it is defined. Users cannot change this value but are able to read from it. Values will include Succeeded, Deploying, Canceled, and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -127,10 +154,12 @@ impl LogAnalyticsQueryPackProperties {
         Self::default()
     }
 }
+#[doc = "A Log Analytics QueryPack-Query definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackQuery {
     #[serde(flatten)]
     pub azure_resource_properties: AzureResourceProperties,
+    #[doc = "Properties that define an Log Analytics QueryPack-Query resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogAnalyticsQueryPackQueryProperties>,
 }
@@ -139,9 +168,12 @@ impl LogAnalyticsQueryPackQuery {
         Self::default()
     }
 }
+#[doc = "Describes the list of Log Analytics QueryPack-Query resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackQueryListResult {
+    #[doc = "List of Log Analytics QueryPack Query definitions."]
     pub value: Vec<LogAnalyticsQueryPackQuery>,
+    #[doc = "The URI to get the next set of Log Analytics QueryPack definitions if too many QueryPack-Queries where returned in the result set."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -150,25 +182,36 @@ impl LogAnalyticsQueryPackQueryListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Properties that define an Log Analytics QueryPack-Query resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsQueryPackQueryProperties {
+    #[doc = "The unique ID of your application. This field cannot be changed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Unique display name for your query within the Query Pack."]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "Creation Date for the Log Analytics Query, in ISO 8601 format."]
     #[serde(rename = "timeCreated", default, skip_serializing_if = "Option::is_none")]
     pub time_created: Option<String>,
+    #[doc = "Last modified date of the Log Analytics Query, in ISO 8601 format."]
     #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
+    #[doc = "Object Id of user creating the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<String>,
+    #[doc = "Description of the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Body of the query."]
     pub body: String,
+    #[doc = "The related metadata items for the function."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub related: Option<log_analytics_query_pack_query_properties::Related>,
+    #[doc = "Tags associated with the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Additional properties that can be set for the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -190,12 +233,16 @@ impl LogAnalyticsQueryPackQueryProperties {
 }
 pub mod log_analytics_query_pack_query_properties {
     use super::*;
+    #[doc = "The related metadata items for the function."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
+        #[doc = "The related categories for the function."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub categories: Vec<String>,
+        #[doc = "The related resource types for the function."]
         #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
         pub resource_types: Vec<String>,
+        #[doc = "The related Log Analytics solutions for the function."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub solutions: Vec<String>,
     }
@@ -205,10 +252,13 @@ pub mod log_analytics_query_pack_query_properties {
         }
     }
 }
+#[doc = "Properties that define an Log Analytics QueryPack-Query search properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogAnalyticsQueryPackQuerySearchProperties {
+    #[doc = "The related metadata items for the function."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub related: Option<log_analytics_query_pack_query_search_properties::Related>,
+    #[doc = "Tags associated with the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -219,12 +269,16 @@ impl LogAnalyticsQueryPackQuerySearchProperties {
 }
 pub mod log_analytics_query_pack_query_search_properties {
     use super::*;
+    #[doc = "The related metadata items for the function."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Related {
+        #[doc = "The related categories for the function."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub categories: Vec<String>,
+        #[doc = "The related resource types for the function."]
         #[serde(rename = "resourceTypes", default, skip_serializing_if = "Vec::is_empty")]
         pub resource_types: Vec<String>,
+        #[doc = "The related Log Analytics solutions for the function."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub solutions: Vec<String>,
     }
@@ -234,14 +288,19 @@ pub mod log_analytics_query_pack_query_search_properties {
         }
     }
 }
+#[doc = "CDN REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation is a data action"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Operation display payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -250,14 +309,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "Operation display payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Resource provider of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Localized friendly name for the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Localized friendly description for the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -266,10 +330,13 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "Result of the request to list CDN operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of CDN operations supported by the CDN resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -278,15 +345,21 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryPacksResource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -301,18 +374,25 @@ impl QueryPacksResource {
         }
     }
 }
+#[doc = "Read only system data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "An identifier for the identity that created the resource"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that creates/modifies resources"]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
+    #[doc = "The timestamp of resource creation (UTC)"]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "An identifier for the identity that last modified the resource"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that creates/modifies resources"]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -321,8 +401,10 @@ impl SystemData {
         Self::default()
     }
 }
+#[doc = "A container holding only the Tags for a resource, allowing the user to update the tags on a QueryPack instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagsResource {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

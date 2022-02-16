@@ -2,12 +2,15 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The IoT Central application."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct App {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The properties of an IoT Central application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppProperties>,
+    #[doc = "Information about the SKU of the IoT Central application."]
     pub sku: AppSkuInfo,
 }
 impl App {
@@ -19,12 +22,16 @@ impl App {
         }
     }
 }
+#[doc = "The properties indicating whether a given IoT Central application name or subdomain is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppAvailabilityInfo {
+    #[doc = "The value which indicates whether the provided name is available."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "The reason for unavailability."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "The detailed reason message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -33,10 +40,13 @@ impl AppAvailabilityInfo {
         Self::default()
     }
 }
+#[doc = "A list of IoT Central Applications with a next link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppListResult {
+    #[doc = "The link used to get the next page of IoT Central Applications."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "A list of IoT Central Applications."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<App>,
 }
@@ -45,12 +55,16 @@ impl AppListResult {
         Self::default()
     }
 }
+#[doc = "The description of the IoT Central application."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppPatch {
+    #[doc = "Instance tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Information about the SKU of the IoT Central application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<AppSkuInfo>,
+    #[doc = "The properties of an IoT Central application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppProperties>,
 }
@@ -59,14 +73,19 @@ impl AppPatch {
         Self::default()
     }
 }
+#[doc = "The properties of an IoT Central application."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppProperties {
+    #[doc = "The ID of the application."]
     #[serde(rename = "applicationId", default, skip_serializing_if = "Option::is_none")]
     pub application_id: Option<String>,
+    #[doc = "The display name of the application."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The subdomain of the application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subdomain: Option<String>,
+    #[doc = "The ID of the application template, which is a blueprint that defines the characteristics and behaviors of an application. Optional; if not specified, defaults to a blank blueprint and allows the application to be defined from scratch."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
 }
@@ -75,8 +94,10 @@ impl AppProperties {
         Self::default()
     }
 }
+#[doc = "Information about the SKU of the IoT Central application."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppSkuInfo {
+    #[doc = "The name of the SKU."]
     pub name: app_sku_info::Name,
 }
 impl AppSkuInfo {
@@ -86,6 +107,7 @@ impl AppSkuInfo {
 }
 pub mod app_sku_info {
     use super::*;
+    #[doc = "The name of the SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         F1,
@@ -98,22 +120,31 @@ pub mod app_sku_info {
         St2,
     }
 }
+#[doc = "IoT Central Application Template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppTemplate {
+    #[doc = "The ID of the template."]
     #[serde(rename = "manifestId", default, skip_serializing_if = "Option::is_none")]
     pub manifest_id: Option<String>,
+    #[doc = "The version of the template."]
     #[serde(rename = "manifestVersion", default, skip_serializing_if = "Option::is_none")]
     pub manifest_version: Option<String>,
+    #[doc = "The name of the template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The title of the template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[doc = "The order of the template in the templates list."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub order: Option<f64>,
+    #[doc = "The description of the template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The industry of the template."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub industry: Option<String>,
+    #[doc = "A list of locations that support the template."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub locations: Vec<AppTemplateLocations>,
 }
@@ -122,10 +153,13 @@ impl AppTemplate {
         Self::default()
     }
 }
+#[doc = "IoT Central Application Template Locations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppTemplateLocations {
+    #[doc = "The ID of the location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The display name of the location."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
@@ -134,10 +168,13 @@ impl AppTemplateLocations {
         Self::default()
     }
 }
+#[doc = "A list of IoT Central Application Templates with a next link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppTemplatesResult {
+    #[doc = "The link used to get the next page of IoT Central application templates."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "A list of IoT Central Application Templates."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AppTemplate>,
 }
@@ -146,8 +183,10 @@ impl AppTemplatesResult {
         Self::default()
     }
 }
+#[doc = "Error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "Details of error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -156,14 +195,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "Details of error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The target of the particular error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "A list of additional details about the error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -172,14 +216,19 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "IoT Central REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{read | write | action | delete}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "The intended executor of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Additional descriptions for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -188,14 +237,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "The object that represents the operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Service provider: Microsoft IoT Central"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource Type: IoT Central"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "Friendly description for the operation,"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -204,9 +258,12 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "Input values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationInputs {
+    #[doc = "The name of the IoT Central application instance to check."]
     pub name: String,
+    #[doc = "The type of the IoT Central resource to query."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -215,10 +272,13 @@ impl OperationInputs {
         Self { name, type_: None }
     }
 }
+#[doc = "A list of IoT Central operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "The link used to get the next page of IoT Central description objects."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "A list of operations supported by the Microsoft.IoTCentral resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -227,15 +287,21 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "The common properties of an ARM resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "The ARM resource identifier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The ARM resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The resource location."]
     pub location: String,
+    #[doc = "The resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }

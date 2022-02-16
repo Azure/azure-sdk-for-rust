@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct AppliedReservationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<String>,
+    #[doc = "Url to get the next page of reservations"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -16,10 +17,13 @@ impl AppliedReservationList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppliedReservations {
+    #[doc = "Identifier of the applied reservations"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Type of resource. \"Microsoft.Capacity/AppliedReservations\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -40,6 +44,7 @@ impl AppliedReservationsProperties {
         Self::default()
     }
 }
+#[doc = "Type of the Applied Scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AppliedScopeType {
     Single,
@@ -48,14 +53,19 @@ pub enum AppliedScopeType {
 pub type AppliedScopes = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Catalog {
+    #[doc = "The type of resource the SKU applies to."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "The name of SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The tier of this SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
+    #[doc = "The size of this SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
+    #[doc = "Available reservation terms for this resource"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub terms: Vec<ReservationTerm>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -155,6 +165,7 @@ impl ExtendedErrorInfo {
 pub struct ExtendedStatusInfo {
     #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
     pub status_code: Option<ReservationStatusCode>,
+    #[doc = "The message giving detailed information about the status code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -163,6 +174,7 @@ impl ExtendedStatusInfo {
         Self::default()
     }
 }
+#[doc = "Location in which the Resources needs to be reserved. It cannot be changed after the resource has been created."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Location {
     #[serde(rename = "westus")]
@@ -216,6 +228,7 @@ pub enum Location {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MergeProperties {
+    #[doc = "Format of the resource id should be /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sources: Vec<String>,
 }
@@ -254,6 +267,7 @@ impl OperationDisplay {
 pub struct OperationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationResponse>,
+    #[doc = "Url to get the next page of items."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -288,8 +302,10 @@ impl Patch {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchProperties {
+    #[doc = "Type of the Applied Scope."]
     #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
+    #[doc = "List of the subscriptions that the benefit will be applied. Do not specify if AppliedScopeType is Shared."]
     #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
     pub applied_scopes: Option<AppliedScopes>,
 }
@@ -298,6 +314,7 @@ impl PatchProperties {
         Self::default()
     }
 }
+#[doc = "Represent the current state of the Reservation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
     Creating,
@@ -318,6 +335,7 @@ pub enum ProvisioningState {
 pub struct ReservationList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReservationResponse>,
+    #[doc = "Url to get the next page of reservations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -328,8 +346,10 @@ impl ReservationList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationMergeProperties {
+    #[doc = "Reservation Resource Id Created due to the merge. Format of the resource Id is /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(rename = "mergeDestination", default, skip_serializing_if = "Option::is_none")]
     pub merge_destination: Option<String>,
+    #[doc = "Resource Ids of the Source Reservation's merged to form this Reservation. Format of the resource Id is /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(rename = "mergeSources", default, skip_serializing_if = "Vec::is_empty")]
     pub merge_sources: Vec<String>,
 }
@@ -342,6 +362,7 @@ impl ReservationMergeProperties {
 pub struct ReservationOrderList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ReservationOrderResponse>,
+    #[doc = "Url to get the next page of reservationOrders."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -352,18 +373,25 @@ impl ReservationOrderList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationOrderProperties {
+    #[doc = "Friendly name for user to easily identified the reservation."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "This is the DateTime when the reservation was initially requested for purchase."]
     #[serde(rename = "requestDateTime", default, skip_serializing_if = "Option::is_none")]
     pub request_date_time: Option<String>,
+    #[doc = "This is the DateTime when the reservation was created."]
     #[serde(rename = "createdDateTime", default, skip_serializing_if = "Option::is_none")]
     pub created_date_time: Option<String>,
+    #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
+    #[doc = "Total Quantity of the SKUs purchased in the Reservation."]
     #[serde(rename = "originalQuantity", default, skip_serializing_if = "Option::is_none")]
     pub original_quantity: Option<i32>,
+    #[doc = "Represent the term of Reservation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub term: Option<ReservationTerm>,
+    #[doc = "Represent the current state of the Reservation."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -378,12 +406,15 @@ impl ReservationOrderProperties {
 pub struct ReservationOrderResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<i64>,
+    #[doc = "Identifier of the reservation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the reservation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationOrderProperties>,
+    #[doc = "Type of resource. \"Microsoft.Capacity/reservations\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -394,20 +425,28 @@ impl ReservationOrderResponse {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationProperties {
+    #[doc = "Friendly name for user to easily identify the reservation"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "List of the subscriptions that the benefit will be applied. Do not specify if AppliedScopeType is Shared."]
     #[serde(rename = "appliedScopes", default, skip_serializing_if = "Option::is_none")]
     pub applied_scopes: Option<AppliedScopes>,
+    #[doc = "Type of the Applied Scope."]
     #[serde(rename = "appliedScopeType", default, skip_serializing_if = "Option::is_none")]
     pub applied_scope_type: Option<AppliedScopeType>,
+    #[doc = "Quantity of the SKUs that are part of the Reservation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<i32>,
+    #[doc = "Represent the current state of the Reservation."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "DateTime of the Reservation starting when this version is effective from."]
     #[serde(rename = "effectiveDateTime", default, skip_serializing_if = "Option::is_none")]
     pub effective_date_time: Option<String>,
+    #[doc = "DateTime of the last time the Reservation was updated."]
     #[serde(rename = "lastUpdatedDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_date_time: Option<String>,
+    #[doc = "This is the date when the Reservation will expire."]
     #[serde(rename = "expiryDate", default, skip_serializing_if = "Option::is_none")]
     pub expiry_date: Option<String>,
     #[serde(rename = "extendedStatusInfo", default, skip_serializing_if = "Option::is_none")]
@@ -424,20 +463,25 @@ impl ReservationProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationResponse {
+    #[doc = "Location in which the Resources needs to be reserved. It cannot be changed after the resource has been created."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<Location>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<i64>,
+    #[doc = "Identifier of the reservation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the reservation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource Provider type to be reserved."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<reservation_response::Kind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<SkuName>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReservationProperties>,
+    #[doc = "Type of resource. \"Microsoft.Capacity/reservationOrders/reservations\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -448,6 +492,7 @@ impl ReservationResponse {
 }
 pub mod reservation_response {
     use super::*;
+    #[doc = "Resource Provider type to be reserved."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Kind {
         #[serde(rename = "Microsoft.Compute")]
@@ -456,8 +501,10 @@ pub mod reservation_response {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationSplitProperties {
+    #[doc = "List of destination Resource Id that are created due to split. Format of the resource Id is /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(rename = "splitDestinations", default, skip_serializing_if = "Vec::is_empty")]
     pub split_destinations: Vec<String>,
+    #[doc = "Resource Id of the Reservation from which this is split. Format of the resource Id is /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(rename = "splitSource", default, skip_serializing_if = "Option::is_none")]
     pub split_source: Option<String>,
 }
@@ -478,6 +525,7 @@ pub enum ReservationStatusCode {
     Expired,
     Succeeded,
 }
+#[doc = "Represent the term of Reservation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ReservationTerm {
     #[serde(rename = "P1Y")]
@@ -487,8 +535,10 @@ pub enum ReservationTerm {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuCapability {
+    #[doc = "An invariant to describe the feature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "An invariant if the feature is measured by quantity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -509,10 +559,13 @@ impl SkuName {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuRestriction {
+    #[doc = "The type of restrictions."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub values: Vec<String>,
+    #[doc = "The reason for restriction."]
     #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
     pub reason_code: Option<String>,
 }
@@ -523,8 +576,10 @@ impl SkuRestriction {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SplitProperties {
+    #[doc = "List of the quantities in the new reservations to create."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub quantities: Vec<i64>,
+    #[doc = "Resource id of the reservation to be split. Format of the resource id should be /providers/Microsoft.Capacity/reservationOrders/{reservationOrderId}/reservations/{reservationId}"]
     #[serde(rename = "reservationId", default, skip_serializing_if = "Option::is_none")]
     pub reservation_id: Option<String>,
 }

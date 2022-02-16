@@ -2,9 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Query result column descriptor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Column {
+    #[doc = "Column name."]
     pub name: String,
+    #[doc = "Data type of a column in a table."]
     #[serde(rename = "type")]
     pub type_: ColumnDataType,
 }
@@ -13,6 +16,7 @@ impl Column {
         Self { name, type_ }
     }
 }
+#[doc = "Data type of a column in a table."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ColumnDataType {
     #[serde(rename = "string")]
@@ -26,9 +30,12 @@ pub enum ColumnDataType {
     #[serde(rename = "object")]
     Object,
 }
+#[doc = "An interval in time specifying the date and time for the inclusive start and exclusive end, i.e. `[start, end)`."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DateTimeInterval {
+    #[doc = "A datetime indicating the inclusive/closed start of the time interval, i.e. `[`**`start`**`, end)`. Specifying a `start` that occurs chronologically after `end` will result in an error."]
     pub start: String,
+    #[doc = "A datetime indicating the exclusive/open end of the time interval, i.e. `[start, `**`end`**`)`. Specifying an `end` that occurs chronologically before `start` will result in an error."]
     pub end: String,
 }
 impl DateTimeInterval {
@@ -36,10 +43,14 @@ impl DateTimeInterval {
         Self { start, end }
     }
 }
+#[doc = "Error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
+    #[doc = "Error code identifying the specific error."]
     pub code: String,
+    #[doc = "A human readable error message."]
     pub message: String,
+    #[doc = "Error details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetails>,
 }
@@ -54,7 +65,9 @@ impl Error {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetails {
+    #[doc = "Error code identifying the specific error."]
     pub code: String,
+    #[doc = "A human readable error message."]
     pub message: String,
 }
 impl ErrorDetails {
@@ -62,12 +75,16 @@ impl ErrorDetails {
         Self { code, message }
     }
 }
+#[doc = "Error Field contract."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorFieldContract {
+    #[doc = "Property level error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Human-readable representation of property-level error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Property name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
 }
@@ -76,8 +93,10 @@ impl ErrorFieldContract {
         Self::default()
     }
 }
+#[doc = "An error response from the API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
+    #[doc = "Error details."]
     pub error: Error,
 }
 impl ErrorResponse {
@@ -85,9 +104,12 @@ impl ErrorResponse {
         Self { error }
     }
 }
+#[doc = "A facet containing additional statistics on the response of a query. Can be either FacetResult or FacetError."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Facet {
+    #[doc = "Facet expression, same as in the corresponding facet request."]
     pub expression: String,
+    #[doc = "Result type"]
     #[serde(rename = "resultType")]
     pub result_type: String,
 }
@@ -96,10 +118,12 @@ impl Facet {
         Self { expression, result_type }
     }
 }
+#[doc = "A facet whose execution resulted in an error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetError {
     #[serde(flatten)]
     pub facet: Facet,
+    #[doc = "An array containing detected facet errors with details."]
     pub errors: Vec<ErrorDetails>,
 }
 impl FacetError {
@@ -107,9 +131,12 @@ impl FacetError {
         Self { facet, errors }
     }
 }
+#[doc = "A request to compute additional statistics (facets) over the query results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetRequest {
+    #[doc = "The column or list of columns to summarize by"]
     pub expression: String,
+    #[doc = "The options for facet evaluation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<FacetRequestOptions>,
 }
@@ -118,14 +145,19 @@ impl FacetRequest {
         Self { expression, options: None }
     }
 }
+#[doc = "The options for facet evaluation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FacetRequestOptions {
+    #[doc = "The column name or query expression to sort on. Defaults to count if not present."]
     #[serde(rename = "sortBy", default, skip_serializing_if = "Option::is_none")]
     pub sort_by: Option<String>,
+    #[doc = "The sorting order by the selected column (count by default)."]
     #[serde(rename = "sortOrder", default, skip_serializing_if = "Option::is_none")]
     pub sort_order: Option<facet_request_options::SortOrder>,
+    #[doc = "Specifies the filter condition for the 'where' clause which will be run on main query's result, just before the actual faceting."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<String>,
+    #[doc = "The maximum number of facet rows that should be returned."]
     #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
     pub top: Option<i32>,
 }
@@ -136,6 +168,7 @@ impl FacetRequestOptions {
 }
 pub mod facet_request_options {
     use super::*;
+    #[doc = "The sorting order by the selected column (count by default)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum SortOrder {
         #[serde(rename = "asc")]
@@ -149,13 +182,17 @@ pub mod facet_request_options {
         }
     }
 }
+#[doc = "Successfully executed facet containing additional statistics on the response of a query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacetResult {
     #[serde(flatten)]
     pub facet: Facet,
+    #[doc = "Number of total records in the facet results."]
     #[serde(rename = "totalRecords")]
     pub total_records: i64,
+    #[doc = "Number of records returned in the facet response."]
     pub count: i32,
+    #[doc = "Query output in tabular format."]
     pub data: Table,
 }
 impl FacetResult {
@@ -168,12 +205,16 @@ impl FacetResult {
         }
     }
 }
+#[doc = "Error message body that will indicate why the operation failed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphQueryError {
+    #[doc = "Service-defined error code. This code serves as a sub-status for the HTTP error code specified in the response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Human-readable representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The list of invalid fields send in request, in case of validation error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorFieldContract>,
 }
@@ -182,10 +223,13 @@ impl GraphQueryError {
         Self::default()
     }
 }
+#[doc = "Graph query list result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphQueryListResult {
+    #[doc = "URL to fetch the next set of queries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "An array of graph queries."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<GraphQueryResource>,
 }
@@ -194,13 +238,18 @@ impl GraphQueryListResult {
         Self::default()
     }
 }
+#[doc = "Properties that contain a graph query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GraphQueryProperties {
+    #[doc = "Date and time in UTC of the last modification that was made to this graph query definition."]
     #[serde(rename = "timeModified", default, skip_serializing_if = "Option::is_none")]
     pub time_modified: Option<String>,
+    #[doc = "The description of a graph query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "KQL query that will be graph."]
     pub query: String,
+    #[doc = "Enum indicating a type of graph query."]
     #[serde(rename = "resultKind", default, skip_serializing_if = "Option::is_none")]
     pub result_kind: Option<graph_query_properties::ResultKind>,
 }
@@ -216,16 +265,20 @@ impl GraphQueryProperties {
 }
 pub mod graph_query_properties {
     use super::*;
+    #[doc = "Enum indicating a type of graph query."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResultKind {
         #[serde(rename = "basic")]
         Basic,
     }
 }
+#[doc = "Properties that contain a workbook for PATCH operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphQueryPropertiesUpdateParameters {
+    #[doc = "The description of a graph query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "KQL query that will be graph."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
 }
@@ -234,10 +287,12 @@ impl GraphQueryPropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Graph Query entity definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphQueryResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties that contain a graph query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GraphQueryProperties>,
 }
@@ -246,12 +301,16 @@ impl GraphQueryResource {
         Self::default()
     }
 }
+#[doc = "The parameters that can be provided when updating workbook properties properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GraphQueryUpdateParameters {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "This will be used to handle Optimistic Concurrency. If not present, it will always overwrite the existing resource without checking conflict."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Properties that contain a workbook for PATCH operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GraphQueryPropertiesUpdateParameters>,
 }
@@ -260,12 +319,16 @@ impl GraphQueryUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Resource Graph REST API operation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+    #[doc = "The origin of operations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -276,14 +339,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Display metadata associated with the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft Resource Graph."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Type of operation: get, read, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description for the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -293,10 +361,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list Resource Graph operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of Resource Graph operations supported by the Resource Graph resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "The link used to get the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -305,12 +376,17 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Describes a query to be executed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
+    #[doc = "Azure subscriptions against which to execute the query."]
     pub subscriptions: Vec<String>,
+    #[doc = "The resources query."]
     pub query: String,
+    #[doc = "The options for query evaluation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<QueryRequestOptions>,
+    #[doc = "An array of facet requests to be computed against the query result."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub facets: Vec<FacetRequest>,
 }
@@ -324,12 +400,16 @@ impl QueryRequest {
         }
     }
 }
+#[doc = "The options for query evaluation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryRequestOptions {
+    #[doc = "Continuation token for pagination, capturing the next page size and offset, as well as the context of the query."]
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
+    #[doc = "The maximum number of rows that the query should return. Overrides the page size when ```$skipToken``` property is present."]
     #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
     pub top: Option<i32>,
+    #[doc = "The number of rows to skip from the beginning of the results. Overrides the next page offset when ```$skipToken``` property is present."]
     #[serde(rename = "$skip", default, skip_serializing_if = "Option::is_none")]
     pub skip: Option<i32>,
 }
@@ -338,16 +418,23 @@ impl QueryRequestOptions {
         Self::default()
     }
 }
+#[doc = "Query result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryResponse {
+    #[doc = "Number of total records matching the query."]
     #[serde(rename = "totalRecords")]
     pub total_records: i64,
+    #[doc = "Number of records returned in the current response. In the case of paging, this is the number of records in the current page."]
     pub count: i64,
+    #[doc = "Indicates whether the query results are truncated."]
     #[serde(rename = "resultTruncated")]
     pub result_truncated: query_response::ResultTruncated,
+    #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and subscriptions used in the current request) to retrieve the next page of data."]
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
+    #[doc = "Query output in tabular format."]
     pub data: Table,
+    #[doc = "Query facets."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub facets: Vec<Facet>,
 }
@@ -365,6 +452,7 @@ impl QueryResponse {
 }
 pub mod query_response {
     use super::*;
+    #[doc = "Indicates whether the query results are truncated."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ResultTruncated {
         #[serde(rename = "true")]
@@ -373,18 +461,25 @@ pub mod query_response {
         False,
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name. This is GUID value. The display name should be assigned within properties field."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The location of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "This will be used to handle Optimistic Concurrency. If not present, it will always overwrite the existing resource without checking conflict."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -393,12 +488,16 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Data on a specific change, represented by a pair of before and after resource snapshots."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceChangeData {
+    #[doc = "The change ID. Valid and unique within the specified resource only."]
     #[serde(rename = "changeId")]
     pub change_id: String,
+    #[doc = "The snapshot before the change."]
     #[serde(rename = "beforeSnapshot")]
     pub before_snapshot: serde_json::Value,
+    #[doc = "The snapshot after the change."]
     #[serde(rename = "afterSnapshot")]
     pub after_snapshot: serde_json::Value,
 }
@@ -411,10 +510,13 @@ impl ResourceChangeData {
         }
     }
 }
+#[doc = "The parameters for a specific change details request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceChangeDetailsRequestParameters {
+    #[doc = "Specifies the resource for a change details request."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
+    #[doc = "Specifies the change ID."]
     #[serde(rename = "changeId")]
     pub change_id: String,
 }
@@ -423,10 +525,13 @@ impl ResourceChangeDetailsRequestParameters {
         Self { resource_id, change_id }
     }
 }
+#[doc = "A list of changes associated with a resource over a specific time interval."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceChangeList {
+    #[doc = "The pageable value returned by the operation, i.e. a list of changes to the resource.\n\n- The list is ordered from the most recent changes to the least recent changes.\n- This list will be empty if there were no changes during the requested interval.\n- The `Before` snapshot timestamp value of the oldest change can be outside of the specified time interval."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub changes: Vec<ResourceChangeData>,
+    #[doc = "Skip token that encodes the skip information while executing the current request"]
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<serde_json::Value>,
 }
@@ -435,13 +540,18 @@ impl ResourceChangeList {
         Self::default()
     }
 }
+#[doc = "The parameters for a specific changes request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceChangesRequestParameters {
+    #[doc = "Specifies the resource for a changes request."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
+    #[doc = "Specifies the date and time interval for a changes request."]
     pub interval: serde_json::Value,
+    #[doc = "Acts as the continuation token for paged responses."]
     #[serde(rename = "$skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
+    #[doc = "The maximum number of changes the client can accept in a paged response."]
     #[serde(rename = "$top", default, skip_serializing_if = "Option::is_none")]
     pub top: Option<i32>,
 }
@@ -455,9 +565,12 @@ impl ResourceChangesRequestParameters {
         }
     }
 }
+#[doc = "Data on a specific resource snapshot."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSnapshotData {
+    #[doc = "The time when the snapshot was created.\nThe snapshot timestamp provides an approximation as to when a modification to a resource was detected.  There can be a difference between the actual modification time and the detection time.  This is due to differences in how operations that modify a resource are processed, versus how operation that record resource snapshots are processed."]
     pub timestamp: String,
+    #[doc = "The resource snapshot content (in resourceChangeDetails response only)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<serde_json::Value>,
 }
@@ -467,9 +580,12 @@ impl ResourceSnapshotData {
     }
 }
 pub type Row = Vec<serde_json::Value>;
+#[doc = "Query output in tabular format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Table {
+    #[doc = "Query result column descriptors."]
     pub columns: Vec<Column>,
+    #[doc = "Query result rows."]
     pub rows: Vec<Row>,
 }
 impl Table {

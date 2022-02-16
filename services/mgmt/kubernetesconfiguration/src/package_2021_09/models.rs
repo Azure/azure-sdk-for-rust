@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -14,16 +17,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -32,8 +41,10 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -42,14 +53,18 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The Extension object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Extension {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties of an Extension resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<extension::Properties>,
+    #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -60,32 +75,46 @@ impl Extension {
 }
 pub mod extension {
     use super::*;
+    #[doc = "Properties of an Extension resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Type of the Extension, of which this resource is an instance of.  It must be one of the Extension Types registered with Microsoft.KubernetesConfiguration by the Extension publisher."]
         #[serde(rename = "extensionType", default, skip_serializing_if = "Option::is_none")]
         pub extension_type: Option<String>,
+        #[doc = "Flag to note if this extension participates in auto upgrade of minor version, or not."]
         #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
         pub auto_upgrade_minor_version: Option<bool>,
+        #[doc = "ReleaseTrain this extension participates in for auto-upgrade (e.g. Stable, Preview, etc.) - only if autoUpgradeMinorVersion is 'true'."]
         #[serde(rename = "releaseTrain", default, skip_serializing_if = "Option::is_none")]
         pub release_train: Option<String>,
+        #[doc = "Version of the extension for this extension, if it is 'pinned' to a specific version. autoUpgradeMinorVersion must be 'false'."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub version: Option<String>,
+        #[doc = "Scope of the extension. It can be either Cluster or Namespace; but not both."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub scope: Option<Scope>,
+        #[doc = "Configuration settings, as name-value pairs for configuring this extension."]
         #[serde(rename = "configurationSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_settings: Option<serde_json::Value>,
+        #[doc = "Configuration settings that are sensitive, as name-value pairs for configuring this extension."]
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<serde_json::Value>,
+        #[doc = "The provisioning state of the extension resource."]
         #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
         pub provisioning_state: Option<ProvisioningState>,
+        #[doc = "Status from this extension."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub statuses: Vec<ExtensionStatus>,
+        #[doc = "The error detail."]
         #[serde(rename = "errorInfo", default, skip_serializing_if = "Option::is_none")]
         pub error_info: Option<ErrorDetail>,
+        #[doc = "Custom Location settings properties."]
         #[serde(rename = "customLocationSettings", default, skip_serializing_if = "Option::is_none")]
         pub custom_location_settings: Option<serde_json::Value>,
+        #[doc = "Uri of the Helm package"]
         #[serde(rename = "packageUri", default, skip_serializing_if = "Option::is_none")]
         pub package_uri: Option<String>,
+        #[doc = "Identity of the Extension resource in an AKS cluster"]
         #[serde(rename = "aksAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
         pub aks_assigned_identity: Option<properties::AksAssignedIdentity>,
     }
@@ -96,12 +125,16 @@ pub mod extension {
     }
     pub mod properties {
         use super::*;
+        #[doc = "Identity of the Extension resource in an AKS cluster"]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct AksAssignedIdentity {
+            #[doc = "The principal ID of resource identity."]
             #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
             pub principal_id: Option<String>,
+            #[doc = "The tenant ID of resource."]
             #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
             pub tenant_id: Option<String>,
+            #[doc = "The identity type."]
             #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
             pub type_: Option<aks_assigned_identity::Type>,
         }
@@ -112,6 +145,7 @@ pub mod extension {
         }
         pub mod aks_assigned_identity {
             use super::*;
+            #[doc = "The identity type."]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
             pub enum Type {
                 SystemAssigned,
@@ -119,16 +153,22 @@ pub mod extension {
         }
     }
 }
+#[doc = "Status from the extension."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionStatus {
+    #[doc = "Status code provided by the Extension"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Short description of status of the extension."]
     #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
     pub display_status: Option<String>,
+    #[doc = "Level of the status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<extension_status::Level>,
+    #[doc = "Detailed message of the status from the Extension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "DateLiteral (per ISO8601) noting the time of installation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub time: Option<String>,
 }
@@ -139,6 +179,7 @@ impl ExtensionStatus {
 }
 pub mod extension_status {
     use super::*;
+    #[doc = "Level of the status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Level {
         Error,
@@ -151,10 +192,13 @@ pub mod extension_status {
         }
     }
 }
+#[doc = "Result of the request to list Extensions.  It contains a list of Extension objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionsList {
+    #[doc = "List of Extensions within a Kubernetes cluster."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Extension>,
+    #[doc = "URL to get the next set of extension objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -163,12 +207,16 @@ impl ExtensionsList {
         Self::default()
     }
 }
+#[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
+    #[doc = "The principal ID of resource identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<identity::Type>,
 }
@@ -179,15 +227,19 @@ impl Identity {
 }
 pub mod identity {
     use super::*;
+    #[doc = "The identity type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "The async operations in progress, in the cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatusList {
+    #[doc = "List of async operations in progress, in the cluster."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationStatusResult>,
+    #[doc = "URL to get the next set of Operation Result objects, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -196,15 +248,21 @@ impl OperationStatusList {
         Self::default()
     }
 }
+#[doc = "The current status of an async operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusResult {
+    #[doc = "Fully qualified ID for the async operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the async operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Operation status."]
     pub status: String,
+    #[doc = "Additional information, if available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -219,6 +277,7 @@ impl OperationStatusResult {
         }
     }
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -229,12 +288,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -243,14 +306,19 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Supported operation of this resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperation {
+    #[doc = "Operation name, in format of {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
+    #[doc = "The flag that indicates whether the operation applies to data plane."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -261,14 +329,19 @@ impl ResourceProviderOperation {
 }
 pub mod resource_provider_operation {
     use super::*;
+    #[doc = "Display metadata associated with the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Resource provider: Microsoft KubernetesConfiguration."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Type of operation: get, read, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of this operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -278,10 +351,13 @@ pub mod resource_provider_operation {
         }
     }
 }
+#[doc = "Result of the request to list operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
+    #[doc = "List of operations supported by this resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperation>,
+    #[doc = "URL to the next set of results, if any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -290,10 +366,13 @@ impl ResourceProviderOperationList {
         Self::default()
     }
 }
+#[doc = "Scope of the extension. It can be either Cluster or Namespace; but not both."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Scope {
+    #[doc = "Specifies that the scope of the extension is Cluster"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cluster: Option<ScopeCluster>,
+    #[doc = "Specifies that the scope of the extension is Namespace"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<ScopeNamespace>,
 }
@@ -302,8 +381,10 @@ impl Scope {
         Self::default()
     }
 }
+#[doc = "Specifies that the scope of the extension is Cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeCluster {
+    #[doc = "Namespace where the extension Release must be placed, for a Cluster scoped extension.  If this namespace does not exist, it will be created"]
     #[serde(rename = "releaseNamespace", default, skip_serializing_if = "Option::is_none")]
     pub release_namespace: Option<String>,
 }
@@ -312,8 +393,10 @@ impl ScopeCluster {
         Self::default()
     }
 }
+#[doc = "Specifies that the scope of the extension is Namespace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeNamespace {
+    #[doc = "Namespace where the extension will be created for an Namespace scoped extension.  If this namespace does not exist, it will be created"]
     #[serde(rename = "targetNamespace", default, skip_serializing_if = "Option::is_none")]
     pub target_namespace: Option<String>,
 }
@@ -322,8 +405,10 @@ impl ScopeNamespace {
         Self::default()
     }
 }
+#[doc = "The Extension Patch Request object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchExtension {
+    #[doc = "Updatable properties of an Extension Patch Request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<patch_extension::Properties>,
 }
@@ -334,16 +419,22 @@ impl PatchExtension {
 }
 pub mod patch_extension {
     use super::*;
+    #[doc = "Updatable properties of an Extension Patch Request"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Flag to note if this extension participates in auto upgrade of minor version, or not."]
         #[serde(rename = "autoUpgradeMinorVersion", default, skip_serializing_if = "Option::is_none")]
         pub auto_upgrade_minor_version: Option<bool>,
+        #[doc = "ReleaseTrain this extension participates in for auto-upgrade (e.g. Stable, Preview, etc.) - only if autoUpgradeMinorVersion is 'true'."]
         #[serde(rename = "releaseTrain", default, skip_serializing_if = "Option::is_none")]
         pub release_train: Option<String>,
+        #[doc = "Version of the extension for this extension, if it is 'pinned' to a specific version. autoUpgradeMinorVersion must be 'false'."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub version: Option<String>,
+        #[doc = "Configuration settings, as name-value pairs for configuring this extension."]
         #[serde(rename = "configurationSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_settings: Option<serde_json::Value>,
+        #[doc = "Configuration settings that are sensitive, as name-value pairs for configuring this extension."]
         #[serde(rename = "configurationProtectedSettings", default, skip_serializing_if = "Option::is_none")]
         pub configuration_protected_settings: Option<serde_json::Value>,
     }
@@ -353,6 +444,7 @@ pub mod patch_extension {
         }
     }
 }
+#[doc = "The provisioning state of the extension resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
     Succeeded,
@@ -362,18 +454,25 @@ pub enum ProvisioningState {
     Updating,
     Deleting,
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -384,6 +483,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -391,6 +491,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

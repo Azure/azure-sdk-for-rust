@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Contains details when the response code indicates an error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -47,12 +48,16 @@ impl ErrorResponse {
         }
     }
 }
+#[doc = "Role Assignment response details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentDetails {
+    #[doc = "Role Assignment ID"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Role ID of the Synapse Built-In Role"]
     #[serde(rename = "roleId", default, skip_serializing_if = "Option::is_none")]
     pub role_id: Option<String>,
+    #[doc = "Object ID of the AAD principal or security-group"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
 }
@@ -62,10 +67,13 @@ impl RoleAssignmentDetails {
     }
 }
 pub type RoleAssignmentDetailsList = Vec<RoleAssignmentDetails>;
+#[doc = "Role Assignment request details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentOptions {
+    #[doc = "Role ID of the Synapse Built-In Role"]
     #[serde(rename = "roleId")]
     pub role_id: String,
+    #[doc = "Object ID of the AAD principal or security-group"]
     #[serde(rename = "principalId")]
     pub principal_id: String,
 }
@@ -74,9 +82,12 @@ impl RoleAssignmentOptions {
         Self { role_id, principal_id }
     }
 }
+#[doc = "A list of Synapse roles available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RolesListResponse {
+    #[doc = "List of Synapse roles."]
     pub value: Vec<SynapseRole>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -85,12 +96,16 @@ impl RolesListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Synapse role details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseRole {
+    #[doc = "Role ID"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Name of the Synapse role"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Is a built-in role or not"]
     #[serde(rename = "isBuiltIn")]
     pub is_built_in: bool,
 }

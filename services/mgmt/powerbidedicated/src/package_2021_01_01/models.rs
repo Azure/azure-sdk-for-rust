@@ -2,11 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Represents an instance of an auto scale v-core resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScaleVCore {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Represents the SKU name and Azure pricing tier for auto scale v-core resource."]
     pub sku: AutoScaleVCoreSku,
+    #[doc = "Properties of an auto scale v-core resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutoScaleVCoreProperties>,
 }
@@ -19,8 +22,10 @@ impl AutoScaleVCore {
         }
     }
 }
+#[doc = "An array of auto scale v-core resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScaleVCoreListResult {
+    #[doc = "An array of auto scale v-core resources."]
     pub value: Vec<AutoScaleVCore>,
 }
 impl AutoScaleVCoreListResult {
@@ -28,8 +33,10 @@ impl AutoScaleVCoreListResult {
         Self { value }
     }
 }
+#[doc = "An object that represents a set of mutable auto scale v-core resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaleVCoreMutableProperties {
+    #[doc = "The maximum capacity of an auto scale v-core resource."]
     #[serde(rename = "capacityLimit", default, skip_serializing_if = "Option::is_none")]
     pub capacity_limit: Option<i32>,
 }
@@ -38,12 +45,15 @@ impl AutoScaleVCoreMutableProperties {
         Self::default()
     }
 }
+#[doc = "Properties of an auto scale v-core resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaleVCoreProperties {
     #[serde(flatten)]
     pub auto_scale_v_core_mutable_properties: AutoScaleVCoreMutableProperties,
+    #[doc = "The object ID of the capacity resource associated with the auto scale v-core resource."]
     #[serde(rename = "capacityObjectId", default, skip_serializing_if = "Option::is_none")]
     pub capacity_object_id: Option<String>,
+    #[doc = "The current deployment state of an auto scale v-core resource. The provisioningState is to indicate states for resource provisioning."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<auto_scale_v_core_properties::ProvisioningState>,
 }
@@ -54,16 +64,21 @@ impl AutoScaleVCoreProperties {
 }
 pub mod auto_scale_v_core_properties {
     use super::*;
+    #[doc = "The current deployment state of an auto scale v-core resource. The provisioningState is to indicate states for resource provisioning."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Succeeded,
     }
 }
+#[doc = "Represents the SKU name and Azure pricing tier for auto scale v-core resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScaleVCoreSku {
+    #[doc = "Name of the SKU level."]
     pub name: String,
+    #[doc = "The name of the Azure pricing tier to which the SKU applies."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<auto_scale_v_core_sku::Tier>,
+    #[doc = "The capacity of an auto scale v-core resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
@@ -78,17 +93,22 @@ impl AutoScaleVCoreSku {
 }
 pub mod auto_scale_v_core_sku {
     use super::*;
+    #[doc = "The name of the Azure pricing tier to which the SKU applies."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         AutoScale,
     }
 }
+#[doc = "Update request specification"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaleVCoreUpdateParameters {
+    #[doc = "Represents the SKU name and Azure pricing tier for auto scale v-core resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<AutoScaleVCoreSku>,
+    #[doc = "Key-value pairs of additional provisioning properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "An object that represents a set of mutable auto scale v-core resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutoScaleVCoreMutableProperties>,
 }
@@ -97,11 +117,15 @@ impl AutoScaleVCoreUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Represents the SKU name and Azure pricing tier for PowerBI Dedicated capacity resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CapacitySku {
+    #[doc = "Name of the SKU level."]
     pub name: String,
+    #[doc = "The name of the Azure pricing tier to which the SKU applies."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<capacity_sku::Tier>,
+    #[doc = "The capacity of the SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
@@ -116,6 +140,7 @@ impl CapacitySku {
 }
 pub mod capacity_sku {
     use super::*;
+    #[doc = "The name of the Azure pricing tier to which the SKU applies."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         #[serde(rename = "PBIE_Azure")]
@@ -124,10 +149,13 @@ pub mod capacity_sku {
         AutoPremiumHost,
     }
 }
+#[doc = "Details of capacity name request body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckCapacityNameAvailabilityParameters {
+    #[doc = "Name for checking availability."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource type of PowerBI dedicated."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -136,12 +164,16 @@ impl CheckCapacityNameAvailabilityParameters {
         Self::default()
     }
 }
+#[doc = "The checking result of capacity name availability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckCapacityNameAvailabilityResult {
+    #[doc = "Indicator of availability of the capacity name."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "The reason of unavailability."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "The detailed message of the request unavailability."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -150,8 +182,10 @@ impl CheckCapacityNameAvailabilityResult {
         Self::default()
     }
 }
+#[doc = "An array of Dedicated capacities resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedCapacities {
+    #[doc = "An array of Dedicated capacities resources."]
     pub value: Vec<DedicatedCapacity>,
 }
 impl DedicatedCapacities {
@@ -159,11 +193,14 @@ impl DedicatedCapacities {
         Self { value }
     }
 }
+#[doc = "Represents an instance of a Dedicated Capacity resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedCapacity {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Represents the SKU name and Azure pricing tier for PowerBI Dedicated capacity resource."]
     pub sku: CapacitySku,
+    #[doc = "Properties of Dedicated Capacity resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DedicatedCapacityProperties>,
 }
@@ -176,8 +213,10 @@ impl DedicatedCapacity {
         }
     }
 }
+#[doc = "An array of administrator user identities"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DedicatedCapacityAdministrators {
+    #[doc = "An array of administrator user identities."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub members: Vec<String>,
 }
@@ -186,14 +225,19 @@ impl DedicatedCapacityAdministrators {
         Self::default()
     }
 }
+#[doc = "An object that represents a set of mutable Dedicated capacity resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DedicatedCapacityMutableProperties {
+    #[doc = "An array of administrator user identities"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub administration: Option<DedicatedCapacityAdministrators>,
+    #[doc = "Specifies the generation of the Power BI Embedded capacity. If no value is specified, the default value 'Gen2' is used. [Learn More](https://docs.microsoft.com/power-bi/developer/embedded/power-bi-embedded-generation-2)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<dedicated_capacity_mutable_properties::Mode>,
+    #[doc = "Tenant ID for the capacity. Used for creating Pro Plus capacity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[doc = "Capacity name"]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
 }
@@ -204,18 +248,22 @@ impl DedicatedCapacityMutableProperties {
 }
 pub mod dedicated_capacity_mutable_properties {
     use super::*;
+    #[doc = "Specifies the generation of the Power BI Embedded capacity. If no value is specified, the default value 'Gen2' is used. [Learn More](https://docs.microsoft.com/power-bi/developer/embedded/power-bi-embedded-generation-2)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Mode {
         Gen1,
         Gen2,
     }
 }
+#[doc = "Properties of Dedicated Capacity resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DedicatedCapacityProperties {
     #[serde(flatten)]
     pub dedicated_capacity_mutable_properties: DedicatedCapacityMutableProperties,
+    #[doc = "The current state of PowerBI Dedicated resource. The state is to indicate more states outside of resource provisioning."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<dedicated_capacity_properties::State>,
+    #[doc = "The current deployment state of PowerBI Dedicated resource. The provisioningState is to indicate states for resource provisioning."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<dedicated_capacity_properties::ProvisioningState>,
 }
@@ -226,6 +274,7 @@ impl DedicatedCapacityProperties {
 }
 pub mod dedicated_capacity_properties {
     use super::*;
+    #[doc = "The current state of PowerBI Dedicated resource. The state is to indicate more states outside of resource provisioning."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Deleting,
@@ -241,6 +290,7 @@ pub mod dedicated_capacity_properties {
         Preparing,
         Scaling,
     }
+    #[doc = "The current deployment state of PowerBI Dedicated resource. The provisioningState is to indicate states for resource provisioning."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Deleting,
@@ -257,12 +307,16 @@ pub mod dedicated_capacity_properties {
         Scaling,
     }
 }
+#[doc = "Provision request specification"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DedicatedCapacityUpdateParameters {
+    #[doc = "Represents the SKU name and Azure pricing tier for PowerBI Dedicated capacity resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<CapacitySku>,
+    #[doc = "Key-value pairs of additional provisioning properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "An object that represents a set of mutable Dedicated capacity resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DedicatedCapacityMutableProperties>,
 }
@@ -271,8 +325,10 @@ impl DedicatedCapacityUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
@@ -283,10 +339,13 @@ impl ErrorResponse {
 }
 pub mod error_response {
     use super::*;
+    #[doc = "The error object"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
+        #[doc = "Error code"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
+        #[doc = "Error message indicating why the operation failed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
     }
@@ -296,6 +355,7 @@ pub mod error_response {
         }
     }
 }
+#[doc = "The type of identity that created/modified the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IdentityType {
     User,
@@ -303,12 +363,16 @@ pub enum IdentityType {
     ManagedIdentity,
     Key,
 }
+#[doc = "Log specification for exposing diagnostic logs to shoebox."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
+    #[doc = "Name of the log"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Localizable name of the log"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Blob duration for the log"]
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
@@ -317,20 +381,28 @@ impl LogSpecification {
         Self::default()
     }
 }
+#[doc = "Metric specification for exposing performance metrics to shoebox."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
+    #[doc = "Metric name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Localizable metric name"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Localizable description of metric"]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "Unit for the metric"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Aggregation type for the metric"]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "Pattern used to filter the metric"]
     #[serde(rename = "metricFilterPattern", default, skip_serializing_if = "Option::is_none")]
     pub metric_filter_pattern: Option<String>,
+    #[doc = "For describing multi dimensional metrics"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<serde_json::Value>,
 }
@@ -339,14 +411,19 @@ impl MetricSpecification {
         Self::default()
     }
 }
+#[doc = "Capacities REST API operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+    #[doc = "Origin of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Additional properties to expose performance metrics to shoebox."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<operation::Properties>,
 }
@@ -357,14 +434,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.PowerBIDedicated."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: capacity, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: create, update, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Localized description of the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -373,8 +455,10 @@ pub mod operation {
             Self::default()
         }
     }
+    #[doc = "Additional properties to expose performance metrics to shoebox."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
+        #[doc = "Service specification for exposing performance metrics to shoebox."]
         #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
         pub service_specification: Option<ServiceSpecification>,
     }
@@ -384,10 +468,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result listing capacities. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of capacities supported by the Microsoft.PowerBIDedicated resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -396,17 +483,24 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Represents an instance of an PowerBI Dedicated resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "An identifier that represents the PowerBI Dedicated resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the PowerBI Dedicated resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the PowerBI Dedicated resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Location of the PowerBI Dedicated resource."]
     pub location: String,
+    #[doc = "Key-value pairs of additional resource provisioning properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -422,10 +516,13 @@ impl Resource {
         }
     }
 }
+#[doc = "Service specification for exposing performance metrics to shoebox."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
+    #[doc = "Metric specifications for exposing performance metrics to shoebox."]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
+    #[doc = "Log specifications for exposing diagnostic logs to shoebox."]
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<LogSpecification>,
 }
@@ -434,10 +531,13 @@ impl ServiceSpecification {
         Self::default()
     }
 }
+#[doc = "An object that represents SKU details for existing resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuDetailsForExistingResource {
+    #[doc = "The resource type"]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
+    #[doc = "Represents the SKU name and Azure pricing tier for PowerBI Dedicated capacity resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<CapacitySku>,
 }
@@ -446,8 +546,10 @@ impl SkuDetailsForExistingResource {
         Self::default()
     }
 }
+#[doc = "An object that represents enumerating SKUs for existing resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuEnumerationForExistingResourceResult {
+    #[doc = "The collection of available SKUs for existing resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SkuDetailsForExistingResource>,
 }
@@ -456,8 +558,10 @@ impl SkuEnumerationForExistingResourceResult {
         Self::default()
     }
 }
+#[doc = "An object that represents enumerating SKUs for new resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuEnumerationForNewResourceResult {
+    #[doc = "The collection of available SKUs for new resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<CapacitySku>,
 }
@@ -466,18 +570,25 @@ impl SkuEnumerationForNewResourceResult {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "An identifier for the identity that created the resource"]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created/modified the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<IdentityType>,
+    #[doc = "The timestamp of resource creation (UTC)"]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "An identifier for the identity that last modified the resource"]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that created/modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<IdentityType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }

@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "describe the properties of a security assessment object reference (by key)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignedComponentItem {
+    #[doc = "unique key to a security assessment object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
@@ -12,8 +14,10 @@ impl AssignedComponentItem {
         Self::default()
     }
 }
+#[doc = "describe the properties of a of a security standard object reference"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignedStandardItem {
+    #[doc = "full resourceId of the Microsoft.Security/standard object"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -22,12 +26,15 @@ impl AssignedStandardItem {
         Self::default()
     }
 }
+#[doc = "Security Assignment on a resource group over a given scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Assignment {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Describes the properties of a standardAssignment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssignmentProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -36,10 +43,13 @@ impl Assignment {
         Self::default()
     }
 }
+#[doc = "Page of a standard assignment list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentList {
+    #[doc = "Collection of standardAssignments in this page"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Assignment>,
+    #[doc = "The URI to fetch the next page"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -48,24 +58,34 @@ impl AssignmentList {
         Self::default()
     }
 }
+#[doc = "Describes the properties of a standardAssignment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssignmentProperties {
+    #[doc = "display name of the standardAssignment"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "description of the standardAssignment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "describe the properties of a of a security standard object reference"]
     #[serde(rename = "assignedStandard", default, skip_serializing_if = "Option::is_none")]
     pub assigned_standard: Option<AssignedStandardItem>,
+    #[doc = "describe the properties of a security assessment object reference (by key)"]
     #[serde(rename = "assignedComponent", default, skip_serializing_if = "Option::is_none")]
     pub assigned_component: Option<AssignedComponentItem>,
+    #[doc = "Scope to which the standardAssignment applies - can be a subscription path or a resource group under that subscription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "expected effect of this assignment (Disable/Exempt/etc)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub effect: Option<String>,
+    #[doc = "Expiration date of this assignment as a full ISO date"]
     #[serde(rename = "expiresOn", default, skip_serializing_if = "Option::is_none")]
     pub expires_on: Option<String>,
+    #[doc = "Additional data about the assignment"]
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<assignment_properties::AdditionalData>,
+    #[doc = "The assignment metadata. Metadata is an open ended object and is typically a collection of key value pairs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
@@ -76,8 +96,10 @@ impl AssignmentProperties {
 }
 pub mod assignment_properties {
     use super::*;
+    #[doc = "Additional data about the assignment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct AdditionalData {
+        #[doc = "Exemption category of this assignment"]
         #[serde(rename = "exemptionCategory", default, skip_serializing_if = "Option::is_none")]
         pub exemption_category: Option<String>,
     }
@@ -87,8 +109,10 @@ pub mod assignment_properties {
         }
     }
 }
+#[doc = "Describes an Azure resource with location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureTrackedResourceLocation {
+    #[doc = "Location where the resource is stored"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -97,8 +121,10 @@ impl AzureTrackedResourceLocation {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -107,16 +133,22 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -125,8 +157,10 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Entity tag is used for comparing two or more entities from the same requested resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ETag {
+    #[doc = "Entity tag is used for comparing two or more entities from the same requested resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -135,10 +169,13 @@ impl ETag {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -147,8 +184,10 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Kind {
+    #[doc = "Kind of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
@@ -157,12 +196,16 @@ impl Kind {
         Self::default()
     }
 }
+#[doc = "Describes an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -171,12 +214,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Security Standard on a resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Standard {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Describes properties of a standard."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StandardProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -185,8 +231,10 @@ impl Standard {
         Self::default()
     }
 }
+#[doc = "Describes properties of an component as related to the standard"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StandardComponentProperties {
+    #[doc = "Component Key matching componentMetadata"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
@@ -195,10 +243,13 @@ impl StandardComponentProperties {
         Self::default()
     }
 }
+#[doc = "Page of a Standard list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StandardList {
+    #[doc = "Collection of standards in this page"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Standard>,
+    #[doc = "The URI to fetch the next page"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -207,16 +258,22 @@ impl StandardList {
         Self::default()
     }
 }
+#[doc = "Describes properties of a standard."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StandardProperties {
+    #[doc = "display name of the standard, equivalent to the standardId"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "standard type (Custom or BuiltIn only currently)"]
     #[serde(rename = "standardType", default, skip_serializing_if = "Option::is_none")]
     pub standard_type: Option<String>,
+    #[doc = "description of the standard"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "category of the standard provided"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "List of component objects containing component unique keys (such as assessment keys) to apply to standard scope.  Currently only supports assessment keys."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub components: Vec<StandardComponentProperties>,
 }
@@ -225,8 +282,10 @@ impl StandardProperties {
         Self::default()
     }
 }
+#[doc = "A list of key value pairs that describe the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tags {
+    #[doc = "A list of key value pairs that describe the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -235,6 +294,7 @@ impl Tags {
         Self::default()
     }
 }
+#[doc = "Describes an Azure tracked resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
     #[serde(flatten)]
@@ -253,18 +313,25 @@ impl TrackedResource {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -275,6 +342,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -282,6 +350,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,

@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The Active Directory Object that will be used for authenticating the token of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveDirectoryObject {
+    #[doc = "The user/group/application object ID for Active Directory Object that will be used for authenticating the token of a container registry."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
+    #[doc = "The tenant ID of user/group/application object Active Directory Object that will be used for authenticating the token of a container registry."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -14,12 +17,16 @@ impl ActiveDirectoryObject {
         Self::default()
     }
 }
+#[doc = "The parameters used to generate credentials for a specified token or user of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenerateCredentialsParameters {
+    #[doc = "The resource ID of the token for which credentials have to be generated."]
     #[serde(rename = "tokenId", default, skip_serializing_if = "Option::is_none")]
     pub token_id: Option<String>,
+    #[doc = "The expiry date of the generated credentials after which the credentials become invalid."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
+    #[doc = "Specifies name of the password which should be regenerated if any -- password1 or password2."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<generate_credentials_parameters::Name>,
 }
@@ -30,6 +37,7 @@ impl GenerateCredentialsParameters {
 }
 pub mod generate_credentials_parameters {
     use super::*;
+    #[doc = "Specifies name of the password which should be regenerated if any -- password1 or password2."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "password1")]
@@ -38,10 +46,13 @@ pub mod generate_credentials_parameters {
         Password2,
     }
 }
+#[doc = "The response from the GenerateCredentials operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GenerateCredentialsResult {
+    #[doc = "The username for a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[doc = "The list of passwords for a container registry."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub passwords: Vec<TokenPassword>,
 }
@@ -50,14 +61,19 @@ impl GenerateCredentialsResult {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
+    #[doc = "The resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
@@ -66,10 +82,12 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "An object that represents a scope map for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeMap {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a scope map."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopeMapProperties>,
 }
@@ -78,10 +96,13 @@ impl ScopeMap {
         Self::default()
     }
 }
+#[doc = "The result of a request to list scope maps for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeMapListResult {
+    #[doc = "The list of scope maps. Since this list may be incomplete, the nextLink field should be used to request the next list of scope maps."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ScopeMap>,
+    #[doc = "The URI that can be used to request the next list of scope maps."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -90,16 +111,22 @@ impl ScopeMapListResult {
         Self::default()
     }
 }
+#[doc = "The properties of a scope map."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScopeMapProperties {
+    #[doc = "The user friendly description of the scope map."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The type of the scope map. E.g. BuildIn scope map."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The creation date of scope map."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<scope_map_properties::ProvisioningState>,
+    #[doc = "The list of scoped permissions for registry artifacts.\r\nE.g. repositories/repository-name/content/read,\r\nrepositories/repository-name/metadata/write"]
     pub actions: Vec<String>,
 }
 impl ScopeMapProperties {
@@ -115,6 +142,7 @@ impl ScopeMapProperties {
 }
 pub mod scope_map_properties {
     use super::*;
+    #[doc = "Provisioning state of the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -125,10 +153,13 @@ pub mod scope_map_properties {
         Canceled,
     }
 }
+#[doc = "The update parameters for scope map properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeMapPropertiesUpdateParameters {
+    #[doc = "The user friendly description of the scope map."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The list of scope permissions for registry artifacts.\r\nE.g. repositories/repository-name/pull, \r\nrepositories/repository-name/delete"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<String>,
 }
@@ -137,8 +168,10 @@ impl ScopeMapPropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The properties for updating the scope map."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeMapUpdateParameters {
+    #[doc = "The update parameters for scope map properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopeMapPropertiesUpdateParameters>,
 }
@@ -147,18 +180,25 @@ impl ScopeMapUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemData {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -169,6 +209,7 @@ impl SystemData {
 }
 pub mod system_data {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -176,6 +217,7 @@ pub mod system_data {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,
@@ -184,10 +226,12 @@ pub mod system_data {
         Key,
     }
 }
+#[doc = "An object that represents a token for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Token {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a token."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TokenProperties>,
 }
@@ -196,14 +240,18 @@ impl Token {
         Self::default()
     }
 }
+#[doc = "The properties of a certificate used for authenticating a token."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenCertificate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<token_certificate::Name>,
+    #[doc = "The expiry datetime of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
+    #[doc = "The thumbprint of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
+    #[doc = "Base 64 encoded string of the public certificate1 in PEM format that will be used for authenticating the token."]
     #[serde(rename = "encodedPemCertificate", default, skip_serializing_if = "Option::is_none")]
     pub encoded_pem_certificate: Option<String>,
 }
@@ -222,8 +270,10 @@ pub mod token_certificate {
         Certificate2,
     }
 }
+#[doc = "The properties of the credentials that can be used for authenticating the token."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenCredentialsProperties {
+    #[doc = "The Active Directory Object that will be used for authenticating the token of a container registry."]
     #[serde(rename = "activeDirectoryObject", default, skip_serializing_if = "Option::is_none")]
     pub active_directory_object: Option<ActiveDirectoryObject>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -236,10 +286,13 @@ impl TokenCredentialsProperties {
         Self::default()
     }
 }
+#[doc = "The result of a request to list tokens for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenListResult {
+    #[doc = "The list of tokens. Since this list may be incomplete, the nextLink field should be used to request the next list of tokens."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Token>,
+    #[doc = "The URI that can be used to request the next list of tokens."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -248,14 +301,19 @@ impl TokenListResult {
         Self::default()
     }
 }
+#[doc = "The password that will be used for authenticating the token of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenPassword {
+    #[doc = "The creation datetime of the password."]
     #[serde(rename = "creationTime", default, skip_serializing_if = "Option::is_none")]
     pub creation_time: Option<String>,
+    #[doc = "The expiry datetime of the password."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expiry: Option<String>,
+    #[doc = "The password name \"password1\" or \"password2\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<token_password::Name>,
+    #[doc = "The password value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -266,6 +324,7 @@ impl TokenPassword {
 }
 pub mod token_password {
     use super::*;
+    #[doc = "The password name \"password1\" or \"password2\""]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "password1")]
@@ -274,16 +333,22 @@ pub mod token_password {
         Password2,
     }
 }
+#[doc = "The properties of a token."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenProperties {
+    #[doc = "The creation date of scope map."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<token_properties::ProvisioningState>,
+    #[doc = "The resource ID of the scope map to which the token will be associated with."]
     #[serde(rename = "scopeMapId", default, skip_serializing_if = "Option::is_none")]
     pub scope_map_id: Option<String>,
+    #[doc = "The properties of the credentials that can be used for authenticating the token."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<TokenCredentialsProperties>,
+    #[doc = "The status of the token example enabled or disabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<token_properties::Status>,
 }
@@ -294,6 +359,7 @@ impl TokenProperties {
 }
 pub mod token_properties {
     use super::*;
+    #[doc = "Provisioning state of the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
@@ -303,6 +369,7 @@ pub mod token_properties {
         Failed,
         Canceled,
     }
+    #[doc = "The status of the token example enabled or disabled."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "enabled")]
@@ -311,8 +378,10 @@ pub mod token_properties {
         Disabled,
     }
 }
+#[doc = "The parameters for updating a token."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenUpdateParameters {
+    #[doc = "The parameters for updating token properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TokenUpdateProperties>,
 }
@@ -321,12 +390,16 @@ impl TokenUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters for updating token properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TokenUpdateProperties {
+    #[doc = "The resource ID of the scope map to which the token will be associated with."]
     #[serde(rename = "scopeMapId", default, skip_serializing_if = "Option::is_none")]
     pub scope_map_id: Option<String>,
+    #[doc = "The status of the token example enabled or disabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<token_update_properties::Status>,
+    #[doc = "The properties of the credentials that can be used for authenticating the token."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<TokenCredentialsProperties>,
 }
@@ -337,6 +410,7 @@ impl TokenUpdateProperties {
 }
 pub mod token_update_properties {
     use super::*;
+    #[doc = "The status of the token example enabled or disabled."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "enabled")]

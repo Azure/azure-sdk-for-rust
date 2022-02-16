@@ -2,16 +2,22 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Type of operation: get, read, delete, etc."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DimensionProperties {
+    #[doc = "Name of dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display name of dimension."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Legacy usage, should not set."]
     #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
+    #[doc = "When set, the dimension is hidden from the customer, used in conjunction with the defaultDimensionValues field below"]
     #[serde(rename = "isHidden", default, skip_serializing_if = "Option::is_none")]
     pub is_hidden: Option<bool>,
+    #[doc = "Default dimension value to be sent down for the hidden dimension during query"]
     #[serde(rename = "defaultDimensionValues", default, skip_serializing_if = "Option::is_none")]
     pub default_dimension_values: Option<serde_json::Value>,
 }
@@ -20,8 +26,10 @@ impl DimensionProperties {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
+    #[doc = "Describes the format of Error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -30,10 +38,13 @@ impl ErrorContract {
         Self::default()
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -42,9 +53,12 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The localizable string class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
+    #[doc = "the invariant value."]
     pub value: String,
+    #[doc = "the locale specific value."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -56,12 +70,16 @@ impl LocalizableString {
         }
     }
 }
+#[doc = "Log specification of operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
+    #[doc = "Name of log specification."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display name of log specification."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Blob duration of specification."]
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
@@ -70,10 +88,13 @@ impl LogSpecification {
         Self::default()
     }
 }
+#[doc = "Represents a metric metadata value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataValue {
+    #[doc = "The localizable string class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[doc = "the value of the metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -82,19 +103,28 @@ impl MetadataValue {
         Self::default()
     }
 }
+#[doc = "The result data of a query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metric {
+    #[doc = "the metric Id."]
     pub id: String,
+    #[doc = "the resource type of the metric resource."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "The localizable string class."]
     pub name: LocalizableString,
+    #[doc = "Detailed description of this metric."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "'Success' or the error details on query failures for this metric."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[doc = "Error message encountered querying this specific metric."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "The unit of the metric."]
     pub unit: Unit,
+    #[doc = "the time series returned when a data query is performed."]
     pub timeseries: Vec<TimeSeriesElement>,
 }
 impl Metric {
@@ -111,32 +141,46 @@ impl Metric {
         }
     }
 }
+#[doc = "Metric specification of operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
+    #[doc = "The name of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Display name of the metric."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Display description of the metric."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "The metric unit. Possible values include: Count,Bytes,Seconds,Percent,CountPerSecond,BytesPerSecond,MilliSeconds,ByteSeconds,Unspecified,BitsPerSecond,Cores,MilliCores,NanoCores"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "The default metric aggregation type. Possible values include: Total,Average,Maximum,Minimum,Count"]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "The supported aggregation types for the metrics."]
     #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_aggregation_types: Vec<String>,
+    #[doc = "The supported time grain types for the metrics."]
     #[serde(rename = "supportedTimeGrainTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_time_grain_types: Vec<String>,
+    #[doc = "The supported time grain types for the metrics."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub availabilities: Vec<String>,
+    #[doc = "The metric lock aggregation type."]
     #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub lock_aggregation_type: Option<String>,
+    #[doc = "Category or type of metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "The dimensions of metric."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<DimensionProperties>,
+    #[doc = "Property to specify whether to fill empty gaps with zero."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
+    #[doc = "The internal metric name."]
     #[serde(rename = "internalMetricName", default, skip_serializing_if = "Option::is_none")]
     pub internal_metric_name: Option<String>,
 }
@@ -145,18 +189,25 @@ impl MetricSpecification {
         Self::default()
     }
 }
+#[doc = "Represents a metric value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricValue {
+    #[doc = "the timestamp for the metric value in ISO 8601 format."]
     #[serde(rename = "timeStamp")]
     pub time_stamp: String,
+    #[doc = "the average value in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub average: Option<f64>,
+    #[doc = "the least value in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<f64>,
+    #[doc = "the greatest value in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<f64>,
+    #[doc = "the sum of all of the values in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<f64>,
+    #[doc = "the number of samples in the time range. Can be used to determine the number of values that contributed to the average value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<f64>,
 }
@@ -172,14 +223,19 @@ impl MetricValue {
         }
     }
 }
+#[doc = "Microsoft Insights API operation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Property to specify whether the action is a data action."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+    #[doc = "Properties of operation, include metric specifications."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
 }
@@ -190,16 +246,22 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Display metadata associated with the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "The publisher of this operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub publisher: Option<String>,
+        #[doc = "Service provider: Microsoft.Insights"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: AlertRules, Autoscale, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "The description of the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -209,10 +271,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list Microsoft.Insights operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of operations supported by the Microsoft.Insights provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -221,8 +286,10 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Properties of operation, include metric specifications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
+    #[doc = "One property of operation, include log specifications."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
@@ -231,17 +298,24 @@ impl OperationProperties {
         Self::default()
     }
 }
+#[doc = "The response to a metrics query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Response {
+    #[doc = "The integer value representing the relative cost of the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cost: Option<f64>,
+    #[doc = "The timespan for which the data was retrieved. Its value consists of two datetimes concatenated, separated by '/'.  This may be adjusted in the future and returned back from what was originally requested."]
     pub timespan: String,
+    #[doc = "The interval (window size) for which the metric data was returned in.  This may be adjusted in the future and returned back from what was originally requested.  This is not present if a metadata request was made."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
+    #[doc = "The namespace of the metrics being queried"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
+    #[doc = "The region of the resource being queried for metrics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resourceregion: Option<String>,
+    #[doc = "the value of the collection."]
     pub value: Vec<Metric>,
 }
 impl Response {
@@ -256,12 +330,16 @@ impl Response {
         }
     }
 }
+#[doc = "One property of operation, include log specifications."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
+    #[doc = "Log specifications of operation."]
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<LogSpecification>,
+    #[doc = "Metric specifications of operation."]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
+    #[doc = "Legacy Metric specifications for operation. Deprecated, do not use."]
     #[serde(rename = "legacyMetricSpecifications", default, skip_serializing_if = "Option::is_none")]
     pub legacy_metric_specifications: Option<serde_json::Value>,
 }
@@ -270,10 +348,13 @@ impl ServiceSpecification {
         Self::default()
     }
 }
+#[doc = "A time series result type. The discriminator value is always TimeSeries in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesElement {
+    #[doc = "the metadata values returned if $filter was specified in the call."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadatavalues: Vec<MetadataValue>,
+    #[doc = "An array of data points representing the metric values.  This is only returned if a result type of data is specified."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data: Vec<MetricValue>,
 }
@@ -282,6 +363,7 @@ impl TimeSeriesElement {
         Self::default()
     }
 }
+#[doc = "The unit of the metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Unit {
     Count,

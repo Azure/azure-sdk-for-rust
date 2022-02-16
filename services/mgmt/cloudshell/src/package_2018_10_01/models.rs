@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Cloud shell console"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudShellConsole {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Cloud shell console properties."]
     pub properties: ConsoleProperties,
 }
 impl CloudShellConsole {
@@ -16,8 +18,10 @@ impl CloudShellConsole {
         }
     }
 }
+#[doc = "Cloud shell patch operation user settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudShellPatchUserSettings {
+    #[doc = "The cloud shell user settings properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserProperties>,
 }
@@ -26,10 +30,12 @@ impl CloudShellPatchUserSettings {
         Self::default()
     }
 }
+#[doc = "Cloud shell user settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudShellUserSettings {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The cloud shell user settings properties."]
     pub properties: UserProperties,
 }
 impl CloudShellUserSettings {
@@ -40,12 +46,16 @@ impl CloudShellUserSettings {
         }
     }
 }
+#[doc = "Cloud shell properties for creating a console."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsoleCreateProperties {
+    #[doc = "The operating system type of the cloud shell."]
     #[serde(rename = "osType")]
     pub os_type: console_create_properties::OsType,
+    #[doc = "Provisioning state of the console."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<console_create_properties::ProvisioningState>,
+    #[doc = "Uri of the console."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
@@ -60,11 +70,13 @@ impl ConsoleCreateProperties {
 }
 pub mod console_create_properties {
     use super::*;
+    #[doc = "The operating system type of the cloud shell."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Linux,
         Windows,
     }
+    #[doc = "Provisioning state of the console."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         NotSpecified,
@@ -78,10 +90,12 @@ pub mod console_create_properties {
         Succeeded,
     }
 }
+#[doc = "Console definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsoleDefinition {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Cloud shell properties for creating a console."]
     pub properties: ConsoleCreateProperties,
 }
 impl ConsoleDefinition {
@@ -92,12 +106,16 @@ impl ConsoleDefinition {
         }
     }
 }
+#[doc = "Cloud shell console properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsoleProperties {
+    #[doc = "The operating system type of the cloud shell."]
     #[serde(rename = "osType")]
     pub os_type: console_properties::OsType,
+    #[doc = "Provisioning state of the console."]
     #[serde(rename = "provisioningState")]
     pub provisioning_state: console_properties::ProvisioningState,
+    #[doc = "Uri of the console."]
     pub uri: String,
 }
 impl ConsoleProperties {
@@ -111,11 +129,13 @@ impl ConsoleProperties {
 }
 pub mod console_properties {
     use super::*;
+    #[doc = "The operating system type of the cloud shell."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OsType {
         Linux,
         Windows,
     }
+    #[doc = "Provisioning state of the console."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         NotSpecified,
@@ -131,7 +151,9 @@ pub mod console_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorDetail {
+    #[doc = "The error's code."]
     pub code: String,
+    #[doc = "A human readable error message."]
     pub message: String,
 }
 impl ErrorDetail {
@@ -139,6 +161,7 @@ impl ErrorDetail {
         Self { code, message }
     }
 }
+#[doc = "Contains details when the response code indicates an error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: ErrorDetail,
@@ -148,6 +171,7 @@ impl ErrorResponse {
         Self { error }
     }
 }
+#[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {}
 impl Resource {
@@ -155,12 +179,16 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The storage profile of the user settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfile {
+    #[doc = "Full resource ID of storage account."]
     #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_resource_id: Option<String>,
+    #[doc = "Name of the mounted file share. 63 characters or less, lowercase alphabet, numbers, and -"]
     #[serde(rename = "fileShareName", default, skip_serializing_if = "Option::is_none")]
     pub file_share_name: Option<String>,
+    #[doc = "Size of file share"]
     #[serde(rename = "diskSizeInGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_in_gb: Option<i32>,
 }
@@ -169,10 +197,13 @@ impl StorageProfile {
         Self::default()
     }
 }
+#[doc = "Settings for terminal appearance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TerminalSettings {
+    #[doc = "Size of terminal font."]
     #[serde(rename = "fontSize", default, skip_serializing_if = "Option::is_none")]
     pub font_size: Option<terminal_settings::FontSize>,
+    #[doc = "Style of terminal font."]
     #[serde(rename = "fontStyle", default, skip_serializing_if = "Option::is_none")]
     pub font_style: Option<terminal_settings::FontStyle>,
 }
@@ -183,6 +214,7 @@ impl TerminalSettings {
 }
 pub mod terminal_settings {
     use super::*;
+    #[doc = "Size of terminal font."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FontSize {
         NotSpecified,
@@ -190,6 +222,7 @@ pub mod terminal_settings {
         Medium,
         Large,
     }
+    #[doc = "Style of terminal font."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum FontStyle {
         NotSpecified,
@@ -197,16 +230,22 @@ pub mod terminal_settings {
         Courier,
     }
 }
+#[doc = "The cloud shell user settings properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserProperties {
+    #[doc = "The operating system type of the cloud shell. Deprecated, use preferredShellType."]
     #[serde(rename = "preferredOsType")]
     pub preferred_os_type: user_properties::PreferredOsType,
+    #[doc = "The preferred location of the cloud shell."]
     #[serde(rename = "preferredLocation")]
     pub preferred_location: String,
+    #[doc = "The storage profile of the user settings."]
     #[serde(rename = "storageProfile")]
     pub storage_profile: StorageProfile,
+    #[doc = "Settings for terminal appearance."]
     #[serde(rename = "terminalSettings")]
     pub terminal_settings: TerminalSettings,
+    #[doc = "The shell type of the cloud shell."]
     #[serde(rename = "preferredShellType")]
     pub preferred_shell_type: user_properties::PreferredShellType,
 }
@@ -229,11 +268,13 @@ impl UserProperties {
 }
 pub mod user_properties {
     use super::*;
+    #[doc = "The operating system type of the cloud shell. Deprecated, use preferredShellType."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PreferredOsType {
         Windows,
         Linux,
     }
+    #[doc = "The shell type of the cloud shell."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PreferredShellType {
         #[serde(rename = "bash")]
@@ -244,10 +285,12 @@ pub mod user_properties {
         Powershell,
     }
 }
+#[doc = "Response to get user settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserSettingsResponse {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The cloud shell user settings properties."]
     pub properties: UserProperties,
 }
 impl UserSettingsResponse {

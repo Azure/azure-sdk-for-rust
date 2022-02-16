@@ -2,13 +2,18 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "A pipeline activity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Activity {
+    #[doc = "Activity name."]
     pub name: String,
+    #[doc = "Type of activity."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "Activity description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Activity depends on condition."]
     #[serde(rename = "dependsOn", default, skip_serializing_if = "Vec::is_empty")]
     pub depends_on: Vec<ActivityDependency>,
 }
@@ -22,9 +27,12 @@ impl Activity {
         }
     }
 }
+#[doc = "Activity dependency information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityDependency {
+    #[doc = "Activity name."]
     pub activity: String,
+    #[doc = "Match-Condition for the dependency."]
     #[serde(rename = "dependencyConditions")]
     pub dependency_conditions: Vec<String>,
 }
@@ -36,32 +44,46 @@ impl ActivityDependency {
         }
     }
 }
+#[doc = "Information about an activity run in a pipeline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActivityRun {
+    #[doc = "The name of the pipeline."]
     #[serde(rename = "pipelineName", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_name: Option<String>,
+    #[doc = "The id of the pipeline run."]
     #[serde(rename = "pipelineRunId", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_run_id: Option<String>,
+    #[doc = "The name of the activity."]
     #[serde(rename = "activityName", default, skip_serializing_if = "Option::is_none")]
     pub activity_name: Option<String>,
+    #[doc = "The type of the activity."]
     #[serde(rename = "activityType", default, skip_serializing_if = "Option::is_none")]
     pub activity_type: Option<String>,
+    #[doc = "The id of the activity run."]
     #[serde(rename = "activityRunId", default, skip_serializing_if = "Option::is_none")]
     pub activity_run_id: Option<String>,
+    #[doc = "The name of the compute linked service."]
     #[serde(rename = "linkedServiceName", default, skip_serializing_if = "Option::is_none")]
     pub linked_service_name: Option<String>,
+    #[doc = "The status of the activity run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The start time of the activity run in 'ISO 8601' format."]
     #[serde(rename = "activityRunStart", default, skip_serializing_if = "Option::is_none")]
     pub activity_run_start: Option<String>,
+    #[doc = "The end time of the activity run in 'ISO 8601' format."]
     #[serde(rename = "activityRunEnd", default, skip_serializing_if = "Option::is_none")]
     pub activity_run_end: Option<String>,
+    #[doc = "The duration of the activity run."]
     #[serde(rename = "durationInMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_ms: Option<i64>,
+    #[doc = "The input for the activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input: Option<serde_json::Value>,
+    #[doc = "The output for the activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<serde_json::Value>,
+    #[doc = "The error if any from the activity run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
 }
@@ -70,9 +92,12 @@ impl ActivityRun {
         Self::default()
     }
 }
+#[doc = "A list activity runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityRunsListResponse {
+    #[doc = "List of activity runs."]
     pub value: Vec<ActivityRun>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -81,13 +106,17 @@ impl ActivityRunsListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Azure Key Vault secret reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureKeyVaultSecretReference {
     #[serde(flatten)]
     pub secret_base: SecretBase,
+    #[doc = "Linked service reference type."]
     pub store: LinkedServiceReference,
+    #[doc = "The name of the secret in Azure Key Vault. Type: string (or Expression with resultType string)."]
     #[serde(rename = "secretName")]
     pub secret_name: serde_json::Value,
+    #[doc = "The version of the secret in Azure Key Vault. The default value is the latest version of the secret. Type: string (or Expression with resultType string)."]
     #[serde(rename = "secretVersion", default, skip_serializing_if = "Option::is_none")]
     pub secret_version: Option<serde_json::Value>,
 }
@@ -101,8 +130,10 @@ impl AzureKeyVaultSecretReference {
         }
     }
 }
+#[doc = "Response body with a run identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateRunResponse {
+    #[doc = "Identifier of a run."]
     #[serde(rename = "runId")]
     pub run_id: String,
 }
@@ -111,18 +142,25 @@ impl CreateRunResponse {
         Self { run_id }
     }
 }
+#[doc = "The Azure Data Factory nested object which identifies data within different data stores, such as tables, files, folders, and documents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dataset {
+    #[doc = "Type of dataset."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "Dataset description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Columns that define the structure of the dataset. Type: array (or Expression with resultType array), itemType: DatasetDataElement."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub structure: Option<serde_json::Value>,
+    #[doc = "Linked service reference type."]
     #[serde(rename = "linkedServiceName")]
     pub linked_service_name: LinkedServiceReference,
+    #[doc = "Definition of all parameters for an entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterDefinitionSpecification>,
+    #[doc = "List of tags that can be used for describing the Dataset."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub annotations: Vec<serde_json::Value>,
 }
@@ -138,9 +176,12 @@ impl Dataset {
         }
     }
 }
+#[doc = "A list of dataset resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetListResponse {
+    #[doc = "List of datasets."]
     pub value: Vec<DatasetResource>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -149,12 +190,16 @@ impl DatasetListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Dataset reference type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetReference {
+    #[doc = "Dataset reference type."]
     #[serde(rename = "type")]
     pub type_: dataset_reference::Type,
+    #[doc = "Reference dataset name."]
     #[serde(rename = "referenceName")]
     pub reference_name: String,
+    #[doc = "An object mapping parameter names to argument values."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterValueSpecification>,
 }
@@ -169,15 +214,18 @@ impl DatasetReference {
 }
 pub mod dataset_reference {
     use super::*;
+    #[doc = "Dataset reference type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         DatasetReference,
     }
 }
+#[doc = "Dataset resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "The Azure Data Factory nested object which identifies data within different data stores, such as tables, files, folders, and documents."]
     pub properties: Dataset,
 }
 impl DatasetResource {
@@ -188,12 +236,17 @@ impl DatasetResource {
         }
     }
 }
+#[doc = "The object that defines the structure of an Azure Data Factory response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponse {
+    #[doc = "Error code."]
     pub code: String,
+    #[doc = "Error message."]
     pub message: String,
+    #[doc = "Property name/path in request associated with error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Array with additional error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
 }
@@ -207,10 +260,13 @@ impl ErrorResponse {
         }
     }
 }
+#[doc = "Azure Data Factory expression definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Expression {
+    #[doc = "Expression type."]
     #[serde(rename = "type")]
     pub type_: expression::Type,
+    #[doc = "Expression value."]
     pub value: String,
 }
 impl Expression {
@@ -220,17 +276,21 @@ impl Expression {
 }
 pub mod expression {
     use super::*;
+    #[doc = "Expression type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Expression,
     }
 }
+#[doc = "Factory resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Factory {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Identity properties of the factory resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<FactoryIdentity>,
+    #[doc = "Factory resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FactoryProperties>,
 }
@@ -239,12 +299,16 @@ impl Factory {
         Self::default()
     }
 }
+#[doc = "Identity properties of the factory resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryIdentity {
+    #[doc = "The identity type. Currently the only supported type is 'SystemAssigned'."]
     #[serde(rename = "type")]
     pub type_: factory_identity::Type,
+    #[doc = "The principal id of the identity."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The client tenant id of the identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -259,14 +323,18 @@ impl FactoryIdentity {
 }
 pub mod factory_identity {
     use super::*;
+    #[doc = "The identity type. Currently the only supported type is 'SystemAssigned'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         SystemAssigned,
     }
 }
+#[doc = "A list of factory resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryListResponse {
+    #[doc = "List of factories."]
     pub value: Vec<Factory>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -275,14 +343,19 @@ impl FactoryListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Factory resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FactoryProperties {
+    #[doc = "Factory provisioning state, example Succeeded."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "Time the factory was created in ISO8601 format."]
     #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
     pub create_time: Option<String>,
+    #[doc = "Version of the factory."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Factory's VSTS repo information."]
     #[serde(rename = "vstsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub vsts_configuration: Option<FactoryVstsConfiguration>,
 }
@@ -291,12 +364,16 @@ impl FactoryProperties {
         Self::default()
     }
 }
+#[doc = "Factory's VSTS repo information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FactoryRepoUpdate {
+    #[doc = "The factory resource id."]
     #[serde(rename = "factoryResourceId", default, skip_serializing_if = "Option::is_none")]
     pub factory_resource_id: Option<String>,
+    #[doc = "The resource group name."]
     #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
     pub resource_group_name: Option<String>,
+    #[doc = "Factory's VSTS repo information."]
     #[serde(rename = "vstsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub vsts_configuration: Option<FactoryVstsConfiguration>,
 }
@@ -305,10 +382,13 @@ impl FactoryRepoUpdate {
         Self::default()
     }
 }
+#[doc = "Parameters for updating a factory resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FactoryUpdateParameters {
+    #[doc = "The resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Identity properties of the factory resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<FactoryIdentity>,
 }
@@ -317,20 +397,28 @@ impl FactoryUpdateParameters {
         Self::default()
     }
 }
+#[doc = "Factory's VSTS repo information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FactoryVstsConfiguration {
+    #[doc = "VSTS account name."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
+    #[doc = "VSTS project name."]
     #[serde(rename = "projectName", default, skip_serializing_if = "Option::is_none")]
     pub project_name: Option<String>,
+    #[doc = "VSTS repository name."]
     #[serde(rename = "repositoryName", default, skip_serializing_if = "Option::is_none")]
     pub repository_name: Option<String>,
+    #[doc = "VSTS collaboration branch."]
     #[serde(rename = "collaborationBranch", default, skip_serializing_if = "Option::is_none")]
     pub collaboration_branch: Option<String>,
+    #[doc = "VSTS root folder."]
     #[serde(rename = "rootFolder", default, skip_serializing_if = "Option::is_none")]
     pub root_folder: Option<String>,
+    #[doc = "VSTS last commit id."]
     #[serde(rename = "lastCommitId", default, skip_serializing_if = "Option::is_none")]
     pub last_commit_id: Option<String>,
+    #[doc = "VSTS tenant id."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -339,10 +427,13 @@ impl FactoryVstsConfiguration {
         Self::default()
     }
 }
+#[doc = "Azure Data Factory nested object which serves as a compute resource for activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
+    #[doc = "The type of integration runtime."]
     #[serde(rename = "type")]
     pub type_: IntegrationRuntimeType,
+    #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -351,10 +442,13 @@ impl IntegrationRuntime {
         Self { type_, description: None }
     }
 }
+#[doc = "The integration runtime authentication keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeAuthKeys {
+    #[doc = "The primary integration runtime authentication key."]
     #[serde(rename = "authKey1", default, skip_serializing_if = "Option::is_none")]
     pub auth_key1: Option<String>,
+    #[doc = "The secondary integration runtime authentication key."]
     #[serde(rename = "authKey2", default, skip_serializing_if = "Option::is_none")]
     pub auth_key2: Option<String>,
 }
@@ -363,23 +457,31 @@ impl IntegrationRuntimeAuthKeys {
         Self::default()
     }
 }
+#[doc = "The state of integration runtime auto update."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationRuntimeAutoUpdate {
     On,
     Off,
 }
+#[doc = "Connection information for encrypting the on-premises data source credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeConnectionInfo {
+    #[doc = "The token generated in service. Callers use this token to authenticate to integration runtime."]
     #[serde(rename = "serviceToken", default, skip_serializing_if = "Option::is_none")]
     pub service_token: Option<String>,
+    #[doc = "The integration runtime SSL certificate thumbprint. Click-Once application uses it to do server validation."]
     #[serde(rename = "identityCertThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub identity_cert_thumbprint: Option<String>,
+    #[doc = "The on-premises integration runtime host URL."]
     #[serde(rename = "hostServiceUri", default, skip_serializing_if = "Option::is_none")]
     pub host_service_uri: Option<String>,
+    #[doc = "The integration runtime version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "The public key for encrypting a credential when transferring the credential to the integration runtime."]
     #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
+    #[doc = "Whether the identity certificate is expired."]
     #[serde(rename = "isIdentityCertExprired", default, skip_serializing_if = "Option::is_none")]
     pub is_identity_cert_exprired: Option<bool>,
 }
@@ -388,9 +490,12 @@ impl IntegrationRuntimeConnectionInfo {
         Self::default()
     }
 }
+#[doc = "A list of integration runtime resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeListResponse {
+    #[doc = "List of integration runtimes."]
     pub value: Vec<IntegrationRuntimeResource>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -399,10 +504,13 @@ impl IntegrationRuntimeListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Get monitoring data response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeMonitoringData {
+    #[doc = "Integration runtime name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Integration runtime node monitoring data."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub nodes: Vec<IntegrationRuntimeNodeMonitoringData>,
 }
@@ -411,8 +519,10 @@ impl IntegrationRuntimeMonitoringData {
         Self::default()
     }
 }
+#[doc = "The IP address of self-hosted integration runtime node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeNodeIpAddress {
+    #[doc = "The IP address of self-hosted integration runtime node."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
 }
@@ -421,22 +531,31 @@ impl IntegrationRuntimeNodeIpAddress {
         Self::default()
     }
 }
+#[doc = "Monitoring data for integration runtime node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeNodeMonitoringData {
+    #[doc = "Name of the integration runtime node."]
     #[serde(rename = "nodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<String>,
+    #[doc = "Available memory (MB) on the integration runtime node."]
     #[serde(rename = "availableMemoryInMB", default, skip_serializing_if = "Option::is_none")]
     pub available_memory_in_mb: Option<i64>,
+    #[doc = "CPU percentage on the integration runtime node."]
     #[serde(rename = "cpuUtilization", default, skip_serializing_if = "Option::is_none")]
     pub cpu_utilization: Option<f64>,
+    #[doc = "Maximum concurrent jobs on the integration runtime node."]
     #[serde(rename = "concurrentJobsLimit", default, skip_serializing_if = "Option::is_none")]
     pub concurrent_jobs_limit: Option<i64>,
+    #[doc = "The number of jobs currently running on the integration runtime node."]
     #[serde(rename = "concurrentJobsRunning", default, skip_serializing_if = "Option::is_none")]
     pub concurrent_jobs_running: Option<i64>,
+    #[doc = "The maximum concurrent jobs in this integration runtime."]
     #[serde(rename = "maxConcurrentJobs", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_jobs: Option<i64>,
+    #[doc = "Sent bytes on the integration runtime node."]
     #[serde(rename = "sentBytes", default, skip_serializing_if = "Option::is_none")]
     pub sent_bytes: Option<f64>,
+    #[doc = "Received bytes on the integration runtime node."]
     #[serde(rename = "receivedBytes", default, skip_serializing_if = "Option::is_none")]
     pub received_bytes: Option<f64>,
 }
@@ -445,12 +564,16 @@ impl IntegrationRuntimeNodeMonitoringData {
         Self::default()
     }
 }
+#[doc = "Integration runtime reference type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeReference {
+    #[doc = "Type of integration runtime."]
     #[serde(rename = "type")]
     pub type_: integration_runtime_reference::Type,
+    #[doc = "Reference integration runtime name."]
     #[serde(rename = "referenceName")]
     pub reference_name: String,
+    #[doc = "An object mapping parameter names to argument values."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterValueSpecification>,
 }
@@ -465,13 +588,16 @@ impl IntegrationRuntimeReference {
 }
 pub mod integration_runtime_reference {
     use super::*;
+    #[doc = "Type of integration runtime."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         IntegrationRuntimeReference,
     }
 }
+#[doc = "Parameters to regenerate the authentication key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeRegenerateKeyParameters {
+    #[doc = "The name of the authentication key to regenerate."]
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<integration_runtime_regenerate_key_parameters::KeyName>,
 }
@@ -482,6 +608,7 @@ impl IntegrationRuntimeRegenerateKeyParameters {
 }
 pub mod integration_runtime_regenerate_key_parameters {
     use super::*;
+    #[doc = "The name of the authentication key to regenerate."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
         #[serde(rename = "authKey1")]
@@ -490,8 +617,10 @@ pub mod integration_runtime_regenerate_key_parameters {
         AuthKey2,
     }
 }
+#[doc = "Request to remove a node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeRemoveNodeRequest {
+    #[doc = "The name of the node to be removed."]
     #[serde(rename = "nodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<String>,
 }
@@ -500,10 +629,12 @@ impl IntegrationRuntimeRemoveNodeRequest {
         Self::default()
     }
 }
+#[doc = "Integration runtime resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Azure Data Factory nested object which serves as a compute resource for activities."]
     pub properties: IntegrationRuntime,
 }
 impl IntegrationRuntimeResource {
@@ -514,6 +645,7 @@ impl IntegrationRuntimeResource {
         }
     }
 }
+#[doc = "The state of integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationRuntimeState {
     Initial,
@@ -526,12 +658,16 @@ pub enum IntegrationRuntimeState {
     Limited,
     Offline,
 }
+#[doc = "Integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeStatus {
+    #[doc = "The type of integration runtime."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<IntegrationRuntimeType>,
+    #[doc = "The data factory name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
+    #[doc = "The state of integration runtime."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<IntegrationRuntimeState>,
 }
@@ -540,9 +676,12 @@ impl IntegrationRuntimeStatus {
         Self::default()
     }
 }
+#[doc = "A list of integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatusListResponse {
+    #[doc = "List of integration runtime status."]
     pub value: Vec<IntegrationRuntimeStatusResponse>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -551,10 +690,13 @@ impl IntegrationRuntimeStatusListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Integration runtime status response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatusResponse {
+    #[doc = "The integration runtime name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Integration runtime status."]
     pub properties: IntegrationRuntimeStatus,
 }
 impl IntegrationRuntimeStatusResponse {
@@ -562,21 +704,28 @@ impl IntegrationRuntimeStatusResponse {
         Self { name: None, properties }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum IntegrationRuntimeType {
     Managed,
     SelfHosted,
 }
+#[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedService {
+    #[doc = "Type of linked service."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "Integration runtime reference type."]
     #[serde(rename = "connectVia", default, skip_serializing_if = "Option::is_none")]
     pub connect_via: Option<IntegrationRuntimeReference>,
+    #[doc = "Linked service description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Definition of all parameters for an entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterDefinitionSpecification>,
+    #[doc = "List of tags that can be used for describing the Dataset."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub annotations: Vec<serde_json::Value>,
 }
@@ -591,9 +740,12 @@ impl LinkedService {
         }
     }
 }
+#[doc = "A list of linked service resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedServiceListResponse {
+    #[doc = "List of linked services."]
     pub value: Vec<LinkedServiceResource>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -602,12 +754,16 @@ impl LinkedServiceListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Linked service reference type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedServiceReference {
+    #[doc = "Linked service reference type."]
     #[serde(rename = "type")]
     pub type_: linked_service_reference::Type,
+    #[doc = "Reference LinkedService name."]
     #[serde(rename = "referenceName")]
     pub reference_name: String,
+    #[doc = "An object mapping parameter names to argument values."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterValueSpecification>,
 }
@@ -622,15 +778,18 @@ impl LinkedServiceReference {
 }
 pub mod linked_service_reference {
     use super::*;
+    #[doc = "Linked service reference type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         LinkedServiceReference,
     }
 }
+#[doc = "Linked service resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedServiceResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
     pub properties: LinkedService,
 }
 impl LinkedServiceResource {
@@ -641,14 +800,19 @@ impl LinkedServiceResource {
         }
     }
 }
+#[doc = "Azure Data Factory API operation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The intended executor of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
+    #[doc = "Additional details about an operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
 }
@@ -659,14 +823,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Metadata associated with the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "The description of the operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
+        #[doc = "The name of the provider."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "The name of the resource type on which the operation is performed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "The type of operation: get, read, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -676,10 +845,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "A list of operations that can be performed by the Data Factory service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResponse {
+    #[doc = "List of Data Factory operations supported by the Data Factory resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -688,12 +860,16 @@ impl OperationListResponse {
         Self::default()
     }
 }
+#[doc = "Details about an operation related to logs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationLogSpecification {
+    #[doc = "The name of the log category."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Localized display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Blobs created in the customer storage account, per hour."]
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
@@ -702,10 +878,13 @@ impl OperationLogSpecification {
         Self::default()
     }
 }
+#[doc = "Defines how often data for a metric becomes available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetricAvailability {
+    #[doc = "The granularity for the metric."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
+    #[doc = "Blob created in the customer storage account, per hour."]
     #[serde(rename = "blobDuration", default, skip_serializing_if = "Option::is_none")]
     pub blob_duration: Option<String>,
 }
@@ -714,24 +893,34 @@ impl OperationMetricAvailability {
         Self::default()
     }
 }
+#[doc = "Details about an operation related to metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationMetricSpecification {
+    #[doc = "The name of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Localized display name of the metric."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The description of the metric."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "The unit that the metric is measured in."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "The type of metric aggregation."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "Whether or not the service is using regional MDM accounts."]
     #[serde(rename = "enableRegionalMdmAccount", default, skip_serializing_if = "Option::is_none")]
     pub enable_regional_mdm_account: Option<String>,
+    #[doc = "The name of the MDM account."]
     #[serde(rename = "sourceMdmAccount", default, skip_serializing_if = "Option::is_none")]
     pub source_mdm_account: Option<String>,
+    #[doc = "The name of the MDM namespace."]
     #[serde(rename = "sourceMdmNamespace", default, skip_serializing_if = "Option::is_none")]
     pub source_mdm_namespace: Option<String>,
+    #[doc = "Defines how often data for metrics becomes available."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub availabilities: Vec<OperationMetricAvailability>,
 }
@@ -740,8 +929,10 @@ impl OperationMetricSpecification {
         Self::default()
     }
 }
+#[doc = "Additional details about an operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
+    #[doc = "Details about a service operation."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<OperationServiceSpecification>,
 }
@@ -750,10 +941,13 @@ impl OperationProperties {
         Self::default()
     }
 }
+#[doc = "Details about a service operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationServiceSpecification {
+    #[doc = "Details about operations related to logs."]
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<OperationLogSpecification>,
+    #[doc = "Details about operations related to metrics."]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<OperationMetricSpecification>,
 }
@@ -762,6 +956,7 @@ impl OperationServiceSpecification {
         Self::default()
     }
 }
+#[doc = "Definition of all parameters for an entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterDefinitionSpecification {}
 impl ParameterDefinitionSpecification {
@@ -769,10 +964,13 @@ impl ParameterDefinitionSpecification {
         Self::default()
     }
 }
+#[doc = "Definition of a single parameter for an entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParameterSpecification {
+    #[doc = "Parameter type."]
     #[serde(rename = "type")]
     pub type_: parameter_specification::Type,
+    #[doc = "Default value of parameter."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<serde_json::Value>,
 }
@@ -786,6 +984,7 @@ impl ParameterSpecification {
 }
 pub mod parameter_specification {
     use super::*;
+    #[doc = "Parameter type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         Object,
@@ -797,6 +996,7 @@ pub mod parameter_specification {
         SecureString,
     }
 }
+#[doc = "An object mapping parameter names to argument values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterValueSpecification {}
 impl ParameterValueSpecification {
@@ -804,16 +1004,22 @@ impl ParameterValueSpecification {
         Self::default()
     }
 }
+#[doc = "A data factory pipeline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pipeline {
+    #[doc = "The description of the pipeline."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "List of activities in pipeline."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub activities: Vec<Activity>,
+    #[doc = "Definition of all parameters for an entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterDefinitionSpecification>,
+    #[doc = "The max number of concurrent runs for the pipeline."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub concurrency: Option<i64>,
+    #[doc = "List of tags that can be used for describing the Pipeline."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub annotations: Vec<serde_json::Value>,
 }
@@ -822,9 +1028,12 @@ impl Pipeline {
         Self::default()
     }
 }
+#[doc = "A list of pipeline resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineListResponse {
+    #[doc = "List of pipelines."]
     pub value: Vec<PipelineResource>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -833,12 +1042,16 @@ impl PipelineListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Pipeline reference type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineReference {
+    #[doc = "Pipeline reference type."]
     #[serde(rename = "type")]
     pub type_: pipeline_reference::Type,
+    #[doc = "Reference pipeline name."]
     #[serde(rename = "referenceName")]
     pub reference_name: String,
+    #[doc = "Reference name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -853,15 +1066,18 @@ impl PipelineReference {
 }
 pub mod pipeline_reference {
     use super::*;
+    #[doc = "Pipeline reference type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         PipelineReference,
     }
 }
+#[doc = "Pipeline resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "A data factory pipeline."]
     pub properties: Pipeline,
 }
 impl PipelineResource {
@@ -872,26 +1088,37 @@ impl PipelineResource {
         }
     }
 }
+#[doc = "Information about a pipeline run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineRun {
+    #[doc = "Identifier of a run."]
     #[serde(rename = "runId", default, skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
+    #[doc = "The pipeline name."]
     #[serde(rename = "pipelineName", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_name: Option<String>,
+    #[doc = "The full or partial list of parameter name, value pair used in the pipeline run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
+    #[doc = "Provides entity name and id that started the pipeline run."]
     #[serde(rename = "invokedBy", default, skip_serializing_if = "Option::is_none")]
     pub invoked_by: Option<PipelineRunInvokedBy>,
+    #[doc = "The last updated timestamp for the pipeline run event in ISO8601 format."]
     #[serde(rename = "lastUpdated", default, skip_serializing_if = "Option::is_none")]
     pub last_updated: Option<String>,
+    #[doc = "The start time of a pipeline run in ISO8601 format."]
     #[serde(rename = "runStart", default, skip_serializing_if = "Option::is_none")]
     pub run_start: Option<String>,
+    #[doc = "The end time of a pipeline run in ISO8601 format."]
     #[serde(rename = "runEnd", default, skip_serializing_if = "Option::is_none")]
     pub run_end: Option<String>,
+    #[doc = "The duration of a pipeline run."]
     #[serde(rename = "durationInMs", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_ms: Option<i64>,
+    #[doc = "The status of a pipeline run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[doc = "The message from a pipeline run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -900,16 +1127,22 @@ impl PipelineRun {
         Self::default()
     }
 }
+#[doc = "Query parameters for listing pipeline runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunFilterParameters {
+    #[doc = "The continuation token for getting the next page of results. Null for first page."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
+    #[doc = "The time at or after which the pipeline run event was updated in 'ISO 8601' format."]
     #[serde(rename = "lastUpdatedAfter")]
     pub last_updated_after: String,
+    #[doc = "The time at or before which the pipeline run event was updated in 'ISO 8601' format."]
     #[serde(rename = "lastUpdatedBefore")]
     pub last_updated_before: String,
+    #[doc = "List of filters."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub filters: Vec<PipelineRunQueryFilter>,
+    #[doc = "List of OrderBy option."]
     #[serde(rename = "orderBy", default, skip_serializing_if = "Vec::is_empty")]
     pub order_by: Vec<PipelineRunQueryOrderBy>,
 }
@@ -924,10 +1157,13 @@ impl PipelineRunFilterParameters {
         }
     }
 }
+#[doc = "Provides entity name and id that started the pipeline run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineRunInvokedBy {
+    #[doc = "Name of the entity that started the pipeline run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The ID of the entity that started the run."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -936,10 +1172,14 @@ impl PipelineRunInvokedBy {
         Self::default()
     }
 }
+#[doc = "Query filter option for listing pipeline runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunQueryFilter {
+    #[doc = "Parameter name to be used for filter."]
     pub operand: pipeline_run_query_filter::Operand,
+    #[doc = "Operator to be used for filter."]
     pub operator: pipeline_run_query_filter::Operator,
+    #[doc = "List of filter values."]
     pub values: Vec<String>,
 }
 impl PipelineRunQueryFilter {
@@ -949,6 +1189,7 @@ impl PipelineRunQueryFilter {
 }
 pub mod pipeline_run_query_filter {
     use super::*;
+    #[doc = "Parameter name to be used for filter."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operand {
         PipelineName,
@@ -956,6 +1197,7 @@ pub mod pipeline_run_query_filter {
         RunStart,
         RunEnd,
     }
+    #[doc = "Operator to be used for filter."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Operator {
         Equals,
@@ -964,10 +1206,13 @@ pub mod pipeline_run_query_filter {
         NotIn,
     }
 }
+#[doc = "An object to provide order by options for listing pipeline runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunQueryOrderBy {
+    #[doc = "Parameter name to be used for order by."]
     #[serde(rename = "orderBy")]
     pub order_by: pipeline_run_query_order_by::OrderBy,
+    #[doc = "Sorting order of the parameter."]
     pub order: pipeline_run_query_order_by::Order,
 }
 impl PipelineRunQueryOrderBy {
@@ -977,11 +1222,13 @@ impl PipelineRunQueryOrderBy {
 }
 pub mod pipeline_run_query_order_by {
     use super::*;
+    #[doc = "Parameter name to be used for order by."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OrderBy {
         RunStart,
         RunEnd,
     }
+    #[doc = "Sorting order of the parameter."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Order {
         #[serde(rename = "ASC")]
@@ -990,9 +1237,12 @@ pub mod pipeline_run_query_order_by {
         Desc,
     }
 }
+#[doc = "A list pipeline runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineRunQueryResponse {
+    #[doc = "List of pipeline runs."]
     pub value: Vec<PipelineRun>,
+    #[doc = "The continuation token for getting the next page of results, if any remaining results exist, null otherwise."]
     #[serde(rename = "continuationToken", default, skip_serializing_if = "Option::is_none")]
     pub continuation_token: Option<String>,
 }
@@ -1004,16 +1254,22 @@ impl PipelineRunQueryResponse {
         }
     }
 }
+#[doc = "Azure Data Factory top-level resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "The resource identifier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "The resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1022,8 +1278,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretBase {
+    #[doc = "Type of the secret."]
     #[serde(rename = "type")]
     pub type_: String,
 }
@@ -1032,10 +1290,12 @@ impl SecretBase {
         Self { type_ }
     }
 }
+#[doc = "Azure Data Factory secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureString {
     #[serde(flatten)]
     pub secret_base: SecretBase,
+    #[doc = "Value of secure string."]
     pub value: String,
 }
 impl SecureString {
@@ -1043,42 +1303,61 @@ impl SecureString {
         Self { secret_base, value }
     }
 }
+#[doc = "Properties of Self-hosted integration runtime node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SelfHostedIntegrationRuntimeNode {
+    #[doc = "Name of the integration runtime node."]
     #[serde(rename = "nodeName", default, skip_serializing_if = "Option::is_none")]
     pub node_name: Option<String>,
+    #[doc = "Machine name of the integration runtime node."]
     #[serde(rename = "machineName", default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
+    #[doc = "URI for the host machine of the integration runtime."]
     #[serde(rename = "hostServiceUri", default, skip_serializing_if = "Option::is_none")]
     pub host_service_uri: Option<String>,
+    #[doc = "Status of the integration runtime node."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<self_hosted_integration_runtime_node::Status>,
+    #[doc = "The integration runtime capabilities dictionary"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<serde_json::Value>,
+    #[doc = "Status of the integration runtime node version."]
     #[serde(rename = "versionStatus", default, skip_serializing_if = "Option::is_none")]
     pub version_status: Option<String>,
+    #[doc = "Version of the integration runtime node."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "The time at which the integration runtime node was registered in ISO8601 format."]
     #[serde(rename = "registerTime", default, skip_serializing_if = "Option::is_none")]
     pub register_time: Option<String>,
+    #[doc = "The most recent time at which the integration runtime was connected in ISO8601 format."]
     #[serde(rename = "lastConnectTime", default, skip_serializing_if = "Option::is_none")]
     pub last_connect_time: Option<String>,
+    #[doc = "The time at which the integration runtime will expire in ISO8601 format."]
     #[serde(rename = "expiryTime", default, skip_serializing_if = "Option::is_none")]
     pub expiry_time: Option<String>,
+    #[doc = "The time the node last started up."]
     #[serde(rename = "lastStartTime", default, skip_serializing_if = "Option::is_none")]
     pub last_start_time: Option<String>,
+    #[doc = "The integration runtime node last stop time."]
     #[serde(rename = "lastStopTime", default, skip_serializing_if = "Option::is_none")]
     pub last_stop_time: Option<String>,
+    #[doc = "The result of the last integration runtime node update."]
     #[serde(rename = "lastUpdateResult", default, skip_serializing_if = "Option::is_none")]
     pub last_update_result: Option<self_hosted_integration_runtime_node::LastUpdateResult>,
+    #[doc = "The last time for the integration runtime node update start."]
     #[serde(rename = "lastStartUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_start_update_time: Option<String>,
+    #[doc = "The last time for the integration runtime node update end."]
     #[serde(rename = "lastEndUpdateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_end_update_time: Option<String>,
+    #[doc = "Indicates whether this node is the active dispatcher for integration runtime requests."]
     #[serde(rename = "isActiveDispatcher", default, skip_serializing_if = "Option::is_none")]
     pub is_active_dispatcher: Option<bool>,
+    #[doc = "Maximum concurrent jobs on the integration runtime node."]
     #[serde(rename = "concurrentJobsLimit", default, skip_serializing_if = "Option::is_none")]
     pub concurrent_jobs_limit: Option<i64>,
+    #[doc = "The maximum concurrent jobs in this integration runtime."]
     #[serde(rename = "maxConcurrentJobs", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_jobs: Option<i64>,
 }
@@ -1089,6 +1368,7 @@ impl SelfHostedIntegrationRuntimeNode {
 }
 pub mod self_hosted_integration_runtime_node {
     use super::*;
+    #[doc = "Status of the integration runtime node."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         NeedRegistration,
@@ -1099,20 +1379,26 @@ pub mod self_hosted_integration_runtime_node {
         Initializing,
         InitializeFailed,
     }
+    #[doc = "The result of the last integration runtime node update."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastUpdateResult {
         Succeed,
         Fail,
     }
 }
+#[doc = "Azure Data Factory nested resource, which belongs to a factory."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
+    #[doc = "The resource identifier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Etag identifies change in the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1121,12 +1407,16 @@ impl SubResource {
         Self::default()
     }
 }
+#[doc = "Azure data factory nested object which contains information about creating pipeline run"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
+    #[doc = "Trigger type."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "Trigger description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Enumerates possible state of Triggers."]
     #[serde(rename = "runtimeState", default, skip_serializing_if = "Option::is_none")]
     pub runtime_state: Option<TriggerRuntimeState>,
 }
@@ -1139,9 +1429,12 @@ impl Trigger {
         }
     }
 }
+#[doc = "A list of trigger resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerListResponse {
+    #[doc = "List of triggers."]
     pub value: Vec<TriggerResource>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1150,10 +1443,13 @@ impl TriggerListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Pipeline that needs to be triggered with the given parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerPipelineReference {
+    #[doc = "Pipeline reference type."]
     #[serde(rename = "pipelineReference", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_reference: Option<PipelineReference>,
+    #[doc = "An object mapping parameter names to argument values."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterValueSpecification>,
 }
@@ -1162,10 +1458,12 @@ impl TriggerPipelineReference {
         Self::default()
     }
 }
+#[doc = "Trigger resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Azure data factory nested object which contains information about creating pipeline run"]
     pub properties: Trigger,
 }
 impl TriggerResource {
@@ -1176,22 +1474,31 @@ impl TriggerResource {
         }
     }
 }
+#[doc = "Trigger runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerRun {
+    #[doc = "Trigger run id."]
     #[serde(rename = "triggerRunId", default, skip_serializing_if = "Option::is_none")]
     pub trigger_run_id: Option<String>,
+    #[doc = "Trigger name."]
     #[serde(rename = "triggerName", default, skip_serializing_if = "Option::is_none")]
     pub trigger_name: Option<String>,
+    #[doc = "Trigger type."]
     #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
     pub trigger_type: Option<String>,
+    #[doc = "Trigger run start time."]
     #[serde(rename = "triggerRunTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub trigger_run_timestamp: Option<String>,
+    #[doc = "Trigger run status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<trigger_run::Status>,
+    #[doc = "Trigger error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "List of property name and value related to trigger run. Name, value pair depends on type of trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "List of pipeline name and run Id triggered by the trigger run."]
     #[serde(rename = "triggeredPipelines", default, skip_serializing_if = "Option::is_none")]
     pub triggered_pipelines: Option<serde_json::Value>,
 }
@@ -1202,6 +1509,7 @@ impl TriggerRun {
 }
 pub mod trigger_run {
     use super::*;
+    #[doc = "Trigger run status."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Succeeded,
@@ -1209,9 +1517,12 @@ pub mod trigger_run {
         Inprogress,
     }
 }
+#[doc = "A list of trigger runs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerRunListResponse {
+    #[doc = "List of trigger runs."]
     pub value: Vec<TriggerRun>,
+    #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1220,14 +1531,17 @@ impl TriggerRunListResponse {
         Self { value, next_link: None }
     }
 }
+#[doc = "Enumerates possible state of Triggers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum TriggerRuntimeState {
     Started,
     Stopped,
     Disabled,
 }
+#[doc = "Update integration runtime node request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateIntegrationRuntimeNodeRequest {
+    #[doc = "The number of concurrent jobs permitted to run on the integration runtime node. Values between 1 and maxConcurrentJobs(inclusive) are allowed."]
     #[serde(rename = "concurrentJobsLimit", default, skip_serializing_if = "Option::is_none")]
     pub concurrent_jobs_limit: Option<i64>,
 }
@@ -1236,10 +1550,13 @@ impl UpdateIntegrationRuntimeNodeRequest {
         Self::default()
     }
 }
+#[doc = "Update integration runtime request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateIntegrationRuntimeRequest {
+    #[doc = "The state of integration runtime auto update."]
     #[serde(rename = "autoUpdate", default, skip_serializing_if = "Option::is_none")]
     pub auto_update: Option<IntegrationRuntimeAutoUpdate>,
+    #[doc = "The time offset (in hours) in the day, e.g., PT03H is 3 hours. The integration runtime auto update will happen on that time."]
     #[serde(rename = "updateDelayOffset", default, skip_serializing_if = "Option::is_none")]
     pub update_delay_offset: Option<String>,
 }

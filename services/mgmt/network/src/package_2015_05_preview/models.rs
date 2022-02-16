@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "AddressSpace contains an array of IP address ranges that can be used by subnets"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddressSpace {
+    #[doc = "Gets or sets List of address blocks reserved for this virtual network in CIDR notation"]
     #[serde(rename = "addressPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub address_prefixes: Vec<String>,
 }
@@ -12,12 +14,15 @@ impl AddressSpace {
         Self::default()
     }
 }
+#[doc = "ApplicationGateways resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationGateway {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of Application Gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -30,10 +35,13 @@ impl ApplicationGateway {
         }
     }
 }
+#[doc = "Backend Address of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendAddress {
+    #[doc = "Gets or sets the dns name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Gets or sets the ip address"]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
 }
@@ -42,14 +50,18 @@ impl ApplicationGatewayBackendAddress {
         Self::default()
     }
 }
+#[doc = "Backend Address Pool of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendAddressPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Backend Address Pool of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayBackendAddressPoolPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -58,12 +70,16 @@ impl ApplicationGatewayBackendAddressPool {
         Self::default()
     }
 }
+#[doc = "Properties of Backend Address Pool of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendAddressPoolPropertiesFormat {
+    #[doc = "Gets or sets backendIPConfiguration of application gateway "]
     #[serde(rename = "backendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_ip_configurations: Vec<SubResource>,
+    #[doc = "Gets or sets the backend addresses"]
     #[serde(rename = "backendAddresses", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_addresses: Vec<ApplicationGatewayBackendAddress>,
+    #[doc = "Gets or sets Provisioning state of the backend address pool resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -72,14 +88,18 @@ impl ApplicationGatewayBackendAddressPoolPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Backend address pool settings of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHttpSettings {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Backend address pool settings of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayBackendHttpSettingsPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -88,14 +108,19 @@ impl ApplicationGatewayBackendHttpSettings {
         Self::default()
     }
 }
+#[doc = "Properties of Backend address pool settings of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayBackendHttpSettingsPropertiesFormat {
+    #[doc = "Gets or sets the port"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
+    #[doc = "Gets or sets the protocol"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<application_gateway_backend_http_settings_properties_format::Protocol>,
+    #[doc = "Gets or sets the cookie affinity"]
     #[serde(rename = "cookieBasedAffinity", default, skip_serializing_if = "Option::is_none")]
     pub cookie_based_affinity: Option<application_gateway_backend_http_settings_properties_format::CookieBasedAffinity>,
+    #[doc = "Gets or sets Provisioning state of the backend http settings resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -106,25 +131,31 @@ impl ApplicationGatewayBackendHttpSettingsPropertiesFormat {
 }
 pub mod application_gateway_backend_http_settings_properties_format {
     use super::*;
+    #[doc = "Gets or sets the protocol"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         Http,
         Https,
     }
+    #[doc = "Gets or sets the cookie affinity"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CookieBasedAffinity {
         Enabled,
         Disabled,
     }
 }
+#[doc = "Frontend IP configuration of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFrontendIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Frontend IP configuration of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayFrontendIpConfigurationPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -133,16 +164,20 @@ impl ApplicationGatewayFrontendIpConfiguration {
         Self::default()
     }
 }
+#[doc = "Properties of Frontend IP configuration of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFrontendIpConfigurationPropertiesFormat {
+    #[doc = "Gets or sets the privateIPAddress of the Network Interface IP Configuration"]
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
+    #[doc = "Gets or sets PrivateIP allocation method (Static/Dynamic)"]
     #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<application_gateway_frontend_ip_configuration_properties_format::PrivateIpAllocationMethod>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -153,20 +188,25 @@ impl ApplicationGatewayFrontendIpConfigurationPropertiesFormat {
 }
 pub mod application_gateway_frontend_ip_configuration_properties_format {
     use super::*;
+    #[doc = "Gets or sets PrivateIP allocation method (Static/Dynamic)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateIpAllocationMethod {
         Static,
         Dynamic,
     }
 }
+#[doc = "Frontend Port of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFrontendPort {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Frontend Port of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayFrontendPortPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -175,10 +215,13 @@ impl ApplicationGatewayFrontendPort {
         Self::default()
     }
 }
+#[doc = "Properties of Frontend Port of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayFrontendPortPropertiesFormat {
+    #[doc = "Gets or sets the frontend port"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
+    #[doc = "Gets or sets Provisioning state of the frontend port resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -187,14 +230,18 @@ impl ApplicationGatewayFrontendPortPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Http listener of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayHttpListener {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Http listener of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayHttpListenerPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -203,16 +250,19 @@ impl ApplicationGatewayHttpListener {
         Self::default()
     }
 }
+#[doc = "Properties of Http listener of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayHttpListenerPropertiesFormat {
     #[serde(rename = "frontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub frontend_ip_configuration: Option<SubResource>,
     #[serde(rename = "frontendPort", default, skip_serializing_if = "Option::is_none")]
     pub frontend_port: Option<SubResource>,
+    #[doc = "Gets or sets the protocol"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<application_gateway_http_listener_properties_format::Protocol>,
     #[serde(rename = "sslCertificate", default, skip_serializing_if = "Option::is_none")]
     pub ssl_certificate: Option<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the http listener resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -223,20 +273,25 @@ impl ApplicationGatewayHttpListenerPropertiesFormat {
 }
 pub mod application_gateway_http_listener_properties_format {
     use super::*;
+    #[doc = "Gets or sets the protocol"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         Http,
         Https,
     }
 }
+#[doc = "IP configuration of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of IP configuration of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayIpConfigurationPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -245,10 +300,12 @@ impl ApplicationGatewayIpConfiguration {
         Self::default()
     }
 }
+#[doc = "Properties of IP configuration of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayIpConfigurationPropertiesFormat {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the application gateway subnet resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -257,10 +314,13 @@ impl ApplicationGatewayIpConfigurationPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Response for ListLoadBalancers Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayListResult {
+    #[doc = "Gets a list of ApplicationGateways in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ApplicationGateway>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -269,30 +329,43 @@ impl ApplicationGatewayListResult {
         Self::default()
     }
 }
+#[doc = "Properties of Application Gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayPropertiesFormat {
+    #[doc = "SKU of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ApplicationGatewaySku>,
+    #[doc = "Gets operational state of application gateway resource"]
     #[serde(rename = "operationalState", default, skip_serializing_if = "Option::is_none")]
     pub operational_state: Option<application_gateway_properties_format::OperationalState>,
+    #[doc = "Gets or sets subnets of application gateway resource"]
     #[serde(rename = "gatewayIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub gateway_ip_configurations: Vec<ApplicationGatewayIpConfiguration>,
+    #[doc = "Gets or sets ssl certificates of application gateway resource"]
     #[serde(rename = "sslCertificates", default, skip_serializing_if = "Vec::is_empty")]
     pub ssl_certificates: Vec<ApplicationGatewaySslCertificate>,
+    #[doc = "Gets or sets frontend IP addresses of application gateway resource"]
     #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub frontend_ip_configurations: Vec<ApplicationGatewayFrontendIpConfiguration>,
+    #[doc = "Gets or sets frontend ports of application gateway resource"]
     #[serde(rename = "frontendPorts", default, skip_serializing_if = "Vec::is_empty")]
     pub frontend_ports: Vec<ApplicationGatewayFrontendPort>,
+    #[doc = "Gets or sets backend address pool of application gateway resource"]
     #[serde(rename = "backendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_address_pools: Vec<ApplicationGatewayBackendAddressPool>,
+    #[doc = "Gets or sets backend http settings of application gateway resource"]
     #[serde(rename = "backendHttpSettingsCollection", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_http_settings_collection: Vec<ApplicationGatewayBackendHttpSettings>,
+    #[doc = "Gets or sets HTTP listeners of application gateway resource"]
     #[serde(rename = "httpListeners", default, skip_serializing_if = "Vec::is_empty")]
     pub http_listeners: Vec<ApplicationGatewayHttpListener>,
+    #[doc = "Gets or sets request routing rules of application gateway resource"]
     #[serde(rename = "requestRoutingRules", default, skip_serializing_if = "Vec::is_empty")]
     pub request_routing_rules: Vec<ApplicationGatewayRequestRoutingRule>,
+    #[doc = "Gets or sets resource guid property of the ApplicationGateway resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the ApplicationGateway resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -303,6 +376,7 @@ impl ApplicationGatewayPropertiesFormat {
 }
 pub mod application_gateway_properties_format {
     use super::*;
+    #[doc = "Gets operational state of application gateway resource"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum OperationalState {
         Stopped,
@@ -311,14 +385,18 @@ pub mod application_gateway_properties_format {
         Stopping,
     }
 }
+#[doc = "Request routing rule of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRequestRoutingRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Request routing rule of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewayRequestRoutingRulePropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -327,8 +405,10 @@ impl ApplicationGatewayRequestRoutingRule {
         Self::default()
     }
 }
+#[doc = "Properties of Request routing rule of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewayRequestRoutingRulePropertiesFormat {
+    #[doc = "Gets or sets the rule type"]
     #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
     pub rule_type: Option<application_gateway_request_routing_rule_properties_format::RuleType>,
     #[serde(rename = "backendAddressPool", default, skip_serializing_if = "Option::is_none")]
@@ -337,6 +417,7 @@ pub struct ApplicationGatewayRequestRoutingRulePropertiesFormat {
     pub backend_http_settings: Option<SubResource>,
     #[serde(rename = "httpListener", default, skip_serializing_if = "Option::is_none")]
     pub http_listener: Option<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the request routing rule resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -347,17 +428,22 @@ impl ApplicationGatewayRequestRoutingRulePropertiesFormat {
 }
 pub mod application_gateway_request_routing_rule_properties_format {
     use super::*;
+    #[doc = "Gets or sets the rule type"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum RuleType {
         Basic,
     }
 }
+#[doc = "SKU of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySku {
+    #[doc = "Gets or sets name of application gateway SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<application_gateway_sku::Name>,
+    #[doc = "Gets or sets tier of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<application_gateway_sku::Tier>,
+    #[doc = "Gets or sets capacity (instance count) of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
@@ -368,6 +454,7 @@ impl ApplicationGatewaySku {
 }
 pub mod application_gateway_sku {
     use super::*;
+    #[doc = "Gets or sets name of application gateway SKU"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "Standard_Small")]
@@ -377,19 +464,24 @@ pub mod application_gateway_sku {
         #[serde(rename = "Standard_Large")]
         StandardLarge,
     }
+    #[doc = "Gets or sets tier of application gateway"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Standard,
     }
 }
+#[doc = "SSL certificates of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslCertificate {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of SSL certificates of application gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationGatewaySslCertificatePropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -398,14 +490,19 @@ impl ApplicationGatewaySslCertificate {
         Self::default()
     }
 }
+#[doc = "Properties of SSL certificates of application gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationGatewaySslCertificatePropertiesFormat {
+    #[doc = "Gets or sets the certificate data "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
+    #[doc = "Gets or sets the certificate password "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+    #[doc = "Gets or sets the certificate public data "]
     #[serde(rename = "publicCertData", default, skip_serializing_if = "Option::is_none")]
     pub public_cert_data: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the ssl certificate resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -414,10 +511,13 @@ impl ApplicationGatewaySslCertificatePropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Response for ListAuthorizations Api service callRetrieves all authorizations that belongs to an ExpressRouteCircuit"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationListResult {
+    #[doc = "Gets the authorizations in an ExpressRoute Circuit"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitAuthorization>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -428,10 +528,13 @@ impl AuthorizationListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationPropertiesFormat {
+    #[doc = "Gets or sets the authorization key"]
     #[serde(rename = "authorizationKey", default, skip_serializing_if = "Option::is_none")]
     pub authorization_key: Option<String>,
+    #[doc = "Gets or sets AuthorizationUseStatus"]
     #[serde(rename = "authorizationUseStatus", default, skip_serializing_if = "Option::is_none")]
     pub authorization_use_status: Option<authorization_properties_format::AuthorizationUseStatus>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -442,14 +545,17 @@ impl AuthorizationPropertiesFormat {
 }
 pub mod authorization_properties_format {
     use super::*;
+    #[doc = "Gets or sets AuthorizationUseStatus"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AuthorizationUseStatus {
         Available,
         InUse,
     }
 }
+#[doc = "The response body contains the status of the specified asynchronous operation, indicating whether it has succeeded, is in progress, or has failed. Note that this status is distinct from the HTTP status code returned for the Get Operation Status operation itself. If the asynchronous operation succeeded, the response body includes the HTTP status code for the successful request. If the asynchronous operation failed, the response body includes the HTTP status code for the failed request and error information regarding the failure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAsyncOperationResult {
+    #[doc = "Status of the AzureAsyncOperation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<azure_async_operation_result::Status>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -462,6 +568,7 @@ impl AzureAsyncOperationResult {
 }
 pub mod azure_async_operation_result {
     use super::*;
+    #[doc = "Status of the AzureAsyncOperation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         InProgress,
@@ -469,14 +576,18 @@ pub mod azure_async_operation_result {
         Failed,
     }
 }
+#[doc = "Pool of backend IP addresses"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendAddressPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of BackendAddressPool"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackendAddressPoolPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -485,14 +596,18 @@ impl BackendAddressPool {
         Self::default()
     }
 }
+#[doc = "Properties of BackendAddressPool"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendAddressPoolPropertiesFormat {
+    #[doc = "Gets collection of references to IPs defined in NICs"]
     #[serde(rename = "backendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_ip_configurations: Vec<SubResource>,
+    #[doc = "Gets Load Balancing rules that use this Backend Address Pool"]
     #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancing_rules: Vec<SubResource>,
     #[serde(rename = "outboundNatRule", default, skip_serializing_if = "Option::is_none")]
     pub outbound_nat_rule: Option<SubResource>,
+    #[doc = "Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -503,6 +618,7 @@ impl BackendAddressPoolPropertiesFormat {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionResetSharedKey {
+    #[doc = "The virtual network connection reset shared key length"]
     #[serde(rename = "keyLength", default, skip_serializing_if = "Option::is_none")]
     pub key_length: Option<i64>,
 }
@@ -511,8 +627,10 @@ impl ConnectionResetSharedKey {
         Self::default()
     }
 }
+#[doc = "Response for GetConnectionSharedKey Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionSharedKey {
+    #[doc = "The virtual network connection shared key value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -521,8 +639,10 @@ impl ConnectionSharedKey {
         Self::default()
     }
 }
+#[doc = "DHCPOptions contains an array of DNS servers available to VMs deployed in the virtual networkStandard DHCP option for a subnet overrides VNET DHCP options."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DhcpOptions {
+    #[doc = "Gets or sets list of DNS servers IP addresses"]
     #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
     pub dns_servers: Vec<String>,
 }
@@ -531,8 +651,10 @@ impl DhcpOptions {
         Self::default()
     }
 }
+#[doc = "Response for CheckDnsNameAvailability Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsNameAvailabilityResult {
+    #[doc = "Domain availability (True/False)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
 }
@@ -573,14 +695,18 @@ impl ErrorDetails {
         Self::default()
     }
 }
+#[doc = "ExpressRouteCircuit resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExpressRouteCircuit {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Contains sku in an ExpressRouteCircuit"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ExpressRouteCircuitSku>,
+    #[doc = "Properties of ExpressRouteCircuit"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExpressRouteCircuitPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -594,10 +720,13 @@ impl ExpressRouteCircuit {
         }
     }
 }
+#[doc = "The arp table associated with the ExpressRouteCircuit"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitArpTable {
+    #[doc = "Gets ipAddress."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
+    #[doc = "Gets macAddress."]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
 }
@@ -606,14 +735,17 @@ impl ExpressRouteCircuitArpTable {
         Self::default()
     }
 }
+#[doc = "Authorization in a ExpressRouteCircuit resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitAuthorization {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -622,10 +754,13 @@ impl ExpressRouteCircuitAuthorization {
         Self::default()
     }
 }
+#[doc = "Response for ListExpressRouteCircuit Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitListResult {
+    #[doc = "Gets a list of ExpressRouteCircuits in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuit>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -634,14 +769,17 @@ impl ExpressRouteCircuitListResult {
         Self::default()
     }
 }
+#[doc = "Peering in a ExpressRouteCircuit resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeering {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExpressRouteCircuitPeeringPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -650,14 +788,19 @@ impl ExpressRouteCircuitPeering {
         Self::default()
     }
 }
+#[doc = "Specifies the peering config"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringConfig {
+    #[doc = "Gets or sets the reference of AdvertisedPublicPrefixes"]
     #[serde(rename = "advertisedPublicPrefixes", default, skip_serializing_if = "Vec::is_empty")]
     pub advertised_public_prefixes: Vec<String>,
+    #[doc = "Gets or sets AdvertisedPublicPrefixState of the Peering resource "]
     #[serde(rename = "advertisedPublicPrefixesState", default, skip_serializing_if = "Option::is_none")]
     pub advertised_public_prefixes_state: Option<express_route_circuit_peering_config::AdvertisedPublicPrefixesState>,
+    #[doc = "Gets or Sets CustomerAsn of the peering."]
     #[serde(rename = "customerASN", default, skip_serializing_if = "Option::is_none")]
     pub customer_asn: Option<i32>,
+    #[doc = "Gets or Sets RoutingRegistryName of the config."]
     #[serde(rename = "routingRegistryName", default, skip_serializing_if = "Option::is_none")]
     pub routing_registry_name: Option<String>,
 }
@@ -668,6 +811,7 @@ impl ExpressRouteCircuitPeeringConfig {
 }
 pub mod express_route_circuit_peering_config {
     use super::*;
+    #[doc = "Gets or sets AdvertisedPublicPrefixState of the Peering resource "]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AdvertisedPublicPrefixesState {
         NotConfigured,
@@ -676,10 +820,13 @@ pub mod express_route_circuit_peering_config {
         ValidationNeeded,
     }
 }
+#[doc = "Response for ListPeering Api service callRetrieves all Peerings that belongs to an ExpressRouteCircuit"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringListResult {
+    #[doc = "Gets the peerings in an express route circuit"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitPeering>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -690,30 +837,43 @@ impl ExpressRouteCircuitPeeringListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPeeringPropertiesFormat {
+    #[doc = "Gets or sets PeeringType"]
     #[serde(rename = "peeringType", default, skip_serializing_if = "Option::is_none")]
     pub peering_type: Option<express_route_circuit_peering_properties_format::PeeringType>,
+    #[doc = "Gets or sets state of Peering"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<express_route_circuit_peering_properties_format::State>,
+    #[doc = "Gets or sets the azure ASN"]
     #[serde(rename = "azureASN", default, skip_serializing_if = "Option::is_none")]
     pub azure_asn: Option<i32>,
+    #[doc = "Gets or sets the peer ASN"]
     #[serde(rename = "peerASN", default, skip_serializing_if = "Option::is_none")]
     pub peer_asn: Option<i32>,
+    #[doc = "Gets or sets the primary address prefix"]
     #[serde(rename = "primaryPeerAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub primary_peer_address_prefix: Option<String>,
+    #[doc = "Gets or sets the secondary address prefix"]
     #[serde(rename = "secondaryPeerAddressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub secondary_peer_address_prefix: Option<String>,
+    #[doc = "Gets or sets the primary port"]
     #[serde(rename = "primaryAzurePort", default, skip_serializing_if = "Option::is_none")]
     pub primary_azure_port: Option<String>,
+    #[doc = "Gets or sets the secondary port"]
     #[serde(rename = "secondaryAzurePort", default, skip_serializing_if = "Option::is_none")]
     pub secondary_azure_port: Option<String>,
+    #[doc = "Gets or sets the shared key"]
     #[serde(rename = "sharedKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_key: Option<String>,
+    #[doc = "Gets or sets the vlan id"]
     #[serde(rename = "vlanId", default, skip_serializing_if = "Option::is_none")]
     pub vlan_id: Option<i32>,
+    #[doc = "Specifies the peering config"]
     #[serde(rename = "microsoftPeeringConfig", default, skip_serializing_if = "Option::is_none")]
     pub microsoft_peering_config: Option<ExpressRouteCircuitPeeringConfig>,
+    #[doc = "Contains Stats associated with the peering"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<ExpressRouteCircuitStats>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -724,34 +884,45 @@ impl ExpressRouteCircuitPeeringPropertiesFormat {
 }
 pub mod express_route_circuit_peering_properties_format {
     use super::*;
+    #[doc = "Gets or sets PeeringType"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PeeringType {
         AzurePublicPeering,
         AzurePrivatePeering,
         MicrosoftPeering,
     }
+    #[doc = "Gets or sets state of Peering"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Disabled,
         Enabled,
     }
 }
+#[doc = "Properties of ExpressRouteCircuit"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitPropertiesFormat {
+    #[doc = "Gets or sets CircuitProvisioningState state of the resource "]
     #[serde(rename = "circuitProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub circuit_provisioning_state: Option<String>,
+    #[doc = "Gets or sets ServiceProviderProvisioningState state of the resource "]
     #[serde(rename = "serviceProviderProvisioningState", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_provisioning_state: Option<express_route_circuit_properties_format::ServiceProviderProvisioningState>,
+    #[doc = "Gets or sets list of authorizations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub authorizations: Vec<ExpressRouteCircuitAuthorization>,
+    #[doc = "Gets or sets list of peerings"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub peerings: Vec<ExpressRouteCircuitPeering>,
+    #[doc = "Gets or sets ServiceKey"]
     #[serde(rename = "serviceKey", default, skip_serializing_if = "Option::is_none")]
     pub service_key: Option<String>,
+    #[doc = "Gets or sets ServiceProviderNotes"]
     #[serde(rename = "serviceProviderNotes", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_notes: Option<String>,
+    #[doc = "Contains ServiceProviderProperties in an ExpressRouteCircuit"]
     #[serde(rename = "serviceProviderProperties", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_properties: Option<ExpressRouteCircuitServiceProviderProperties>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -762,6 +933,7 @@ impl ExpressRouteCircuitPropertiesFormat {
 }
 pub mod express_route_circuit_properties_format {
     use super::*;
+    #[doc = "Gets or sets ServiceProviderProvisioningState state of the resource "]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ServiceProviderProvisioningState {
         NotProvisioned,
@@ -770,14 +942,19 @@ pub mod express_route_circuit_properties_format {
         Deprovisioning,
     }
 }
+#[doc = "The routes table associated with the ExpressRouteCircuit"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExpressRouteCircuitRoutesTable {
+    #[doc = "Gets AddressPrefix."]
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
+    #[doc = "Gets NextHopType."]
     #[serde(rename = "nextHopType")]
     pub next_hop_type: express_route_circuit_routes_table::NextHopType,
+    #[doc = "Gets NextHopIP."]
     #[serde(rename = "nextHopIP", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_ip: Option<String>,
+    #[doc = "Gets AsPath."]
     #[serde(rename = "asPath", default, skip_serializing_if = "Option::is_none")]
     pub as_path: Option<String>,
 }
@@ -793,6 +970,7 @@ impl ExpressRouteCircuitRoutesTable {
 }
 pub mod express_route_circuit_routes_table {
     use super::*;
+    #[doc = "Gets NextHopType."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NextHopType {
         VirtualNetworkGateway,
@@ -802,12 +980,16 @@ pub mod express_route_circuit_routes_table {
         None,
     }
 }
+#[doc = "Contains ServiceProviderProperties in an ExpressRouteCircuit"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitServiceProviderProperties {
+    #[doc = "Gets or sets serviceProviderName."]
     #[serde(rename = "serviceProviderName", default, skip_serializing_if = "Option::is_none")]
     pub service_provider_name: Option<String>,
+    #[doc = "Gets or sets peering location."]
     #[serde(rename = "peeringLocation", default, skip_serializing_if = "Option::is_none")]
     pub peering_location: Option<String>,
+    #[doc = "Gets or sets BandwidthInMbps."]
     #[serde(rename = "bandwidthInMbps", default, skip_serializing_if = "Option::is_none")]
     pub bandwidth_in_mbps: Option<i32>,
 }
@@ -816,12 +998,16 @@ impl ExpressRouteCircuitServiceProviderProperties {
         Self::default()
     }
 }
+#[doc = "Contains sku in an ExpressRouteCircuit"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitSku {
+    #[doc = "Gets or sets name of the sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets tier of the sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<express_route_circuit_sku::Tier>,
+    #[doc = "Gets or sets family of the sku."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<express_route_circuit_sku::Family>,
 }
@@ -832,21 +1018,26 @@ impl ExpressRouteCircuitSku {
 }
 pub mod express_route_circuit_sku {
     use super::*;
+    #[doc = "Gets or sets tier of the sku."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Standard,
         Premium,
     }
+    #[doc = "Gets or sets family of the sku."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Family {
         UnlimitedData,
         MeteredData,
     }
 }
+#[doc = "Contains Stats associated with the peering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitStats {
+    #[doc = "Gets BytesIn of the peering."]
     #[serde(rename = "bytesIn", default, skip_serializing_if = "Option::is_none")]
     pub bytes_in: Option<i32>,
+    #[doc = "Gets BytesOut of the peering."]
     #[serde(rename = "bytesOut", default, skip_serializing_if = "Option::is_none")]
     pub bytes_out: Option<i32>,
 }
@@ -855,10 +1046,13 @@ impl ExpressRouteCircuitStats {
         Self::default()
     }
 }
+#[doc = "Response for ListArpTable associated with the Express Route Circuits Api"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsArpTableListResult {
+    #[doc = "Gets List of ArpTable"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitArpTable>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -867,10 +1061,13 @@ impl ExpressRouteCircuitsArpTableListResult {
         Self::default()
     }
 }
+#[doc = "Response for ListRoutesTable associated with the Express Route Circuits Api"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsRoutesTableListResult {
+    #[doc = "Gets List of RoutesTable"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitRoutesTable>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -879,10 +1076,13 @@ impl ExpressRouteCircuitsRoutesTableListResult {
         Self::default()
     }
 }
+#[doc = "Response for ListStats from Express Route Circuits Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteCircuitsStatsListResult {
+    #[doc = "Gets List of Stats"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteCircuitStats>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -891,14 +1091,19 @@ impl ExpressRouteCircuitsStatsListResult {
         Self::default()
     }
 }
+#[doc = "ExpressRouteResourceProvider object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProvider {
+    #[doc = "Gets or sets the ID of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Gets or sets the name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Gets or sets the type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Properties of ExpressRouteServiceProvider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExpressRouteServiceProviderPropertiesFormat>,
 }
@@ -907,10 +1112,13 @@ impl ExpressRouteServiceProvider {
         Self::default()
     }
 }
+#[doc = "Contains Bandwidths offered in ExpressRouteServiceProviders"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProviderBandwidthsOffered {
+    #[doc = "Gets the OfferName"]
     #[serde(rename = "offerName", default, skip_serializing_if = "Option::is_none")]
     pub offer_name: Option<String>,
+    #[doc = "Gets the ValueInMbps."]
     #[serde(rename = "valueInMbps", default, skip_serializing_if = "Option::is_none")]
     pub value_in_mbps: Option<i32>,
 }
@@ -919,10 +1127,13 @@ impl ExpressRouteServiceProviderBandwidthsOffered {
         Self::default()
     }
 }
+#[doc = "Response for ListExpressRouteServiceProvider Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProviderListResult {
+    #[doc = "Gets List of ExpressRouteResourceProvider"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ExpressRouteServiceProvider>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -931,12 +1142,16 @@ impl ExpressRouteServiceProviderListResult {
         Self::default()
     }
 }
+#[doc = "Properties of ExpressRouteServiceProvider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteServiceProviderPropertiesFormat {
+    #[doc = "Gets or list of peering locations"]
     #[serde(rename = "peeringLocations", default, skip_serializing_if = "Vec::is_empty")]
     pub peering_locations: Vec<String>,
+    #[doc = "Gets or bandwidths offered"]
     #[serde(rename = "bandwidthsOffered", default, skip_serializing_if = "Vec::is_empty")]
     pub bandwidths_offered: Vec<ExpressRouteServiceProviderBandwidthsOffered>,
+    #[doc = "Gets or sets Provisioning state of the resource "]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -945,14 +1160,18 @@ impl ExpressRouteServiceProviderPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Frontend IP address of the load balancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontendIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Frontend IP Configuration of the load balancer"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FrontendIpConfigurationPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -961,24 +1180,32 @@ impl FrontendIpConfiguration {
         Self::default()
     }
 }
+#[doc = "Properties of Frontend IP Configuration of the load balancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontendIpConfigurationPropertiesFormat {
+    #[doc = "Gets or sets the IP address of the Load Balancer.This is only specified if a specific private IP address shall be allocated from the subnet specified in subnetRef"]
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
+    #[doc = "Gets or sets PrivateIP allocation method (Static/Dynamic)"]
     #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<frontend_ip_configuration_properties_format::PrivateIpAllocationMethod>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<SubResource>,
+    #[doc = "Read only.Inbound rules URIs that use this frontend IP"]
     #[serde(rename = "inboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_nat_rules: Vec<SubResource>,
+    #[doc = "Read only.Inbound pools URIs that use this frontend IP"]
     #[serde(rename = "inboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_nat_pools: Vec<SubResource>,
+    #[doc = "Read only.Outbound rules URIs that use this frontend IP"]
     #[serde(rename = "outboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
     pub outbound_nat_rules: Vec<SubResource>,
+    #[doc = "Gets Load Balancing rules URIs that use this frontend IP"]
     #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancing_rules: Vec<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -989,20 +1216,25 @@ impl FrontendIpConfigurationPropertiesFormat {
 }
 pub mod frontend_ip_configuration_properties_format {
     use super::*;
+    #[doc = "Gets or sets PrivateIP allocation method (Static/Dynamic)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateIpAllocationMethod {
         Static,
         Dynamic,
     }
 }
+#[doc = "Inbound NAT pool of the loadbalancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatPool {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Inbound NAT pool"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InboundNatPoolPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1011,17 +1243,23 @@ impl InboundNatPool {
         Self::default()
     }
 }
+#[doc = "Properties of Inbound NAT pool"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundNatPoolPropertiesFormat {
     #[serde(rename = "frontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub frontend_ip_configuration: Option<SubResource>,
+    #[doc = "Gets or sets the transport protocol for the external endpoint. Possible values are Udp or Tcp"]
     pub protocol: inbound_nat_pool_properties_format::Protocol,
+    #[doc = "Gets or sets the starting port range for the NAT pool. You can specify any port number you choose, but the port numbers specified for each role in the service must be unique. Possible values range between 1 and 65535, inclusive"]
     #[serde(rename = "frontendPortRangeStart")]
     pub frontend_port_range_start: i32,
+    #[doc = "Gets or sets the ending port range for the NAT pool. You can specify any port number you choose, but the port numbers specified for each role in the service must be unique. Possible values range between 1 and 65535, inclusive"]
     #[serde(rename = "frontendPortRangeEnd")]
     pub frontend_port_range_end: i32,
+    #[doc = "Gets or sets a port used for internal connections on the endpoint. The localPort attribute maps the eternal port of the endpoint to an internal port on a role. This is useful in scenarios where a role must communicate to an internal component on a port that is different from the one that is exposed externally. If not specified, the value of localPort is the same as the port attribute. Set the value of localPort to '*' to automatically assign an unallocated port that is discoverable using the runtime API"]
     #[serde(rename = "backendPort")]
     pub backend_port: i32,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1044,20 +1282,25 @@ impl InboundNatPoolPropertiesFormat {
 }
 pub mod inbound_nat_pool_properties_format {
     use super::*;
+    #[doc = "Gets or sets the transport protocol for the external endpoint. Possible values are Udp or Tcp"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         Udp,
         Tcp,
     }
 }
+#[doc = "Inbound NAT rule of the loadbalancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of Inbound NAT rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InboundNatRulePropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1066,21 +1309,28 @@ impl InboundNatRule {
         Self::default()
     }
 }
+#[doc = "Properties of Inbound NAT rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InboundNatRulePropertiesFormat {
     #[serde(rename = "frontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub frontend_ip_configuration: Option<SubResource>,
     #[serde(rename = "backendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub backend_ip_configuration: Option<SubResource>,
+    #[doc = "Gets or sets the transport protocol for the external endpoint. Possible values are Udp or Tcp"]
     pub protocol: inbound_nat_rule_properties_format::Protocol,
+    #[doc = "Gets or sets the port for the external endpoint. You can specify any port number you choose, but the port numbers specified for each role in the service must be unique. Possible values range between 1 and 65535, inclusive"]
     #[serde(rename = "frontendPort")]
     pub frontend_port: i32,
+    #[doc = "Gets or sets a port used for internal connections on the endpoint. The localPort attribute maps the eternal port of the endpoint to an internal port on a role. This is useful in scenarios where a role must communicate to an internal component on a port that is different from the one that is exposed externally. If not specified, the value of localPort is the same as the port attribute. Set the value of localPort to '*' to automatically assign an unallocated port that is discoverable using the runtime API"]
     #[serde(rename = "backendPort", default, skip_serializing_if = "Option::is_none")]
     pub backend_port: Option<i32>,
+    #[doc = "Gets or sets the timeout for the Tcp idle connection. The value can be set between 4 and 30 minutes. The default value is 4 minutes. This element is only used when the protocol is set to Tcp"]
     #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub idle_timeout_in_minutes: Option<i32>,
+    #[doc = "Configures a virtual machine's endpoint for the floating IP capability required to configure a SQL AlwaysOn availability Group. This setting is required when using the SQL Always ON availability Groups in SQL server. This setting can't be changed after you create the endpoint"]
     #[serde(rename = "enableFloatingIP")]
     pub enable_floating_ip: bool,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1100,18 +1350,22 @@ impl InboundNatRulePropertiesFormat {
 }
 pub mod inbound_nat_rule_properties_format {
     use super::*;
+    #[doc = "Gets or sets the transport protocol for the external endpoint. Possible values are Udp or Tcp"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         Udp,
         Tcp,
     }
 }
+#[doc = "LoadBalancer resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoadBalancer {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of Load Balancer"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LoadBalancerPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1124,10 +1378,13 @@ impl LoadBalancer {
         }
     }
 }
+#[doc = "Response for ListLoadBalancers Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerListResult {
+    #[doc = "Gets a list of LoadBalancers in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LoadBalancer>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1136,24 +1393,34 @@ impl LoadBalancerListResult {
         Self::default()
     }
 }
+#[doc = "Properties of Load Balancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerPropertiesFormat {
+    #[doc = "Gets or sets frontend IP addresses of the load balancer"]
     #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub frontend_ip_configurations: Vec<FrontendIpConfiguration>,
+    #[doc = "Gets or sets Pools of backend IP addresses"]
     #[serde(rename = "backendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
     pub backend_address_pools: Vec<BackendAddressPool>,
+    #[doc = "Gets or sets load balancing rules"]
     #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancing_rules: Vec<LoadBalancingRule>,
+    #[doc = "Gets or sets list of Load balancer probes"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub probes: Vec<Probe>,
+    #[doc = "Gets or sets list of inbound rules"]
     #[serde(rename = "inboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_nat_rules: Vec<InboundNatRule>,
+    #[doc = "Gets or sets inbound NAT pools"]
     #[serde(rename = "inboundNatPools", default, skip_serializing_if = "Vec::is_empty")]
     pub inbound_nat_pools: Vec<InboundNatPool>,
+    #[doc = "Gets or sets outbound NAT rules"]
     #[serde(rename = "outboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
     pub outbound_nat_rules: Vec<OutboundNatRule>,
+    #[doc = "Gets or sets resource guid property of the Load balancer resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1162,14 +1429,18 @@ impl LoadBalancerPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Rules of the load balancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancingRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of the load balancer"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LoadBalancingRulePropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1178,6 +1449,7 @@ impl LoadBalancingRule {
         Self::default()
     }
 }
+#[doc = "Properties of the load balancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LoadBalancingRulePropertiesFormat {
     #[serde(rename = "frontendIPConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1186,17 +1458,24 @@ pub struct LoadBalancingRulePropertiesFormat {
     pub backend_address_pool: SubResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub probe: Option<SubResource>,
+    #[doc = "Gets or sets the transport protocol for the external endpoint. Possible values are Udp or Tcp"]
     pub protocol: load_balancing_rule_properties_format::Protocol,
+    #[doc = "Gets or sets the load distribution policy for this rule"]
     #[serde(rename = "loadDistribution", default, skip_serializing_if = "Option::is_none")]
     pub load_distribution: Option<load_balancing_rule_properties_format::LoadDistribution>,
+    #[doc = "Gets or sets the port for the external endpoint. You can specify any port number you choose, but the port numbers specified for each role in the service must be unique. Possible values range between 1 and 65535, inclusive"]
     #[serde(rename = "frontendPort")]
     pub frontend_port: i32,
+    #[doc = "Gets or sets a port used for internal connections on the endpoint. The localPort attribute maps the eternal port of the endpoint to an internal port on a role. This is useful in scenarios where a role must communicate to an internal component on a port that is different from the one that is exposed externally. If not specified, the value of localPort is the same as the port attribute. Set the value of localPort to '*' to automatically assign an unallocated port that is discoverable using the runtime API"]
     #[serde(rename = "backendPort", default, skip_serializing_if = "Option::is_none")]
     pub backend_port: Option<i32>,
+    #[doc = "Gets or sets the timeout for the Tcp idle connection. The value can be set between 4 and 30 minutes. The default value is 4 minutes. This element is only used when the protocol is set to Tcp"]
     #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub idle_timeout_in_minutes: Option<i32>,
+    #[doc = "Configures a virtual machine's endpoint for the floating IP capability required to configure a SQL AlwaysOn availability Group. This setting is required when using the SQL Always ON availability Groups in SQL server. This setting can't be changed after you create the endpoint"]
     #[serde(rename = "enableFloatingIP")]
     pub enable_floating_ip: bool,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1223,11 +1502,13 @@ impl LoadBalancingRulePropertiesFormat {
 }
 pub mod load_balancing_rule_properties_format {
     use super::*;
+    #[doc = "Gets or sets the transport protocol for the external endpoint. Possible values are Udp or Tcp"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         Udp,
         Tcp,
     }
+    #[doc = "Gets or sets the load distribution policy for this rule"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LoadDistribution {
         Default,
@@ -1237,12 +1518,15 @@ pub mod load_balancing_rule_properties_format {
         SourceIpProtocol,
     }
 }
+#[doc = "A common class for general resource information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalNetworkGateway {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "LocalNetworkGateway properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LocalNetworkGatewayPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1255,10 +1539,13 @@ impl LocalNetworkGateway {
         }
     }
 }
+#[doc = "Response for ListLocalNetworkGateways Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalNetworkGatewayListResult {
+    #[doc = "Gets List of LocalNetworkGateways that exists in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<LocalNetworkGateway>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1267,14 +1554,19 @@ impl LocalNetworkGatewayListResult {
         Self::default()
     }
 }
+#[doc = "LocalNetworkGateway properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalNetworkGatewayPropertiesFormat {
+    #[doc = "AddressSpace contains an array of IP address ranges that can be used by subnets"]
     #[serde(rename = "localNetworkAddressSpace", default, skip_serializing_if = "Option::is_none")]
     pub local_network_address_space: Option<AddressSpace>,
+    #[doc = "IP address of local network gateway."]
     #[serde(rename = "gatewayIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub gateway_ip_address: Option<String>,
+    #[doc = "Gets or sets resource guid property of the LocalNetworkGateway resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the LocalNetworkGateway resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1283,12 +1575,15 @@ impl LocalNetworkGatewayPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "A NetworkInterface in a resource group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkInterface {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "NetworkInterface properties. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkInterfacePropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1301,14 +1596,19 @@ impl NetworkInterface {
         }
     }
 }
+#[doc = "Dns Settings of a network interface"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceDnsSettings {
+    #[doc = "Gets or sets list of DNS servers IP addresses"]
     #[serde(rename = "dnsServers", default, skip_serializing_if = "Vec::is_empty")]
     pub dns_servers: Vec<String>,
+    #[doc = "Gets or sets list of Applied DNS servers IP addresses"]
     #[serde(rename = "appliedDnsServers", default, skip_serializing_if = "Vec::is_empty")]
     pub applied_dns_servers: Vec<String>,
+    #[doc = "Gets or sets the Internal DNS name"]
     #[serde(rename = "internalDnsNameLabel", default, skip_serializing_if = "Option::is_none")]
     pub internal_dns_name_label: Option<String>,
+    #[doc = "Gets or sets full IDNS name in the form, DnsName.VnetId.ZoneId.TopLevelSuffix. This is set when the NIC is associated to a VM"]
     #[serde(rename = "internalFqdn", default, skip_serializing_if = "Option::is_none")]
     pub internal_fqdn: Option<String>,
 }
@@ -1317,14 +1617,18 @@ impl NetworkInterfaceDnsSettings {
         Self::default()
     }
 }
+#[doc = "IPConfiguration in a NetworkInterface"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of IPConfiguration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkInterfaceIpConfigurationPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1333,20 +1637,26 @@ impl NetworkInterfaceIpConfiguration {
         Self::default()
     }
 }
+#[doc = "Properties of IPConfiguration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceIpConfigurationPropertiesFormat {
+    #[doc = "Gets or sets the privateIPAddress of the Network Interface IP Configuration"]
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
+    #[doc = "Gets or sets PrivateIP allocation method (Static/Dynamic)"]
     #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<network_interface_ip_configuration_properties_format::PrivateIpAllocationMethod>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<SubResource>,
+    #[doc = "Gets or sets the reference of LoadBalancerBackendAddressPool resource"]
     #[serde(rename = "loadBalancerBackendAddressPools", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancer_backend_address_pools: Vec<SubResource>,
+    #[doc = "Gets or sets list of references of LoadBalancerInboundNatRules"]
     #[serde(rename = "loadBalancerInboundNatRules", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancer_inbound_nat_rules: Vec<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1357,16 +1667,20 @@ impl NetworkInterfaceIpConfigurationPropertiesFormat {
 }
 pub mod network_interface_ip_configuration_properties_format {
     use super::*;
+    #[doc = "Gets or sets PrivateIP allocation method (Static/Dynamic)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateIpAllocationMethod {
         Static,
         Dynamic,
     }
 }
+#[doc = "Response for ListNetworkInterface Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfaceListResult {
+    #[doc = "Gets or sets list of NetworkInterfaces in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkInterface>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1375,24 +1689,32 @@ impl NetworkInterfaceListResult {
         Self::default()
     }
 }
+#[doc = "NetworkInterface properties. "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterfacePropertiesFormat {
     #[serde(rename = "virtualMachine", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine: Option<SubResource>,
     #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
     pub network_security_group: Option<SubResource>,
+    #[doc = "Gets or sets list of IPConfigurations of the NetworkInterface"]
     #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_configurations: Vec<NetworkInterfaceIpConfiguration>,
+    #[doc = "Dns Settings of a network interface"]
     #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
     pub dns_settings: Option<NetworkInterfaceDnsSettings>,
+    #[doc = "Gets the MAC Address of the network interface"]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
+    #[doc = "Gets whether this is a primary NIC on a virtual machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub primary: Option<bool>,
+    #[doc = "Gets or sets whether IPForwarding is enabled on the NIC"]
     #[serde(rename = "enableIPForwarding", default, skip_serializing_if = "Option::is_none")]
     pub enable_ip_forwarding: Option<bool>,
+    #[doc = "Gets or sets resource guid property of the network interface resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1401,12 +1723,15 @@ impl NetworkInterfacePropertiesFormat {
         Self::default()
     }
 }
+#[doc = "NetworkSecurityGroup resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkSecurityGroup {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Network Security Group resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkSecurityGroupPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1419,10 +1744,13 @@ impl NetworkSecurityGroup {
         }
     }
 }
+#[doc = "Response for ListNetworkSecurityGroups Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroupListResult {
+    #[doc = "Gets List of NetworkSecurityGroups in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NetworkSecurityGroup>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1431,18 +1759,25 @@ impl NetworkSecurityGroupListResult {
         Self::default()
     }
 }
+#[doc = "Network Security Group resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkSecurityGroupPropertiesFormat {
+    #[doc = "Gets or sets Security rules of network security group"]
     #[serde(rename = "securityRules", default, skip_serializing_if = "Vec::is_empty")]
     pub security_rules: Vec<SecurityRule>,
+    #[doc = "Gets or sets Default security rules of network security group"]
     #[serde(rename = "defaultSecurityRules", default, skip_serializing_if = "Vec::is_empty")]
     pub default_security_rules: Vec<SecurityRule>,
+    #[doc = "Gets collection of references to Network Interfaces"]
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<SubResource>,
+    #[doc = "Gets collection of references to subnets"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subnets: Vec<SubResource>,
+    #[doc = "Gets or sets resource guid property of the network security group resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1451,14 +1786,18 @@ impl NetworkSecurityGroupPropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Outbound NAT pool of the loadbalancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutboundNatRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Outbound NAT pool of the loadbalancer"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OutboundNatRulePropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1467,14 +1806,18 @@ impl OutboundNatRule {
         Self::default()
     }
 }
+#[doc = "Outbound NAT pool of the loadbalancer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutboundNatRulePropertiesFormat {
+    #[doc = "Gets or sets the number of outbound ports to be used for SNAT"]
     #[serde(rename = "allocatedOutboundPorts")]
     pub allocated_outbound_ports: i32,
+    #[doc = "Gets or sets Frontend IP addresses of the load balancer"]
     #[serde(rename = "frontendIPConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub frontend_ip_configurations: Vec<SubResource>,
     #[serde(rename = "backendAddressPool")]
     pub backend_address_pool: SubResource,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1488,14 +1831,17 @@ impl OutboundNatRulePropertiesFormat {
         }
     }
 }
+#[doc = "Load balancer Probe"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Probe {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProbePropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1506,16 +1852,23 @@ impl Probe {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProbePropertiesFormat {
+    #[doc = "Gets Load balancer rules that use this probe"]
     #[serde(rename = "loadBalancingRules", default, skip_serializing_if = "Vec::is_empty")]
     pub load_balancing_rules: Vec<SubResource>,
+    #[doc = "Gets or sets the protocol of the end point. Possible values are http pr Tcp. If Tcp is specified, a received ACK is required for the probe to be successful. If http is specified,a 200 OK response from the specifies URI is required for the probe to be successful"]
     pub protocol: probe_properties_format::Protocol,
+    #[doc = "Gets or sets Port for communicating the probe. Possible values range from 1 to 65535, inclusive."]
     pub port: i32,
+    #[doc = "Gets or sets the interval, in seconds, for how frequently to probe the endpoint for health status. Typically, the interval is slightly less than half the allocated timeout period (in seconds) which allows two full probes before taking the instance out of rotation. The default value is 15, the minimum value is 5"]
     #[serde(rename = "intervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub interval_in_seconds: Option<i32>,
+    #[doc = "Gets or sets the number of probes where if no response, will result in stopping further traffic from being delivered to the endpoint. This values allows endpoints to be taken out of rotation faster or slower than the typical times used in Azure. "]
     #[serde(rename = "numberOfProbes", default, skip_serializing_if = "Option::is_none")]
     pub number_of_probes: Option<i32>,
+    #[doc = "Gets or sets the URI used for requesting health status from the VM. Path is required if a protocol is set to http. Otherwise, it is not allowed. There is no default value"]
     #[serde(rename = "requestPath", default, skip_serializing_if = "Option::is_none")]
     pub request_path: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1534,18 +1887,22 @@ impl ProbePropertiesFormat {
 }
 pub mod probe_properties_format {
     use super::*;
+    #[doc = "Gets or sets the protocol of the end point. Possible values are http pr Tcp. If Tcp is specified, a received ACK is required for the probe to be successful. If http is specified,a 200 OK response from the specifies URI is required for the probe to be successful"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         Http,
         Tcp,
     }
 }
+#[doc = "PublicIPAddress resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublicIpAddress {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "PublicIpAddress properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PublicIpAddressPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1558,12 +1915,16 @@ impl PublicIpAddress {
         }
     }
 }
+#[doc = "Contains FQDN of the DNS record associated with the public IP address"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressDnsSettings {
+    #[doc = "Gets or sets the Domain name label.The concatenation of the domain name label and the regionalized DNS zone make up the fully qualified domain name associated with the public IP address. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system."]
     #[serde(rename = "domainNameLabel", default, skip_serializing_if = "Option::is_none")]
     pub domain_name_label: Option<String>,
+    #[doc = "Gets the FQDN, Fully qualified domain name of the A DNS record associated with the public IP. This is the concatenation of the domainNameLabel and the regionalized DNS zone."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fqdn: Option<String>,
+    #[doc = "Gets or Sets the Reverse FQDN. A user-visible, fully qualified domain name that resolves to this public IP address. If the reverseFqdn is specified, then a PTR DNS record is created pointing from the IP address in the in-addr.arpa domain to the reverse FQDN. "]
     #[serde(rename = "reverseFqdn", default, skip_serializing_if = "Option::is_none")]
     pub reverse_fqdn: Option<String>,
 }
@@ -1572,10 +1933,13 @@ impl PublicIpAddressDnsSettings {
         Self::default()
     }
 }
+#[doc = "Response for ListPublicIpAddresses Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressListResult {
+    #[doc = "Gets List of publicIP addresses that exists in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PublicIpAddress>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1584,20 +1948,27 @@ impl PublicIpAddressListResult {
         Self::default()
     }
 }
+#[doc = "PublicIpAddress properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PublicIpAddressPropertiesFormat {
+    #[doc = "Gets or sets PublicIP allocation method (Static/Dynamic)"]
     #[serde(rename = "publicIPAllocationMethod")]
     pub public_ip_allocation_method: public_ip_address_properties_format::PublicIpAllocationMethod,
     #[serde(rename = "ipConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub ip_configuration: Option<SubResource>,
+    #[doc = "Contains FQDN of the DNS record associated with the public IP address"]
     #[serde(rename = "dnsSettings", default, skip_serializing_if = "Option::is_none")]
     pub dns_settings: Option<PublicIpAddressDnsSettings>,
+    #[doc = "Gets the assigned public IP address"]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
+    #[doc = "Gets or sets the idle timeout of the public IP address"]
     #[serde(rename = "idleTimeoutInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub idle_timeout_in_minutes: Option<i32>,
+    #[doc = "Gets or sets resource guid property of the PublicIP resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1616,6 +1987,7 @@ impl PublicIpAddressPropertiesFormat {
 }
 pub mod public_ip_address_properties_format {
     use super::*;
+    #[doc = "Gets or sets PublicIP allocation method (Static/Dynamic)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PublicIpAllocationMethod {
         Static,
@@ -1624,13 +1996,18 @@ pub mod public_ip_address_properties_format {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -1645,14 +2022,18 @@ impl Resource {
         }
     }
 }
+#[doc = "Route resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Route {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Route resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoutePropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1661,10 +2042,13 @@ impl Route {
         Self::default()
     }
 }
+#[doc = "Response for ListRoute Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteListResult {
+    #[doc = "Gets List of Routes in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Route>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1673,14 +2057,19 @@ impl RouteListResult {
         Self::default()
     }
 }
+#[doc = "Route resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoutePropertiesFormat {
+    #[doc = "Gets or sets the destination CIDR to which the route applies."]
     #[serde(rename = "addressPrefix", default, skip_serializing_if = "Option::is_none")]
     pub address_prefix: Option<String>,
+    #[doc = "Gets or sets the type of Azure hop the packet should be sent to."]
     #[serde(rename = "nextHopType")]
     pub next_hop_type: route_properties_format::NextHopType,
+    #[doc = "Gets or sets the IP address packets should be forwarded to. Next hop values are only allowed in routes where the next hop type is VirtualAppliance."]
     #[serde(rename = "nextHopIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub next_hop_ip_address: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1696,6 +2085,7 @@ impl RoutePropertiesFormat {
 }
 pub mod route_properties_format {
     use super::*;
+    #[doc = "Gets or sets the type of Azure hop the packet should be sent to."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum NextHopType {
         VirtualNetworkGateway,
@@ -1705,12 +2095,15 @@ pub mod route_properties_format {
         None,
     }
 }
+#[doc = "RouteTable resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RouteTable {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Route Table resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RouteTablePropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1723,10 +2116,13 @@ impl RouteTable {
         }
     }
 }
+#[doc = "Response for ListRouteTable Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteTableListResult {
+    #[doc = "Gets List of RouteTables in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RouteTable>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1735,12 +2131,16 @@ impl RouteTableListResult {
         Self::default()
     }
 }
+#[doc = "Route Table resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RouteTablePropertiesFormat {
+    #[doc = "Gets or sets Routes in a Route Table"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub routes: Vec<Route>,
+    #[doc = "Gets collection of references to subnets"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subnets: Vec<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1749,14 +2149,17 @@ impl RouteTablePropertiesFormat {
         Self::default()
     }
 }
+#[doc = "Network security rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityRule {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityRulePropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1765,10 +2168,13 @@ impl SecurityRule {
         Self::default()
     }
 }
+#[doc = "Response for ListSecurityRule Api service callRetrieves all security rules that belongs to a network security group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityRuleListResult {
+    #[doc = "Gets security rules in a network security group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityRule>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1779,21 +2185,31 @@ impl SecurityRuleListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityRulePropertiesFormat {
+    #[doc = "Gets or sets a description for this rule. Restricted to 140 chars."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Gets or sets Network protocol this rule applies to. Can be Tcp, Udp or All(*)."]
     pub protocol: security_rule_properties_format::Protocol,
+    #[doc = "Gets or sets Source Port or Range. Integer or range between 0 and 65535. Asterisk '*' can also be used to match all ports."]
     #[serde(rename = "sourcePortRange", default, skip_serializing_if = "Option::is_none")]
     pub source_port_range: Option<String>,
+    #[doc = "Gets or sets Destination Port or Range. Integer or range between 0 and 65535. Asterisk '*' can also be used to match all ports."]
     #[serde(rename = "destinationPortRange", default, skip_serializing_if = "Option::is_none")]
     pub destination_port_range: Option<String>,
+    #[doc = "Gets or sets source address prefix. CIDR or source IP range. Asterisk '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used. If this is an ingress rule, specifies where network traffic originates from. "]
     #[serde(rename = "sourceAddressPrefix")]
     pub source_address_prefix: String,
+    #[doc = "Gets or sets destination address prefix. CIDR or source IP range. Asterisk '*' can also be used to match all source IPs. Default tags such as 'VirtualNetwork', 'AzureLoadBalancer' and 'Internet' can also be used. "]
     #[serde(rename = "destinationAddressPrefix")]
     pub destination_address_prefix: String,
+    #[doc = "Gets or sets network traffic is allowed or denied. Possible values are 'Allow' and 'Deny'"]
     pub access: security_rule_properties_format::Access,
+    #[doc = "Gets or sets the priority of the rule. The value can be between 100 and 4096. The priority number must be unique for each rule in the collection. The lower the priority number, the higher the priority of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i32>,
+    #[doc = "Gets or sets the direction of the rule.InBound or Outbound. The direction specifies if rule will be evaluated on incoming or outgoing traffic."]
     pub direction: security_rule_properties_format::Direction,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1821,6 +2237,7 @@ impl SecurityRulePropertiesFormat {
 }
 pub mod security_rule_properties_format {
     use super::*;
+    #[doc = "Gets or sets Network protocol this rule applies to. Can be Tcp, Udp or All(*)."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Protocol {
         Tcp,
@@ -1828,11 +2245,13 @@ pub mod security_rule_properties_format {
         #[serde(rename = "*")]
         U2a,
     }
+    #[doc = "Gets or sets network traffic is allowed or denied. Possible values are 'Allow' and 'Deny'"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Access {
         Allow,
         Deny,
     }
+    #[doc = "Gets or sets the direction of the rule.InBound or Outbound. The direction specifies if rule will be evaluated on incoming or outgoing traffic."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Direction {
         Inbound,
@@ -1841,6 +2260,7 @@ pub mod security_rule_properties_format {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubResource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -1849,14 +2269,17 @@ impl SubResource {
         Self::default()
     }
 }
+#[doc = "Subnet in a VirtualNetwork resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Subnet {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubnetPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1865,10 +2288,13 @@ impl Subnet {
         Self::default()
     }
 }
+#[doc = "Response for ListSubnets Api service callRetrieves all subnet that belongs to a virtual network"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubnetListResult {
+    #[doc = "Gets the subnets in a virtual network"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Subnet>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1879,14 +2305,17 @@ impl SubnetListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubnetPropertiesFormat {
+    #[doc = "Gets or sets Address prefix for the subnet."]
     #[serde(rename = "addressPrefix")]
     pub address_prefix: String,
     #[serde(rename = "networkSecurityGroup", default, skip_serializing_if = "Option::is_none")]
     pub network_security_group: Option<SubResource>,
     #[serde(rename = "routeTable", default, skip_serializing_if = "Option::is_none")]
     pub route_table: Option<SubResource>,
+    #[doc = "Gets array of references to the network interface IP configurations using subnet"]
     #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_configurations: Vec<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -1901,12 +2330,17 @@ impl SubnetPropertiesFormat {
         }
     }
 }
+#[doc = "Describes Network Resource Usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Usage {
+    #[doc = "Gets or sets an enum describing the unit of measurement."]
     pub unit: usage::Unit,
+    #[doc = "Gets or sets the current value of the usage."]
     #[serde(rename = "currentValue")]
     pub current_value: i32,
+    #[doc = "Gets or sets the limit of usage."]
     pub limit: i64,
+    #[doc = "The Usage Names."]
     pub name: UsageName,
 }
 impl Usage {
@@ -1921,15 +2355,19 @@ impl Usage {
 }
 pub mod usage {
     use super::*;
+    #[doc = "Gets or sets an enum describing the unit of measurement."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Unit {
         Count,
     }
 }
+#[doc = "The Usage Names."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageName {
+    #[doc = "Gets or sets a string describing the resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Gets or sets a localized string describing the resource name."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -1938,10 +2376,13 @@ impl UsageName {
         Self::default()
     }
 }
+#[doc = "The List Usages operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsagesListResult {
+    #[doc = "Gets or sets the list Network Resource Usages."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Usage>,
+    #[doc = "URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -1950,12 +2391,14 @@ impl UsagesListResult {
         Self::default()
     }
 }
+#[doc = "Virtual Network resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetwork {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1968,12 +2411,15 @@ impl VirtualNetwork {
         }
     }
 }
+#[doc = "A common class for general resource information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkGateway {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "VirtualNetworkGateway properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkGatewayPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -1986,12 +2432,15 @@ impl VirtualNetworkGateway {
         }
     }
 }
+#[doc = "A common class for general resource information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkGatewayConnection {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "VirtualNetworkGatewayConnection properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkGatewayConnectionPropertiesFormat>,
+    #[doc = "Gets a unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -2004,10 +2453,13 @@ impl VirtualNetworkGatewayConnection {
         }
     }
 }
+#[doc = "Response for ListVirtualNetworkGatewayConnections Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayConnectionListResult {
+    #[doc = "Gets List of VirtualNetworkGatewayConnections that exists in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkGatewayConnection>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2016,30 +2468,42 @@ impl VirtualNetworkGatewayConnectionListResult {
         Self::default()
     }
 }
+#[doc = "VirtualNetworkGatewayConnection properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayConnectionPropertiesFormat {
+    #[doc = "A common class for general resource information"]
     #[serde(rename = "virtualNetworkGateway1", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_gateway1: Option<VirtualNetworkGateway>,
+    #[doc = "A common class for general resource information"]
     #[serde(rename = "virtualNetworkGateway2", default, skip_serializing_if = "Option::is_none")]
     pub virtual_network_gateway2: Option<VirtualNetworkGateway>,
+    #[doc = "A common class for general resource information"]
     #[serde(rename = "localNetworkGateway2", default, skip_serializing_if = "Option::is_none")]
     pub local_network_gateway2: Option<LocalNetworkGateway>,
+    #[doc = "Gateway connection type IPsec/Dedicated/VpnClient/Vnet2Vnet"]
     #[serde(rename = "connectionType", default, skip_serializing_if = "Option::is_none")]
     pub connection_type: Option<virtual_network_gateway_connection_properties_format::ConnectionType>,
+    #[doc = "The Routing weight."]
     #[serde(rename = "routingWeight", default, skip_serializing_if = "Option::is_none")]
     pub routing_weight: Option<i32>,
+    #[doc = "The IPsec share key."]
     #[serde(rename = "sharedKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_key: Option<String>,
+    #[doc = "Virtual network Gateway connection status"]
     #[serde(rename = "connectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub connection_status: Option<virtual_network_gateway_connection_properties_format::ConnectionStatus>,
+    #[doc = "The Egress Bytes Transferred in this connection"]
     #[serde(rename = "egressBytesTransferred", default, skip_serializing_if = "Option::is_none")]
     pub egress_bytes_transferred: Option<i64>,
+    #[doc = "The Ingress Bytes Transferred in this connection"]
     #[serde(rename = "ingressBytesTransferred", default, skip_serializing_if = "Option::is_none")]
     pub ingress_bytes_transferred: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub peer: Option<SubResource>,
+    #[doc = "Gets or sets resource guid property of the VirtualNetworkGatewayConnection resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the VirtualNetworkGatewayConnection resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -2050,6 +2514,7 @@ impl VirtualNetworkGatewayConnectionPropertiesFormat {
 }
 pub mod virtual_network_gateway_connection_properties_format {
     use super::*;
+    #[doc = "Gateway connection type IPsec/Dedicated/VpnClient/Vnet2Vnet"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectionType {
         IPsec,
@@ -2058,6 +2523,7 @@ pub mod virtual_network_gateway_connection_properties_format {
         #[serde(rename = "VPNClient")]
         VpnClient,
     }
+    #[doc = "Virtual network Gateway connection status"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ConnectionStatus {
         Unknown,
@@ -2066,14 +2532,18 @@ pub mod virtual_network_gateway_connection_properties_format {
         NotConnected,
     }
 }
+#[doc = "IpConfiguration for Virtual network gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayIpConfiguration {
     #[serde(flatten)]
     pub sub_resource: SubResource,
+    #[doc = "Properties of VirtualNetworkGatewayIPConfiguration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkGatewayIpConfigurationPropertiesFormat>,
+    #[doc = "Gets name of the resource that is unique within a resource group. This name can be used to access the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "A unique read-only string that changes whenever the resource is updated"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
@@ -2082,16 +2552,20 @@ impl VirtualNetworkGatewayIpConfiguration {
         Self::default()
     }
 }
+#[doc = "Properties of VirtualNetworkGatewayIPConfiguration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayIpConfigurationPropertiesFormat {
+    #[doc = "Gets or sets the privateIPAddress of the Network Interface IP Configuration"]
     #[serde(rename = "privateIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
+    #[doc = "Gets or sets PrivateIP allocation method (Static/Dynamic)"]
     #[serde(rename = "privateIPAllocationMethod", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_allocation_method: Option<virtual_network_gateway_ip_configuration_properties_format::PrivateIpAllocationMethod>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
     #[serde(rename = "publicIPAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<SubResource>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -2102,16 +2576,20 @@ impl VirtualNetworkGatewayIpConfigurationPropertiesFormat {
 }
 pub mod virtual_network_gateway_ip_configuration_properties_format {
     use super::*;
+    #[doc = "Gets or sets PrivateIP allocation method (Static/Dynamic)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrivateIpAllocationMethod {
         Static,
         Dynamic,
     }
 }
+#[doc = "Response for ListVirtualNetworkGateways Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayListResult {
+    #[doc = "Gets List of VirtualNetworkGateways that exists in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetworkGateway>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2120,20 +2598,27 @@ impl VirtualNetworkGatewayListResult {
         Self::default()
     }
 }
+#[doc = "VirtualNetworkGateway properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkGatewayPropertiesFormat {
+    #[doc = "IpConfigurations for Virtual network gateway."]
     #[serde(rename = "ipConfigurations", default, skip_serializing_if = "Vec::is_empty")]
     pub ip_configurations: Vec<VirtualNetworkGatewayIpConfiguration>,
+    #[doc = "The type of this virtual network gateway."]
     #[serde(rename = "gatewayType", default, skip_serializing_if = "Option::is_none")]
     pub gateway_type: Option<virtual_network_gateway_properties_format::GatewayType>,
+    #[doc = "The type of this virtual network gateway."]
     #[serde(rename = "vpnType", default, skip_serializing_if = "Option::is_none")]
     pub vpn_type: Option<virtual_network_gateway_properties_format::VpnType>,
+    #[doc = "EnableBgp Flag"]
     #[serde(rename = "enableBgp", default, skip_serializing_if = "Option::is_none")]
     pub enable_bgp: Option<bool>,
     #[serde(rename = "gatewayDefaultSite", default, skip_serializing_if = "Option::is_none")]
     pub gateway_default_site: Option<SubResource>,
+    #[doc = "Gets or sets resource guid property of the VirtualNetworkGateway resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the VirtualNetworkGateway resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }
@@ -2144,21 +2629,26 @@ impl VirtualNetworkGatewayPropertiesFormat {
 }
 pub mod virtual_network_gateway_properties_format {
     use super::*;
+    #[doc = "The type of this virtual network gateway."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum GatewayType {
         Vpn,
         ExpressRoute,
     }
+    #[doc = "The type of this virtual network gateway."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum VpnType {
         PolicyBased,
         RouteBased,
     }
 }
+#[doc = "Response for ListVirtualNetworks Api service call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkListResult {
+    #[doc = "Gets list of VirtualNetworks in a resource group"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<VirtualNetwork>,
+    #[doc = "Gets the URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -2169,14 +2659,19 @@ impl VirtualNetworkListResult {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkPropertiesFormat {
+    #[doc = "AddressSpace contains an array of IP address ranges that can be used by subnets"]
     #[serde(rename = "addressSpace", default, skip_serializing_if = "Option::is_none")]
     pub address_space: Option<AddressSpace>,
+    #[doc = "DHCPOptions contains an array of DNS servers available to VMs deployed in the virtual networkStandard DHCP option for a subnet overrides VNET DHCP options."]
     #[serde(rename = "dhcpOptions", default, skip_serializing_if = "Option::is_none")]
     pub dhcp_options: Option<DhcpOptions>,
+    #[doc = "Gets or sets List of subnets in a VirtualNetwork"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub subnets: Vec<Subnet>,
+    #[doc = "Gets or sets resource guid property of the VirtualNetwork resource"]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
     pub resource_guid: Option<String>,
+    #[doc = "Gets or sets Provisioning state of the PublicIP resource Updating/Deleting/Failed"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
 }

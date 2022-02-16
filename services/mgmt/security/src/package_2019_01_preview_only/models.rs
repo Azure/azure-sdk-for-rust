@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Describes the suppression rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSuppressionRule {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "describes AlertsSuppressionRule properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertsSuppressionRuleProperties>,
 }
@@ -14,16 +16,23 @@ impl AlertsSuppressionRule {
         Self::default()
     }
 }
+#[doc = "describes AlertsSuppressionRule properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsSuppressionRuleProperties {
+    #[doc = "Type of the alert to automatically suppress. For all alert types, use '*'"]
     #[serde(rename = "alertType")]
     pub alert_type: String,
+    #[doc = "The last time this rule was modified"]
     #[serde(rename = "lastModifiedUtc", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_utc: Option<String>,
+    #[doc = "Expiration date of the rule, if value is not provided or provided as null this field will default to the maximum allowed expiration date."]
     #[serde(rename = "expirationDateUtc", default, skip_serializing_if = "Option::is_none")]
     pub expiration_date_utc: Option<String>,
+    #[doc = "The reason for dismissing the alert"]
     pub reason: String,
+    #[doc = "Possible states of the rule"]
     pub state: alerts_suppression_rule_properties::State,
+    #[doc = "Any comment regarding the rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
     #[serde(rename = "suppressionAlertsScope", default, skip_serializing_if = "Option::is_none")]
@@ -44,6 +53,7 @@ impl AlertsSuppressionRuleProperties {
 }
 pub mod alerts_suppression_rule_properties {
     use super::*;
+    #[doc = "Possible states of the rule"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Enabled,
@@ -51,9 +61,11 @@ pub mod alerts_suppression_rule_properties {
         Expired,
     }
 }
+#[doc = "Suppression rules list for subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsSuppressionRulesList {
     pub value: Vec<AlertsSuppressionRule>,
+    #[doc = "URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -62,8 +74,10 @@ impl AlertsSuppressionRulesList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Links relevant to the assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessmentLinks {
+    #[doc = "Link to assessment in Azure Portal"]
     #[serde(rename = "azurePortalUri", default, skip_serializing_if = "Option::is_none")]
     pub azure_portal_uri: Option<String>,
 }
@@ -72,11 +86,15 @@ impl AssessmentLinks {
         Self::default()
     }
 }
+#[doc = "The result of the assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentStatus {
+    #[doc = "Programmatic code for the status of the assessment"]
     pub code: assessment_status::Code,
+    #[doc = "Programmatic code for the cause of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cause: Option<String>,
+    #[doc = "Human readable description of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -91,6 +109,7 @@ impl AssessmentStatus {
 }
 pub mod assessment_status {
     use super::*;
+    #[doc = "Programmatic code for the status of the assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Code {
         Healthy,
@@ -98,8 +117,10 @@ pub mod assessment_status {
         NotApplicable,
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -108,16 +129,22 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -126,10 +153,13 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -138,10 +168,12 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Regulatory compliance assessment details and state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceAssessment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Regulatory compliance assessment data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceAssessmentProperties>,
 }
@@ -150,9 +182,11 @@ impl RegulatoryComplianceAssessment {
         Self::default()
     }
 }
+#[doc = "List of regulatory compliance assessment response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceAssessmentList {
     pub value: Vec<RegulatoryComplianceAssessment>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -161,22 +195,31 @@ impl RegulatoryComplianceAssessmentList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Regulatory compliance assessment data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceAssessmentProperties {
+    #[doc = "The description of the regulatory compliance assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The expected type of assessment contained in the AssessmentDetailsLink"]
     #[serde(rename = "assessmentType", default, skip_serializing_if = "Option::is_none")]
     pub assessment_type: Option<String>,
+    #[doc = "Link to more detailed assessment results data. The response type will be according to the assessmentType field"]
     #[serde(rename = "assessmentDetailsLink", default, skip_serializing_if = "Option::is_none")]
     pub assessment_details_link: Option<String>,
+    #[doc = "Aggregative state based on the assessment's scanned resources states"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<regulatory_compliance_assessment_properties::State>,
+    #[doc = "The given assessment's related resources count with passed state."]
     #[serde(rename = "passedResources", default, skip_serializing_if = "Option::is_none")]
     pub passed_resources: Option<i64>,
+    #[doc = "The given assessment's related resources count with failed state."]
     #[serde(rename = "failedResources", default, skip_serializing_if = "Option::is_none")]
     pub failed_resources: Option<i64>,
+    #[doc = "The given assessment's related resources count with skipped state."]
     #[serde(rename = "skippedResources", default, skip_serializing_if = "Option::is_none")]
     pub skipped_resources: Option<i64>,
+    #[doc = "The given assessment's related resources count with unsupported state."]
     #[serde(rename = "unsupportedResources", default, skip_serializing_if = "Option::is_none")]
     pub unsupported_resources: Option<i64>,
 }
@@ -187,6 +230,7 @@ impl RegulatoryComplianceAssessmentProperties {
 }
 pub mod regulatory_compliance_assessment_properties {
     use super::*;
+    #[doc = "Aggregative state based on the assessment's scanned resources states"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Passed,
@@ -195,10 +239,12 @@ pub mod regulatory_compliance_assessment_properties {
         Unsupported,
     }
 }
+#[doc = "Regulatory compliance control details and state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceControl {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Regulatory compliance control data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceControlProperties>,
 }
@@ -207,9 +253,12 @@ impl RegulatoryComplianceControl {
         Self::default()
     }
 }
+#[doc = "List of regulatory compliance controls response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceControlList {
+    #[doc = "List of regulatory compliance controls"]
     pub value: Vec<RegulatoryComplianceControl>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -218,16 +267,22 @@ impl RegulatoryComplianceControlList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Regulatory compliance control data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceControlProperties {
+    #[doc = "The description of the regulatory compliance control"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Aggregative state based on the control's supported assessments states"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<regulatory_compliance_control_properties::State>,
+    #[doc = "The number of supported regulatory compliance assessments of the given control with a passed state"]
     #[serde(rename = "passedAssessments", default, skip_serializing_if = "Option::is_none")]
     pub passed_assessments: Option<i64>,
+    #[doc = "The number of supported regulatory compliance assessments of the given control with a failed state"]
     #[serde(rename = "failedAssessments", default, skip_serializing_if = "Option::is_none")]
     pub failed_assessments: Option<i64>,
+    #[doc = "The number of supported regulatory compliance assessments of the given control with a skipped state"]
     #[serde(rename = "skippedAssessments", default, skip_serializing_if = "Option::is_none")]
     pub skipped_assessments: Option<i64>,
 }
@@ -238,6 +293,7 @@ impl RegulatoryComplianceControlProperties {
 }
 pub mod regulatory_compliance_control_properties {
     use super::*;
+    #[doc = "Aggregative state based on the control's supported assessments states"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Passed,
@@ -246,10 +302,12 @@ pub mod regulatory_compliance_control_properties {
         Unsupported,
     }
 }
+#[doc = "Regulatory compliance standard details and state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceStandard {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Regulatory compliance standard data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegulatoryComplianceStandardProperties>,
 }
@@ -258,9 +316,11 @@ impl RegulatoryComplianceStandard {
         Self::default()
     }
 }
+#[doc = "List of regulatory compliance standards response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegulatoryComplianceStandardList {
     pub value: Vec<RegulatoryComplianceStandard>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -269,16 +329,22 @@ impl RegulatoryComplianceStandardList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Regulatory compliance standard data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceStandardProperties {
+    #[doc = "Aggregative state based on the standard's supported controls states"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<regulatory_compliance_standard_properties::State>,
+    #[doc = "The number of supported regulatory compliance controls of the given standard with a passed state"]
     #[serde(rename = "passedControls", default, skip_serializing_if = "Option::is_none")]
     pub passed_controls: Option<i64>,
+    #[doc = "The number of supported regulatory compliance controls of the given standard with a failed state"]
     #[serde(rename = "failedControls", default, skip_serializing_if = "Option::is_none")]
     pub failed_controls: Option<i64>,
+    #[doc = "The number of supported regulatory compliance controls of the given standard with a skipped state"]
     #[serde(rename = "skippedControls", default, skip_serializing_if = "Option::is_none")]
     pub skipped_controls: Option<i64>,
+    #[doc = "The number of regulatory compliance controls of the given standard which are unsupported by automated assessments"]
     #[serde(rename = "unsupportedControls", default, skip_serializing_if = "Option::is_none")]
     pub unsupported_controls: Option<i64>,
 }
@@ -289,6 +355,7 @@ impl RegulatoryComplianceStandardProperties {
 }
 pub mod regulatory_compliance_standard_properties {
     use super::*;
+    #[doc = "Aggregative state based on the standard's supported controls states"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum State {
         Passed,
@@ -297,12 +364,16 @@ pub mod regulatory_compliance_standard_properties {
         Unsupported,
     }
 }
+#[doc = "Describes an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -311,8 +382,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Details of the resource that was assessed"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceDetails {
+    #[doc = "The platform where the assessed resource resides"]
     pub source: resource_details::Source,
 }
 impl ResourceDetails {
@@ -322,6 +395,7 @@ impl ResourceDetails {
 }
 pub mod resource_details {
     use super::*;
+    #[doc = "The platform where the assessed resource resides"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Source {
         Azure,
@@ -329,8 +403,10 @@ pub mod resource_details {
         OnPremiseSql,
     }
 }
+#[doc = "A more specific scope used to identify the alerts to suppress."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeElement {
+    #[doc = "The alert entity type to suppress by."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub field: Option<String>,
 }
@@ -339,10 +415,12 @@ impl ScopeElement {
         Self::default()
     }
 }
+#[doc = "Security assessment on a resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessment {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of an assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAssessmentProperties>,
 }
@@ -351,10 +429,13 @@ impl SecurityAssessment {
         Self::default()
     }
 }
+#[doc = "Page of a security assessments list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentList {
+    #[doc = "Collection of security assessments in this page"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityAssessment>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -363,10 +444,12 @@ impl SecurityAssessmentList {
         Self::default()
     }
 }
+#[doc = "Security assessment metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentMetadata {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Describes properties of an assessment metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAssessmentMetadataProperties>,
 }
@@ -375,10 +458,12 @@ impl SecurityAssessmentMetadata {
         Self::default()
     }
 }
+#[doc = "List of security assessment metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityAssessmentMetadataList {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SecurityAssessmentMetadata>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -387,27 +472,37 @@ impl SecurityAssessmentMetadataList {
         Self::default()
     }
 }
+#[doc = "Describes properties of an assessment metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentMetadataProperties {
+    #[doc = "User friendly display name of the assessment"]
     #[serde(rename = "displayName")]
     pub display_name: String,
+    #[doc = "Azure resource ID of the policy definition that turns this assessment calculation on"]
     #[serde(rename = "policyDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_id: Option<String>,
+    #[doc = "Human readable description of the assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Human readable description of what you should do to mitigate this security issue"]
     #[serde(rename = "remediationDescription", default, skip_serializing_if = "Option::is_none")]
     pub remediation_description: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub categories: Vec<String>,
+    #[doc = "The severity level of the assessment"]
     pub severity: security_assessment_metadata_properties::Severity,
+    #[doc = "The user impact of the assessment"]
     #[serde(rename = "userImpact", default, skip_serializing_if = "Option::is_none")]
     pub user_impact: Option<security_assessment_metadata_properties::UserImpact>,
+    #[doc = "The implementation effort required to remediate this assessment"]
     #[serde(rename = "implementationEffort", default, skip_serializing_if = "Option::is_none")]
     pub implementation_effort: Option<security_assessment_metadata_properties::ImplementationEffort>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub threats: Vec<String>,
+    #[doc = "True if this assessment is in preview release status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preview: Option<bool>,
+    #[doc = "BuiltIn if the assessment based on built-in Azure Policy definition, Custom if the assessment based on custom Azure Policy definition"]
     #[serde(rename = "assessmentType")]
     pub assessment_type: security_assessment_metadata_properties::AssessmentType,
 }
@@ -434,24 +529,28 @@ impl SecurityAssessmentMetadataProperties {
 }
 pub mod security_assessment_metadata_properties {
     use super::*;
+    #[doc = "The severity level of the assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Severity {
         Low,
         Medium,
         High,
     }
+    #[doc = "The user impact of the assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum UserImpact {
         Low,
         Moderate,
         High,
     }
+    #[doc = "The implementation effort required to remediate this assessment"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ImplementationEffort {
         Low,
         Moderate,
         High,
     }
+    #[doc = "BuiltIn if the assessment based on built-in Azure Policy definition, Custom if the assessment based on custom Azure Policy definition"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AssessmentType {
         BuiltIn,
@@ -459,15 +558,21 @@ pub mod security_assessment_metadata_properties {
         CustomerManaged,
     }
 }
+#[doc = "Describes properties of an assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAssessmentProperties {
+    #[doc = "Details of the resource that was assessed"]
     #[serde(rename = "resourceDetails")]
     pub resource_details: ResourceDetails,
+    #[doc = "User friendly display name of the assessment"]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "The result of the assessment"]
     pub status: AssessmentStatus,
+    #[doc = "Additional data regarding the assessment"]
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
     pub additional_data: Option<serde_json::Value>,
+    #[doc = "Links relevant to the assessment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub links: Option<AssessmentLinks>,
 }
@@ -484,6 +589,7 @@ impl SecurityAssessmentProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuppressionAlertsScope {
+    #[doc = "All the conditions inside need to be true in order to suppress the alert"]
     #[serde(rename = "allOf")]
     pub all_of: Vec<ScopeElement>,
 }

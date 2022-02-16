@@ -2,17 +2,24 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The shared dashboard resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dashboard {
+    #[doc = "The shared dashboard properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DashboardProperties>,
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -28,10 +35,14 @@ impl Dashboard {
         }
     }
 }
+#[doc = "A dashboard lens."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DashboardLens {
+    #[doc = "The lens order."]
     pub order: i64,
+    #[doc = "The dashboard parts."]
     pub parts: serde_json::Value,
+    #[doc = "The dashboard len's metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
@@ -44,10 +55,13 @@ impl DashboardLens {
         }
     }
 }
+#[doc = "List of dashboards."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DashboardListResult {
+    #[doc = "The array of custom resource provider manifests."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Dashboard>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -56,6 +70,7 @@ impl DashboardListResult {
         Self::default()
     }
 }
+#[doc = "A dashboard part metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DashboardPartMetadata {}
 impl DashboardPartMetadata {
@@ -63,9 +78,12 @@ impl DashboardPartMetadata {
         Self::default()
     }
 }
+#[doc = "A dashboard part."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DashboardParts {
+    #[doc = "The dashboard's part position."]
     pub position: dashboard_parts::Position,
+    #[doc = "A dashboard part metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<DashboardPartMetadata>,
 }
@@ -76,14 +94,20 @@ impl DashboardParts {
 }
 pub mod dashboard_parts {
     use super::*;
+    #[doc = "The dashboard's part position."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Position {
+        #[doc = "The dashboard's part x coordinate."]
         pub x: i64,
+        #[doc = "The dashboard's part y coordinate."]
         pub y: i64,
+        #[doc = "The dashboard's part row span."]
         #[serde(rename = "rowSpan")]
         pub row_span: i64,
+        #[doc = "The dashboard's part column span."]
         #[serde(rename = "colSpan")]
         pub col_span: i64,
+        #[doc = "The dashboard part's metadata."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub metadata: Option<serde_json::Value>,
     }
@@ -99,10 +123,13 @@ pub mod dashboard_parts {
         }
     }
 }
+#[doc = "The shared dashboard properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DashboardProperties {
+    #[doc = "The dashboard lenses."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lenses: Option<serde_json::Value>,
+    #[doc = "The dashboard metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
 }
@@ -111,12 +138,16 @@ impl DashboardProperties {
         Self::default()
     }
 }
+#[doc = "Error definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
+    #[doc = "Service specific error code which serves as the substatus for the HTTP error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Description of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Internal error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
@@ -125,8 +156,10 @@ impl ErrorDefinition {
         Self::default()
     }
 }
+#[doc = "Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
@@ -135,10 +168,13 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The shared dashboard resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PatchableDashboard {
+    #[doc = "The shared dashboard properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DashboardProperties>,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -147,12 +183,16 @@ impl PatchableDashboard {
         Self::default()
     }
 }
+#[doc = "Supported operations of this resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperation {
+    #[doc = "Operation name, in format of {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Indicates whether the operation applies to data-plane."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<String>,
+    #[doc = "Display metadata associated with the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<resource_provider_operation::Display>,
 }
@@ -163,14 +203,19 @@ impl ResourceProviderOperation {
 }
 pub mod resource_provider_operation {
     use super::*;
+    #[doc = "Display metadata associated with the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Resource provider: Microsoft Custom Providers."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Type of operation: get, read, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of this operation."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -180,10 +225,13 @@ pub mod resource_provider_operation {
         }
     }
 }
+#[doc = "Results of the request to list operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProviderOperationList {
+    #[doc = "List of operations supported by this resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<ResourceProviderOperation>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }

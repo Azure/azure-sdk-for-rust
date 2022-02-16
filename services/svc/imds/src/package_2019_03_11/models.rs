@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "This is the response from the Attested_GetDocument operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttestedData {
+    #[doc = "This is the encoded string containing the VM ID, plan information, public key, timestamp, and nonce value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
+    #[doc = "This is the encoding scheme of the signature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encoding: Option<String>,
 }
@@ -14,52 +17,76 @@ impl AttestedData {
         Self::default()
     }
 }
+#[doc = "Compute Metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Compute {
+    #[doc = "This is the name of the environment in which the VM is running."]
     #[serde(rename = "azEnvironment", default, skip_serializing_if = "Option::is_none")]
     pub az_environment: Option<String>,
+    #[doc = "This is the base64 encoded custom data for the running VM."]
     #[serde(rename = "customData", default, skip_serializing_if = "Option::is_none")]
     pub custom_data: Option<String>,
+    #[doc = "This is the Azure Region in which the VM is running."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "This is the name of the VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "This is the offer information for the VM image. This value is only present for images deployed from the Azure Image Gallery."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub offer: Option<String>,
+    #[doc = "This value indicates the type of OS the VM is running, either Linux or Windows."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
+    #[doc = "This is the placement group of your Virtual Machine Scale Set."]
     #[serde(rename = "placementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub placement_group_id: Option<String>,
+    #[doc = "This contains the data about the plan."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<PlanProperties>,
+    #[doc = "This is information about the SSH certificate"]
     #[serde(rename = "publicKeys", default, skip_serializing_if = "Vec::is_empty")]
     pub public_keys: Vec<PublicKeysProperties>,
+    #[doc = "This is the fault domain in which the VM."]
     #[serde(rename = "platformFaultDomain", default, skip_serializing_if = "Option::is_none")]
     pub platform_fault_domain: Option<String>,
+    #[doc = "This is the update domain in which the VM."]
     #[serde(rename = "platformUpdateDomain", default, skip_serializing_if = "Option::is_none")]
     pub platform_update_domain: Option<String>,
+    #[doc = "This is the provider of the VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "This is the publisher of the VM image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "This is the resource group for the VM."]
     #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
     pub resource_group_name: Option<String>,
+    #[doc = "This is the fully qualified ID for the VM."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "This is the specific SKU for the VM image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<String>,
+    #[doc = "This is the Azure subscription for the VM."]
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
+    #[doc = "This is the list of tags for your VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<String>,
+    #[doc = "This is the version of the VM image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "This is the unique identifier for the VM."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
+    #[doc = "This is the resource name of the VMSS."]
     #[serde(rename = "vmScaleSetName", default, skip_serializing_if = "Option::is_none")]
     pub vm_scale_set_name: Option<String>,
+    #[doc = "This is the size of the VM."]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
     pub vm_size: Option<String>,
+    #[doc = "This is the availability zone of the VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub zone: Option<String>,
 }
@@ -68,8 +95,10 @@ impl Compute {
         Self::default()
     }
 }
+#[doc = "This is the response from an operation in the case an error occurs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
@@ -78,10 +107,13 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "This is the response from an Identity operation in the case an error occurs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<identity_error_response::Error>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_description: Option<String>,
 }
@@ -92,6 +124,7 @@ impl IdentityErrorResponse {
 }
 pub mod identity_error_response {
     use super::*;
+    #[doc = "Error code"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Error {
         #[serde(rename = "invalid_request")]
@@ -120,8 +153,10 @@ pub mod identity_error_response {
         TooManyRequests,
     }
 }
+#[doc = "This is the response from the Identity_GetInfo operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityInfoResponse {
+    #[doc = "This is the AAD tenantId of the identity of the caller."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -130,26 +165,37 @@ impl IdentityInfoResponse {
         Self::default()
     }
 }
+#[doc = "This is the response from the Identity_GetToken operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityTokenResponse {
+    #[doc = "This is the requested access token. The app can use this token to authenticate to the sink resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access_token: Option<String>,
+    #[doc = "This is how long the access token is valid (in seconds)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expires_in: Option<String>,
+    #[doc = "This is the time when the access token expires. The date is represented as the number of seconds from 1970-01-01T0:0:0Z UTC until the expiration time. This value is used to determine the lifetime of cached tokens."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expires_on: Option<String>,
+    #[doc = "This indicates the extended lifetime of the token (in seconds)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ext_expires_in: Option<String>,
+    #[doc = "This is the time when the access token becomes effective. The date is represented as the number of seconds from 1970-01-01T0:0:0Z UTC until the expiration time."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub not_before: Option<String>,
+    #[doc = "This is the app ID URI of the sink resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "This indicates the token type value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token_type: Option<String>,
+    #[doc = "This is the client_id specified in the request, if any."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
+    #[doc = "This is the object_id specified in the request, if any."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
+    #[doc = "This is the msi_res_id specified in the request, if any."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub msi_res_id: Option<String>,
 }
@@ -158,10 +204,13 @@ impl IdentityTokenResponse {
         Self::default()
     }
 }
+#[doc = "This is the response from the Instance_GetMetadata operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Instance {
+    #[doc = "Compute Metadata"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compute: Option<Compute>,
+    #[doc = "Network Metadata"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<Network>,
 }
@@ -170,10 +219,13 @@ impl Instance {
         Self::default()
     }
 }
+#[doc = "This contains the IPv4 properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Ipv4Properties {
+    #[doc = "This is the private IP address assigned to the interface."]
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
+    #[doc = "This is the public IP address assigned to the interface."]
     #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub public_ip_address: Option<String>,
 }
@@ -182,8 +234,10 @@ impl Ipv4Properties {
         Self::default()
     }
 }
+#[doc = "This contains the IPv6 properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Ipv6Properties {
+    #[doc = "This is the private IPv6 address assigned to the interface."]
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
 }
@@ -192,8 +246,10 @@ impl Ipv6Properties {
         Self::default()
     }
 }
+#[doc = "Network Metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Network {
+    #[doc = "This contains data about the network interface."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub interface: Vec<NetworkInterface>,
 }
@@ -202,12 +258,16 @@ impl Network {
         Self::default()
     }
 }
+#[doc = "This contains data about the network interface."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkInterface {
+    #[doc = "This contains the IPv4 address."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ipv4: Option<network_interface::Ipv4>,
+    #[doc = "This contains the IPv6 address."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ipv6: Option<network_interface::Ipv6>,
+    #[doc = "This is the MAC address of the interface."]
     #[serde(rename = "macAddress", default, skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
 }
@@ -218,10 +278,13 @@ impl NetworkInterface {
 }
 pub mod network_interface {
     use super::*;
+    #[doc = "This contains the IPv4 address."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Ipv4 {
+        #[doc = "This is the IP address"]
         #[serde(rename = "ipAddress", default, skip_serializing_if = "Vec::is_empty")]
         pub ip_address: Vec<Ipv4Properties>,
+        #[doc = "This is the subnet"]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub subnet: Vec<SubnetProperties>,
     }
@@ -230,8 +293,10 @@ pub mod network_interface {
             Self::default()
         }
     }
+    #[doc = "This contains the IPv6 address."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Ipv6 {
+        #[doc = "This is the IP address"]
         #[serde(rename = "ipAddress", default, skip_serializing_if = "Vec::is_empty")]
         pub ip_address: Vec<Ipv6Properties>,
     }
@@ -241,12 +306,16 @@ pub mod network_interface {
         }
     }
 }
+#[doc = "This contains the data about the plan."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlanProperties {
+    #[doc = "This is the Plan ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "This is the publisher ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
+    #[doc = "This is the product of the image from the Marketplace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product: Option<String>,
 }
@@ -255,10 +324,13 @@ impl PlanProperties {
         Self::default()
     }
 }
+#[doc = "This contains the data about the public key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicKeysProperties {
+    #[doc = "This specifies the full path on the VM where the SSH public key is stored."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    #[doc = "This is the SSH public key certificate used to authenticate with the VM."]
     #[serde(rename = "keyData", default, skip_serializing_if = "Option::is_none")]
     pub key_data: Option<String>,
 }
@@ -267,10 +339,13 @@ impl PublicKeysProperties {
         Self::default()
     }
 }
+#[doc = "This contains the properties of the subnet."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubnetProperties {
+    #[doc = "This is the address range of the subnet."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
+    #[doc = "This is the prefix of the subnet."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
 }

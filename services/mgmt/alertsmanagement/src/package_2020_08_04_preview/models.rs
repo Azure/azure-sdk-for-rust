@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An alert action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertAction {
+    #[doc = "the id of the action group to use."]
     #[serde(rename = "actionGroupId", default, skip_serializing_if = "Option::is_none")]
     pub action_group_id: Option<String>,
+    #[doc = "The properties of a webhook object."]
     #[serde(rename = "webHookProperties", default, skip_serializing_if = "Option::is_none")]
     pub web_hook_properties: Option<serde_json::Value>,
 }
@@ -14,8 +17,10 @@ impl HealthAlertAction {
         Self::default()
     }
 }
+#[doc = "Specifies the resource health alert criteria for a single resource that has multiple metric criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertCriteria {
+    #[doc = "The list of metric criteria for this 'all of' operation. "]
     #[serde(rename = "allOf", default, skip_serializing_if = "Vec::is_empty")]
     pub all_of: Vec<HealthAlertCriterion>,
 }
@@ -24,8 +29,10 @@ impl HealthAlertCriteria {
         Self::default()
     }
 }
+#[doc = "The rule criterion that defines the conditions of the alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthAlertCriterion {
+    #[doc = "specifies the type of the alert criterion."]
     pub namespace: health_alert_criterion::Namespace,
 }
 impl HealthAlertCriterion {
@@ -35,20 +42,28 @@ impl HealthAlertCriterion {
 }
 pub mod health_alert_criterion {
     use super::*;
+    #[doc = "specifies the type of the alert criterion."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Namespace {
         GuestVmHealth,
     }
 }
+#[doc = "An alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthAlertProperties {
+    #[doc = "the description of the health alert that will be included in the alert email."]
     pub description: String,
+    #[doc = "the flag that indicates whether the health alert is enabled."]
     pub enabled: bool,
+    #[doc = "the list of resource id's that this health alert is scoped to."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<String>,
+    #[doc = "Specifies the resource health alert criteria for a single resource that has multiple metric criteria."]
     pub criteria: HealthAlertCriteria,
+    #[doc = "the array of actions that are performed when the alert rule becomes active, and when an alert condition is resolved."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<HealthAlertAction>,
+    #[doc = "Last time the rule was updated in ISO8601 format."]
     #[serde(rename = "lastUpdatedTime", default, skip_serializing_if = "Option::is_none")]
     pub last_updated_time: Option<String>,
 }
@@ -64,10 +79,12 @@ impl HealthAlertProperties {
         }
     }
 }
+#[doc = "The health alert resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthAlertResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "An alert rule."]
     pub properties: HealthAlertProperties,
 }
 impl HealthAlertResource {
@@ -75,8 +92,10 @@ impl HealthAlertResource {
         Self { resource, properties }
     }
 }
+#[doc = "Represents a collection of alert rule resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertResourceCollection {
+    #[doc = "the values for the alert rule resources."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HealthAlertResource>,
 }
@@ -85,10 +104,13 @@ impl HealthAlertResourceCollection {
         Self::default()
     }
 }
+#[doc = "The health alert resource for patch operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertResourcePatch {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "An alert rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HealthAlertProperties>,
 }
@@ -97,8 +119,10 @@ impl HealthAlertResourcePatch {
         Self::default()
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertsErrorResponse {
+    #[doc = "Describes the format of Error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<HealthAlertsErrorResponseBody>,
 }
@@ -107,10 +131,13 @@ impl HealthAlertsErrorResponse {
         Self::default()
     }
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthAlertsErrorResponseBody {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -119,10 +146,13 @@ impl HealthAlertsErrorResponseBody {
         Self::default()
     }
 }
+#[doc = "Specifies the health state to alert on and the corresponding severity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthState {
+    #[doc = "Health state name"]
     #[serde(rename = "healthStateName")]
     pub health_state_name: health_state::HealthStateName,
+    #[doc = "Severity of alert fired"]
     pub severity: i64,
 }
 impl HealthState {
@@ -135,21 +165,28 @@ impl HealthState {
 }
 pub mod health_state {
     use super::*;
+    #[doc = "Health state name"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HealthStateName {
         Warning,
         Critical,
     }
 }
+#[doc = "An azure resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "Azure resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Azure resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Azure resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -164,14 +201,18 @@ impl Resource {
         }
     }
 }
+#[doc = "Specifies the health alert criteria to alert on."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmGuestHealthAlertCriterion {
     #[serde(flatten)]
     pub health_alert_criterion: HealthAlertCriterion,
+    #[doc = "Names of health monitor on which to define alert"]
     #[serde(rename = "monitorNames", default, skip_serializing_if = "Vec::is_empty")]
     pub monitor_names: Vec<String>,
+    #[doc = "Names of health monitor type on which to define alert"]
     #[serde(rename = "monitorTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub monitor_types: Vec<String>,
+    #[doc = "Health states to alert on"]
     #[serde(rename = "healthStates")]
     pub health_states: Vec<HealthState>,
 }
@@ -185,10 +226,13 @@ impl VmGuestHealthAlertCriterion {
         }
     }
 }
+#[doc = "Operation provided by provider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Properties of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -199,14 +243,19 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "Properties of the operation"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Provider name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation name"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Description of the operation"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
     }
@@ -216,10 +265,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Lists the operations available in the AlertsManagement RP."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationsList {
+    #[doc = "URL to fetch the next set of operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
+    #[doc = "Array of operations"]
     pub value: Vec<Operation>,
 }
 impl OperationsList {

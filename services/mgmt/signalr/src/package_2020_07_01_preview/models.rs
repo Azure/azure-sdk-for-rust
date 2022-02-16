@@ -2,19 +2,25 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Default action when no other rule matches"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AclAction {
     Allow,
     Deny,
 }
+#[doc = "Specifications of the Dimension of metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
+    #[doc = "The public facing name of the dimension."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Localized friendly display name of the dimension."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Name of the dimension as it appears in MDM."]
     #[serde(rename = "internalName", default, skip_serializing_if = "Option::is_none")]
     pub internal_name: Option<String>,
+    #[doc = "A Boolean flag indicating whether this dimension should be included for the shoebox export scenario."]
     #[serde(rename = "toBeExportedForShoebox", default, skip_serializing_if = "Option::is_none")]
     pub to_be_exported_for_shoebox: Option<bool>,
 }
@@ -23,8 +29,10 @@ impl Dimension {
         Self::default()
     }
 }
+#[doc = "Contains information about an API error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Describes a particular API error with an error code and a message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponseBody>,
 }
@@ -33,12 +41,17 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Describes a particular API error with an error code and a message."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ErrorResponseBody {
+    #[doc = "An error code that describes the error condition more precisely than an HTTP status code. \r\nCan be used to programmatically handle specific error cases."]
     pub code: String,
+    #[doc = "A message that describes the error in detail and provides debugging information."]
     pub message: String,
+    #[doc = "The target of the particular error (for example, the name of the property in error)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Contains nested errors that are related to this error."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponseBody>,
 }
@@ -52,21 +65,26 @@ impl ErrorResponseBody {
         }
     }
 }
+#[doc = "FeatureFlags is the supported features of Azure SignalR service.\r\n- ServiceMode: Flag for backend server for SignalR service. Values allowed: \"Default\": have your own backend server; \"Serverless\": your application doesn't have a backend server; \"Classic\": for backward compatibility. Support both Default and Serverless mode but not recommended; \"PredefinedOnly\": for future use.\r\n- EnableConnectivityLogs: \"true\"/\"false\", to enable/disable the connectivity log category respectively."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum FeatureFlags {
     ServiceMode,
     EnableConnectivityLogs,
     EnableMessagingLogs,
 }
+#[doc = "The keyType to regenerate. Must be either 'primary' or 'secondary'(case-insensitive)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum KeyType {
     Primary,
     Secondary,
 }
+#[doc = "Specifications of the Logs for Azure Monitoring."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSpecification {
+    #[doc = "Name of the log."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Localized friendly display name of the log."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
 }
@@ -75,14 +93,19 @@ impl LogSpecification {
         Self::default()
     }
 }
+#[doc = "A class represent managed identities used for request and response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedIdentity {
+    #[doc = "Represent the identity type: systemAssigned, userAssigned, None"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<ManagedIdentityType>,
+    #[doc = "Get or set the user assigned identities"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<serde_json::Value>,
+    #[doc = "Get the principal id for the system assigned identity.\r\nOnly be used in response."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "Get the tenant id for the system assigned identity.\r\nOnly be used in response"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
 }
@@ -91,8 +114,10 @@ impl ManagedIdentity {
         Self::default()
     }
 }
+#[doc = "Managed identity settings for upstream."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedIdentitySettings {
+    #[doc = "The Resource indicating the App ID URI of the target resource.\r\nIt also appears in the aud (audience) claim of the issued token."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
@@ -101,28 +126,38 @@ impl ManagedIdentitySettings {
         Self::default()
     }
 }
+#[doc = "Represent the identity type: systemAssigned, userAssigned, None"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ManagedIdentityType {
     None,
     SystemAssigned,
     UserAssigned,
 }
+#[doc = "Specifications of the Metrics for Azure Monitoring."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricSpecification {
+    #[doc = "Name of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Localized friendly display name of the metric."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[doc = "Localized friendly description of the metric."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "The unit that makes sense for the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
+    #[doc = "Only provide one value for this field. Valid values: Average, Minimum, Maximum, Total, Count."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "Optional. If set to true, then zero will be returned for time duration where no metric is emitted/published. \r\nEx. a metric that returns the number of times a particular error code was emitted. The error code may not appear \r\noften, instead of the RP publishing 0, Shoebox can auto fill in 0s for time periods where nothing was emitted."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<String>,
+    #[doc = "The name of the metric category that the metric belongs to. A metric can only belong to a single category."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "The dimensions of the metrics."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<Dimension>,
 }
@@ -131,12 +166,16 @@ impl MetricSpecification {
         Self::default()
     }
 }
+#[doc = "Result of the request to check name availability. It contains a flag and possible reason of failure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NameAvailability {
+    #[doc = "Indicates whether the name is available or not."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "The reason of the availability. Required if name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "The message of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -145,10 +184,13 @@ impl NameAvailability {
         Self::default()
     }
 }
+#[doc = "Data POST-ed to the nameAvailability action"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NameAvailabilityParameters {
+    #[doc = "The resource type. Can be \"Microsoft.SignalRService/SignalR\" or \"Microsoft.SignalRService/webPubSub\""]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "The SignalR service name to validate. e.g.\"my-signalR-name-here\""]
     pub name: String,
 }
 impl NameAvailabilityParameters {
@@ -156,10 +198,13 @@ impl NameAvailabilityParameters {
         Self { type_, name }
     }
 }
+#[doc = "Network ACL"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkAcl {
+    #[doc = "Allowed request types. The value can be one or more of: ClientConnection, ServerConnection, RESTAPI."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub allow: Vec<SignalRRequestType>,
+    #[doc = "Denied request types. The value can be one or more of: ClientConnection, ServerConnection, RESTAPI."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub deny: Vec<SignalRRequestType>,
 }
@@ -168,16 +213,22 @@ impl NetworkAcl {
         Self::default()
     }
 }
+#[doc = "REST API operation supported by resource provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Name of the operation with format: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "If the operation is a data action. (for data plane rbac)"]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
+    #[doc = "The object that describes a operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Optional. The intended executor of the operation; governs the display of the operation in the RBAC UX and the audit logs UX."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
+    #[doc = "Extra Operation properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationProperties>,
 }
@@ -186,14 +237,19 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "The object that describes a operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplay {
+    #[doc = "Friendly name of the resource provider"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "Resource type on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The localized friendly name for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The localized friendly description for the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -202,10 +258,13 @@ impl OperationDisplay {
         Self::default()
     }
 }
+#[doc = "Result of the request to list REST API operations. It contains a list of operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
+    #[doc = "List of operations supported by the resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "The URL the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -214,8 +273,10 @@ impl OperationList {
         Self::default()
     }
 }
+#[doc = "Extra Operation properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationProperties {
+    #[doc = "An object that describes a specification."]
     #[serde(rename = "serviceSpecification", default, skip_serializing_if = "Option::is_none")]
     pub service_specification: Option<ServiceSpecification>,
 }
@@ -224,8 +285,10 @@ impl OperationProperties {
         Self::default()
     }
 }
+#[doc = "Private endpoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
+    #[doc = "Full qualified Id of the private endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
@@ -234,10 +297,12 @@ impl PrivateEndpoint {
         Self::default()
     }
 }
+#[doc = "ACL for a private endpoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointAcl {
     #[serde(flatten)]
     pub network_acl: NetworkAcl,
+    #[doc = "Name of the private endpoint connection"]
     pub name: String,
 }
 impl PrivateEndpointAcl {
@@ -248,10 +313,12 @@ impl PrivateEndpointAcl {
         }
     }
 }
+#[doc = "A private endpoint connection to SignalR resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Private endpoint connection properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -260,12 +327,16 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
+#[doc = "Private endpoint connection properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Private endpoint"]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "Connection state of the private endpoint connection"]
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
 }
@@ -274,10 +345,12 @@ impl PrivateEndpointConnectionProperties {
         Self::default()
     }
 }
+#[doc = "Private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Private link resource properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -286,10 +359,13 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
+#[doc = "Contains a list of AzSignalR.Models.Response.PrivateLink.PrivateLinkResource and a possible link to query more results"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceList {
+    #[doc = "List of PrivateLinkResource"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<PrivateLinkResource>,
+    #[doc = "The URL the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -298,12 +374,16 @@ impl PrivateLinkResourceList {
         Self::default()
     }
 }
+#[doc = "Private link resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
+    #[doc = "Group Id of the private link resource"]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
+    #[doc = "Required members of the private link resource"]
     #[serde(rename = "requiredMembers", default, skip_serializing_if = "Vec::is_empty")]
     pub required_members: Vec<String>,
+    #[doc = "Required private DNS zone names"]
     #[serde(rename = "requiredZoneNames", default, skip_serializing_if = "Vec::is_empty")]
     pub required_zone_names: Vec<String>,
 }
@@ -312,12 +392,16 @@ impl PrivateLinkResourceProperties {
         Self::default()
     }
 }
+#[doc = "Connection state of the private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
+    #[doc = "Indicates whether the connection has been Approved/Rejected/Removed by the owner of the service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<PrivateLinkServiceConnectionStatus>,
+    #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
@@ -326,6 +410,7 @@ impl PrivateLinkServiceConnectionState {
         Self::default()
     }
 }
+#[doc = "Indicates whether the connection has been Approved/Rejected/Removed by the owner of the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum PrivateLinkServiceConnectionStatus {
     Pending,
@@ -333,6 +418,7 @@ pub enum PrivateLinkServiceConnectionStatus {
     Rejected,
     Disconnected,
 }
+#[doc = "Provisioning state of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
     Unknown,
@@ -345,6 +431,7 @@ pub enum ProvisioningState {
     Deleting,
     Moving,
 }
+#[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -355,8 +442,10 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Parameters describes the request to regenerate access keys"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeyParameters {
+    #[doc = "The keyType to regenerate. Must be either 'primary' or 'secondary'(case-insensitive)."]
     #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
     pub key_type: Option<KeyType>,
 }
@@ -365,12 +454,16 @@ impl RegenerateKeyParameters {
         Self::default()
     }
 }
+#[doc = "The core properties of ARM resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource Id for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource - e.g. \"Microsoft.SignalRService/SignalR\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -379,15 +472,21 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The billing information of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSku {
+    #[doc = "The name of the SKU. Required.\r\n\r\nAllowed values: Standard_S1, Free_F1"]
     pub name: String,
+    #[doc = "Optional tier of this particular SKU. 'Standard' or 'Free'. \r\n\r\n`Basic` is deprecated, use `Standard` instead."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<SignalRSkuTier>,
+    #[doc = "Not used. Retained for future use."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
+    #[doc = "Not used. Retained for future use."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub family: Option<String>,
+    #[doc = "Optional, integer. The unit count of SignalR resource. 1 by default.\r\n\r\nIf present, following values are allowed:\r\n    Free: 1\r\n    Standard: 1,2,5,10,20,50,100"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
@@ -402,8 +501,10 @@ impl ResourceSku {
         }
     }
 }
+#[doc = "The settings for the Upstream when the service is in server-less mode."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerlessUpstreamSettings {
+    #[doc = "Gets or sets the list of Upstream URL templates. Order matters, and the first matching template takes effects."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub templates: Vec<UpstreamTemplate>,
 }
@@ -412,15 +513,19 @@ impl ServerlessUpstreamSettings {
         Self::default()
     }
 }
+#[doc = "The kind of the service - e.g. \"SignalR\" for \"Microsoft.SignalRService/SignalR\""]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ServiceKind {
     SignalR,
     RawWebSockets,
 }
+#[doc = "An object that describes a specification."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceSpecification {
+    #[doc = "Specifications of the Metrics for Azure Monitoring."]
     #[serde(rename = "metricSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_specifications: Vec<MetricSpecification>,
+    #[doc = "Specifications of the Logs for Azure Monitoring."]
     #[serde(rename = "logSpecifications", default, skip_serializing_if = "Vec::is_empty")]
     pub log_specifications: Vec<LogSpecification>,
 }
@@ -429,8 +534,10 @@ impl ServiceSpecification {
         Self::default()
     }
 }
+#[doc = "Cross-Origin Resource Sharing (CORS) settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRCorsSettings {
+    #[doc = "Gets or sets the list of origins that should be allowed to make cross-origin calls (for example: http://example.com:12345). Use \"*\" to allow all. If omitted, allow all by default."]
     #[serde(rename = "allowedOrigins", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_origins: Vec<String>,
 }
@@ -439,14 +546,19 @@ impl SignalRCorsSettings {
         Self::default()
     }
 }
+#[doc = "Settings used to provision or configure the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRCreateOrUpdateProperties {
+    #[doc = "List of SignalR featureFlags. e.g. ServiceMode.\r\n\r\nFeatureFlags that are not included in the parameters for the update operation will not be modified.\r\nAnd the response will only include featureFlags that are explicitly set. \r\nWhen a featureFlag is not explicitly set, SignalR service will use its globally default value. \r\nBut keep in mind, the default value doesn't mean \"false\". It varies in terms of different FeatureFlags."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub features: Vec<SignalRFeature>,
+    #[doc = "Cross-Origin Resource Sharing (CORS) settings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cors: Option<SignalRCorsSettings>,
+    #[doc = "The settings for the Upstream when the service is in server-less mode."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub upstream: Option<ServerlessUpstreamSettings>,
+    #[doc = "Network ACLs for the resource"]
     #[serde(rename = "networkACLs", default, skip_serializing_if = "Option::is_none")]
     pub network_ac_ls: Option<SignalRNetworkAcLs>,
 }
@@ -455,10 +567,14 @@ impl SignalRCreateOrUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Feature of a SignalR resource, which controls the SignalR runtime behavior."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignalRFeature {
+    #[doc = "FeatureFlags is the supported features of Azure SignalR service.\r\n- ServiceMode: Flag for backend server for SignalR service. Values allowed: \"Default\": have your own backend server; \"Serverless\": your application doesn't have a backend server; \"Classic\": for backward compatibility. Support both Default and Serverless mode but not recommended; \"PredefinedOnly\": for future use.\r\n- EnableConnectivityLogs: \"true\"/\"false\", to enable/disable the connectivity log category respectively."]
     pub flag: FeatureFlags,
+    #[doc = "Value of the feature flag. See Azure SignalR service document https://docs.microsoft.com/azure/azure-signalr/ for allowed values."]
     pub value: String,
+    #[doc = "Optional properties related to this feature."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -471,14 +587,19 @@ impl SignalRFeature {
         }
     }
 }
+#[doc = "A class represents the access keys of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRKeys {
+    #[doc = "The primary access key."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "The secondary access key."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
+    #[doc = "Connection string constructed via the primaryKey"]
     #[serde(rename = "primaryConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub primary_connection_string: Option<String>,
+    #[doc = "Connection string constructed via the secondaryKey"]
     #[serde(rename = "secondaryConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub secondary_connection_string: Option<String>,
 }
@@ -487,12 +608,16 @@ impl SignalRKeys {
         Self::default()
     }
 }
+#[doc = "Network ACLs for the resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRNetworkAcLs {
+    #[doc = "Default action when no other rule matches"]
     #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
     pub default_action: Option<AclAction>,
+    #[doc = "Network ACL"]
     #[serde(rename = "publicNetwork", default, skip_serializing_if = "Option::is_none")]
     pub public_network: Option<NetworkAcl>,
+    #[doc = "ACLs for requests from private endpoints"]
     #[serde(rename = "privateEndpoints", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoints: Vec<PrivateEndpointAcl>,
 }
@@ -501,24 +626,33 @@ impl SignalRNetworkAcLs {
         Self::default()
     }
 }
+#[doc = "A class that describes the properties of the resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRProperties {
     #[serde(flatten)]
     pub signal_r_create_or_update_properties: SignalRCreateOrUpdateProperties,
+    #[doc = "Provisioning state of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "The publicly accessible IP of the resource."]
     #[serde(rename = "externalIP", default, skip_serializing_if = "Option::is_none")]
     pub external_ip: Option<String>,
+    #[doc = "FQDN of the service instance."]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
+    #[doc = "The publicly accessible port of the resource which is designed for browser/client side usage."]
     #[serde(rename = "publicPort", default, skip_serializing_if = "Option::is_none")]
     pub public_port: Option<i32>,
+    #[doc = "The publicly accessible port of the resource which is designed for customer server side usage."]
     #[serde(rename = "serverPort", default, skip_serializing_if = "Option::is_none")]
     pub server_port: Option<i32>,
+    #[doc = "Version of the resource. Probably you need the same or higher version of client SDKs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Private endpoint connections to the resource."]
     #[serde(rename = "privateEndpointConnections", default, skip_serializing_if = "Vec::is_empty")]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "TLS settings for the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tls: Option<SignalRTlsSettings>,
 }
@@ -527,6 +661,7 @@ impl SignalRProperties {
         Self::default()
     }
 }
+#[doc = "Allowed request types. The value can be one or more of: ClientConnection, ServerConnection, RESTAPI."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SignalRRequestType {
     ClientConnection,
@@ -534,16 +669,21 @@ pub enum SignalRRequestType {
     #[serde(rename = "RESTAPI")]
     Restapi,
 }
+#[doc = "A class represent a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "The billing information of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<ResourceSku>,
+    #[doc = "A class that describes the properties of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SignalRProperties>,
+    #[doc = "The kind of the service - e.g. \"SignalR\" for \"Microsoft.SignalRService/SignalR\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<ServiceKind>,
+    #[doc = "A class represent managed identities used for request and response"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedIdentity>,
 }
@@ -552,10 +692,13 @@ impl SignalRResource {
         Self::default()
     }
 }
+#[doc = "Object that includes an array of resources and a possible link for next set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRResourceList {
+    #[doc = "List of the resources"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SignalRResource>,
+    #[doc = "The URL the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -564,6 +707,7 @@ impl SignalRResourceList {
         Self::default()
     }
 }
+#[doc = "Optional tier of this particular SKU. 'Standard' or 'Free'. \r\n\r\n`Basic` is deprecated, use `Standard` instead."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum SignalRSkuTier {
     Free,
@@ -571,8 +715,10 @@ pub enum SignalRSkuTier {
     Standard,
     Premium,
 }
+#[doc = "TLS settings for the resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRTlsSettings {
+    #[doc = "Request client certificate during TLS handshake if enabled"]
     #[serde(rename = "clientCertEnabled", default, skip_serializing_if = "Option::is_none")]
     pub client_cert_enabled: Option<bool>,
 }
@@ -581,16 +727,22 @@ impl SignalRTlsSettings {
         Self::default()
     }
 }
+#[doc = "Object that describes a specific usage of the resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRUsage {
+    #[doc = "Fully qualified ARM resource id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Current value for the usage quota."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i64>,
+    #[doc = "The maximum permitted value for the usage quota. If there is no limit, this value will be -1."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    #[doc = "Localizable String object containing the name and a localized value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<SignalRUsageName>,
+    #[doc = "Representing the units of the usage quota. Possible values are: Count, Bytes, Seconds, Percent, CountPerSecond, BytesPerSecond."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
 }
@@ -599,10 +751,13 @@ impl SignalRUsage {
         Self::default()
     }
 }
+#[doc = "Object that includes an array of the resource usages and a possible link for next set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRUsageList {
+    #[doc = "List of the resource usages"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SignalRUsage>,
+    #[doc = "The URL the client should use to fetch the next page (per server side paging).\r\nIt's null for now, added for future use."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -611,10 +766,13 @@ impl SignalRUsageList {
         Self::default()
     }
 }
+#[doc = "Localizable String object containing the name and a localized value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRUsageName {
+    #[doc = "The identifier of the usage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
+    #[doc = "Localized name of the usage."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -623,12 +781,15 @@ impl SignalRUsageName {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a ARM tracked top level resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The GEO location of the resource. e.g. West US | East US | North Central US | South Central US."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Tags of the service which is a list of key value pairs that describe the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -637,10 +798,13 @@ impl TrackedResource {
         Self::default()
     }
 }
+#[doc = "Upstream auth settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpstreamAuthSettings {
+    #[doc = "Gets or sets the type of auth. None or ManagedIdentity is supported now."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<UpstreamAuthType>,
+    #[doc = "Managed identity settings for upstream."]
     #[serde(rename = "managedIdentity", default, skip_serializing_if = "Option::is_none")]
     pub managed_identity: Option<ManagedIdentitySettings>,
 }
@@ -649,21 +813,28 @@ impl UpstreamAuthSettings {
         Self::default()
     }
 }
+#[doc = "Gets or sets the type of auth. None or ManagedIdentity is supported now."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UpstreamAuthType {
     None,
     ManagedIdentity,
 }
+#[doc = "Upstream template item settings. It defines the Upstream URL of the incoming requests.\r\nThe template defines the pattern of the event, the hub or the category of the incoming request that matches current URL template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UpstreamTemplate {
+    #[doc = "Gets or sets the matching pattern for hub names. If not set, it matches any hub.\r\nThere are 3 kind of patterns supported:\r\n    1. \"*\", it to matches any hub name\r\n    2. Combine multiple hubs with \",\", for example \"hub1,hub2\", it matches \"hub1\" and \"hub2\"\r\n    3. The single hub name, for example, \"hub1\", it matches \"hub1\""]
     #[serde(rename = "hubPattern", default, skip_serializing_if = "Option::is_none")]
     pub hub_pattern: Option<String>,
+    #[doc = "Gets or sets the matching pattern for event names. If not set, it matches any event.\r\nThere are 3 kind of patterns supported:\r\n    1. \"*\", it to matches any event name\r\n    2. Combine multiple events with \",\", for example \"connect,disconnect\", it matches event \"connect\" and \"disconnect\"\r\n    3. The single event name, for example, \"connect\", it matches \"connect\""]
     #[serde(rename = "eventPattern", default, skip_serializing_if = "Option::is_none")]
     pub event_pattern: Option<String>,
+    #[doc = "Gets or sets the matching pattern for category names. If not set, it matches any category.\r\nThere are 3 kind of patterns supported:\r\n    1. \"*\", it to matches any category name\r\n    2. Combine multiple categories with \",\", for example \"connections,messages\", it matches category \"connections\" and \"messages\"\r\n    3. The single category name, for example, \"connections\", it matches the category \"connections\""]
     #[serde(rename = "categoryPattern", default, skip_serializing_if = "Option::is_none")]
     pub category_pattern: Option<String>,
+    #[doc = "Gets or sets the Upstream URL template. You can use 3 predefined parameters {hub}, {category} {event} inside the template, the value of the Upstream URL is dynamically calculated when the client request comes in.\r\nFor example, if the urlTemplate is `http://example.com/{hub}/api/{event}`, with a client request from hub `chat` connects, it will first POST to this URL: `http://example.com/chat/api/connect`."]
     #[serde(rename = "urlTemplate")]
     pub url_template: String,
+    #[doc = "Upstream auth settings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub auth: Option<UpstreamAuthSettings>,
 }
@@ -678,10 +849,13 @@ impl UpstreamTemplate {
         }
     }
 }
+#[doc = "Properties of user assigned identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserAssignedIdentityProperty {
+    #[doc = "Get the principal id for the user assigned identity"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "Get the client id for the user assigned identity"]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }

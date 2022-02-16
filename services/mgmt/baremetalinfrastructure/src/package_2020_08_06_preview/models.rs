@@ -2,10 +2,12 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "AzureBareMetal instance info on Azure (ARM properties and AzureBareMetal properties)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBareMetalInstance {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Describes the properties of an AzureBareMetal instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureBareMetalInstanceProperties>,
 }
@@ -17,26 +19,37 @@ impl AzureBareMetalInstance {
         }
     }
 }
+#[doc = "Describes the properties of an AzureBareMetal instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBareMetalInstanceProperties {
+    #[doc = "Specifies the hardware settings for the AzureBareMetal instance."]
     #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
     pub hardware_profile: Option<HardwareProfile>,
+    #[doc = "Specifies the storage settings for the AzureBareMetal instance disks."]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<StorageProfile>,
+    #[doc = "Specifies the operating system settings for the AzureBareMetal instance."]
     #[serde(rename = "osProfile", default, skip_serializing_if = "Option::is_none")]
     pub os_profile: Option<OsProfile>,
+    #[doc = "Specifies the network settings for the AzureBareMetal instance disks."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
+    #[doc = "Specifies the AzureBareMetal instance unique ID."]
     #[serde(rename = "azureBareMetalInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub azure_bare_metal_instance_id: Option<String>,
+    #[doc = "Resource power state"]
     #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
     pub power_state: Option<azure_bare_metal_instance_properties::PowerState>,
+    #[doc = "Resource proximity placement group"]
     #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
     pub proximity_placement_group: Option<String>,
+    #[doc = "Hardware revision of an AzureBareMetal instance"]
     #[serde(rename = "hwRevision", default, skip_serializing_if = "Option::is_none")]
     pub hw_revision: Option<String>,
+    #[doc = "ARM ID of another AzureBareMetalInstance that will share a network with this AzureBareMetalInstance"]
     #[serde(rename = "partnerNodeId", default, skip_serializing_if = "Option::is_none")]
     pub partner_node_id: Option<String>,
+    #[doc = "State of provisioning of the AzureBareMetalInstance"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<azure_bare_metal_instance_properties::ProvisioningState>,
 }
@@ -47,6 +60,7 @@ impl AzureBareMetalInstanceProperties {
 }
 pub mod azure_bare_metal_instance_properties {
     use super::*;
+    #[doc = "Resource power state"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PowerState {
         #[serde(rename = "starting")]
@@ -62,6 +76,7 @@ pub mod azure_bare_metal_instance_properties {
         #[serde(rename = "unknown")]
         Unknown,
     }
+    #[doc = "State of provisioning of the AzureBareMetalInstance"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Accepted,
@@ -73,10 +88,13 @@ pub mod azure_bare_metal_instance_properties {
         Migrating,
     }
 }
+#[doc = "The response from the List AzureBareMetal Instances operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBareMetalInstancesListResult {
+    #[doc = "The list of Azure BareMetal instances."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<AzureBareMetalInstance>,
+    #[doc = "The URL to get the next set of AzureBareMetal instances."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -85,12 +103,16 @@ impl AzureBareMetalInstancesListResult {
         Self::default()
     }
 }
+#[doc = "Specifies the disk information fo the AzureBareMetal instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Disk {
+    #[doc = "The disk name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Specifies the size of an empty data disk in gigabytes."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
+    #[doc = "Specifies the logical unit number of the data disk. This value is used to identify data disks within the VM and therefore must be unique for each data disk attached to a VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
@@ -99,16 +121,22 @@ impl Disk {
         Self::default()
     }
 }
+#[doc = "Detailed BareMetal operation information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Display {
+    #[doc = "The localized friendly form of the resource provider name. This form is also expected to include the publisher/company responsible. Use Title Casing. Begin with \"Microsoft\" for 1st party services."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The localized friendly form of the resource type related to this action/operation. This form should match the public documentation for the resource provider. Use Title Casing. For examples, refer to the “name” section."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The localized friendly name for the operation as shown to the user. This name should be concise (to fit in drop downs), but clear (self-documenting). Use Title Casing and include the entity/resource to which it applies."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The localized friendly description for the operation as shown to the user. This description should be thorough, yet concise. It will be used in tool-tips and detailed views."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The intended executor of the operation; governs the display of the operation in the RBAC UX and the audit logs UX. Default value is 'user,system'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -117,12 +145,16 @@ impl Display {
         Self::default()
     }
 }
+#[doc = "Error definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
+    #[doc = "Service specific error code which serves as the substatus for the HTTP error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Description of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Internal error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDefinition>,
 }
@@ -131,8 +163,10 @@ impl ErrorDefinition {
         Self::default()
     }
 }
+#[doc = "Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDefinition>,
 }
@@ -141,10 +175,13 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Specifies the hardware settings for the AzureBareMetal instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HardwareProfile {
+    #[doc = "Name of the hardware type (vendor and/or their product name)"]
     #[serde(rename = "hardwareType", default, skip_serializing_if = "Option::is_none")]
     pub hardware_type: Option<hardware_profile::HardwareType>,
+    #[doc = "Specifies the AzureBareMetal instance SKU."]
     #[serde(rename = "azureBareMetalInstanceSize", default, skip_serializing_if = "Option::is_none")]
     pub azure_bare_metal_instance_size: Option<hardware_profile::AzureBareMetalInstanceSize>,
 }
@@ -155,6 +192,7 @@ impl HardwareProfile {
 }
 pub mod hardware_profile {
     use super::*;
+    #[doc = "Name of the hardware type (vendor and/or their product name)"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum HardwareType {
         #[serde(rename = "Cisco_UCS")]
@@ -162,6 +200,7 @@ pub mod hardware_profile {
         #[serde(rename = "HPE")]
         Hpe,
     }
+    #[doc = "Specifies the AzureBareMetal instance SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AzureBareMetalInstanceSize {
         S72m,
@@ -209,8 +248,10 @@ pub mod hardware_profile {
         S960m,
     }
 }
+#[doc = "Specifies the IP address of the network interface."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpAddress {
+    #[doc = "Specifies the IP address of the network interface."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
 }
@@ -219,10 +260,13 @@ impl IpAddress {
         Self::default()
     }
 }
+#[doc = "Specifies the network settings for the AzureBareMetal instance disks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkProfile {
+    #[doc = "Specifies the network interfaces for the AzureBareMetal instance."]
     #[serde(rename = "networkInterfaces", default, skip_serializing_if = "Vec::is_empty")]
     pub network_interfaces: Vec<IpAddress>,
+    #[doc = "Specifies the circuit id for connecting to express route."]
     #[serde(rename = "circuitId", default, skip_serializing_if = "Option::is_none")]
     pub circuit_id: Option<String>,
 }
@@ -231,14 +275,19 @@ impl NetworkProfile {
         Self::default()
     }
 }
+#[doc = "Specifies the operating system settings for the AzureBareMetal instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsProfile {
+    #[doc = "Specifies the host OS name of the AzureBareMetal instance."]
     #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
     pub computer_name: Option<String>,
+    #[doc = "This property allows you to specify the type of the OS."]
     #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
     pub os_type: Option<String>,
+    #[doc = "Specifies version of operating system."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Specifies the SSH public key used to access the operating system."]
     #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
     pub ssh_public_key: Option<String>,
 }
@@ -247,12 +296,16 @@ impl OsProfile {
         Self::default()
     }
 }
+#[doc = "AzureBareMetal operation information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "The name of the operation being performed on this particular object. This name should match the action name that appears in RBAC / the event service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Detailed BareMetal operation information"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<Display>,
+    #[doc = "indicates whether an operation is a data action or not."]
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
 }
@@ -261,8 +314,10 @@ impl Operation {
         Self::default()
     }
 }
+#[doc = "List of AzureBareMetal operations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
+    #[doc = "List of AzureBareMetal operations"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
 }
@@ -271,12 +326,16 @@ impl OperationList {
         Self::default()
     }
 }
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -285,8 +344,10 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Sample result definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Result {
+    #[doc = "Sample property of type string"]
     #[serde(rename = "sampleProperty", default, skip_serializing_if = "Option::is_none")]
     pub sample_property: Option<String>,
 }
@@ -295,10 +356,13 @@ impl Result {
         Self::default()
     }
 }
+#[doc = "Specifies the storage settings for the AzureBareMetal instance disks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProfile {
+    #[doc = "IP Address to connect to storage."]
     #[serde(rename = "nfsIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub nfs_ip_address: Option<String>,
+    #[doc = "Specifies information about the operating system disk used by baremetal instance."]
     #[serde(rename = "osDisks", default, skip_serializing_if = "Vec::is_empty")]
     pub os_disks: Vec<Disk>,
 }
@@ -307,8 +371,10 @@ impl StorageProfile {
         Self::default()
     }
 }
+#[doc = "Tags field of the AzureBareMetal instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Tags {
+    #[doc = "Tags field of the AzureBareMetal instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -317,12 +383,15 @@ impl Tags {
         Self::default()
     }
 }
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
     pub location: String,
 }
 impl TrackedResource {

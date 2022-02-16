@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The definition of a container registry operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDefinition {
+    #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The display information for a container registry operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplayDefinition>,
 }
@@ -14,14 +17,19 @@ impl OperationDefinition {
         Self::default()
     }
 }
+#[doc = "The display information for a container registry operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationDisplayDefinition {
+    #[doc = "The resource provider name: Microsoft.ContainerRegistry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The resource on which the operation is performed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The operation that users can perform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The description for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -30,10 +38,13 @@ impl OperationDisplayDefinition {
         Self::default()
     }
 }
+#[doc = "The result of a request to list container registry operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "The list of container registry operations. Since this list may be incomplete, the nextLink field should be used to request the next list of operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<OperationDefinition>,
+    #[doc = "The URI that can be used to request the next list of container registry operations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -42,8 +53,10 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "The parameters used to regenerate the login credential."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateCredentialParameters {
+    #[doc = "Specifies name of the password which should be regenerated -- password or password2."]
     pub name: regenerate_credential_parameters::Name,
 }
 impl RegenerateCredentialParameters {
@@ -53,6 +66,7 @@ impl RegenerateCredentialParameters {
 }
 pub mod regenerate_credential_parameters {
     use super::*;
+    #[doc = "Specifies name of the password which should be regenerated -- password or password2."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "password")]
@@ -61,11 +75,14 @@ pub mod regenerate_credential_parameters {
         Password2,
     }
 }
+#[doc = "An object that represents a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Registry {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The SKU of a container registry."]
     pub sku: Sku,
+    #[doc = "The properties of a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryProperties>,
 }
@@ -78,12 +95,17 @@ impl Registry {
         }
     }
 }
+#[doc = "The parameters for creating a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryCreateParameters {
+    #[doc = "The tags for the container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The location of the container registry. This cannot be changed after the resource is created."]
     pub location: String,
+    #[doc = "The SKU of a container registry."]
     pub sku: Sku,
+    #[doc = "The parameters for creating the properties of a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryPropertiesCreateParameters>,
 }
@@ -97,10 +119,13 @@ impl RegistryCreateParameters {
         }
     }
 }
+#[doc = "The response from the ListCredentials operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListCredentialsResult {
+    #[doc = "The username for a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[doc = "The list of passwords for a container registry."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub passwords: Vec<RegistryPassword>,
 }
@@ -109,10 +134,13 @@ impl RegistryListCredentialsResult {
         Self::default()
     }
 }
+#[doc = "The result of a request to list container registries."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryListResult {
+    #[doc = "The list of container registries. Since this list may be incomplete, the nextLink field should be used to request the next list of container registries."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Registry>,
+    #[doc = "The URI that can be used to request the next list of container registries."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -121,9 +149,12 @@ impl RegistryListResult {
         Self::default()
     }
 }
+#[doc = "A request to check whether a container registry name is available."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryNameCheckRequest {
+    #[doc = "The name of the container registry."]
     pub name: String,
+    #[doc = "The resource type of the container registry. This field must be set to 'Microsoft.ContainerRegistry/registries'."]
     #[serde(rename = "type")]
     pub type_: registry_name_check_request::Type,
 }
@@ -134,18 +165,23 @@ impl RegistryNameCheckRequest {
 }
 pub mod registry_name_check_request {
     use super::*;
+    #[doc = "The resource type of the container registry. This field must be set to 'Microsoft.ContainerRegistry/registries'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
         #[serde(rename = "Microsoft.ContainerRegistry/registries")]
         MicrosoftContainerRegistryRegistries,
     }
 }
+#[doc = "The result of a request to check the availability of a container registry name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryNameStatus {
+    #[doc = "The value that indicates whether the name is available."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "If any, the reason that the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[doc = "If any, the error message that provides more detail for the reason that the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -154,10 +190,13 @@ impl RegistryNameStatus {
         Self::default()
     }
 }
+#[doc = "The login password for the container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPassword {
+    #[doc = "The password name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<registry_password::Name>,
+    #[doc = "The password value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -168,6 +207,7 @@ impl RegistryPassword {
 }
 pub mod registry_password {
     use super::*;
+    #[doc = "The password name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         #[serde(rename = "password")]
@@ -176,16 +216,22 @@ pub mod registry_password {
         Password2,
     }
 }
+#[doc = "The properties of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryProperties {
+    #[doc = "The URL that can be used to log into the container registry."]
     #[serde(rename = "loginServer", default, skip_serializing_if = "Option::is_none")]
     pub login_server: Option<String>,
+    #[doc = "The creation date of the container registry in ISO8601 format."]
     #[serde(rename = "creationDate", default, skip_serializing_if = "Option::is_none")]
     pub creation_date: Option<String>,
+    #[doc = "The provisioning state of the container registry at the time the operation was called."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<registry_properties::ProvisioningState>,
+    #[doc = "The value that indicates whether the admin user is enabled."]
     #[serde(rename = "adminUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
+    #[doc = "The properties of a storage account for a container registry."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountProperties>,
 }
@@ -196,16 +242,20 @@ impl RegistryProperties {
 }
 pub mod registry_properties {
     use super::*;
+    #[doc = "The provisioning state of the container registry at the time the operation was called."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Creating,
         Succeeded,
     }
 }
+#[doc = "The parameters for creating the properties of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegistryPropertiesCreateParameters {
+    #[doc = "The value that indicates whether the admin user is enabled."]
     #[serde(rename = "adminUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
+    #[doc = "The parameters of a storage account for a container registry."]
     #[serde(rename = "storageAccount")]
     pub storage_account: StorageAccountParameters,
 }
@@ -217,10 +267,13 @@ impl RegistryPropertiesCreateParameters {
         }
     }
 }
+#[doc = "The parameters for updating the properties of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryPropertiesUpdateParameters {
+    #[doc = "The value that indicates whether the admin user is enabled."]
     #[serde(rename = "adminUserEnabled", default, skip_serializing_if = "Option::is_none")]
     pub admin_user_enabled: Option<bool>,
+    #[doc = "The parameters of a storage account for a container registry."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
     pub storage_account: Option<StorageAccountParameters>,
 }
@@ -229,10 +282,13 @@ impl RegistryPropertiesUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The parameters for updating a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegistryUpdateParameters {
+    #[doc = "The tags for the container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The parameters for updating the properties of a container registry."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegistryPropertiesUpdateParameters>,
 }
@@ -241,15 +297,21 @@ impl RegistryUpdateParameters {
         Self::default()
     }
 }
+#[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
+    #[doc = "The resource ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The location of the resource. This cannot be changed after the resource is created."]
     pub location: String,
+    #[doc = "The tags of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -264,9 +326,12 @@ impl Resource {
         }
     }
 }
+#[doc = "The SKU of a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "The SKU name of the container registry. Required for registry creation. Allowed value: Basic."]
     pub name: String,
+    #[doc = "The SKU tier based on the SKU name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<sku::Tier>,
 }
@@ -277,14 +342,18 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "The SKU tier based on the SKU name."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Basic,
     }
 }
+#[doc = "The parameters of a storage account for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccountParameters {
+    #[doc = "The name of the storage account."]
     pub name: String,
+    #[doc = "The access key to the storage account."]
     #[serde(rename = "accessKey")]
     pub access_key: String,
 }
@@ -293,8 +362,10 @@ impl StorageAccountParameters {
         Self { name, access_key }
     }
 }
+#[doc = "The properties of a storage account for a container registry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountProperties {
+    #[doc = "The name of the storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }

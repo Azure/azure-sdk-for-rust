@@ -4,7 +4,9 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSku {
+    #[doc = "SKU name"]
     pub name: azure_sku::Name,
+    #[doc = "SKU tier"]
     pub tier: azure_sku::Tier,
 }
 impl AzureSku {
@@ -14,10 +16,12 @@ impl AzureSku {
 }
 pub mod azure_sku {
     use super::*;
+    #[doc = "SKU name"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         S1,
     }
+    #[doc = "SKU tier"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Standard,
@@ -25,8 +29,10 @@ pub mod azure_sku {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameRequest {
+    #[doc = "Workspace collection name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -37,10 +43,13 @@ impl CheckNameRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameResponse {
+    #[doc = "Specifies a Boolean value that indicates whether the specified Power BI Workspace Collection name is available to use."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "Reason why the workspace collection name cannot be used."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<check_name_response::Reason>,
+    #[doc = "Message indicating an unavailable name due to a conflict, or a description of the naming rules that are violated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -51,6 +60,7 @@ impl CheckNameResponse {
 }
 pub mod check_name_response {
     use super::*;
+    #[doc = "Reason why the workspace collection name cannot be used."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Reason {
         Unavailable,
@@ -59,6 +69,7 @@ pub mod check_name_response {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateWorkspaceCollectionRequest {
+    #[doc = "Azure location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -73,14 +84,19 @@ impl CreateWorkspaceCollectionRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Display {
+    #[doc = "The localized friendly form of the resource provider name. This form is also expected to include the publisher/company responsible. Use Title Casing. Begin with \"Microsoft\" for 1st party services."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    #[doc = "The localized friendly form of the resource type related to this action/operation. This form should match the public documentation for the resource provider. Use Title Casing. For examples, refer to the \"name\" section."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
+    #[doc = "The localized friendly name for the operation as shown to the user. This name should be concise (to fit in drop downs), but clear (self-documenting). Use Title Casing and include the entity/resource to which it applies."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub operation: Option<String>,
+    #[doc = "The localized friendly description for the operation as shown to the user. This description should be thorough, yet concise. It will be used in tool-tips and detailed views."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "The intended executor of the operation; governs the display of the operation in the RBAC UX and the audit logs UX. Default value is 'user,system'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -121,6 +137,7 @@ impl ErrorDetail {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrateWorkspaceCollectionRequest {
+    #[doc = "Name of the resource group the Power BI workspace collections will be migrated to."]
     #[serde(rename = "targetResourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_group: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -133,6 +150,7 @@ impl MigrateWorkspaceCollectionRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "The name of the operation being performed on this particular object. This name should match the action name that appears in RBAC / the event service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -167,12 +185,16 @@ impl UpdateWorkspaceCollectionRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workspace {
+    #[doc = "Workspace id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Workspace name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Property bag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -183,18 +205,23 @@ impl Workspace {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceCollection {
+    #[doc = "Resource id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Workspace collection name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Azure location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<AzureSku>,
+    #[doc = "Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -205,6 +232,7 @@ impl WorkspaceCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceCollectionAccessKey {
+    #[doc = "Key name"]
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<workspace_collection_access_key::KeyName>,
 }
@@ -215,6 +243,7 @@ impl WorkspaceCollectionAccessKey {
 }
 pub mod workspace_collection_access_key {
     use super::*;
+    #[doc = "Key name"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum KeyName {
         #[serde(rename = "key1")]
@@ -225,8 +254,10 @@ pub mod workspace_collection_access_key {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceCollectionAccessKeys {
+    #[doc = "Access key 1"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key1: Option<String>,
+    #[doc = "Access key 2"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key2: Option<String>,
 }

@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Access Control List (ACL) for an iSCSI Target; defines LUN masking policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Acl {
+    #[doc = "iSCSI initiator IQN (iSCSI Qualified Name); example: \"iqn.2005-03.org.iscsi:client\"."]
     #[serde(rename = "initiatorIqn")]
     pub initiator_iqn: String,
+    #[doc = "List of LUN names mapped to the ACL."]
     #[serde(rename = "mappedLuns")]
     pub mapped_luns: Vec<String>,
 }
@@ -17,6 +20,7 @@ impl Acl {
         }
     }
 }
+#[doc = "ACL mode for iSCSI Target."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AclMode {
     Dynamic,
@@ -24,8 +28,10 @@ pub enum AclMode {
 }
 pub type AdditionalCapability = String;
 pub type AvailabilityZone = String;
+#[doc = "Azure Managed Disk to attach to the Disk Pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Disk {
+    #[doc = "Unique Azure Resource ID of the Managed Disk."]
     pub id: String,
 }
 impl Disk {
@@ -33,13 +39,17 @@ impl Disk {
         Self { id }
     }
 }
+#[doc = "Response for Disk Pool request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPool {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Sku for ARM resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Disk Pool response properties."]
     pub properties: DiskPoolProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemMetadata>,
 }
@@ -53,17 +63,25 @@ impl DiskPool {
         }
     }
 }
+#[doc = "Request payload for create or update Disk Pool request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolCreate {
+    #[doc = "Sku for ARM resource"]
     pub sku: Sku,
+    #[doc = "Properties for Disk Pool create or update request."]
     pub properties: DiskPoolCreateProperties,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives."]
     pub location: String,
+    #[doc = "Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. Ex- Microsoft.Compute/virtualMachines or Microsoft.Storage/storageAccounts."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -80,14 +98,19 @@ impl DiskPoolCreate {
         }
     }
 }
+#[doc = "Properties for Disk Pool create or update request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolCreateProperties {
+    #[doc = "Logical zone for Disk Pool resource; example: [\"1\"]."]
     #[serde(rename = "availabilityZones", default, skip_serializing_if = "Vec::is_empty")]
     pub availability_zones: Vec<AvailabilityZone>,
+    #[doc = "List of Azure Managed Disks to attach to a Disk Pool."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<Disk>,
+    #[doc = "Azure Resource ID of a Subnet for the Disk Pool."]
     #[serde(rename = "subnetId")]
     pub subnet_id: String,
+    #[doc = "List of additional capabilities for a Disk Pool."]
     #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_capabilities: Vec<AdditionalCapability>,
 }
@@ -101,9 +124,12 @@ impl DiskPoolCreateProperties {
         }
     }
 }
+#[doc = "List of Disk Pools"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolListResult {
+    #[doc = "An array of Disk pool objects."]
     pub value: Vec<DiskPool>,
+    #[doc = "URI to fetch the next section of the paginated response."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -112,17 +138,24 @@ impl DiskPoolListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Disk Pool response properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolProperties {
+    #[doc = "Provisioning state of the iSCSI Target."]
     #[serde(rename = "provisioningState")]
     pub provisioning_state: ProvisioningState,
+    #[doc = "Logical zone for Disk Pool resource; example: [\"1\"]."]
     #[serde(rename = "availabilityZones")]
     pub availability_zones: Vec<AvailabilityZone>,
+    #[doc = "Operational status of the resource."]
     pub status: OperationalStatus,
+    #[doc = "List of Azure Managed Disks to attach to a Disk Pool."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<Disk>,
+    #[doc = "Azure Resource ID of a Subnet for the Disk Pool."]
     #[serde(rename = "subnetId")]
     pub subnet_id: String,
+    #[doc = "List of additional capabilities for Disk Pool."]
     #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_capabilities: Vec<AdditionalCapability>,
 }
@@ -143,15 +176,19 @@ impl DiskPoolProperties {
         }
     }
 }
+#[doc = "SKU of the VM host part of the Disk Pool deployment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum DiskPoolTier {
     Basic,
     Standard,
     Premium,
 }
+#[doc = "Request payload for Update Disk Pool request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiskPoolUpdate {
+    #[doc = "Properties for Disk Pool update request."]
     pub properties: DiskPoolUpdateProperties,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -160,8 +197,10 @@ impl DiskPoolUpdate {
         Self { properties, tags: None }
     }
 }
+#[doc = "Properties for Disk Pool update request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskPoolUpdateProperties {
+    #[doc = "List of Azure Managed Disks to attach to a Disk Pool."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub disks: Vec<Disk>,
 }
@@ -170,12 +209,16 @@ impl DiskPoolUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Disk Pool Sku Details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskPoolZoneInfo {
+    #[doc = "Logical zone for Disk Pool resource; example: [\"1\"]."]
     #[serde(rename = "availabilityZones", default, skip_serializing_if = "Vec::is_empty")]
     pub availability_zones: Vec<AvailabilityZone>,
+    #[doc = "List of additional capabilities for Disk Pool."]
     #[serde(rename = "additionalCapabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_capabilities: Vec<AdditionalCapability>,
+    #[doc = "Sku for ARM resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
@@ -184,10 +227,13 @@ impl DiskPoolZoneInfo {
         Self::default()
     }
 }
+#[doc = "List Disk Pool skus operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskPoolZoneListResult {
+    #[doc = "The list of Disk Pool Skus."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<DiskPoolZoneInfo>,
+    #[doc = "URI to fetch the next section of the paginated response."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -196,10 +242,13 @@ impl DiskPoolZoneListResult {
         Self::default()
     }
 }
+#[doc = "A domain name that a service is reached at, including details of the current connection status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointDependency {
+    #[doc = "The domain name of the dependency."]
     #[serde(rename = "domainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
+    #[doc = "The IP Addresses and Ports used when connecting to DomainName."]
     #[serde(rename = "endpointDetails", default, skip_serializing_if = "Vec::is_empty")]
     pub endpoint_details: Vec<EndpointDetail>,
 }
@@ -208,14 +257,19 @@ impl EndpointDependency {
         Self::default()
     }
 }
+#[doc = "Current TCP connectivity information from the App Service Environment to a single endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointDetail {
+    #[doc = "An IP Address that Domain Name currently resolves to."]
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
+    #[doc = "The port an endpoint is connected to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
+    #[doc = "The time in milliseconds it takes for a TCP connection to be created from the App Service Environment to this IpAddress at this Port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latency: Option<f64>,
+    #[doc = "Whether it is possible to create a TCP connection from the App Service Environment to this IpAddress at this Port."]
     #[serde(rename = "isAccessible", default, skip_serializing_if = "Option::is_none")]
     pub is_accessible: Option<bool>,
 }
@@ -224,8 +278,10 @@ impl EndpointDetail {
         Self::default()
     }
 }
+#[doc = "The resource management error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
+    #[doc = "The resource management error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -234,10 +290,13 @@ impl Error {
         Self::default()
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -246,16 +305,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The resource management error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorResponse>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -264,11 +329,15 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "LUN to expose the Azure Managed Disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiLun {
+    #[doc = "User defined name for iSCSI LUN; example: \"lun0\""]
     pub name: String,
+    #[doc = "Azure Resource ID of the Managed Disk."]
     #[serde(rename = "managedDiskAzureResourceId")]
     pub managed_disk_azure_resource_id: String,
+    #[doc = "Specifies the Logical Unit Number of the iSCSI LUN."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
@@ -281,11 +350,14 @@ impl IscsiLun {
         }
     }
 }
+#[doc = "Response for iSCSI Target requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTarget {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Response properties for iSCSI Target operations."]
     pub properties: IscsiTargetProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemMetadata>,
 }
@@ -298,10 +370,12 @@ impl IscsiTarget {
         }
     }
 }
+#[doc = "Payload for iSCSI Target create or update requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetCreate {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties for iSCSI Target create or update request."]
     pub properties: IscsiTargetCreateProperties,
 }
 impl IscsiTargetCreate {
@@ -312,14 +386,19 @@ impl IscsiTargetCreate {
         }
     }
 }
+#[doc = "Properties for iSCSI Target create or update request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetCreateProperties {
+    #[doc = "ACL mode for iSCSI Target."]
     #[serde(rename = "aclMode")]
     pub acl_mode: AclMode,
+    #[doc = "iSCSI Target IQN (iSCSI Qualified Name); example: \"iqn.2005-03.org.iscsi:server\"."]
     #[serde(rename = "targetIqn", default, skip_serializing_if = "Option::is_none")]
     pub target_iqn: Option<String>,
+    #[doc = "Access Control List (ACL) for an iSCSI Target; defines LUN masking policy"]
     #[serde(rename = "staticAcls", default, skip_serializing_if = "Vec::is_empty")]
     pub static_acls: Vec<Acl>,
+    #[doc = "List of LUNs to be exposed through iSCSI Target."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub luns: Vec<IscsiLun>,
 }
@@ -333,9 +412,12 @@ impl IscsiTargetCreateProperties {
         }
     }
 }
+#[doc = "List of iSCSI Targets."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetList {
+    #[doc = "An array of iSCSI Targets in a Disk Pool."]
     pub value: Vec<IscsiTarget>,
+    #[doc = "URI to fetch the next section of the paginated response."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -344,21 +426,30 @@ impl IscsiTargetList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Response properties for iSCSI Target operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetProperties {
+    #[doc = "ACL mode for iSCSI Target."]
     #[serde(rename = "aclMode")]
     pub acl_mode: AclMode,
+    #[doc = "Access Control List (ACL) for an iSCSI Target; defines LUN masking policy"]
     #[serde(rename = "staticAcls", default, skip_serializing_if = "Vec::is_empty")]
     pub static_acls: Vec<Acl>,
+    #[doc = "List of LUNs to be exposed through iSCSI Target."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub luns: Vec<IscsiLun>,
+    #[doc = "iSCSI Target IQN (iSCSI Qualified Name); example: \"iqn.2005-03.org.iscsi:server\"."]
     #[serde(rename = "targetIqn")]
     pub target_iqn: String,
+    #[doc = "Provisioning state of the iSCSI Target."]
     #[serde(rename = "provisioningState")]
     pub provisioning_state: ProvisioningState,
+    #[doc = "Operational status of the resource."]
     pub status: OperationalStatus,
+    #[doc = "List of private IPv4 addresses to connect to the iSCSI Target."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<String>,
+    #[doc = "The port used by iSCSI Target portal group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
 }
@@ -376,10 +467,12 @@ impl IscsiTargetProperties {
         }
     }
 }
+#[doc = "Payload for iSCSI Target update requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetUpdate {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Properties for iSCSI Target update request."]
     pub properties: IscsiTargetUpdateProperties,
 }
 impl IscsiTargetUpdate {
@@ -390,10 +483,13 @@ impl IscsiTargetUpdate {
         }
     }
 }
+#[doc = "Properties for iSCSI Target update request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IscsiTargetUpdateProperties {
+    #[doc = "Access Control List (ACL) for an iSCSI Target; defines LUN masking policy"]
     #[serde(rename = "staticAcls", default, skip_serializing_if = "Vec::is_empty")]
     pub static_acls: Vec<Acl>,
+    #[doc = "List of LUNs to be exposed through iSCSI Target."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub luns: Vec<IscsiLun>,
 }
@@ -402,6 +498,7 @@ impl IscsiTargetUpdateProperties {
         Self::default()
     }
 }
+#[doc = "Operational status of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum OperationalStatus {
     Invalid,
@@ -414,10 +511,13 @@ pub enum OperationalStatus {
     #[serde(rename = "Stopped (deallocated)")]
     StoppedDeallocated,
 }
+#[doc = "Endpoints accessed for a common purpose that the App Service Environment requires outbound network access to."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutboundEnvironmentEndpoint {
+    #[doc = "The type of service accessed by the App Service Environment, e.g., Azure Storage, Azure SQL Database, and Azure Active Directory."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "The endpoints that the App Service Environment reaches the service at."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<EndpointDependency>,
 }
@@ -426,9 +526,12 @@ impl OutboundEnvironmentEndpoint {
         Self::default()
     }
 }
+#[doc = "Collection of Outbound Environment Endpoints"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutboundEnvironmentEndpointList {
+    #[doc = "Collection of resources."]
     pub value: Vec<OutboundEnvironmentEndpoint>,
+    #[doc = "Link to next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -437,6 +540,7 @@ impl OutboundEnvironmentEndpointList {
         Self { value, next_link: None }
     }
 }
+#[doc = "Provisioning state of the iSCSI Target."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
     Invalid,
@@ -448,6 +552,7 @@ pub enum ProvisioningState {
     Updating,
     Deleting,
 }
+#[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -458,12 +563,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "ARM resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. Ex- Microsoft.Compute/virtualMachines or Microsoft.Storage/storageAccounts."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -472,9 +581,12 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Sku for ARM resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "Sku name"]
     pub name: String,
+    #[doc = "Sku tier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tier: Option<String>,
 }
@@ -483,11 +595,16 @@ impl Sku {
         Self { name, tier: None }
     }
 }
+#[doc = "Metadata about an operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoragePoolOperationDisplay {
+    #[doc = "Localized friendly form of the resource provider name."]
     pub provider: String,
+    #[doc = "Localized friendly form of the resource type related to this action/operation."]
     pub resource: String,
+    #[doc = "Localized friendly name for the operation, as it should be shown to the user."]
     pub operation: String,
+    #[doc = "Localized friendly description for the operation, as it should be shown to the user."]
     pub description: String,
 }
 impl StoragePoolOperationDisplay {
@@ -500,9 +617,12 @@ impl StoragePoolOperationDisplay {
         }
     }
 }
+#[doc = "List of operations supported by the RP."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoragePoolOperationListResult {
+    #[doc = "An array of operations supported by the StoragePool RP."]
     pub value: Vec<StoragePoolRpOperation>,
+    #[doc = "URI to fetch the next section of the paginated response."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -511,14 +631,20 @@ impl StoragePoolOperationListResult {
         Self { value, next_link: None }
     }
 }
+#[doc = "Description of a StoragePool RP Operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoragePoolRpOperation {
+    #[doc = "The name of the operation being performed on this particular object"]
     pub name: String,
+    #[doc = "Indicates whether the operation applies to data-plane."]
     #[serde(rename = "isDataAction")]
     pub is_data_action: bool,
+    #[doc = "Indicates the action type."]
     #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
     pub action_type: Option<String>,
+    #[doc = "Metadata about an operation."]
     pub display: StoragePoolOperationDisplay,
+    #[doc = "The intended executor of the operation; governs the display of the operation in the RBAC UX and the audit logs UX."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
 }
@@ -533,18 +659,25 @@ impl StoragePoolRpOperation {
         }
     }
 }
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SystemMetadata {
+    #[doc = "The identity that created the resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
     #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
     pub created_by_type: Option<system_metadata::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by_type: Option<system_metadata::LastModifiedByType>,
+    #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_at: Option<String>,
 }
@@ -555,6 +688,7 @@ impl SystemMetadata {
 }
 pub mod system_metadata {
     use super::*;
+    #[doc = "The type of identity that created the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreatedByType {
         User,
@@ -562,6 +696,7 @@ pub mod system_metadata {
         ManagedIdentity,
         Key,
     }
+    #[doc = "The type of identity that last modified the resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum LastModifiedByType {
         User,
@@ -570,12 +705,15 @@ pub mod system_metadata {
         Key,
     }
 }
+#[doc = "The resource model definition for a ARM tracked top level resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives."]
     pub location: String,
 }
 impl TrackedResource {

@@ -4,8 +4,10 @@
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
+    #[doc = "Error code identifying the specific error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "A human-readable error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -16,6 +18,7 @@ impl ErrorDetails {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<error_response::Error>,
 }
@@ -26,12 +29,16 @@ impl ErrorResponse {
 }
 pub mod error_response {
     use super::*;
+    #[doc = "Error info."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Error {
+        #[doc = "Service-defined error code. This code serves as a sub-status for the HTTP error code specified in the response."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
+        #[doc = "Human-readable representation of the error."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
+        #[doc = "Error details."]
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub details: Vec<ErrorDetails>,
     }
@@ -45,6 +52,7 @@ pub mod error_response {
 pub struct HealthMonitor {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the monitor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HealthMonitorProperties>,
 }
@@ -55,8 +63,10 @@ impl HealthMonitor {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorList {
+    #[doc = "Array of health monitors of the virtual machine."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HealthMonitor>,
+    #[doc = "Link to next page if the list is too long."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -65,28 +75,38 @@ impl HealthMonitorList {
         Self::default()
     }
 }
+#[doc = "Properties of the monitor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorProperties {
+    #[doc = "Human-readable name of the monitor."]
     #[serde(rename = "monitorName", default, skip_serializing_if = "Option::is_none")]
     pub monitor_name: Option<String>,
+    #[doc = "Type of the monitor."]
     #[serde(rename = "monitorType", default, skip_serializing_if = "Option::is_none")]
     pub monitor_type: Option<String>,
+    #[doc = "Dynamic monitored object of the monitor."]
     #[serde(rename = "monitoredObject", default, skip_serializing_if = "Option::is_none")]
     pub monitored_object: Option<String>,
+    #[doc = "Name of the parent monitor."]
     #[serde(rename = "parentMonitorName", default, skip_serializing_if = "Option::is_none")]
     pub parent_monitor_name: Option<String>,
     #[serde(rename = "previousMonitorState", default, skip_serializing_if = "Option::is_none")]
     pub previous_monitor_state: Option<HealthState>,
     #[serde(rename = "currentMonitorState", default, skip_serializing_if = "Option::is_none")]
     pub current_monitor_state: Option<HealthState>,
+    #[doc = "Timestamp of the monitor's last health evaluation."]
     #[serde(rename = "evaluationTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_timestamp: Option<String>,
+    #[doc = "Timestamp of the monitor's last health state change."]
     #[serde(rename = "currentStateFirstObservedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub current_state_first_observed_timestamp: Option<String>,
+    #[doc = "Timestamp of the monitor's last reported health state."]
     #[serde(rename = "lastReportedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub last_reported_timestamp: Option<String>,
+    #[doc = "Evidence validating the monitor's current health state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub evidence: Option<serde_json::Value>,
+    #[doc = "The configuration settings at the time of the monitor's health evaluation."]
     #[serde(rename = "monitorConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub monitor_configuration: Option<serde_json::Value>,
 }
@@ -99,6 +119,7 @@ impl HealthMonitorProperties {
 pub struct HealthMonitorStateChange {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Properties of the monitor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HealthMonitorStateChangeProperties>,
 }
@@ -109,8 +130,10 @@ impl HealthMonitorStateChange {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorStateChangeList {
+    #[doc = "Array of health state changes within the specified time window."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<HealthMonitorStateChange>,
+    #[doc = "Link to next page if the list is too long."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -119,24 +142,32 @@ impl HealthMonitorStateChangeList {
         Self::default()
     }
 }
+#[doc = "Properties of the monitor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthMonitorStateChangeProperties {
+    #[doc = "Human-readable name of the monitor."]
     #[serde(rename = "monitorName", default, skip_serializing_if = "Option::is_none")]
     pub monitor_name: Option<String>,
+    #[doc = "Type of the monitor."]
     #[serde(rename = "monitorType", default, skip_serializing_if = "Option::is_none")]
     pub monitor_type: Option<String>,
+    #[doc = "Dynamic monitored object of the monitor."]
     #[serde(rename = "monitoredObject", default, skip_serializing_if = "Option::is_none")]
     pub monitored_object: Option<String>,
+    #[doc = "Timestamp of the monitor's last health evaluation."]
     #[serde(rename = "evaluationTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_timestamp: Option<String>,
+    #[doc = "Timestamp of the monitor's last health state change."]
     #[serde(rename = "currentStateFirstObservedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub current_state_first_observed_timestamp: Option<String>,
     #[serde(rename = "previousMonitorState", default, skip_serializing_if = "Option::is_none")]
     pub previous_monitor_state: Option<HealthState>,
     #[serde(rename = "currentMonitorState", default, skip_serializing_if = "Option::is_none")]
     pub current_monitor_state: Option<HealthState>,
+    #[doc = "Evidence validating the monitor's current health state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub evidence: Option<serde_json::Value>,
+    #[doc = "The configuration settings at the time of the monitor's health evaluation."]
     #[serde(rename = "monitorConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub monitor_configuration: Option<serde_json::Value>,
 }
@@ -156,8 +187,11 @@ pub enum HealthState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Operation {
+    #[doc = "The name of the operation being performed on this particular object."]
     pub name: String,
+    #[doc = "The localized display information for this particular operation or action."]
     pub display: operation::Display,
+    #[doc = "The intended executor of the operation."]
     pub origin: String,
 }
 impl Operation {
@@ -167,11 +201,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The localized display information for this particular operation or action."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Display {
+        #[doc = "Operation resource provider name."]
         pub provider: String,
+        #[doc = "Resource on which the operation is performed."]
         pub resource: String,
+        #[doc = "Human-readable, friendly name for the operation."]
         pub operation: String,
+        #[doc = "Operation description."]
         pub description: String,
     }
     impl Display {
@@ -187,8 +226,10 @@ pub mod operation {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationList {
+    #[doc = "Array of available REST API operations."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "Link to next page if the list is too long."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -197,12 +238,16 @@ impl OperationList {
         Self::default()
     }
 }
+#[doc = "The resource model definition for the ARM proxy resource, 'microsoft.workloadmonitor/monitors'."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "The resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The resource type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

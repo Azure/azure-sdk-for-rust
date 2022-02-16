@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "the aggregation type of the metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum AggregationType {
     None,
@@ -11,10 +12,13 @@ pub enum AggregationType {
     Maximum,
     Total,
 }
+#[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -23,9 +27,12 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "The localizable string class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalizableString {
+    #[doc = "the invariant value."]
     pub value: String,
+    #[doc = "the locale specific value."]
     #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
     pub localized_value: Option<String>,
 }
@@ -37,10 +44,13 @@ impl LocalizableString {
         }
     }
 }
+#[doc = "Represents a metric metadata value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataValue {
+    #[doc = "The localizable string class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[doc = "the value of the metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -49,19 +59,28 @@ impl MetadataValue {
         Self::default()
     }
 }
+#[doc = "The result data of a query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metric {
+    #[doc = "the metric Id."]
     pub id: String,
+    #[doc = "the resource type of the metric resource."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "The localizable string class."]
     pub name: LocalizableString,
+    #[doc = "Detailed description of this metric."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "'Success' or the error details on query failures for this metric."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[doc = "Error message encountered querying this specific metric."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "The unit of the metric."]
     pub unit: Unit,
+    #[doc = "the time series returned when a data query is performed."]
     pub timeseries: Vec<TimeSeriesElement>,
 }
 impl Metric {
@@ -78,10 +97,13 @@ impl Metric {
         }
     }
 }
+#[doc = "Metric availability specifies the time grain (aggregation interval or frequency) and the retention period for that time grain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricAvailability {
+    #[doc = "the time grain specifies the aggregation interval for the metric. Expressed as a duration 'PT1M', 'P1D', etc."]
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
+    #[doc = "the retention period for the metric at the specified timegrain.  Expressed as a duration 'PT1M', 'P1D', etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub retention: Option<String>,
 }
@@ -90,6 +112,7 @@ impl MetricAvailability {
         Self::default()
     }
 }
+#[doc = "The class of the metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum MetricClass {
     Availability,
@@ -98,32 +121,46 @@ pub enum MetricClass {
     Latency,
     Saturation,
 }
+#[doc = "Metric definition class specifies the metadata for a metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetricDefinition {
+    #[doc = "Flag to indicate whether the dimension is required."]
     #[serde(rename = "isDimensionRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_dimension_required: Option<bool>,
+    #[doc = "the resource identifier of the resource that emitted the metric."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "the namespace the metric belongs to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
+    #[doc = "The localizable string class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<LocalizableString>,
+    #[doc = "Detailed description of this metric."]
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
+    #[doc = "Custom category name for this metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "The class of the metric."]
     #[serde(rename = "metricClass", default, skip_serializing_if = "Option::is_none")]
     pub metric_class: Option<MetricClass>,
+    #[doc = "The unit of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<Unit>,
+    #[doc = "the aggregation type of the metric."]
     #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub primary_aggregation_type: Option<AggregationType>,
+    #[doc = "the collection of what aggregation types are supported."]
     #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
     pub supported_aggregation_types: Vec<AggregationType>,
+    #[doc = "the collection of what aggregation intervals are available to be queried."]
     #[serde(rename = "metricAvailabilities", default, skip_serializing_if = "Vec::is_empty")]
     pub metric_availabilities: Vec<MetricAvailability>,
+    #[doc = "the resource identifier of the metric definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "the name and the display name of the dimension, i.e. it is a localizable string."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dimensions: Vec<LocalizableString>,
 }
@@ -132,8 +169,10 @@ impl MetricDefinition {
         Self::default()
     }
 }
+#[doc = "Represents collection of metric definitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricDefinitionCollection {
+    #[doc = "the values for the metric definitions."]
     pub value: Vec<MetricDefinition>,
 }
 impl MetricDefinitionCollection {
@@ -141,18 +180,25 @@ impl MetricDefinitionCollection {
         Self { value }
     }
 }
+#[doc = "Represents a metric value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricValue {
+    #[doc = "the timestamp for the metric value in ISO 8601 format."]
     #[serde(rename = "timeStamp")]
     pub time_stamp: String,
+    #[doc = "the average value in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub average: Option<f64>,
+    #[doc = "the least value in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub minimum: Option<f64>,
+    #[doc = "the greatest value in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub maximum: Option<f64>,
+    #[doc = "the sum of all of the values in the time range."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<f64>,
+    #[doc = "the number of samples in the time range. Can be used to determine the number of values that contributed to the average value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<f64>,
 }
@@ -168,17 +214,24 @@ impl MetricValue {
         }
     }
 }
+#[doc = "The response to a metrics query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Response {
+    #[doc = "The integer value representing the relative cost of the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cost: Option<f64>,
+    #[doc = "The timespan for which the data was retrieved. Its value consists of two datetimes concatenated, separated by '/'.  This may be adjusted in the future and returned back from what was originally requested."]
     pub timespan: String,
+    #[doc = "The interval (window size) for which the metric data was returned in.  This may be adjusted in the future and returned back from what was originally requested.  This is not present if a metadata request was made."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub interval: Option<String>,
+    #[doc = "The namespace of the metrics being queried"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub namespace: Option<String>,
+    #[doc = "The region of the resource being queried for metrics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resourceregion: Option<String>,
+    #[doc = "the value of the collection."]
     pub value: Vec<Metric>,
 }
 impl Response {
@@ -193,10 +246,13 @@ impl Response {
         }
     }
 }
+#[doc = "A time series result type. The discriminator value is always TimeSeries in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesElement {
+    #[doc = "the metadata values returned if $filter was specified in the call."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub metadatavalues: Vec<MetadataValue>,
+    #[doc = "An array of data points representing the metric values.  This is only returned if a result type of data is specified."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data: Vec<MetricValue>,
 }
@@ -205,6 +261,7 @@ impl TimeSeriesElement {
         Self::default()
     }
 }
+#[doc = "The unit of the metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum Unit {
     Count,

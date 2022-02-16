@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Description of a Check Name availability request properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailability {
+    #[doc = "The Name to check the namespace name availability and The namespace name can contain only letters, numbers, and hyphens. The namespace must start with a letter, and it must end with a letter or number."]
     pub name: String,
 }
 impl CheckNameAvailability {
@@ -11,12 +13,16 @@ impl CheckNameAvailability {
         Self { name }
     }
 }
+#[doc = "Description of a Check Name availability request properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityResult {
+    #[doc = "Value indicating namespace is availability, true if the namespace is available; otherwise, false."]
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
+    #[doc = "Specifies the reason for the unavailability of the service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<UnavailableReason>,
+    #[doc = "The detailed info regarding the reason associated with the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -25,6 +31,7 @@ impl CheckNameAvailabilityResult {
         Self::default()
     }
 }
+#[doc = "Entity availability status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityAvailabilityStatus {
     Available,
@@ -33,6 +40,7 @@ pub enum EntityAvailabilityStatus {
     Restoring,
     Unknown,
 }
+#[doc = "Entity status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum EntityStatus {
     Active,
@@ -45,16 +53,22 @@ pub enum EntityStatus {
     SendDisabled,
     Unknown,
 }
+#[doc = "Message Count Details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MessageCountDetails {
+    #[doc = "Number of active messages in the queue, topic, or subscription."]
     #[serde(rename = "activeMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub active_message_count: Option<i64>,
+    #[doc = "Number of messages that are dead lettered."]
     #[serde(rename = "deadLetterMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_message_count: Option<i64>,
+    #[doc = "Number of scheduled messages."]
     #[serde(rename = "scheduledMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub scheduled_message_count: Option<i64>,
+    #[doc = "Number of messages transferred into dead letters."]
     #[serde(rename = "transferDeadLetterMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub transfer_dead_letter_message_count: Option<i64>,
+    #[doc = "Number of messages transferred to another queue, topic, or subscription."]
     #[serde(rename = "transferMessageCount", default, skip_serializing_if = "Option::is_none")]
     pub transfer_message_count: Option<i64>,
 }
@@ -63,13 +77,18 @@ impl MessageCountDetails {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Namespace operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamespaceCreateOrUpdateParameters {
+    #[doc = "Namespace location."]
     pub location: String,
+    #[doc = "SKU of the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Namespace tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Properties of the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamespaceProperties>,
 }
@@ -83,10 +102,13 @@ impl NamespaceCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The response of the List Namespace operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceListResult {
+    #[doc = "Result of the List Namespace operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<NamespaceResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Namespaces."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -95,20 +117,28 @@ impl NamespaceListResult {
         Self::default()
     }
 }
+#[doc = "Properties of the namespace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceProperties {
+    #[doc = "Provisioning state of the namespace."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "State of the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<namespace_properties::Status>,
+    #[doc = "The time the namespace was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The time the namespace was updated."]
     #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+    #[doc = "Endpoint you can use to perform Service Bus operations."]
     #[serde(rename = "serviceBusEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub service_bus_endpoint: Option<String>,
+    #[doc = "Indicates whether to create an ACS namespace."]
     #[serde(rename = "createACSNamespace", default, skip_serializing_if = "Option::is_none")]
     pub create_acs_namespace: Option<bool>,
+    #[doc = "Specifies whether this instance is enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
 }
@@ -119,6 +149,7 @@ impl NamespaceProperties {
 }
 pub mod namespace_properties {
     use super::*;
+    #[doc = "State of the namespace."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Unknown,
@@ -136,12 +167,15 @@ pub mod namespace_properties {
         Failed,
     }
 }
+#[doc = "Description of a namespace resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamespaceResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "SKU of the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
+    #[doc = "Properties of the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamespaceProperties>,
 }
@@ -154,10 +188,13 @@ impl NamespaceResource {
         }
     }
 }
+#[doc = "Parameters supplied to the Patch Namespace operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamespaceUpdateParameters {
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "SKU of the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
@@ -166,10 +203,13 @@ impl NamespaceUpdateParameters {
         Self::default()
     }
 }
+#[doc = "A ServiceBus REST API operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation name: {provider}/{resource}/{operation}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The object that represents the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
 }
@@ -180,12 +220,16 @@ impl Operation {
 }
 pub mod operation {
     use super::*;
+    #[doc = "The object that represents the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Display {
+        #[doc = "Service provider: Microsoft.ServiceBus"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub provider: Option<String>,
+        #[doc = "Resource on which the operation is performed: Invoice, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub resource: Option<String>,
+        #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
     }
@@ -195,10 +239,13 @@ pub mod operation {
         }
     }
 }
+#[doc = "Result of the request to list ServiceBus operations. It contains a list of operations and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
+    #[doc = "List of ServiceBus operations supported by the Microsoft.ServiceBus resource provider."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Operation>,
+    #[doc = "URL to get the next set of operation list results if there are any."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -207,11 +254,15 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Queue operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueueCreateOrUpdateParameters {
+    #[doc = "Queue name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "location of the resource."]
     pub location: String,
+    #[doc = "The Queue Properties definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueueProperties>,
 }
@@ -224,10 +275,13 @@ impl QueueCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The response to the List Queues operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueueListResult {
+    #[doc = "Result of the List Queues operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<QueueResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of queues."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -236,50 +290,73 @@ impl QueueListResult {
         Self::default()
     }
 }
+#[doc = "The Queue Properties definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueueProperties {
+    #[doc = "The duration of a peek-lock; that is, the amount of time that the message is locked for other receivers. The maximum value for LockDuration is 5 minutes; the default value is 1 minute."]
     #[serde(rename = "lockDuration", default, skip_serializing_if = "Option::is_none")]
     pub lock_duration: Option<String>,
+    #[doc = "Last time a message was sent, or the last time there was a receive request to this queue."]
     #[serde(rename = "accessedAt", default, skip_serializing_if = "Option::is_none")]
     pub accessed_at: Option<String>,
+    #[doc = "the TimeSpan idle interval after which the queue is automatically deleted. The minimum duration is 5 minutes."]
     #[serde(rename = "autoDeleteOnIdle", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete_on_idle: Option<String>,
+    #[doc = "Entity availability status."]
     #[serde(rename = "entityAvailabilityStatus", default, skip_serializing_if = "Option::is_none")]
     pub entity_availability_status: Option<EntityAvailabilityStatus>,
+    #[doc = "The exact time the message was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "The default message time to live value. This is the duration after which the message expires, starting from when the message is sent to Service Bus. This is the default value used when TimeToLive is not set on a message itself."]
     #[serde(rename = "defaultMessageTimeToLive", default, skip_serializing_if = "Option::is_none")]
     pub default_message_time_to_live: Option<String>,
+    #[doc = "TimeSpan structure that defines the duration of the duplicate detection history. The default value is 10 minutes."]
     #[serde(rename = "duplicateDetectionHistoryTimeWindow", default, skip_serializing_if = "Option::is_none")]
     pub duplicate_detection_history_time_window: Option<String>,
+    #[doc = "A value that indicates whether server-side batched operations are enabled."]
     #[serde(rename = "enableBatchedOperations", default, skip_serializing_if = "Option::is_none")]
     pub enable_batched_operations: Option<bool>,
+    #[doc = "A value that indicates whether this queue has dead letter support when a message expires."]
     #[serde(rename = "deadLetteringOnMessageExpiration", default, skip_serializing_if = "Option::is_none")]
     pub dead_lettering_on_message_expiration: Option<bool>,
+    #[doc = "A value that indicates whether Express Entities are enabled. An express queue holds a message in memory temporarily before writing it to persistent storage."]
     #[serde(rename = "enableExpress", default, skip_serializing_if = "Option::is_none")]
     pub enable_express: Option<bool>,
+    #[doc = "A value that indicates whether the queue is to be partitioned across multiple message brokers."]
     #[serde(rename = "enablePartitioning", default, skip_serializing_if = "Option::is_none")]
     pub enable_partitioning: Option<bool>,
+    #[doc = "A value that indicates whether the message is accessible anonymously."]
     #[serde(rename = "isAnonymousAccessible", default, skip_serializing_if = "Option::is_none")]
     pub is_anonymous_accessible: Option<bool>,
+    #[doc = "The maximum delivery count. A message is automatically deadlettered after this number of deliveries."]
     #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_delivery_count: Option<i32>,
+    #[doc = "The maximum size of the queue in megabytes, which is the size of memory allocated for the queue."]
     #[serde(rename = "maxSizeInMegabytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_megabytes: Option<i64>,
+    #[doc = "The number of messages in the queue."]
     #[serde(rename = "messageCount", default, skip_serializing_if = "Option::is_none")]
     pub message_count: Option<i64>,
+    #[doc = "Message Count Details."]
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
     pub count_details: Option<MessageCountDetails>,
+    #[doc = "A value indicating if this queue requires duplicate detection."]
     #[serde(rename = "requiresDuplicateDetection", default, skip_serializing_if = "Option::is_none")]
     pub requires_duplicate_detection: Option<bool>,
+    #[doc = "A value that indicates whether the queue supports the concept of sessions."]
     #[serde(rename = "requiresSession", default, skip_serializing_if = "Option::is_none")]
     pub requires_session: Option<bool>,
+    #[doc = "The size of the queue, in bytes."]
     #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
+    #[doc = "Entity status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EntityStatus>,
+    #[doc = "A value that indicates whether the queue supports ordering."]
     #[serde(rename = "supportOrdering", default, skip_serializing_if = "Option::is_none")]
     pub support_ordering: Option<bool>,
+    #[doc = "The exact time the message was updated."]
     #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
@@ -288,10 +365,12 @@ impl QueueProperties {
         Self::default()
     }
 }
+#[doc = "Description of queue Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueueResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The Queue Properties definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueueProperties>,
 }
@@ -300,8 +379,10 @@ impl QueueResource {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Regenerate Authorization Rule operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeysParameters {
+    #[doc = "Key that needs to be regenerated."]
     #[serde(rename = "Policykey", default, skip_serializing_if = "Option::is_none")]
     pub policykey: Option<regenerate_keys_parameters::Policykey>,
 }
@@ -312,20 +393,26 @@ impl RegenerateKeysParameters {
 }
 pub mod regenerate_keys_parameters {
     use super::*;
+    #[doc = "Key that needs to be regenerated."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Policykey {
         PrimaryKey,
         SecondaryKey,
     }
 }
+#[doc = "The Resource definition for other than namespace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -334,16 +421,22 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Namespace/ServiceBus Connection String"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceListKeys {
+    #[doc = "Primary connection string of the created namespace authorization rule."]
     #[serde(rename = "primaryConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub primary_connection_string: Option<String>,
+    #[doc = "Secondary connection string of the created namespace authorization rule."]
     #[serde(rename = "secondaryConnectionString", default, skip_serializing_if = "Option::is_none")]
     pub secondary_connection_string: Option<String>,
+    #[doc = "A base64-encoded 256-bit primary key for signing and validating the SAS token."]
     #[serde(rename = "primaryKey", default, skip_serializing_if = "Option::is_none")]
     pub primary_key: Option<String>,
+    #[doc = "A base64-encoded 256-bit primary key for signing and validating the SAS token."]
     #[serde(rename = "secondaryKey", default, skip_serializing_if = "Option::is_none")]
     pub secondary_key: Option<String>,
+    #[doc = "A string that describes the authorization rule."]
     #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
     pub key_name: Option<String>,
 }
@@ -352,12 +445,16 @@ impl ResourceListKeys {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Authorization Rules operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleCreateOrUpdateParameters {
+    #[doc = "data center location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Name of the authorization rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "SharedAccessAuthorizationRule properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedAccessAuthorizationRuleProperties>,
 }
@@ -366,10 +463,13 @@ impl SharedAccessAuthorizationRuleCreateOrUpdateParameters {
         Self::default()
     }
 }
+#[doc = "The response to the List Namespace operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleListResult {
+    #[doc = "Result of the List Authorization Rules operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SharedAccessAuthorizationRuleResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of Authorization Rules."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -378,8 +478,10 @@ impl SharedAccessAuthorizationRuleListResult {
         Self::default()
     }
 }
+#[doc = "SharedAccessAuthorizationRule properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SharedAccessAuthorizationRuleProperties {
+    #[doc = "The rights associated with the rule."]
     pub rights: Vec<String>,
 }
 impl SharedAccessAuthorizationRuleProperties {
@@ -387,10 +489,12 @@ impl SharedAccessAuthorizationRuleProperties {
         Self { rights }
     }
 }
+#[doc = "Description of a namespace authorization rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "SharedAccessAuthorizationRule properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedAccessAuthorizationRuleProperties>,
 }
@@ -399,11 +503,15 @@ impl SharedAccessAuthorizationRuleResource {
         Self::default()
     }
 }
+#[doc = "SKU of the namespace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
+    #[doc = "Name of this SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<sku::Name>,
+    #[doc = "The billing tier of this particular SKU."]
     pub tier: sku::Tier,
+    #[doc = "The specified messaging units for the tier."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capacity: Option<i32>,
 }
@@ -418,12 +526,14 @@ impl Sku {
 }
 pub mod sku {
     use super::*;
+    #[doc = "Name of this SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Name {
         Basic,
         Standard,
         Premium,
     }
+    #[doc = "The billing tier of this particular SKU."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Tier {
         Basic,
@@ -431,11 +541,15 @@ pub mod sku {
         Premium,
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Subscription operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SubscriptionCreateOrUpdateParameters {
+    #[doc = "Subscription data center location."]
     pub location: String,
+    #[doc = "Resource manager type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Description of Subscription Resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionProperties>,
 }
@@ -448,10 +562,13 @@ impl SubscriptionCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The response to the List Subscriptions operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionListResult {
+    #[doc = "Result of the List Subscriptions operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<SubscriptionResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of subscriptions."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -460,42 +577,59 @@ impl SubscriptionListResult {
         Self::default()
     }
 }
+#[doc = "Description of Subscription Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionProperties {
+    #[doc = "Last time there was a receive request to this subscription."]
     #[serde(rename = "accessedAt", default, skip_serializing_if = "Option::is_none")]
     pub accessed_at: Option<String>,
+    #[doc = "TimeSpan idle interval after which the topic is automatically deleted. The minimum duration is 5 minutes."]
     #[serde(rename = "autoDeleteOnIdle", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete_on_idle: Option<String>,
+    #[doc = "Message Count Details."]
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
     pub count_details: Option<MessageCountDetails>,
+    #[doc = "Exact time the message was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "Default message time to live value. This is the duration after which the message expires, starting from when the message is sent to Service Bus. This is the default value used when TimeToLive is not set on a message itself."]
     #[serde(rename = "defaultMessageTimeToLive", default, skip_serializing_if = "Option::is_none")]
     pub default_message_time_to_live: Option<String>,
+    #[doc = "Value that indicates whether a subscription has dead letter support on filter evaluation exceptions."]
     #[serde(
         rename = "deadLetteringOnFilterEvaluationExceptions",
         default,
         skip_serializing_if = "Option::is_none"
     )]
     pub dead_lettering_on_filter_evaluation_exceptions: Option<bool>,
+    #[doc = "Value that indicates whether a subscription has dead letter support when a message expires."]
     #[serde(rename = "deadLetteringOnMessageExpiration", default, skip_serializing_if = "Option::is_none")]
     pub dead_lettering_on_message_expiration: Option<bool>,
+    #[doc = "Value that indicates whether server-side batched operations are enabled."]
     #[serde(rename = "enableBatchedOperations", default, skip_serializing_if = "Option::is_none")]
     pub enable_batched_operations: Option<bool>,
+    #[doc = "Entity availability status."]
     #[serde(rename = "entityAvailabilityStatus", default, skip_serializing_if = "Option::is_none")]
     pub entity_availability_status: Option<EntityAvailabilityStatus>,
+    #[doc = "Value that indicates whether the entity description is read-only."]
     #[serde(rename = "isReadOnly", default, skip_serializing_if = "Option::is_none")]
     pub is_read_only: Option<bool>,
+    #[doc = "The lock duration time span for the subscription."]
     #[serde(rename = "lockDuration", default, skip_serializing_if = "Option::is_none")]
     pub lock_duration: Option<String>,
+    #[doc = "Number of maximum deliveries."]
     #[serde(rename = "maxDeliveryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_delivery_count: Option<i32>,
+    #[doc = "Number of messages."]
     #[serde(rename = "messageCount", default, skip_serializing_if = "Option::is_none")]
     pub message_count: Option<i64>,
+    #[doc = "Value indicating if a subscription supports the concept of sessions."]
     #[serde(rename = "requiresSession", default, skip_serializing_if = "Option::is_none")]
     pub requires_session: Option<bool>,
+    #[doc = "Entity status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EntityStatus>,
+    #[doc = "The exact time the message was updated."]
     #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
@@ -504,10 +638,12 @@ impl SubscriptionProperties {
         Self::default()
     }
 }
+#[doc = "Description of subscription resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Description of Subscription Resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionProperties>,
 }
@@ -516,11 +652,15 @@ impl SubscriptionResource {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create Or Update Topic operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TopicCreateOrUpdateParameters {
+    #[doc = "Topic name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Location of the resource."]
     pub location: String,
+    #[doc = "The Topic Properties definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicProperties>,
 }
@@ -533,10 +673,13 @@ impl TopicCreateOrUpdateParameters {
         }
     }
 }
+#[doc = "The response to the List Topics operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicListResult {
+    #[doc = "Result of the List Topics operation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<TopicResource>,
+    #[doc = "Link to the next set of results. Not empty if Value contains incomplete list of topics."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -545,46 +688,67 @@ impl TopicListResult {
         Self::default()
     }
 }
+#[doc = "The Topic Properties definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicProperties {
+    #[doc = "Last time the message was sent, or a request was received, for this topic."]
     #[serde(rename = "accessedAt", default, skip_serializing_if = "Option::is_none")]
     pub accessed_at: Option<String>,
+    #[doc = "TimeSpan idle interval after which the topic is automatically deleted. The minimum duration is 5 minutes."]
     #[serde(rename = "autoDeleteOnIdle", default, skip_serializing_if = "Option::is_none")]
     pub auto_delete_on_idle: Option<String>,
+    #[doc = "Entity availability status."]
     #[serde(rename = "entityAvailabilityStatus", default, skip_serializing_if = "Option::is_none")]
     pub entity_availability_status: Option<EntityAvailabilityStatus>,
+    #[doc = "Exact time the message was created."]
     #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    #[doc = "Message Count Details."]
     #[serde(rename = "countDetails", default, skip_serializing_if = "Option::is_none")]
     pub count_details: Option<MessageCountDetails>,
+    #[doc = "Default message time to live value. This is the duration after which the message expires, starting from when the message is sent to Service Bus. This is the default value used when TimeToLive is not set on a message itself."]
     #[serde(rename = "defaultMessageTimeToLive", default, skip_serializing_if = "Option::is_none")]
     pub default_message_time_to_live: Option<String>,
+    #[doc = "TimeSpan structure that defines the duration of the duplicate detection history. The default value is 10 minutes."]
     #[serde(rename = "duplicateDetectionHistoryTimeWindow", default, skip_serializing_if = "Option::is_none")]
     pub duplicate_detection_history_time_window: Option<String>,
+    #[doc = "Value that indicates whether server-side batched operations are enabled."]
     #[serde(rename = "enableBatchedOperations", default, skip_serializing_if = "Option::is_none")]
     pub enable_batched_operations: Option<bool>,
+    #[doc = "Value that indicates whether Express Entities are enabled. An express topic holds a message in memory temporarily before writing it to persistent storage."]
     #[serde(rename = "enableExpress", default, skip_serializing_if = "Option::is_none")]
     pub enable_express: Option<bool>,
+    #[doc = "Value that indicates whether the topic to be partitioned across multiple message brokers is enabled."]
     #[serde(rename = "enablePartitioning", default, skip_serializing_if = "Option::is_none")]
     pub enable_partitioning: Option<bool>,
+    #[doc = "Whether messages should be filtered before publishing."]
     #[serde(rename = "filteringMessagesBeforePublishing", default, skip_serializing_if = "Option::is_none")]
     pub filtering_messages_before_publishing: Option<bool>,
+    #[doc = "Value that indicates whether the message is accessible anonymously."]
     #[serde(rename = "isAnonymousAccessible", default, skip_serializing_if = "Option::is_none")]
     pub is_anonymous_accessible: Option<bool>,
+    #[doc = ""]
     #[serde(rename = "isExpress", default, skip_serializing_if = "Option::is_none")]
     pub is_express: Option<bool>,
+    #[doc = "Maximum size of the topic in megabytes, which is the size of the memory allocated for the topic."]
     #[serde(rename = "maxSizeInMegabytes", default, skip_serializing_if = "Option::is_none")]
     pub max_size_in_megabytes: Option<i64>,
+    #[doc = "Value indicating if this topic requires duplicate detection."]
     #[serde(rename = "requiresDuplicateDetection", default, skip_serializing_if = "Option::is_none")]
     pub requires_duplicate_detection: Option<bool>,
+    #[doc = "Size of the topic, in bytes."]
     #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
     pub size_in_bytes: Option<i64>,
+    #[doc = "Entity status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<EntityStatus>,
+    #[doc = "Number of subscriptions."]
     #[serde(rename = "subscriptionCount", default, skip_serializing_if = "Option::is_none")]
     pub subscription_count: Option<i32>,
+    #[doc = "Value that indicates whether the topic supports ordering."]
     #[serde(rename = "supportOrdering", default, skip_serializing_if = "Option::is_none")]
     pub support_ordering: Option<bool>,
+    #[doc = "The exact time the message was updated."]
     #[serde(rename = "updatedAt", default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
@@ -593,10 +757,12 @@ impl TopicProperties {
         Self::default()
     }
 }
+#[doc = "Description of topic resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TopicResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "The Topic Properties definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TopicProperties>,
 }
@@ -605,11 +771,14 @@ impl TopicResource {
         Self::default()
     }
 }
+#[doc = "The Resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource location"]
     pub location: String,
+    #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
@@ -622,6 +791,7 @@ impl TrackedResource {
         }
     }
 }
+#[doc = "Specifies the reason for the unavailability of the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum UnavailableReason {
     None,

@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "An error returned by the Azure Resource Manager"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The content of an error returned by the Azure Resource Manager"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -12,14 +14,19 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The content of an error returned by the Azure Resource Manager"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "Error code"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "Error message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "Error target"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "Error details"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
 }
@@ -28,8 +35,10 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "The result of the request or operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeleteOperationResult {
+    #[doc = "The result of the operation or request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub boolean: Option<bool>,
 }
@@ -38,10 +47,13 @@ impl DeleteOperationResult {
         Self::default()
     }
 }
+#[doc = "Class which is a sparse representation of a Traffic Manager endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapEndpoint {
+    #[doc = "The ARM Resource ID of this Traffic Manager endpoint."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
+    #[doc = "A number uniquely identifying this endpoint in query experiences."]
     #[serde(rename = "endpointId", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_id: Option<i64>,
 }
@@ -50,10 +62,12 @@ impl HeatMapEndpoint {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager HeatMap."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapModel {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Class representing a Traffic Manager HeatMap properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HeatMapProperties>,
 }
@@ -62,14 +76,19 @@ impl HeatMapModel {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager HeatMap properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapProperties {
+    #[doc = "The beginning of the time window for this HeatMap, inclusive."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
+    #[doc = "The ending of the time window for this HeatMap, exclusive."]
     #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
     pub end_time: Option<String>,
+    #[doc = "The endpoints used in this HeatMap calculation."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub endpoints: Vec<HeatMapEndpoint>,
+    #[doc = "The traffic flows produced in this HeatMap calculation."]
     #[serde(rename = "trafficFlows", default, skip_serializing_if = "Vec::is_empty")]
     pub traffic_flows: Vec<TrafficFlow>,
 }
@@ -78,6 +97,7 @@ impl HeatMapProperties {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
     #[serde(flatten)]
@@ -88,12 +108,16 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager HeatMap query experience properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryExperience {
+    #[doc = "The id of the endpoint from the 'endpoints' array which these queries were routed to."]
     #[serde(rename = "endpointId")]
     pub endpoint_id: i64,
+    #[doc = "The number of queries originating from this location."]
     #[serde(rename = "queryCount")]
     pub query_count: i64,
+    #[doc = "The latency experienced by queries originating from this location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latency: Option<f64>,
 }
@@ -106,12 +130,16 @@ impl QueryExperience {
         }
     }
 }
+#[doc = "The core properties of ARM resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Fully qualified resource Id for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Network/trafficManagerProfiles/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. Ex- Microsoft.Network/trafficManagerProfiles."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }
@@ -120,12 +148,15 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a ARM tracked top level resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrackedResource {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The Azure Region where the resource lives"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
@@ -134,14 +165,19 @@ impl TrackedResource {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager HeatMap traffic flow properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficFlow {
+    #[doc = "The IP address that this query experience originated from."]
     #[serde(rename = "sourceIp", default, skip_serializing_if = "Option::is_none")]
     pub source_ip: Option<String>,
+    #[doc = "The approximate latitude that these queries originated from."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latitude: Option<f64>,
+    #[doc = "The approximate longitude that these queries originated from."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub longitude: Option<f64>,
+    #[doc = "The query experiences produced in this HeatMap calculation."]
     #[serde(rename = "queryExperiences", default, skip_serializing_if = "Vec::is_empty")]
     pub query_experiences: Vec<QueryExperience>,
 }
@@ -150,16 +186,21 @@ impl TrafficFlow {
         Self::default()
     }
 }
+#[doc = "Class representing a Traffic Manager Real User Metrics key response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerUserMetricsKeyModel {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
+    #[doc = "Fully qualified resource Id for the resource. Ex - /providers/Microsoft.Network/trafficManagerUserMetricsKeys"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The word default."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The type of the resource. Ex- Microsoft.Network/trafficManagerUserMetricsKeys."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The key returned by the Real User Metrics operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }

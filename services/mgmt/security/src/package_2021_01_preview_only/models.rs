@@ -2,8 +2,10 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudError {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudErrorBody>,
 }
@@ -12,16 +14,22 @@ impl CloudError {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudErrorBody {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<CloudErrorBody>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -30,8 +38,10 @@ impl CloudErrorBody {
         Self::default()
     }
 }
+#[doc = "Connection string for ingesting security data and logs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionStrings {
+    #[doc = "Connection strings"]
     pub value: Vec<IngestionConnectionString>,
 }
 impl ConnectionStrings {
@@ -39,10 +49,13 @@ impl ConnectionStrings {
         Self { value }
     }
 }
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -51,10 +64,13 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "Connection string for ingesting security data and logs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionConnectionString {
+    #[doc = "The region where ingested logs and data resides"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
+    #[doc = "Connection string value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -63,10 +79,12 @@ impl IngestionConnectionString {
         Self::default()
     }
 }
+#[doc = "Configures how to correlate scan data and logs with resources associated with the subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSetting {
     #[serde(flatten)]
     pub resource: Resource,
+    #[doc = "Ingestion setting data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IngestionSettingProperties>,
 }
@@ -75,10 +93,13 @@ impl IngestionSetting {
         Self::default()
     }
 }
+#[doc = "List of ingestion settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSettingList {
+    #[doc = "List of ingestion settings"]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<IngestionSetting>,
+    #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -87,6 +108,7 @@ impl IngestionSettingList {
         Self::default()
     }
 }
+#[doc = "Ingestion setting data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSettingProperties {}
 impl IngestionSettingProperties {
@@ -94,8 +116,10 @@ impl IngestionSettingProperties {
         Self::default()
     }
 }
+#[doc = "Configures how to correlate scan data and logs with resources associated with the subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSettingToken {
+    #[doc = "The token is used for correlating security data and logs with the resources in the subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
 }
@@ -104,12 +128,16 @@ impl IngestionSettingToken {
         Self::default()
     }
 }
+#[doc = "Describes an Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
+    #[doc = "Resource Id"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "Resource name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "Resource type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
 }

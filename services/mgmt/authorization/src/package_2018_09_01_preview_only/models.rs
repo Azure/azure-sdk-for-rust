@@ -2,10 +2,13 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The additional info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<serde_json::Value>,
 }
@@ -14,16 +17,22 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetail {
+    #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
+    #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+    #[doc = "The error target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+    #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
     #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
@@ -32,8 +41,10 @@ impl ErrorDetail {
         Self::default()
     }
 }
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
@@ -42,14 +53,19 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Role Assignments"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignment {
+    #[doc = "The role assignment ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The role assignment name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[doc = "The role assignment type."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Role assignment properties with scope."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RoleAssignmentPropertiesWithScope>,
 }
@@ -58,8 +74,10 @@ impl RoleAssignment {
         Self::default()
     }
 }
+#[doc = "Role assignment create parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentCreateParameters {
+    #[doc = "Role assignment properties."]
     pub properties: RoleAssignmentProperties,
 }
 impl RoleAssignmentCreateParameters {
@@ -67,10 +85,13 @@ impl RoleAssignmentCreateParameters {
         Self { properties }
     }
 }
+#[doc = "Role Assignments filter"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentFilter {
+    #[doc = "Returns role assignment of the specific principal."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The Delegation flag for the role assignment"]
     #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
 }
@@ -79,10 +100,13 @@ impl RoleAssignmentFilter {
         Self::default()
     }
 }
+#[doc = "Role assignment list operation result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentListResult {
+    #[doc = "Role assignment list."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<RoleAssignment>,
+    #[doc = "The URL to use for getting the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -91,14 +115,19 @@ impl RoleAssignmentListResult {
         Self::default()
     }
 }
+#[doc = "Role assignment properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentProperties {
+    #[doc = "The role definition ID used in the role assignment."]
     #[serde(rename = "roleDefinitionId")]
     pub role_definition_id: String,
+    #[doc = "The principal ID assigned to the role. This maps to the ID inside the Active Directory. It can point to a user, service principal, or security group."]
     #[serde(rename = "principalId")]
     pub principal_id: String,
+    #[doc = "The principal type of the assigned principal ID."]
     #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<role_assignment_properties::PrincipalType>,
+    #[doc = "The delegation flag used for creating a role assignment"]
     #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
 }
@@ -114,6 +143,7 @@ impl RoleAssignmentProperties {
 }
 pub mod role_assignment_properties {
     use super::*;
+    #[doc = "The principal type of the assigned principal ID."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrincipalType {
         User,
@@ -122,16 +152,22 @@ pub mod role_assignment_properties {
         ForeignGroup,
     }
 }
+#[doc = "Role assignment properties with scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleAssignmentPropertiesWithScope {
+    #[doc = "The role assignment scope."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
+    #[doc = "The role definition ID."]
     #[serde(rename = "roleDefinitionId", default, skip_serializing_if = "Option::is_none")]
     pub role_definition_id: Option<String>,
+    #[doc = "The principal ID."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
+    #[doc = "The principal type of the assigned principal ID."]
     #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
     pub principal_type: Option<role_assignment_properties_with_scope::PrincipalType>,
+    #[doc = "The Delegation flag for the role assignment"]
     #[serde(rename = "canDelegate", default, skip_serializing_if = "Option::is_none")]
     pub can_delegate: Option<bool>,
 }
@@ -142,6 +178,7 @@ impl RoleAssignmentPropertiesWithScope {
 }
 pub mod role_assignment_properties_with_scope {
     use super::*;
+    #[doc = "The principal type of the assigned principal ID."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum PrincipalType {
         User,
