@@ -34,6 +34,12 @@ struct SchemaGen {
     all_of: Vec<SchemaGen>,
 }
 
+#[derive(Clone)]
+struct EnumValue {
+    value: String,
+    description: Option<String>,
+}
+
 impl SchemaGen {
     fn new(ref_key: Option<RefKey>, schema: Schema, doc_file: PathBuf) -> Self {
         Self {
@@ -88,8 +94,19 @@ impl SchemaGen {
         get_schema_array_items(&self.schema.common).map_err(Error::ArrayItems)
     }
 
-    fn enum_values_as_strings(&self) -> Vec<&str> {
-        enum_values_as_strings(&self.schema.common.enum_)
+    fn enum_values(&self) -> Vec<EnumValue> {
+        self.schema
+            .common
+            .enum_
+            .iter()
+            .filter_map(|v| match v {
+                Value::String(s) => Some(EnumValue {
+                    value: s.to_owned(),
+                    description: None,
+                }),
+                _ => None,
+            })
+            .collect()
     }
 
     fn properties(&self) -> Vec<&PropertyGen> {
@@ -208,16 +225,6 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
     schema.properties = properties;
     schema.all_of = all_of.into_iter().flatten().collect();
     Ok(schema)
-}
-
-fn enum_values_as_strings(values: &[Value]) -> Vec<&str> {
-    values
-        .iter()
-        .filter_map(|v| match v {
-            Value::String(s) => Some(s.as_str()),
-            _ => None,
-        })
-        .collect()
 }
 
 fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>, Error> {
@@ -347,31 +354,40 @@ fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_
 }
 
 fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<TypeCode, Error> {
-    let enum_values = property.enum_values_as_strings();
+    let enum_values = property.enum_values();
     let id = &property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
         property: property_name.to_owned(),
     })?;
     let mut values = TokenStream::new();
-    for name in enum_values {
-        let nm = name.to_camel_case_ident().map_err(|source| Error::EnumName {
+    for enum_value in enum_values {
+        let value = &enum_value.value;
+        let nm = value.to_camel_case_ident().map_err(|source| Error::EnumName {
             source,
             property: property_name.to_owned(),
         })?;
-        let lower = name.to_lowercase();
-        let rename = if nm.to_string() == name {
-            quote! {}
-        } else if name != lower && lowercase_workaround {
-            quote! { #[serde(rename = #name, alias = #lower)] }
-        } else {
-            quote! { #[serde(rename = #name)] }
+        let doc_comment = match enum_value.description {
+            Some(description) => {
+                quote! { #[doc = #description] }
+            }
+            None => quote! {},
         };
-        let value = quote! {
+        let lower = value.to_lowercase();
+        let rename = if &nm.to_string() == value {
+            quote! {}
+        } else if value != &lower && lowercase_workaround {
+            quote! { #[serde(rename = #value, alias = #lower)] }
+        } else {
+            quote! { #[serde(rename = #value)] }
+        };
+        let value_token = quote! {
+            #doc_comment
             #rename
             #nm,
         };
-        values.extend(value);
+        values.extend(value_token);
     }
+
     let nm = property_name.to_camel_case_ident().map_err(|source| Error::EnumName {
         source,
         property: property_name.to_owned(),
@@ -391,7 +407,16 @@ fn create_enum(namespace: &TokenStream, property: &SchemaGen, property_name: &st
     } else {
         quote! {}
     };
+
+    let doc_comment = match &property.schema.common.description {
+        Some(description) => {
+            quote! { #[doc = #description] }
+        }
+        None => quote! {},
+    };
+
     let code = quote! {
+        #doc_comment
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum #nm {
             #values
@@ -490,7 +515,14 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         if should_box {
             type_name = quote! { Box<#type_name> };
         }
+
+        let doc_comment = match &property.schema.schema.common.description {
+            Some(description) => quote! { #[doc = #description] },
+            None => quote! {},
+        };
+
         props.extend(quote! {
+            #doc_comment
             #serde
             pub #field_name: #type_name,
         });
@@ -520,7 +552,13 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str) -> Result<
         quote! {}
     };
 
+    let doc_comment = match &schema.schema.common.description {
+        Some(description) => quote! { #[doc = #description] },
+        None => quote! {},
+    };
+
     let struct_code = quote! {
+        #doc_comment
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #default_code
         pub struct #struct_name_code {
@@ -598,17 +636,5 @@ fn create_struct_field_code(
                 })
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    #[test]
-    fn test_enum_values_as_strings() {
-        let values = vec![json!("/"), json!("/keys")];
-        assert_eq!(enum_values_as_strings(&values), vec!["/", "/keys"]);
     }
 }
