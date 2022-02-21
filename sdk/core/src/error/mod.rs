@@ -234,8 +234,8 @@ impl Display for Error {
 
 /// An extention to the `Result` type that easy allows creating `Error` values from exsiting errors
 ///
-/// This trait should not be implemented on custom types and is meant for usage with `Result`
-pub trait ResultExt<T> {
+/// This trait cannot be implemented on custom types and is meant for usage with `Result`
+pub trait ResultExt<T>: private::Sealed {
     fn context<C>(self, kind: ErrorKind, message: C) -> Result<T>
     where
         Self: Sized,
@@ -246,6 +246,12 @@ pub trait ResultExt<T> {
         Self: Sized,
         F: FnOnce() -> C,
         C: Into<Cow<'static, str>>;
+}
+
+mod private {
+    pub trait Sealed {}
+
+    impl<T, E> Sealed for std::result::Result<T, E> where E: std::error::Error + Send + Sync + 'static {}
 }
 
 impl<T, E> ResultExt<T> for std::result::Result<T, E>
