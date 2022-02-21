@@ -1,4 +1,4 @@
-use crate::policies::{Policy, PolicyResult, Request, Response};
+use crate::policies::{Policy, PolicyResult, Request};
 use crate::Context;
 use std::sync::Arc;
 
@@ -17,7 +17,7 @@ impl Policy for NoRetryPolicy {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         // just call the following policies and bubble up the error
         next[0].send(ctx, request, &next[1..]).await
     }

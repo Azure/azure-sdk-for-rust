@@ -1,4 +1,4 @@
-use azure_core::{Context, Policy, PolicyResult, Request, Response};
+use azure_core::{Context, Policy, PolicyResult, Request};
 use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
 use http::{HeaderMap, HeaderValue, Method};
 use ring::hmac;
@@ -26,12 +26,11 @@ impl Policy for SharedKeyAuthorizationPolicy {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
-        if next.is_empty() {
-            return Err(Box::new(azure_core::PipelineError::InvalidTailPolicy(
-                "Authorization policies cannot be the last policy of a pipeline".to_owned(),
-            )));
-        }
+    ) -> PolicyResult {
+        assert!(
+            !next.is_empty(),
+            "Authorization policies cannot be the last policy of a pipeline"
+        );
 
         let headers_mut = request.headers_mut();
         headers_mut.append(

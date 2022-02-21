@@ -13,7 +13,7 @@ use std::convert::TryInto;
 use std::pin::Pin;
 
 /// A future of a delete file response
-type ListPaths = Pin<Box<Pageable<ListPathsResponse>>>;
+type ListPaths = Pin<Box<Pageable<ListPathsResponse, azure_core::Error>>>;
 
 #[derive(Debug, Clone)]
 pub struct ListPathsBuilder {

@@ -1,7 +1,8 @@
 use super::mock_response::MockResponse;
 use super::MockTransaction;
+use crate::error::ResultExt;
 use crate::policies::{Policy, PolicyResult};
-use crate::{Context, Request, Response, TransportOptions};
+use crate::{Context, Request, TransportOptions};
 use std::io::Write;
 use std::sync::Arc;
 
@@ -28,7 +29,7 @@ impl Policy for MockTransportRecorderPolicy {
         _ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         // there must be no more policies
         assert_eq!(0, next.len());
 
@@ -45,9 +46,10 @@ impl Policy for MockTransportRecorderPolicy {
             let mut request_contents_stream = std::fs::File::create(&request_path).unwrap();
             request_contents_stream
                 .write_all(request_contents.as_str().as_bytes())
-                .map_err(|e| {
-                    super::MockFrameworkError::IOError("cannot write request file".into(), e)
-                })?;
+                .context(
+                    crate::error::ErrorKind::MockFramework,
+                    "cannot write request file",
+                )?;
         }
 
         let response = self
@@ -64,9 +66,10 @@ impl Policy for MockTransportRecorderPolicy {
             let mut response_contents_stream = std::fs::File::create(&response_path).unwrap();
             response_contents_stream
                 .write_all(response_contents.as_bytes())
-                .map_err(|e| {
-                    super::MockFrameworkError::IOError("cannot write response file".into(), e)
-                })?;
+                .context(
+                    crate::error::ErrorKind::MockFramework,
+                    "cannot write response file",
+                )?
         }
 
         self.transaction.increment_number();

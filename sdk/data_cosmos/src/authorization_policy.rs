@@ -2,7 +2,7 @@ use crate::headers::{HEADER_DATE, HEADER_VERSION};
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use crate::TimeNonce;
-use azure_core::{Context, Policy, PolicyResult, Request, Response};
+use azure_core::{Context, Policy, PolicyResult, Request};
 use http::header::AUTHORIZATION;
 use http::HeaderValue;
 use ring::hmac;
@@ -43,14 +43,13 @@ impl Policy for AuthorizationPolicy {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
+    ) -> PolicyResult {
         trace!("called AuthorizationPolicy::send. self == {:#?}", self);
 
-        if next.is_empty() {
-            return Err(Box::new(azure_core::PipelineError::InvalidTailPolicy(
-                "Authorization policies cannot be the last policy of a pipeline".to_owned(),
-            )));
-        }
+        assert!(
+            !next.is_empty(),
+            "Authorization policies cannot be the last policy of a pipeline"
+        );
 
         let time_nonce = TimeNonce::new();
 

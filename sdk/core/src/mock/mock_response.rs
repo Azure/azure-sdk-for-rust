@@ -3,7 +3,7 @@ use http::{header, HeaderMap, StatusCode};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-use crate::{collect_pinned_stream, BytesStream, Response};
+use crate::{collect_pinned_stream, error, BytesStream, Response};
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct MockResponse {
@@ -35,9 +35,13 @@ impl MockResponse {
 
     pub(crate) async fn duplicate(
         response: crate::Response,
-    ) -> Result<(crate::Response, Self), crate::StreamError> {
+    ) -> error::Result<(crate::Response, Self)> {
+        use error::ResultExt;
         let (status_code, header_map, pinned_stream) = response.deconstruct();
-        let response_bytes = collect_pinned_stream(pinned_stream).await?;
+        let response_bytes = collect_pinned_stream(pinned_stream).await.context(
+            error::ErrorKind::Io,
+            "an error occurred fetching the next part of the byte stream",
+        )?;
 
         let response = Response::new(
             status_code,

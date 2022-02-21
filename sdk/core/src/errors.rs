@@ -2,16 +2,10 @@ use http::StatusCode;
 #[cfg(feature = "enable_hyper")]
 use hyper::{self, body, Body};
 use std::cmp::PartialEq;
+use std::fmt::Debug;
 
 /// A specialized `Result` type for this crate.
 pub type Result<T> = std::result::Result<T, Error>;
-
-/// An error originating from a pipeline.
-#[derive(Debug, thiserror::Error)]
-pub enum PipelineError {
-    #[error("invalid pipeline: last policy is not a TransportPolicy: {0:?}")]
-    InvalidTailPolicy(String),
-}
 
 /// An error caused by an HTTP header.
 #[derive(Debug, thiserror::Error)]
@@ -28,10 +22,6 @@ pub enum HttpHeaderError {
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("pipeline error")]
-    Pipeline(#[from] PipelineError),
-    #[error("policy error")]
-    Policy(#[source] Box<dyn std::error::Error + Send + Sync>),
     #[error("parse error")]
     Parse(#[from] ParseError),
     #[error("error getting token")]
@@ -52,6 +42,15 @@ pub enum Error {
     Json(#[source] serde_json::Error),
     #[error("Other error")]
     Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+}
+
+impl From<super::error::Error> for Error {
+    fn from(err: super::error::Error) -> Self {
+        match err.into_downcast() {
+            Ok(e) => e,
+            Err(e) => Self::Other(Box::new(e)),
+        }
+    }
 }
 
 #[cfg(feature = "enable_hyper")]
