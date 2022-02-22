@@ -1,7 +1,6 @@
 use azure_core::{Context, Policy, PolicyResult, Request};
-use azure_storage::core::storage_shared_key_credential::StorageSharedKeyCredential;
+use azure_storage::{core::storage_shared_key_credential::StorageSharedKeyCredential, hmac::sign};
 use http::{HeaderMap, HeaderValue, Method};
-use ring::hmac;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -75,7 +74,7 @@ fn generate_authorization(
     // println!("\nstr_to_sign == {:?}\n", str_to_sign);
     // debug!("str_to_sign == {}", str_to_sign);
 
-    let auth = encode_str_to_sign(&str_to_sign, shared_key);
+    let auth = sign(&str_to_sign, shared_key).unwrap();
     // debug!("auth == {:?}", auth);
 
     format!("SharedKey {}:{}", storage_account_name, auth)
@@ -221,14 +220,4 @@ fn lexy_sort<'a>(
     v_values.sort();
 
     v_values
-}
-
-fn encode_str_to_sign(str_to_sign: &str, hmac_key: &str) -> String {
-    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, &base64::decode(hmac_key).unwrap());
-    let sig = hmac::sign(&key, str_to_sign.as_bytes());
-
-    // let res = hmac.result();
-    // debug!("{:?}", res.code());
-
-    base64::encode(sig.as_ref())
 }
