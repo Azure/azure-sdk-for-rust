@@ -20,10 +20,8 @@ impl HttpError {
         let mut headers = HashMap::new();
 
         for (name, value) in response.headers() {
-            // TODO: non-UTF8 header values will not be included
-            if let Ok(value) = value.to_str() {
-                headers.insert(name.to_string(), value.to_string());
-            }
+            let value = String::from_utf8_lossy(value.as_bytes()).to_string();
+            headers.insert(name.to_string(), value);
         }
 
         let body = response.into_body_string().await;
