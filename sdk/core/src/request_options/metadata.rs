@@ -78,12 +78,10 @@ impl From<&HeaderMap> for Metadata {
         header_map
             .iter()
             .map(|header| (header.0.as_str(), header.1.as_bytes()))
-            .filter(|(key, _)| key.starts_with("x-ms-meta-"))
             .for_each(|(key, value)| {
-                metadata.insert(
-                    key.strip_prefix("x-ms-meta-").unwrap().to_owned(),
-                    value.to_owned(),
-                );
+                if let Some(key) = key.strip_prefix("x-ms-meta-") {
+                    metadata.insert(key.to_owned(), value.to_owned());
+                }
             });
 
         metadata

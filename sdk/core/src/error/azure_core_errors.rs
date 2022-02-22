@@ -36,6 +36,7 @@ impl From<crate::errors::HttpError> for Error {
             crate::HttpError::Utf8(e) => Error::new(ErrorKind::DataConversion, e),
             crate::HttpError::BuildResponse(e) => Error::new(ErrorKind::DataConversion, e),
             crate::HttpError::BuildClientRequest(e) => Error::new(ErrorKind::Other, e),
+            crate::HttpError::Url(e) => Error::new(ErrorKind::Other, e),
         }
     }
 }

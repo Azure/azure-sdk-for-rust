@@ -61,29 +61,33 @@ where
                 }
                 Ok(response) => {
                     // Error status code
-                    let error = HttpError::new(response).await;
-                    let status = StatusCode::from_u16(error.status()).unwrap();
+                    let code = response.status().as_u16();
+
+                    let http_error = HttpError::new(response).await;
+                    let status = StatusCode::from_u16(code);
                     let error = Error::full(
                         ErrorKind::http_response(
-                            status.as_u16(),
-                            error.error_code().map(|s| s.to_owned()),
+                            code,
+                            http_error.error_code().map(|s| s.to_owned()),
                         ),
-                        error,
+                        http_error,
                         "server returned error status which will not be retried",
                     );
 
-                    if !RETRY_STATUSES.contains(&status) {
-                        log::error!(
-                            "server returned error status which will not be retried: {}",
+                    if let Ok(status) = status {
+                        if !RETRY_STATUSES.contains(&status) {
+                            log::error!(
+                                "server returned error status which will not be retried: {}",
+                                status
+                            );
+                            // Server didn't return a status we retry on so return early
+                            return Err(error);
+                        }
+                        log::debug!(
+                            "server returned error status which requires retry: {}",
                             status
                         );
-                        // Server didn't return a status we retry on so return early
-                        return Err(error);
                     }
-                    log::debug!(
-                        "server returned error status which requires retry: {}",
-                        status
-                    );
                     error
                 }
                 Err(error) => {
