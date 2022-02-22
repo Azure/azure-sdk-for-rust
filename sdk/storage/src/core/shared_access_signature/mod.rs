@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use ring::hmac;
 use std::fmt;
 use url::form_urlencoded;
 
@@ -8,12 +7,6 @@ pub mod service_sas;
 
 pub trait SasToken {
     fn token(&self) -> String;
-}
-
-pub(crate) fn sign(key: &str, data: &str) -> String {
-    let key = hmac::Key::new(ring::hmac::HMAC_SHA256, &base64::decode(key).unwrap());
-    let sig_bytes = hmac::sign(&key, data.as_bytes());
-    base64::encode(&sig_bytes)
 }
 
 pub(crate) fn format_date(d: DateTime<Utc>) -> String {

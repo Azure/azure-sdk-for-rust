@@ -17,7 +17,6 @@ edition = "2018"
 [dependencies]
 async-trait = "0.1"
 azure_core = { path = "../core", version = "0.1" }
-ring = "0.16"
 base64 = "0.13"
 chrono = "0.4"
 http = "0.2"
@@ -29,6 +28,9 @@ url = "2.2"
 uuid = { version = "0.8", features = ["v4"] }
 thiserror = "1.0"
 bytes = "1.0"
+hmac = "0.12"
+sha2 = "0.10"
+
 
 [dev-dependencies]
 env_logger = "0.9"
