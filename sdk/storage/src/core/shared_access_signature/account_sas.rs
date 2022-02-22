@@ -1,5 +1,6 @@
 use crate::core::{
-    shared_access_signature::{format_date, format_form, sign, SasProtocol, SasToken},
+    hmac::sign,
+    shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
     No, ToAssign,
 };
 use chrono::{DateTime, Utc};
@@ -170,7 +171,7 @@ impl AccountSharedAccessSignature {
                     self.signed_version,
                 );
 
-                sign(&self.key, &string_to_sign)
+                sign(&string_to_sign, &self.key).unwrap()
             }
             _ => {
                 // TODO: support other version tags?

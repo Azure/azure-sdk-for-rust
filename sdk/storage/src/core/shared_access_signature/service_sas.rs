@@ -1,4 +1,7 @@
-use crate::core::shared_access_signature::{format_date, format_form, sign, SasProtocol, SasToken};
+use crate::{
+    core::shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
+    hmac,
+};
 use chrono::{DateTime, Utc};
 use std::{fmt, marker::PhantomData};
 
@@ -128,7 +131,7 @@ impl BlobSharedAccessSignature {
             "".to_string(), // rsct
         ];
 
-        sign(&self.key, &content.join("\n"))
+        hmac::sign(&content.join("\n"), &self.key).unwrap()
     }
 }
 

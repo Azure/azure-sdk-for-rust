@@ -4,6 +4,7 @@ mod connection_string_builder;
 mod copy_id;
 mod copy_progress;
 mod errors;
+pub mod hmac;
 mod into_azure_path;
 mod macros;
 pub mod prelude;
