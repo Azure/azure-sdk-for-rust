@@ -61,11 +61,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
-        .create_permission(
-            Context::new(),
-            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
-            &permission_mode,
-        )
+        .create_permission(permission_mode)
+        .expiry_seconds(18000u64) // 5 hours, max!
+        .into_future()
         .await
         .unwrap();
     println!(
@@ -137,11 +135,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();
     let create_permission_response = permission_client
-        .create_permission(
-            Context::new(),
-            CreatePermissionOptions::new().expiry_seconds(18000u64), // 5 hours, max!
-            &permission_mode,
-        )
+        .create_permission(permission_mode)
+        .expiry_seconds(18000u64)
+        .into_future()
         .await
         .unwrap();
     println!(

@@ -1,19 +1,25 @@
 use crate::prelude::*;
-use crate::resources::permission::{ExpirySeconds, PermissionMode};
+use crate::resources::permission::{ExpirySeconds, PermissionMode, PermissionResponse};
 
-use azure_core::Request as HttpRequest;
+use azure_core::Context;
 
 #[derive(Debug, Clone)]
-pub struct CreatePermissionOptions {
+pub struct CreatePermissionBuilder {
+    client: PermissionClient,
     expiry_seconds: Option<ExpirySeconds>,
     consistency_level: Option<ConsistencyLevel>,
+    permission_mode: PermissionMode,
+    context: Context,
 }
 
-impl CreatePermissionOptions {
-    pub fn new() -> Self {
+impl CreatePermissionBuilder {
+    pub(crate) fn new(client: PermissionClient, permission_mode: PermissionMode) -> Self {
         Self {
+            client,
             expiry_seconds: Some(ExpirySeconds::new(3600)),
             consistency_level: None,
+            permission_mode,
+            context: Context::new(),
         }
     }
 
@@ -22,30 +28,47 @@ impl CreatePermissionOptions {
         consistency_level: ConsistencyLevel => Some(consistency_level),
     }
 
-    pub(crate) fn decorate_request(
-        &self,
-        request: &mut HttpRequest,
-        id: &str,
-        permission_mode: &PermissionMode<'_>,
-    ) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        azure_core::headers::add_optional_header2(&self.expiry_seconds, request)?;
+    pub fn into_future(self) -> CreatePermission {
+        Box::pin(async move {
+            let mut request = self.client.cosmos_client().prepare_request_pipeline(
+                &format!(
+                    "dbs/{}/users/{}/permissions",
+                    self.client.database_client().database_name(),
+                    self.client.user_client().user_name()
+                ),
+                http::Method::POST,
+            );
 
-        #[derive(Serialize, Deserialize)]
-        struct RequestBody<'x> {
-            id: &'x str,
-            #[serde(rename = "permissionMode")]
-            permission_mode: &'x str,
-            resource: &'x str,
-        }
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.expiry_seconds, &mut request)?;
 
-        let request_body = RequestBody {
-            id,
-            permission_mode: permission_mode.kind(),
-            resource: permission_mode.resource(),
-        };
+            #[derive(Serialize, Deserialize)]
+            struct RequestBody<'x> {
+                id: &'x str,
+                #[serde(rename = "permissionMode")]
+                permission_mode: &'x str,
+                resource: &'x str,
+            }
 
-        request.set_body(bytes::Bytes::from(serde_json::to_string(&request_body)?).into());
-        Ok(())
+            let request_body = RequestBody {
+                id: &self.client.permission_name(),
+                permission_mode: self.permission_mode.kind(),
+                resource: self.permission_mode.resource(),
+            };
+
+            request.set_body(bytes::Bytes::from(serde_json::to_string(&request_body)?).into());
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Permissions),
+                    &mut request,
+                )
+                .await?;
+
+            Ok(PermissionResponse::try_from(response).await?)
+        })
     }
 }
+
+type CreatePermission = futures::future::BoxFuture<'static, crate::Result<PermissionResponse>>;
