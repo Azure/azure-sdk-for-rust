@@ -2,29 +2,61 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 
 use azure_core::headers::session_token_from_headers;
-use azure_core::Request as HttpRequest;
+use azure_core::Context;
 use azure_core::Response as HttpResponse;
 
 #[derive(Debug, Clone)]
-pub struct DeletePermissionOptions {
+pub struct DeletePermissionBuilder {
+    client: PermissionClient,
     consistency_level: Option<ConsistencyLevel>,
+    context: Context,
 }
 
-impl DeletePermissionOptions {
-    pub fn new() -> Self {
+impl DeletePermissionBuilder {
+    pub(crate) fn new(client: PermissionClient) -> Self {
         Self {
+            client,
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
+    pub fn into_future(self) -> DeletePermission {
+        Box::pin(async move {
+            let mut request = self
+                .client
+                .prepare_request_with_permission_name(http::Method::DELETE);
 
-        Ok(())
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Permissions),
+                    &mut request,
+                )
+                .await?;
+
+            Ok(DeletePermissionResponse::try_from(response).await?)
+        })
+    }
+}
+
+type DeletePermission =
+    futures::future::BoxFuture<'static, crate::Result<DeletePermissionResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for DeletePermissionBuilder {
+    type Future = DeletePermission;
+    type Output = <DeletePermission as std::future::Future>::Output;
+    fn into_future(self) -> Self::Future {
+        Self::into_future(self)
     }
 }
 

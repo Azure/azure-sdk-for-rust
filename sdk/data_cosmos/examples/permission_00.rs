@@ -138,12 +138,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let delete_permission_response = permission_client
-        .delete_permission(
-            Context::new(),
-            DeletePermissionOptions::new().consistency_level(ConsistencyLevel::Session(
-                replace_permission_response.session_token,
-            )),
-        )
+        .delete_permission()
+        .consistency_level(ConsistencyLevel::Session(
+            replace_permission_response.session_token,
+        ))
+        .into_future()
         .await
         .unwrap();
 

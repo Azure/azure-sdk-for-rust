@@ -126,9 +126,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         Err(error) => println!("Insert failed: {:#?}", error),
     }
 
-    permission_client
-        .delete_permission(Context::new(), DeletePermissionOptions::new())
-        .await?;
+    permission_client.delete_permission().into_future().await?;
 
     // All includes read and write.
     let permission_mode = get_collection_response.collection.all_permission();

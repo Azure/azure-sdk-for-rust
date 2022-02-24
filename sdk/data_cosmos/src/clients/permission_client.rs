@@ -86,21 +86,8 @@ impl PermissionClient {
     }
 
     /// Delete the permission
-    pub async fn delete_permission(
-        &self,
-        ctx: Context,
-        options: DeletePermissionOptions,
-    ) -> crate::Result<DeletePermissionResponse> {
-        let mut request = self.prepare_request_with_permission_name(http::Method::DELETE);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
-            .await?;
-
-        Ok(DeletePermissionResponse::try_from(response).await?)
+    pub fn delete_permission(&self) -> DeletePermissionBuilder {
+        DeletePermissionBuilder::new(self.clone())
     }
 
     pub(crate) fn prepare_request_with_permission_name(&self, method: http::Method) -> Request {
