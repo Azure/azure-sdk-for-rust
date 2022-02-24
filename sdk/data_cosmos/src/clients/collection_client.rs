@@ -60,21 +60,8 @@ impl CollectionClient {
     }
 
     /// Delete a collection
-    pub async fn delete_collection(
-        &self,
-        ctx: Context,
-        options: DeleteCollectionOptions,
-    ) -> crate::Result<DeleteCollectionResponse> {
-        let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-            .await?;
-
-        Ok(DeleteCollectionResponse::try_from(response).await?)
+    pub fn delete_collection(&self) -> DeleteCollectionBuilder {
+        DeleteCollectionBuilder::new(self.clone())
     }
 
     /// Replace a collection
@@ -163,7 +150,10 @@ impl CollectionClient {
         StoredProcedureClient::new(self, stored_procedure_name)
     }
 
-    fn prepare_request_with_collection_name(&self, http_method: http::Method) -> Request {
+    pub(crate) fn prepare_request_with_collection_name(
+        &self,
+        http_method: http::Method,
+    ) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}",
             self.database_client().database_name(),

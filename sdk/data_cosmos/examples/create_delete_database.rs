@@ -70,9 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             println!("res == {:#?}", res);
         }
 
-        let delete_response = db_collection
-            .delete_collection(Context::new(), DeleteCollectionOptions::new())
-            .await?;
+        let delete_response = db_collection.delete_collection().into_future().await?;
         println!("collection deleted: {:#?}", delete_response);
     }
 
