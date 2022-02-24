@@ -46,13 +46,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // create collection!
     {
         let db_client = client.clone().into_database_client(database_name.clone());
-
         let create_collection_response = db_client
-            .create_collection(
-                Context::new(),
-                "panzadoro",
-                CreateCollectionOptions::new("/id"),
-            )
+            .create_collection("panzadoro", "/id")
+            .into_future()
             .await?;
 
         println!(

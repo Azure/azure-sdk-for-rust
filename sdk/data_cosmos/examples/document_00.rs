@@ -102,11 +102,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             client
                 .clone()
                 .into_database_client(database.id.clone())
-                .create_collection(
-                    Context::new(),
-                    COLLECTION,
-                    CreateCollectionOptions::new("/id"),
-                )
+                .create_collection(COLLECTION, "/id")
+                .into_future()
                 .await?
                 .collection
         }

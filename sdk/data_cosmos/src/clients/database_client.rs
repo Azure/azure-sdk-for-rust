@@ -1,5 +1,6 @@
 use super::*;
 use crate::operations::*;
+use crate::resources::collection::PartitionKey;
 use crate::resources::ResourceType;
 use crate::ReadonlyString;
 use azure_core::prelude::Continuation;
@@ -154,24 +155,12 @@ impl DatabaseClient {
     }
 
     /// Create a collection
-    pub async fn create_collection<S: AsRef<str>>(
+    pub fn create_collection<S: Into<String>, P: Into<PartitionKey>>(
         &self,
-        ctx: Context,
         collection_name: S,
-        options: CreateCollectionOptions,
-    ) -> crate::Result<CreateCollectionResponse> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!("dbs/{}/colls", self.database_name()),
-            http::Method::POST,
-        );
-
-        options.decorate_request(&mut request, collection_name.as_ref())?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-            .await?;
-
-        Ok(CreateCollectionResponse::try_from(response).await?)
+        partition_key: P,
+    ) -> CreateCollectionBuilder {
+        CreateCollectionBuilder::new(self.clone(), collection_name.into(), partition_key.into())
     }
 
     /// List users
@@ -245,7 +234,7 @@ impl DatabaseClient {
         UserClient::new(self, user_name)
     }
 
-    fn pipeline(&self) -> &Pipeline {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         self.cosmos_client.pipeline()
     }
 }
