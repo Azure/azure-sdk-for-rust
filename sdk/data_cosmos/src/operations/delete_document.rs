@@ -1,24 +1,30 @@
+use crate::headers::from_headers::*;
 use crate::prelude::*;
 
+use azure_core::headers::session_token_from_headers;
 use azure_core::prelude::*;
-use azure_core::{Request as HttpRequest, Response as HttpResponse};
+use azure_core::Response as HttpResponse;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct DeleteDocumentOptions {
+pub struct DeleteDocumentBuilder {
+    client: DocumentClient,
     if_match_condition: Option<IfMatchCondition>,
     if_modified_since: Option<IfModifiedSince>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TentativeWritesAllowance,
+    context: Context,
 }
 
-impl DeleteDocumentOptions {
-    pub fn new() -> DeleteDocumentOptions {
+impl DeleteDocumentBuilder {
+    pub(crate) fn new(client: DocumentClient) -> DeleteDocumentBuilder {
         Self {
+            client,
             if_match_condition: None,
             if_modified_since: None,
             consistency_level: None,
             allow_tentative_writes: TentativeWritesAllowance::Deny,
+            context: Context::new(),
         }
     }
 
@@ -27,29 +33,50 @@ impl DeleteDocumentOptions {
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         allow_tentative_writes: TentativeWritesAllowance,
         if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        context: Context => context,
     }
 
-    pub fn decorate_request(
-        &self,
-        request: &mut HttpRequest,
-        serialized_partition_key: &str,
-    ) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
-        azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, request)?;
+    pub fn into_future(self) -> DeleteDocument {
+        Box::pin(async move {
+            let mut request = self
+                .client
+                .prepare_request_pipeline_with_document_name(http::Method::DELETE);
 
-        crate::cosmos_entity::add_as_partition_key_header_serialized2(
-            serialized_partition_key,
-            request,
-        );
+            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
 
-        Ok(())
+            crate::cosmos_entity::add_as_partition_key_header_serialized2(
+                &self.client.partition_key_serialized(),
+                &mut request,
+            );
+
+            let response = self
+                .client
+                .cosmos_client()
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Documents),
+                    &mut request,
+                )
+                .await?;
+
+            DeleteDocumentResponse::try_from(response).await
+        })
     }
 }
 
-use crate::headers::from_headers::*;
-use azure_core::headers::session_token_from_headers;
+type DeleteDocument = futures::future::BoxFuture<'static, crate::Result<DeleteDocumentResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for DeleteDocumentBuilder {
+    type Future = DeleteDocument;
+    type Output = <DeleteDocument as std::future::Future>::Output;
+    fn into_future(self) -> Self::Future {
+        Self::into_future(self)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct DeleteDocumentResponse {
