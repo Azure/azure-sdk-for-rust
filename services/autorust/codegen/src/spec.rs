@@ -68,7 +68,7 @@ impl Spec {
         let file_path = file_path.as_ref();
         if !docs.contains_key(file_path) {
             let doc = openapi::parse(&file_path)?;
-            let ref_files = openapi::get_reference_file_paths(&file_path.to_path_buf(), &doc);
+            let ref_files = openapi::get_reference_file_paths(file_path, &doc);
             docs.insert(PathBuf::from(file_path), doc);
             for ref_file in ref_files {
                 let child_path = path::join(&file_path, &ref_file).map_err(|source| Error::PathJoin { source })?;
@@ -110,9 +110,7 @@ impl Spec {
         let mut versions: Vec<_> = self
             .docs()
             .values()
-            .filter(|doc| !doc.paths().is_empty())
-            .map(|api| &api.consumes)
-            .flatten()
+            .filter(|doc| !doc.paths().is_empty()).flat_map(|api| &api.consumes)
             .collect();
         versions.sort_unstable();
         versions

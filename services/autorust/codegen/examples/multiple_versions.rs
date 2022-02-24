@@ -11,7 +11,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 fn main() -> Result<()> {
     println!("CONTROL PLANE");
     check(&get_mgmt_readmes()?)?;
-    println!("");
+    println!();
     println!("DATA PLANE");
     check(&get_svc_readmes()?)?;
     Ok(())
@@ -32,7 +32,7 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
                         for version in versions {
                             println!("  {}", version);
                         }
-                        tags = tags + 1;
+                        tags += 1;
                         services.insert(readme.spec());
                     }
                 }
@@ -41,7 +41,7 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
             }
         }
     }
-    println!("");
+    println!();
     println!("{} tags", tags);
     println!("{} services:", services.len());
     for service in services {
