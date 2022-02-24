@@ -66,8 +66,7 @@ impl Context {
     {
         self.type_map
             .get(&TypeId::of::<E>())
-            .map(|item| item.downcast_ref())
-            .flatten()
+            .and_then(|item| item.downcast_ref())
     }
 
     /// Returns the number of entities in the type map.
