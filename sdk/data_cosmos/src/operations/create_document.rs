@@ -94,6 +94,15 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
 
 type CreateDocument = futures::future::BoxFuture<'static, crate::Result<CreateDocumentResponse>>;
 
+#[cfg(feature = "into_future")]
+impl <D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture for CreateDocumentBuilder<D> {
+    type Future = CreateDocument;
+    type Output = <CreateDocument as std::future::Future>::Output;
+    fn into_future(self) -> Self::Future {
+        Self::into_future(self)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct CreateDocumentResponse {
     pub document_attributes: DocumentAttributes,

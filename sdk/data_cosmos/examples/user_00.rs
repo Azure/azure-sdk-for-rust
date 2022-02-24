@@ -30,7 +30,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let user_client = database_client.clone().into_user_client(user_name.clone());
 
     let create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::new())
+        .create_user()
+        .into_future()
         .await?;
     println!("create_user_response == {:#?}", create_user_response);
 

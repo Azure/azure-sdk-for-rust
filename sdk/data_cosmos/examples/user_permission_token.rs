@@ -39,9 +39,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::default())
-        .await?;
+    let create_user_response = user_client.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // test list documents
