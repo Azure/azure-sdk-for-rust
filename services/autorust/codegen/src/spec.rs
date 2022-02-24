@@ -110,7 +110,8 @@ impl Spec {
         let mut versions: Vec<_> = self
             .docs()
             .values()
-            .filter(|doc| !doc.paths().is_empty()).flat_map(|api| &api.consumes)
+            .filter(|doc| !doc.paths().is_empty())
+            .flat_map(|api| &api.consumes)
             .collect();
         versions.sort_unstable();
         versions
