@@ -64,7 +64,9 @@ where
                     let code = response.status().as_u16();
 
                     let http_error = HttpError::new(response).await;
-                    let status = StatusCode::from_u16(code);
+                    // status code should already be parsed as valid from the underlying HTTP
+                    // implementations.
+                    let status = StatusCode::from_u16(code).expect("invalid status code");
                     let error = Error::full(
                         ErrorKind::http_response(
                             code,
@@ -74,20 +76,18 @@ where
                         "server returned error status which will not be retried",
                     );
 
-                    if let Ok(status) = status {
-                        if !RETRY_STATUSES.contains(&status) {
-                            log::error!(
-                                "server returned error status which will not be retried: {}",
-                                status
-                            );
-                            // Server didn't return a status we retry on so return early
-                            return Err(error);
-                        }
-                        log::debug!(
-                            "server returned error status which requires retry: {}",
+                    if !RETRY_STATUSES.contains(&status) {
+                        log::error!(
+                            "server returned error status which will not be retried: {}",
                             status
                         );
+                        // Server didn't return a status we retry on so return early
+                        return Err(error);
                     }
+                    log::debug!(
+                        "server returned error status which requires retry: {}",
+                        status
+                    );
                     error
                 }
                 Err(error) => {
