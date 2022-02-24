@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     println!(
         "Response as JSON:\n{}",
-        execute_stored_procedure_response.payload.to_string()
+        execute_stored_procedure_response.payload
     );
 
     let delete_stored_procedure_response = stored_procedure_client
