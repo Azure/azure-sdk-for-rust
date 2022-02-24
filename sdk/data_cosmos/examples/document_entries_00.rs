@@ -2,28 +2,22 @@ use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::error::Error;
 
-// Now we create a sample struct. The Cow trick
-// allows us to use the same struct for serializing
-// (without having to own the items if not needed) and
-// for deserializing (where owning is required).
-// We do not need to define the "id" field here, it will be
-// specified in the Document struct below.
+// Now we create a sample struct.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -51,18 +45,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut response = None;
     for i in 0u64..5 {
         let doc = MySampleStruct {
-            id: Cow::Owned(format!("unique_id{}", i)),
-            a_string: Cow::Borrowed("Something here"),
+            id: format!("unique_id{}", i),
+            a_string: "Something here".into(),
             a_number: i,
             a_timestamp: chrono::Utc::now().timestamp(),
         };
 
         // let's add an entity.
-        response = Some(
-            client
-                .create_document(Context::new(), &doc, CreateDocumentOptions::new())
-                .await?,
-        );
+        response = Some(client.create_document(doc.clone()).into_future().await?);
     }
 
     println!("Created 5 documents.");

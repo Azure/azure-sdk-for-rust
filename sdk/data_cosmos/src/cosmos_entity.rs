@@ -4,18 +4,18 @@ use http::request::Builder;
 use serde::Serialize;
 
 /// CosmosDB partition key. Every CosmosDB entity must implement it.
-pub trait CosmosEntity<'a> {
+pub trait CosmosEntity {
     /// Returned type.
-    type Entity: Serialize + 'a;
+    type Entity: Serialize;
 
     /// Return partition key value as reference.
-    fn partition_key(&'a self) -> Self::Entity;
+    fn partition_key(&self) -> Self::Entity;
 }
 
-impl<'a> CosmosEntity<'a> for serde_json::Value {
-    type Entity = &'a Self;
-    fn partition_key(&'a self) -> Self::Entity {
-        self
+impl CosmosEntity for serde_json::Value {
+    type Entity = Self;
+    fn partition_key(&self) -> Self::Entity {
+        self.clone()
     }
 }
 

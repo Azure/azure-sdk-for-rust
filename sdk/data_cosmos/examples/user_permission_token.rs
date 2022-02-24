@@ -120,14 +120,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_database_client(database_name.clone())
         .into_collection_client(collection_name.clone())
-        .create_document(
-            Context::new(),
-            &document,
-            CreateDocumentOptions::new()
-                .is_upsert(true)
-                .partition_key(&"Gianluigi Bombatomica")
-                .unwrap(),
-        )
+        .create_document(document.clone())
+        .is_upsert(true)
+        .partition_key(&"Gianluigi Bombatomica")?
+        .into_future()
         .await
     {
         Ok(_) => panic!("this should not happen!"),
@@ -169,14 +165,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_document_response = client
         .into_database_client(database_name)
         .into_collection_client(collection_name)
-        .create_document(
-            Context::new(),
-            &document,
-            CreateDocumentOptions::new()
-                .is_upsert(true)
-                .partition_key(&"Gianluigi Bombatomica")
-                .unwrap(),
-        )
+        .create_document(document)
+        .is_upsert(true)
+        .partition_key(&"Gianluigi Bombatomica")?
+        .into_future()
         .await?;
     println!(
         "create_document_response == {:#?}",

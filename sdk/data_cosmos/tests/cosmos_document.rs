@@ -1,7 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::Context;
 use azure_data_cosmos::prelude::{
-    CreateDocumentOptions, DeleteDatabaseOptions, GetDocumentOptions,
+    CreateDocumentBuilder, DeleteDatabaseOptions, GetDocumentOptions,
 };
 use serde::{Deserialize, Serialize};
 
