@@ -49,6 +49,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
         allow_tentative_writes: TentativeWritesAllowance,
         is_upsert: bool => if is_upsert { IsUpsert::Yes } else { IsUpsert::No },
         indexing_directive: IndexingDirective,
+        context: Context => context,
     }
 
     pub fn partition_key<PK: Serialize>(
@@ -95,7 +96,9 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
 type CreateDocument = futures::future::BoxFuture<'static, crate::Result<CreateDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
-impl <D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture for CreateDocumentBuilder<D> {
+impl<D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture
+    for CreateDocumentBuilder<D>
+{
     type Future = CreateDocument;
     type Output = <CreateDocument as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {

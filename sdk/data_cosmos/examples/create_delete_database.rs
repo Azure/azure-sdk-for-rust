@@ -76,7 +76,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let resp = client
         .into_database_client(database_name)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await?;
     println!("database deleted. resp == {:#?}", resp);
 

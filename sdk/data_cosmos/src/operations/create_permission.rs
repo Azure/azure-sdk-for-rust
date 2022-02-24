@@ -26,6 +26,7 @@ impl CreatePermissionBuilder {
     setters! {
         expiry_seconds: u64 => Some(ExpirySeconds::new(expiry_seconds)),
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
     }
 
     pub fn into_future(self) -> CreatePermission {

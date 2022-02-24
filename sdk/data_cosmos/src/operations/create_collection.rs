@@ -37,6 +37,7 @@ impl CreateCollectionBuilder {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         indexing_policy: IndexingPolicy => Some(indexing_policy),
         offer: Offer => Some(offer),
+        context: Context => context,
     }
 
     pub fn into_future(self) -> CreateCollection {

@@ -77,23 +77,8 @@ impl DatabaseClient {
     }
 
     /// Delete the database
-    pub async fn delete_database(
-        &self,
-        ctx: Context,
-        options: DeleteDatabaseOptions,
-    ) -> crate::Result<DeleteDatabaseResponse> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!("dbs/{}", self.database_name()),
-            http::Method::DELETE,
-        );
-
-        options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Databases), &mut request)
-            .await?;
-
-        Ok(DeleteDatabaseResponse::try_from(response).await?)
+    pub fn delete_database(&self) -> DeleteDatabaseBuilder {
+        DeleteDatabaseBuilder::new(self.clone())
     }
 
     /// List collections in the database

@@ -196,7 +196,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // And then we delete the database.
     client
         .into_database_client(database.id)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await?;
     println!("database deleted");
 

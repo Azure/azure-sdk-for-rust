@@ -22,6 +22,7 @@ impl DeleteCollectionBuilder {
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
     }
 
     pub fn into_future(self) -> DeleteCollection {
