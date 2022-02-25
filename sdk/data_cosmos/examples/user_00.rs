@@ -29,10 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database_client = client.into_database_client(database_name);
     let user_client = database_client.clone().into_user_client(user_name.clone());
 
-    let create_user_response = user_client
-        .create_user()
-        .into_future()
-        .await?;
+    let create_user_response = user_client.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     let users = Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
