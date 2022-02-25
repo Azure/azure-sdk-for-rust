@@ -58,22 +58,8 @@ impl DatabaseClient {
     }
 
     /// Get the database
-    pub async fn get_database(
-        &self,
-        ctx: Context,
-        options: GetDatabaseOptions,
-    ) -> crate::Result<GetDatabaseResponse> {
-        let mut request = self
-            .cosmos_client()
-            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), http::Method::GET);
-
-        options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Databases), &mut request)
-            .await?;
-
-        Ok(GetDatabaseResponse::try_from(response).await?)
+    pub fn get_database(&self) -> GetDatabaseBuilder {
+        GetDatabaseBuilder::new(self.clone())
     }
 
     /// Delete the database

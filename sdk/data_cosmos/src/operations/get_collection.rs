@@ -53,9 +53,9 @@ impl GetCollectionBuilder {
 type GetCollection = futures::future::BoxFuture<'static, crate::Result<GetCollectionResponse>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteUserBuilder {
-    type Future = DeleteUser;
-    type Output = <DeleteUser as std::future::Future>::Output;
+impl std::future::IntoFuture for GetCollectionBuilder {
+    type Future = GetCollection;
+    type Output = <GetCollection as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)
     }
