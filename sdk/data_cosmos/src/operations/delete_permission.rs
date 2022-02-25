@@ -43,7 +43,7 @@ impl DeletePermissionBuilder {
                 )
                 .await?;
 
-            Ok(DeletePermissionResponse::try_from(response).await?)
+            DeletePermissionResponse::try_from(response).await
         })
     }
 }

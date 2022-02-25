@@ -46,7 +46,7 @@ impl CreateUserBuilder {
                 )
                 .await?;
 
-            Ok(UserResponse::try_from(response).await?)
+            UserResponse::try_from(response).await
         })
     }
 }

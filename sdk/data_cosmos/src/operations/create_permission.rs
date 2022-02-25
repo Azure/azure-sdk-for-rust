@@ -52,7 +52,7 @@ impl CreatePermissionBuilder {
             }
 
             let request_body = RequestBody {
-                id: &self.client.permission_name(),
+                id: self.client.permission_name(),
                 permission_mode: self.permission_mode.kind(),
                 resource: self.permission_mode.resource(),
             };
@@ -67,7 +67,7 @@ impl CreatePermissionBuilder {
                 )
                 .await?;
 
-            Ok(PermissionResponse::try_from(response).await?)
+            PermissionResponse::try_from(response).await
         })
     }
 }

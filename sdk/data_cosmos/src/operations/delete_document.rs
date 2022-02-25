@@ -48,7 +48,7 @@ impl DeleteDocumentBuilder {
             azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
 
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
-                &self.client.partition_key_serialized(),
+                self.client.partition_key_serialized(),
                 &mut request,
             );
 

@@ -43,7 +43,7 @@ impl DeleteDatabaseBuilder {
                 )
                 .await?;
 
-            Ok(DeleteDatabaseResponse::try_from(response).await?)
+            DeleteDatabaseResponse::try_from(response).await
         })
     }
 }

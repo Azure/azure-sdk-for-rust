@@ -42,7 +42,7 @@ impl DeleteCollectionBuilder {
                 )
                 .await?;
 
-            Ok(DeleteCollectionResponse::try_from(response).await?)
+            DeleteCollectionResponse::try_from(response).await
         })
     }
 }

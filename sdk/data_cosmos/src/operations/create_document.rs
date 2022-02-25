@@ -88,7 +88,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
                 )
                 .await?;
 
-            Ok(CreateDocumentResponse::try_from(response).await?)
+            CreateDocumentResponse::try_from(response).await
         })
     }
 }

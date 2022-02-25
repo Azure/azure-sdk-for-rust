@@ -66,7 +66,7 @@ impl CreateCollectionBuilder {
                 )
                 .await?;
 
-            Ok(CreateCollectionResponse::try_from(response).await?)
+            CreateCollectionResponse::try_from(response).await
         })
     }
 }
