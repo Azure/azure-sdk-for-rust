@@ -468,7 +468,7 @@ impl<'a, T: TokenCredential> KeyClient<'a, T> {
         let mut request_body = Map::new();
         request_body.insert(
             "value".to_owned(),
-            Value::String(base64::encode(decrypt_parameters.ciphertext.to_owned())),
+            Value::String(base64::encode(&decrypt_parameters.ciphertext)),
         );
 
         let algorithm = match decrypt_parameters.decrypt_parameters_encryption {

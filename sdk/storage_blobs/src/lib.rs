@@ -82,7 +82,7 @@ impl AddAsHeader for RehydratePriority {
     ) -> std::result::Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             headers::REHYDRATE_PRIORITY,
-            http::header::HeaderValue::from_str(&self.to_string())?,
+            http::header::HeaderValue::from_str(self.as_ref())?,
         );
 
         Ok(())

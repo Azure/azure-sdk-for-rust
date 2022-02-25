@@ -61,17 +61,17 @@ pub fn ident(text: &str) -> Result<TokenStream, Error> {
 }
 
 fn remove_spaces(text: &str) -> String {
-    text.replace(" ", "")
+    text.replace(' ', "")
 }
 
 /// replace special characters with underscores
 fn replace_special_chars(text: &str) -> String {
-    let mut txt = text.replace(".", "_");
-    txt = txt.replace(",", "_");
-    txt = txt.replace("-", "_");
-    txt = txt.replace("/", "_");
-    txt = txt.replace("*", "_");
-    txt = txt.replace(":", "_");
+    let mut txt = text.replace('.', "_");
+    txt = txt.replace(',', "_");
+    txt = txt.replace('-', "_");
+    txt = txt.replace('/', "_");
+    txt = txt.replace('*', "_");
+    txt = txt.replace(':', "_");
     txt
 }
 
