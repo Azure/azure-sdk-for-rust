@@ -53,9 +53,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let user_client = database_client.into_user_client(new_user);
 
-    let delete_user_response = user_client
-        .delete_user(Context::new(), DeleteUserOptions::new())
-        .await?;
+    let delete_user_response = user_client.delete_user().into_future().await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 
     Ok(())

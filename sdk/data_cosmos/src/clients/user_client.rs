@@ -79,19 +79,8 @@ impl UserClient {
     }
 
     /// Delete the user
-    pub async fn delete_user(
-        &self,
-        ctx: Context,
-        options: DeleteUserOptions,
-    ) -> crate::Result<DeleteUserResponse> {
-        let mut request = self.prepare_request_with_user_name(http::Method::DELETE);
-        options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Users), &mut request)
-            .await?;
-
-        Ok(DeleteUserResponse::try_from(response).await?)
+    pub fn delete_user(&self) -> DeleteUserBuilder {
+        DeleteUserBuilder::new(self.clone())
     }
 
     /// List the user's permissions
