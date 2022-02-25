@@ -58,9 +58,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let db_collection = db_client.clone().into_collection_client("panzadoro");
 
-        let get_collection_response = db_collection
-            .get_collection(Context::new(), GetCollectionOptions::new())
-            .await?;
+        let get_collection_response = db_collection.get_collection().into_future().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
         let stream = db_client.list_collections(Context::new(), ListCollectionsOptions::new());

@@ -41,9 +41,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let collection_client = db_client.clone().into_collection_client(collection_name);
 
     // get collection!
-    let get_collection_response = collection_client
-        .get_collection(context.clone(), GetCollectionOptions::new())
-        .await?;
+    let get_collection_response = collection_client.get_collection().into_future().await?;
 
     assert_eq!(get_collection_response.collection.id, collection_name);
 
