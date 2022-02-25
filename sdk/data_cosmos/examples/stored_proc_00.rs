@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .await?;
 
     println!("Response object:\n{:#?}", ret);
-    println!("Response as JSON:\n{}", ret.payload.to_string());
+    println!("Response as JSON:\n{}", ret.payload);
 
     Ok(())
 }

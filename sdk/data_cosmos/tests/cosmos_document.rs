@@ -1,8 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_core::Context;
-use azure_data_cosmos::prelude::{
-    CreateDocumentOptions, DeleteDatabaseOptions, GetDocumentOptions,
-};
+use azure_data_cosmos::prelude::GetDocumentOptions;
 use serde::{Deserialize, Serialize};
 
 mod setup;
@@ -11,17 +9,17 @@ use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use collection::*;
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 struct MyDocument {
     id: String,
     hello: u32,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MyDocument {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MyDocument {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -49,11 +47,11 @@ async fn create_and_delete_document() {
         excluded_paths: vec![],
     };
 
-    let options = CreateCollectionOptions::new("/id")
-        .offer(Offer::Throughput(400))
-        .indexing_policy(indexing_policy);
     database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .create_collection(COLLECTION_NAME, "/id")
+        .offer(Offer::Throughput(400))
+        .indexing_policy(indexing_policy)
+        .into_future()
         .await
         .unwrap();
 
@@ -67,7 +65,8 @@ async fn create_and_delete_document() {
         hello: 42,
     };
     collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+        .create_document(document_data.clone())
+        .into_future()
         .await
         .unwrap();
 
@@ -98,7 +97,8 @@ async fn create_and_delete_document() {
 
     // delete document
     document_client
-        .delete_document(Context::new(), DeleteDocumentOptions::new())
+        .delete_document()
+        .into_future()
         .await
         .unwrap();
 
@@ -111,7 +111,8 @@ async fn create_and_delete_document() {
     assert!(documents.len() == 0);
 
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await
         .unwrap();
 }
@@ -139,11 +140,11 @@ async fn query_documents() {
         excluded_paths: vec![],
     };
 
-    let options = CreateCollectionOptions::new("/id")
-        .indexing_policy(indexing_policy)
-        .offer(Offer::S2);
     database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .create_collection(COLLECTION_NAME, "/id")
+        .indexing_policy(indexing_policy)
+        .offer(Offer::S2)
+        .into_future()
         .await
         .unwrap();
 
@@ -157,7 +158,8 @@ async fn query_documents() {
         hello: 42,
     };
     collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+        .create_document(document_data.clone())
+        .into_future()
         .await
         .unwrap();
 
@@ -185,7 +187,8 @@ async fn query_documents() {
     assert_eq!(query_result[0].result, document_data);
 
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await
         .unwrap();
 }
@@ -213,11 +216,11 @@ async fn replace_document() {
         excluded_paths: vec![],
     };
 
-    let options = CreateCollectionOptions::new("/id")
-        .indexing_policy(indexing_policy)
-        .offer(Offer::S2);
     database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .create_collection(COLLECTION_NAME, "/id")
+        .indexing_policy(indexing_policy)
+        .offer(Offer::S2)
+        .into_future()
         .await
         .unwrap();
 
@@ -231,7 +234,8 @@ async fn replace_document() {
         hello: 42,
     };
     collection_client
-        .create_document(Context::new(), &document_data, CreateDocumentOptions::new())
+        .create_document(document_data.clone())
+        .into_future()
         .await
         .unwrap();
 
@@ -279,7 +283,8 @@ async fn replace_document() {
     }
 
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await
         .unwrap();
 }

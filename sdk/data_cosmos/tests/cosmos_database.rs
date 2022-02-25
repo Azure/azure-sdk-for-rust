@@ -48,7 +48,8 @@ async fn create_and_delete_database() {
     client
         .clone()
         .into_database_client(DATABASE_NAME)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await
         .unwrap();
 

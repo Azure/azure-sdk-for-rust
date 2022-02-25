@@ -1,22 +1,21 @@
 use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::error::Error;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -42,19 +41,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = client.into_collection_client(collection_name);
 
     let mut doc = MySampleStruct {
-        id: Cow::Owned(format!("unique_id{}", 500)),
-        a_string: Cow::Borrowed("Something here"),
+        id: format!("unique_id{}", 500),
+        a_string: "Something here".into(),
         a_number: 600,
         a_timestamp: chrono::Utc::now().timestamp(),
     };
 
     // let's add an entity.
     let create_document_response = client
-        .create_document(
-            Context::new(),
-            &doc,
-            CreateDocumentOptions::new().is_upsert(true),
-        )
+        .create_document(doc.clone())
+        .is_upsert(true)
+        .into_future()
         .await?;
 
     println!(

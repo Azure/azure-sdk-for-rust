@@ -114,7 +114,7 @@ impl SchemaGen {
     }
 
     fn default(&self) -> Option<&str> {
-        self.schema.common.default.as_ref().map(|v| v.as_str()).flatten()
+        self.schema.common.default.as_ref().and_then(|v| v.as_str())
     }
 
     /// If the type should implement Default

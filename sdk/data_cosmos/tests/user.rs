@@ -32,10 +32,7 @@ async fn users() {
     let database_client = client.clone().into_database_client(DATABASE_NAME);
     let user_client = database_client.clone().into_user_client(USER_NAME);
 
-    let _create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::new())
-        .await
-        .unwrap();
+    let _create_user_response = user_client.create_user().into_future().await.unwrap();
 
     let list_users_response =
         Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
@@ -89,7 +86,8 @@ async fn users() {
     client
         .clone()
         .into_database_client(DATABASE_NAME)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await
         .unwrap();
 

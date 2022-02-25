@@ -26,11 +26,8 @@ async fn collection_operations() -> Result<(), BoxedError> {
     log::info!("Creating a collection with name '{}'...", collection_name);
 
     let create_collection_response = db_client
-        .create_collection(
-            context.clone(),
-            collection_name,
-            CreateCollectionOptions::new("/id"),
-        )
+        .create_collection(collection_name, "/id")
+        .into_future()
         .await?;
 
     assert_eq!(create_collection_response.collection.id, collection_name);
@@ -112,9 +109,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     );
 
     // delete collection!
-    let delete_collection_response = collection_client
-        .delete_collection(context.clone(), DeleteCollectionOptions::new())
-        .await?;
+    let delete_collection_response = collection_client.delete_collection().into_future().await?;
 
     log::info!("Successfully deleted collection");
     log::debug!(
@@ -122,10 +117,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
         delete_collection_response
     );
 
-    db_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await
-        .unwrap();
+    db_client.delete_database().into_future().await.unwrap();
 
     Ok(())
 }

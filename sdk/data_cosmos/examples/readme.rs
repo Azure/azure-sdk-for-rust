@@ -1,27 +1,25 @@
-use azure_core::Context;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos.
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
-use std::borrow::Cow;
 use std::error::Error;
 
 // This is the stuct we want to use in our sample.
 // Make sure to have a collection with partition key "a_number" for this example to
 // work (you can create with this SDK too, check the examples folder for that task).
-#[derive(Serialize, Deserialize, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
 // Here we mark "a_number" as partition key.
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
     type Entity = u64;
 
-    fn partition_key(&'a self) -> Self::Entity {
+    fn partition_key(&self) -> Self::Entity {
         self.a_number
     }
 }
@@ -71,8 +69,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     for i in 0..10 {
         // define the document.
         let document_to_insert = MySampleStruct {
-            id: Cow::Owned(format!("unique_id{}", i)),
-            a_string: Cow::Borrowed("Something here"),
+            id: format!("unique_id{}", i),
+            a_string: "Something here".into(),
             a_number: i * 100, // this is the partition key
             a_timestamp: chrono::Utc::now().timestamp(),
         };
@@ -80,11 +78,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // insert it and store the returned session token for later use!
         session_token = Some(
             collection_client
-                .create_document(
-                    Context::new(),
-                    &document_to_insert,
-                    CreateDocumentOptions::new().is_upsert(true),
-                )
+                .create_document(document_to_insert.clone())
+                .is_upsert(true)
+                .into_future()
                 .await?
                 .session_token, // get only the session token, if everything else was ok!
         );
@@ -150,12 +146,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         collection_client
             .clone()
             .into_document_client(document.result.id.clone(), &document.result.a_number)?
-            .delete_document(
-                Context::new(),
-                DeleteDocumentOptions::new()
-                    .consistency_level(session_token.clone())
-                    .if_match_condition(&document.document_attributes),
-            )
+            .delete_document()
+            .consistency_level(session_token.clone())
+            .if_match_condition(&document.document_attributes)
+            .into_future()
             .await?;
     }
 

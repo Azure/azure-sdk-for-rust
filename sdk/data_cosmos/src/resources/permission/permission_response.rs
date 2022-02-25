@@ -6,8 +6,8 @@ use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use super::Permission;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PermissionResponse<'a> {
-    pub permission: Permission<'a>,
+pub struct PermissionResponse {
+    pub permission: Permission,
     pub charge: f64,
     pub activity_id: uuid::Uuid,
     pub etag: String,
@@ -16,8 +16,8 @@ pub struct PermissionResponse<'a> {
     pub alt_content_path: String,
 }
 
-impl<'a> PermissionResponse<'a> {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<PermissionResponse<'a>> {
+impl PermissionResponse {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<PermissionResponse> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

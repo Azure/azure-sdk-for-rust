@@ -1,8 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 
 mod setup;
 
@@ -13,18 +11,18 @@ mod setup;
 // We do not need to define the "id" field here, it will be
 // specified in the Document struct below.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -64,11 +62,11 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
             excluded_paths: vec![],
         };
 
-        let options = CreateCollectionOptions::new("/id")
-            .offer(Offer::Throughput(400))
-            .indexing_policy(ip);
         database_client
-            .create_collection(Context::new(), COLLECTION_NAME, options)
+            .create_collection(COLLECTION_NAME, "/id")
+            .offer(Offer::Throughput(400))
+            .indexing_policy(ip)
+            .into_future()
             .await
             .unwrap()
     };
@@ -80,15 +78,16 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let id = format!("unique_id{}", 100);
 
     let doc = MySampleStruct {
-        id: Cow::Borrowed(&id),
-        a_string: Cow::Borrowed("Something here"),
+        id: id.clone(),
+        a_string: "Something here".into(),
         a_number: 100,
         a_timestamp: chrono::Utc::now().timestamp(),
     };
 
     // let's add an entity.
     let session_token: ConsistencyLevel = collection_client
-        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+        .create_document(doc.clone())
+        .into_future()
         .await?
         .into();
 
@@ -175,9 +174,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     assert_eq!(1, ret.attachments.len());
 
     // delete the database
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await?;
+    database_client.delete_database().into_future().await?;
 
     Ok(())
 }

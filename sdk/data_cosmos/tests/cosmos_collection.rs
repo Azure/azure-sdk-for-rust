@@ -23,11 +23,8 @@ async fn create_and_delete_collection() {
 
     // create a new collection
     let collection = database_client
-        .create_collection(
-            Context::new(),
-            COLLECTION_NAME,
-            CreateCollectionOptions::new("/id"),
-        )
+        .create_collection(COLLECTION_NAME, "/id")
+        .into_future()
         .await
         .unwrap();
     let collections =
@@ -58,7 +55,8 @@ async fn create_and_delete_collection() {
 
     // delete the collection
     collection_client
-        .delete_collection(Context::new(), DeleteCollectionOptions::new())
+        .delete_collection()
+        .into_future()
         .await
         .unwrap();
     let collections =
@@ -70,7 +68,8 @@ async fn create_and_delete_collection() {
     assert!(collections.collections.len() == 0);
 
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await
         .unwrap();
 }
@@ -96,11 +95,12 @@ async fn replace_collection() {
         included_paths: vec![],
         excluded_paths: vec![],
     };
-    let options = CreateCollectionOptions::new("/id")
-        .offer(Offer::S2)
-        .indexing_policy(indexing_policy);
+
     let collection = database_client
-        .create_collection(Context::new(), COLLECTION_NAME, options)
+        .create_collection(COLLECTION_NAME, "/id")
+        .offer(Offer::S2)
+        .indexing_policy(indexing_policy)
+        .into_future()
         .await
         .unwrap();
 
@@ -167,7 +167,8 @@ async fn replace_collection() {
     assert!(eps.len() > 0);
 
     database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await
         .unwrap();
 }

@@ -226,7 +226,7 @@ pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
 }
 
 fn get_service_name(spec_name: &str) -> String {
-    spec_name.replace("azure", "").replace("_", "").replace("-", "").to_lowercase()
+    spec_name.replace("azure", "").replace('_', "").replace('-', "").to_lowercase()
 }
 
 #[cfg(test)]

@@ -60,21 +60,8 @@ impl CollectionClient {
     }
 
     /// Delete a collection
-    pub async fn delete_collection(
-        &self,
-        ctx: Context,
-        options: DeleteCollectionOptions,
-    ) -> crate::Result<DeleteCollectionResponse> {
-        let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-            .await?;
-
-        Ok(DeleteCollectionResponse::try_from(response).await?)
+    pub fn delete_collection(&self) -> DeleteCollectionBuilder {
+        DeleteCollectionBuilder::new(self.clone())
     }
 
     /// Replace a collection
@@ -101,21 +88,11 @@ impl CollectionClient {
     }
 
     /// create a document in a collection
-    pub async fn create_document<'a, D: Serialize + CosmosEntity<'a>>(
+    pub fn create_document<D: Serialize + CosmosEntity + Send + 'static>(
         &self,
-        ctx: Context,
-        document: &'a D,
-        options: CreateDocumentOptions,
-    ) -> crate::Result<CreateDocumentResponse> {
-        let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
-
-        options.decorate_request(&mut request, document)?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
-            .await?;
-
-        Ok(CreateDocumentResponse::try_from(response).await?)
+        document: D,
+    ) -> CreateDocumentBuilder<D> {
+        CreateDocumentBuilder::new(self.clone(), document)
     }
 
     /// query documents in a collection
@@ -173,7 +150,10 @@ impl CollectionClient {
         StoredProcedureClient::new(self, stored_procedure_name)
     }
 
-    fn prepare_request_with_collection_name(&self, http_method: http::Method) -> Request {
+    pub(crate) fn prepare_request_with_collection_name(
+        &self,
+        http_method: http::Method,
+    ) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}",
             self.database_client().database_name(),
@@ -191,7 +171,7 @@ impl CollectionClient {
         self.cosmos_client().pipeline()
     }
 
-    fn prepare_doc_request_pipeline(&self, http_method: http::Method) -> Request {
+    pub(crate) fn prepare_doc_request_pipeline(&self, http_method: http::Method) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}/docs",
             self.database_client().database_name(),
