@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use azure_data_cosmos::responses::QueryDocumentsResponseRaw;
 use futures::stream::StreamExt;
@@ -37,11 +36,8 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
 
     // create a temp collection
     let _create_collection_response = database_client
-        .create_collection(
-            Context::new(),
-            COLLECTION_NAME,
-            CreateCollectionOptions::new("/id"),
-        )
+        .create_collection(COLLECTION_NAME, "/id")
+        .into_future()
         .await
         .unwrap();
 
@@ -117,9 +113,7 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
         .await?;
 
     // delete the database
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await?;
+    database_client.delete_database().into_future().await?;
 
     Ok(())
 }
