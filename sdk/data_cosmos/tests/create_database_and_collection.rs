@@ -30,11 +30,8 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
     let collection_name = "panzadoro";
     log::info!("Creating a collection with name '{}'...", collection_name);
     let collection = db_client
-        .create_collection(
-            context.clone(),
-            collection_name,
-            CreateCollectionOptions::new("/id"),
-        )
+        .create_collection(collection_name, "/id")
+        .into_future()
         .await?;
     assert_eq!(collection.collection.id, collection_name);
     log::info!("Successfully created a collection");
@@ -53,9 +50,7 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
 
     // delete database
     log::info!("Deleting the database...");
-    let deleted_database = db_client
-        .delete_database(context.clone(), DeleteDatabaseOptions::new())
-        .await?;
+    let deleted_database = db_client.delete_database().into_future().await?;
     log::info!("Successfully deleted database");
     log::debug!("The delete_database response: {:#?}", deleted_database);
 
