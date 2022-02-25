@@ -69,10 +69,7 @@ async fn users() {
 
     let user_client = database_client.clone().into_user_client(USER_NAME_REPLACED);
 
-    let _delete_user_response = user_client
-        .delete_user(Context::new(), DeleteUserOptions::new())
-        .await
-        .unwrap();
+    let _delete_user_response = user_client.delete_user().into_future().await.unwrap();
 
     let list_users_response =
         Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))

@@ -41,7 +41,8 @@ async fn create_and_delete_collection() {
         .into_collection_client(COLLECTION_NAME);
 
     let collection_after_get = collection_client
-        .get_collection(Context::new(), GetCollectionOptions::new())
+        .get_collection()
+        .into_future()
         .await
         .unwrap();
     assert!(collection.collection.rid == collection_after_get.collection.rid);
