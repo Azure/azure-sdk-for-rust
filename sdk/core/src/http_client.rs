@@ -108,10 +108,8 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
 impl HttpClient for reqwest::Client {
     async fn execute_request(&self, request: Request<Bytes>) -> Result<Response<Bytes>, HttpError> {
-        let mut reqwest_request = self.request(
-            request.method().clone(),
-            url::Url::parse(&request.uri().to_string()).unwrap(),
-        );
+        let url = url::Url::parse(&request.uri().to_string())?;
+        let mut reqwest_request = self.request(request.method().clone(), url);
         for (header, value) in request.headers() {
             reqwest_request = reqwest_request.header(header, value);
         }
@@ -149,10 +147,8 @@ impl HttpClient for reqwest::Client {
         &self,
         request: &crate::Request,
     ) -> Result<crate::Response, HttpError> {
-        let mut reqwest_request = self.request(
-            request.method(),
-            url::Url::parse(&request.uri().to_string()).unwrap(),
-        );
+        let url = url::Url::parse(&request.uri().to_string())?;
+        let mut reqwest_request = self.request(request.method(), url);
         for header in request.headers() {
             reqwest_request = reqwest_request.header(header.0, header.1);
         }

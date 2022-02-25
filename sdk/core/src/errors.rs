@@ -133,6 +133,8 @@ pub enum HttpError {
     BuildResponse(#[source] http::Error),
     #[error("failed to reset stream")]
     StreamReset(#[source] StreamError),
+    #[error("failed to parse URL")]
+    Url(#[from] url::ParseError),
 }
 
 /// An error caused by invalid permissions.

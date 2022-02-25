@@ -61,14 +61,18 @@ where
                 }
                 Ok(response) => {
                     // Error status code
-                    let error = HttpError::new(response).await;
-                    let status = StatusCode::from_u16(error.status()).unwrap();
+                    let code = response.status().as_u16();
+
+                    let http_error = HttpError::new(response).await;
+                    // status code should already be parsed as valid from the underlying HTTP
+                    // implementations.
+                    let status = StatusCode::from_u16(code).expect("invalid status code");
                     let error = Error::full(
                         ErrorKind::http_response(
-                            status.as_u16(),
-                            error.error_code().map(|s| s.to_owned()),
+                            code,
+                            http_error.error_code().map(|s| s.to_owned()),
                         ),
-                        error,
+                        http_error,
                         "server returned error status which will not be retried",
                     );
 

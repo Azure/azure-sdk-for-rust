@@ -49,7 +49,14 @@ impl FromStr for ContentRange {
             })?;
 
         let mut split_at_dash = remaining.split('-');
-        let start = split_at_dash.next().unwrap().parse()?;
+        let start = split_at_dash
+            .next()
+            .ok_or_else(|| ParseError::TokenNotFound {
+                item: "ContentRange",
+                token: "-".to_owned(),
+                full: s.into(),
+            })?
+            .parse()?;
 
         let mut split_at_slash = split_at_dash
             .next()
@@ -60,7 +67,15 @@ impl FromStr for ContentRange {
             })?
             .split('/');
 
-        let end = split_at_slash.next().unwrap().parse()?;
+        let end = split_at_slash
+            .next()
+            .ok_or_else(|| ParseError::TokenNotFound {
+                item: "ContentRange",
+                token: "/".to_owned(),
+                full: s.into(),
+            })?
+            .parse()?;
+
         let total_length = split_at_slash
             .next()
             .ok_or_else(|| ParseError::TokenNotFound {

@@ -1,4 +1,5 @@
 use crate::Response;
+use std::collections::HashMap;
 
 /// An unsuccessful HTTP response
 #[derive(Debug)]
@@ -16,13 +17,13 @@ impl HttpError {
     pub async fn new(response: Response) -> Self {
         let status = response.status();
         let mut error_code = get_error_code_from_header(&response);
-        let headers = response
-            .headers()
-            .into_iter()
-            // TODO: the following will panic if a non-UTF8 header value is sent back
-            // We should not panic but instead handle this gracefully
-            .map(|(n, v)| (n.as_str().to_owned(), v.to_str().unwrap().to_owned()))
-            .collect();
+        let mut headers = HashMap::new();
+
+        for (name, value) in response.headers() {
+            let value = String::from_utf8_lossy(value.as_bytes()).to_string();
+            headers.insert(name.to_string(), value);
+        }
+
         let body = response.into_body_string().await;
         error_code = error_code.or_else(|| get_error_code_from_body(&body));
         HttpError {
