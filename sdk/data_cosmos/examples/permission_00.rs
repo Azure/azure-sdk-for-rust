@@ -58,9 +58,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         get_collection2_response
     );
 
-    let create_user_response = user_client
-        .create_user(Context::new(), CreateUserOptions::default())
-        .await?;
+    let create_user_response = user_client.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // create the first permission!
@@ -68,13 +66,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
-        .create_permission(
-            Context::new(),
-            CreatePermissionOptions::new()
-                .consistency_level(&create_user_response)
-                .expiry_seconds(18000u64),
-            &permission_mode,
-        )
+        .create_permission(permission_mode)
+        .consistency_level(&create_user_response)
+        .expiry_seconds(18000u64)
+        .into_future()
         .await
         .unwrap();
     println!(
@@ -87,11 +82,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_collection2_response.collection.all_permission();
 
     let create_permission2_response = permission_client
-        .create_permission(
-            Context::new(),
-            CreatePermissionOptions::new().consistency_level(&create_user_response),
-            &permission_mode,
-        )
+        .create_permission(permission_mode)
+        .consistency_level(&create_user_response)
+        .into_future()
         .await
         .unwrap();
 
@@ -145,12 +138,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let delete_permission_response = permission_client
-        .delete_permission(
-            Context::new(),
-            DeletePermissionOptions::new().consistency_level(ConsistencyLevel::Session(
-                replace_permission_response.session_token,
-            )),
-        )
+        .delete_permission()
+        .consistency_level(ConsistencyLevel::Session(
+            replace_permission_response.session_token,
+        ))
+        .into_future()
         .await
         .unwrap();
 

@@ -11,16 +11,16 @@ use std::borrow::Cow;
 /// attachments, stored procedures, triggers, and user-defined functions for a particular user.
 /// You can learn more about permissions [here](https://docs.microsoft.com/rest/api/cosmos-db/permissions).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Permission<'a> {
+pub struct Permission {
     ///  The unique name that identifies the permission.
-    pub id: Cow<'a, str>,
+    pub id: String,
     #[serde(flatten)]
     /// The access mode on the resource for the user
     ///
     /// Represented as both "permissionMode" and "resource" in the JSON representation.
-    pub permission_mode: PermissionMode<'a>,
+    pub permission_mode: PermissionMode,
     #[serde(rename = "_rid")]
-    rid: Cow<'a, str>,
+    rid: String,
     /// The last updated timestamp of the resource.
     ///
     /// Represented as "_ts" in the JSON representation.
@@ -30,12 +30,12 @@ pub struct Permission<'a> {
     ///
     /// Represented as "_self" in the JSON representation.
     #[serde(rename = "_self")]
-    pub uri: Cow<'a, str>,
+    pub uri: String,
     /// The resource etag required for optimistic concurrency control.
     ///
     /// Represented as "_etag" in the JSON representation.
     #[serde(rename = "_etag")]
-    pub etag: Cow<'a, str>,
+    pub etag: String,
     /// The resource token for the particular resource and user.
     ///
     /// Represented as "_token" in the JSON representation.
@@ -51,22 +51,22 @@ pub struct Permission<'a> {
 /// Constructing a `PermissionMode` manually is error prone. Use one of the constructor methods
 /// (i.e., [`PermissionMode::read`] or [`PermissionMode::all`]) or get a permission directly
 /// from a resource (e.g., `Collection::read_permission`).
-pub enum PermissionMode<'a> {
+pub enum PermissionMode {
     /// read, write, and delete access
-    All(Cow<'a, str>),
+    All(Cow<'static, str>),
     /// read access only
-    Read(Cow<'a, str>),
+    Read(Cow<'static, str>),
 }
 
-impl<'a> PermissionMode<'a> {
+impl PermissionMode {
     /// Read permission for a given resource
-    pub fn read<T: Resource + ?Sized + 'a>(resource: &'a T) -> Self {
-        PermissionMode::Read(Cow::Borrowed(resource.uri()))
+    pub fn read<T: Resource + ?Sized>(resource: &T) -> Self {
+        PermissionMode::Read(Cow::Owned(resource.uri().to_owned()))
     }
 
     /// Read, write, and delete permissions for a given resource
-    pub fn all<T: Resource + ?Sized + 'a>(resource: &'a T) -> Self {
-        PermissionMode::All(Cow::Borrowed(resource.uri()))
+    pub fn all<T: Resource + ?Sized>(resource: &T) -> Self {
+        PermissionMode::All(Cow::Owned(resource.uri().to_owned()))
     }
 
     /// The kind of permission mode as a string. Either "All" or "Read".
@@ -86,7 +86,7 @@ impl<'a> PermissionMode<'a> {
     }
 }
 
-impl<'a> std::convert::TryFrom<&[u8]> for Permission<'a> {
+impl std::convert::TryFrom<&[u8]> for Permission {
     type Error = crate::Error;
 
     fn try_from(slice: &[u8]) -> Result<Self, Self::Error> {
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn parse_permission() {
-        let permission: Permission<'_> = serde_json::from_str(PERMISSION_JSON).unwrap();
+        let permission: Permission = serde_json::from_str(PERMISSION_JSON).unwrap();
 
         assert_eq!(
             permission.permission_token,

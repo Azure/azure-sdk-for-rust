@@ -39,23 +39,8 @@ impl UserClient {
     }
 
     /// Create the user
-    pub async fn create_user(
-        &self,
-        ctx: Context,
-        options: CreateUserOptions,
-    ) -> crate::Result<UserResponse> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!("dbs/{}/users", self.database_client.database_name()),
-            http::Method::POST,
-        );
-
-        options.decorate_request(&mut request, self.user_name())?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Users), &mut request)
-            .await?;
-
-        Ok(UserResponse::try_from(response).await?)
+    pub fn create_user(&self) -> CreateUserBuilder {
+        CreateUserBuilder::new(self.clone())
     }
 
     /// Get the user
@@ -137,7 +122,7 @@ impl UserClient {
         self.cosmos_client().http_client()
     }
 
-    fn pipeline(&self) -> &Pipeline {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         self.cosmos_client().pipeline()
     }
 }

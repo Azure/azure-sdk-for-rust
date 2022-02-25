@@ -2,28 +2,60 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::ResourceQuota;
 use azure_core::headers::session_token_from_headers;
-use azure_core::Request as HttpRequest;
+use azure_core::Context;
 use azure_core::Response as HttpResponse;
 
 #[derive(Debug, Clone)]
-pub struct DeleteDatabaseOptions {
+pub struct DeleteDatabaseBuilder {
+    client: DatabaseClient,
     consistency_level: Option<ConsistencyLevel>,
+    context: Context,
 }
 
-impl DeleteDatabaseOptions {
-    pub fn new() -> Self {
+impl DeleteDatabaseBuilder {
+    pub(crate) fn new(client: DatabaseClient) -> Self {
         Self {
+            client,
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
     }
 
-    pub fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        Ok(())
+    pub fn into_future(self) -> DeleteDatabase {
+        Box::pin(async move {
+            let mut request = self.client.cosmos_client().prepare_request_pipeline(
+                &format!("dbs/{}", self.client.database_name()),
+                http::Method::DELETE,
+            );
+
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Databases),
+                    &mut request,
+                )
+                .await?;
+
+            DeleteDatabaseResponse::try_from(response).await
+        })
+    }
+}
+
+type DeleteDatabase = futures::future::BoxFuture<'static, crate::Result<DeleteDatabaseResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for DeleteDatabaseBuilder {
+    type Future = DeleteDatabase;
+    type Output = <DeleteDatabase as std::future::Future>::Output;
+    fn into_future(self) -> Self::Future {
+        Self::into_future(self)
     }
 }
 

@@ -4,22 +4,21 @@ use serde::{Deserialize, Serialize};
 // DB.
 use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
-use std::borrow::Cow;
 use std::error::Error;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -102,11 +101,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             client
                 .clone()
                 .into_database_client(database.id.clone())
-                .create_collection(
-                    Context::new(),
-                    COLLECTION,
-                    CreateCollectionOptions::new("/id"),
-                )
+                .create_collection(COLLECTION, "/id")
+                .into_future()
                 .await?
                 .collection
         }
@@ -118,8 +114,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // data in them. Let's create a Document. The only constraint
     // is that we need an id and an arbitrary, Serializable type.
     let doc = MySampleStruct {
-        id: Cow::Owned("unique_id100".to_owned()),
-        a_string: Cow::Borrowed("Something here"),
+        id: "unique_id100".into(),
+        a_string: "Something here".into(),
         a_number: 100,
         a_timestamp: chrono::Utc::now().timestamp(),
     };
@@ -135,7 +131,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // the document attributes.
 
     let create_document_response = collection_client
-        .create_document(Context::new(), &doc, CreateDocumentOptions::new())
+        .create_document(doc.clone())
+        .into_future()
         .await?;
     println!(
         "create_document_response == {:#?}",
@@ -191,14 +188,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_database_client(DATABASE.to_owned())
         .into_collection_client(COLLECTION.to_owned())
-        .delete_collection(Context::new(), DeleteCollectionOptions::new())
+        .delete_collection()
+        .into_future()
         .await?;
     println!("collection deleted");
 
     // And then we delete the database.
     client
         .into_database_client(database.id)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await?;
     println!("database deleted");
 

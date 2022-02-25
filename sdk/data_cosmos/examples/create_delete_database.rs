@@ -46,13 +46,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // create collection!
     {
         let db_client = client.clone().into_database_client(database_name.clone());
-
         let create_collection_response = db_client
-            .create_collection(
-                Context::new(),
-                "panzadoro",
-                CreateCollectionOptions::new("/id"),
-            )
+            .create_collection("panzadoro", "/id")
+            .into_future()
             .await?;
 
         println!(
@@ -74,15 +70,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             println!("res == {:#?}", res);
         }
 
-        let delete_response = db_collection
-            .delete_collection(Context::new(), DeleteCollectionOptions::new())
-            .await?;
+        let delete_response = db_collection.delete_collection().into_future().await?;
         println!("collection deleted: {:#?}", delete_response);
     }
 
     let resp = client
         .into_database_client(database_name)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await?;
     println!("database deleted. resp == {:#?}", resp);
 

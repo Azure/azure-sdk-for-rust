@@ -26,7 +26,7 @@ impl ReplacePermissionOptions {
         &self,
         request: &mut HttpRequest,
         id: &str,
-        permission_mode: &PermissionMode<'_>,
+        permission_mode: &PermissionMode,
     ) -> crate::Result<()> {
         azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
         azure_core::headers::add_optional_header2(&self.expiry_seconds, request)?;

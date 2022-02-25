@@ -4,8 +4,8 @@ use azure_core::headers::{continuation_token_from_headers_optional, session_toke
 use http::response::Response;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ListPermissionsResponse<'a> {
-    pub permissions: Vec<Permission<'a>>,
+pub struct ListPermissionsResponse {
+    pub permissions: Vec<Permission>,
     pub charge: f64,
     pub activity_id: uuid::Uuid,
     pub session_token: String,
@@ -14,7 +14,7 @@ pub struct ListPermissionsResponse<'a> {
     pub continuation_token: Option<String>,
 }
 
-impl<'a> std::convert::TryFrom<Response<bytes::Bytes>> for ListPermissionsResponse<'a> {
+impl std::convert::TryFrom<Response<bytes::Bytes>> for ListPermissionsResponse {
     type Error = crate::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
@@ -22,15 +22,15 @@ impl<'a> std::convert::TryFrom<Response<bytes::Bytes>> for ListPermissionsRespon
         let body = response.body();
 
         #[derive(Debug, Deserialize)]
-        struct Response<'b> {
+        struct Response {
             _rid: String,
             #[serde(rename = "Permissions")]
-            permissions: Vec<Permission<'b>>,
+            permissions: Vec<Permission>,
             _count: u32,
         }
 
         // first get the Cosmos REST API permission
-        let response: Response<'_> = serde_json::from_slice(body)?;
+        let response: Response = serde_json::from_slice(body)?;
         debug!("response == {:#?}", response);
 
         // now convert every Cosmos REST API permission

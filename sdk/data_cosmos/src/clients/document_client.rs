@@ -101,22 +101,8 @@ impl DocumentClient {
     }
 
     /// Delete a document
-    pub async fn delete_document(
-        &self,
-        ctx: Context,
-        options: DeleteDocumentOptions,
-    ) -> crate::Result<DeleteDocumentResponse> {
-        let mut request = self.prepare_request_pipeline_with_document_name(http::Method::DELETE);
-
-        options.decorate_request(&mut request, self.partition_key_serialized())?;
-
-        let response = self
-            .cosmos_client()
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
-            .await?;
-
-        DeleteDocumentResponse::try_from(response).await
+    pub fn delete_document(&self) -> DeleteDocumentBuilder {
+        DeleteDocumentBuilder::new(self.clone())
     }
 
     /// List all attachments for a document
@@ -132,7 +118,10 @@ impl DocumentClient {
         AttachmentClient::new(self, attachment_name)
     }
 
-    fn prepare_request_pipeline_with_document_name(&self, method: http::Method) -> Request {
+    pub(crate) fn prepare_request_pipeline_with_document_name(
+        &self,
+        method: http::Method,
+    ) -> Request {
         self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}",

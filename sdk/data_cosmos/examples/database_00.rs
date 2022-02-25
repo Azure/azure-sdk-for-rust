@@ -49,12 +49,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 }"#;
                 let document: Value = serde_json::from_str(data)?;
 
-                let options = CreateDocumentOptions::new()
-                    .is_upsert(true)
-                    .partition_key(&43u32)
-                    .unwrap();
                 let resp = collection_client
-                    .create_document(Context::new(), &document, options)
+                    .create_document(document)
+                    .is_upsert(true)
+                    .partition_key(&43u32)?
+                    .into_future()
                     .await?;
 
                 println!("resp == {:?}", resp);
