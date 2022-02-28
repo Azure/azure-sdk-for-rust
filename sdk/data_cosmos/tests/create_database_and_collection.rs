@@ -1,6 +1,5 @@
 #![cfg(feature = "mock_transport_framework")]
 
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
