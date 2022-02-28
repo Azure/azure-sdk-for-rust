@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
@@ -65,10 +64,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
                 println!("\nReplacing collection");
                 let replace_collection_response = collection_client
-                    .replace_collection(
-                        Context::new(),
-                        ReplaceCollectionOptions::new("/age").indexing_policy(indexing_policy_new),
-                    )
+                    .replace_collection("/age")
+                    .indexing_policy(indexing_policy_new)
+                    .into_future()
                     .await?;
                 println!(
                     "replace_collection_response == {:#?}",

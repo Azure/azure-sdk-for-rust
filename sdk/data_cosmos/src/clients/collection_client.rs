@@ -2,10 +2,10 @@ use super::{DatabaseClient, UserDefinedFunctionClient};
 use crate::clients::*;
 use crate::operations::*;
 use crate::requests;
-use crate::resources::ResourceType;
+use crate::resources::collection::PartitionKey;
 use crate::CosmosEntity;
 use crate::ReadonlyString;
-use azure_core::{Context, HttpClient, Pipeline, Request};
+use azure_core::{HttpClient, Pipeline, Request};
 use serde::Serialize;
 
 /// A client for Cosmos collection resources.
@@ -52,21 +52,11 @@ impl CollectionClient {
     }
 
     /// Replace a collection
-    pub async fn replace_collection(
+    pub fn replace_collection<P: Into<PartitionKey>>(
         &self,
-        ctx: Context,
-        options: ReplaceCollectionOptions,
-    ) -> crate::Result<ReplaceCollectionResponse> {
-        let mut request = self.prepare_request_with_collection_name(http::Method::PUT);
-
-        options.decorate_request(&mut request, self.collection_name())?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-            .await?;
-
-        Ok(ReplaceCollectionResponse::try_from(response).await?)
+        partition_key: P,
+    ) -> ReplaceCollectionBuilder {
+        ReplaceCollectionBuilder::new(self.clone(), partition_key.into())
     }
 
     /// list documents in a collection

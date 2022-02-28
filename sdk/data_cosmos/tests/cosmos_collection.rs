@@ -1,7 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 mod setup;
 
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use azure_data_cosmos::resources::collection::*;
 use futures::stream::StreamExt;
@@ -142,10 +141,9 @@ async fn replace_collection() {
         .into_collection_client(COLLECTION_NAME);
 
     let _replace_collection_response = collection_client
-        .replace_collection(
-            Context::new(),
-            ReplaceCollectionOptions::new("/id").indexing_policy(new_ip),
-        )
+        .replace_collection("/id")
+        .indexing_policy(new_ip)
+        .into_future()
         .await
         .unwrap();
 
