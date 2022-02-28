@@ -62,7 +62,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
             let partition_key = self
                 .partition_key
                 .as_deref()
-                .unwrap_or(self.client.partition_key_serialized());
+                .unwrap_or_else(|| self.client.partition_key_serialized());
             add_as_partition_key_header_serialized2(partition_key, &mut request);
 
             azure_core::headers::add_mandatory_header2(&self.indexing_directive, &mut request)?;
