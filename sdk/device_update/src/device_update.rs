@@ -7,6 +7,7 @@ use chrono::{DateTime, Utc};
 use crate::client::API_VERSION_PARAM;
 use crate::Error;
 use crate::DeviceUpdateClient;
+use log::debug;
 
 #[derive(Debug, Deserialize, Getters)]
 #[getset(get = "pub")]
@@ -66,8 +67,8 @@ pub struct Step {
     handler: String,
     handler_properties: Map<String,Value>,
     #[serde(rename = "type")]
-    step_type: StepType,
-    update_id: UpdateId,
+    step_type: Option<StepType>,
+    update_id: Option<UpdateId>,
 }
 
 #[derive(Debug, Deserialize, Getters)]
@@ -82,18 +83,18 @@ pub struct Instructions {
 pub struct Update {
     compatibility: Vec<Map<String,Value>>,
     created_date_time: DateTime<Utc>,
-    description: String,
+    description: Option<String>,
     etag: String,
-    friendly_name: String,
+    friendly_name: Option<String>,
     imported_date_time: DateTime<Utc>,
-    installed_criteria: String,
-    instructions: Instructions,
+    installed_criteria: Option<String>,
+    instructions: Option<Instructions>,
     is_deployable: bool,
     manifest_version: String,
-    referenced_by: Vec<UpdateId>,
+    referenced_by: Option<Vec<UpdateId>>,
     scan_result: String,
     update_id: UpdateId,
-    update_type: String,
+    update_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Getters)]
@@ -111,7 +112,6 @@ pub struct UpdateFile {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum OperationStatus {
     Failed,
     NotStarted,
@@ -125,14 +125,14 @@ pub enum OperationStatus {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateOperation {
     created_date_time: DateTime<Utc>,
-    error: Value,
+    error: Option<Value>,
     etag: String,
     last_action_date_time: DateTime<Utc>,
     operation_id: String,
-    resource_location: String,
+    resource_location: Option<String>,
     status: OperationStatus,
     trace_id: String,
-    update_id: UpdateId,
+    update_id: Option<UpdateId>,
 }
 
 #[derive(Debug, Deserialize, Getters)]
@@ -167,18 +167,44 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         &mut self,
         instance_id: &str,
         import_json: String,
-    ) -> Result<Update, Error> {
+    ) -> Result<UpdateOperation, Error> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates");
         uri.set_path(&path);
         let params = format!("action=import&{}", API_VERSION_PARAM);
         uri.set_query(Some(&params));
 
+        debug!("Import request: {}", &uri);
         let resp_body = self.post_authed(uri.to_string(), Some(import_json)).await?;
-        println!("Body: {:?}", resp_body);
-        let response = serde_json::from_str::<Update>(&resp_body)?;
-        Ok(response)
+        debug!("Import response: {}", &resp_body);
+
+        loop{
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            let mut uri = self.device_update_url.clone();
+            uri.set_path(&resp_body);
+            debug!("Requesting operational status: {}", &uri);
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            debug!("Operational status response: {}", &resp_body);
+            match serde_json::from_str::<UpdateOperation>(&resp_body)
+            {
+                Ok(status) => {
+                    let error:String = match status.error.clone() {
+                        None => "not present".to_owned(),
+                        Some(v) => v.to_string(),
+                    };
+                    match status.status {
+                        OperationStatus::Failed => return Err(Error::ImportFailed(error)),
+                        OperationStatus::Succeeded => return Ok(status),
+                        OperationStatus::NotStarted => continue,
+                        OperationStatus::Running => continue,
+                        OperationStatus::Undefined => return Err(Error::ImportUndefined(error)),
+                    }
+                },
+                Err(_e) => {},
+            }
+        }
     }
+
 
     /// Delete a specific update version.
     /// DELETE https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview
@@ -402,13 +428,16 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         uri.set_query(Some(&params));
 
         let resp_body = self.get_authed(uri.to_string()).await?;
+        println!("Body: {:?}", resp_body);
         let mut response = serde_json::from_str::<UpdateList>(&resp_body)?;
         let mut all_results = response.value;
         loop {
             match response.next_link {
                 None => break,
-                Some(url) => {
-                    let resp_body = self.get_authed(url).await?;
+                Some(path) => {
+                    let mut uri = self.device_update_url.clone();
+                    uri.set_path(&path);
+                    let resp_body = self.get_authed(uri.to_string()).await?;
                     response = serde_json::from_str::<UpdateList>(&resp_body)?;
                     all_results.append(&mut response.value);
                 },

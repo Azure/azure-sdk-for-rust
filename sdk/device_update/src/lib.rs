@@ -6,36 +6,46 @@ pub use client::{DeviceUpdateClient};
 #[non_exhaustive]
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("Key Vault does not exist, or is unreachable at '{keyvault_name:?}.vault.azure.net'")]
-    KeyVaultDoesNotExist { keyvault_name: String },
-
     #[error("Azure Active Directory authorization error")]
     Authorization,
 
-    #[error("Received an error accessing the Key Vault, which could not be parsed as expected.")]
+    #[error("Received an error accessing the Device Update, which could not be parsed as expected.")]
     UnparsableError,
 
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
 
-    #[error("Key Vault Error: {0}")]
+    #[error("Device Update Error: {0}")]
     General(String),
 
     #[error("Base64 Decode Error: {0}")]
     Base64(#[from] base64::DecodeError),
 
-    #[error("Failed to parse response from Key Vault: {0}")]
+    #[error("Failed to parse response from Device Update: {0}")]
     SerdeParse(#[from] serde_json::Error),
-
-    #[error("Could not get vault domain")]
-    DomainParse,
 
     #[error("URL parse error: {0}")]
     UrlParseError(#[from] url::ParseError),
 
-    #[error("Maximum Query results is 25, given {0}.")]
-    MaxQueryTooHigh(usize),
+    #[error("Could not get device update domain")]
+    DomainParse,
+
+    #[error("Successful import (202 status) but no operation-location header found")]
+    NoOperationLocation,
+
+    #[error("Invalid characters in operation-location path")]
+    InvalidOperationPath(),
+
+    #[error("Import unsuccessful, status: {0}")]
+    ImportError(reqwest::StatusCode),
+
+    #[error("Import unsuccessful with status Failed, error: {0}")]
+    ImportFailed(String),
+
+    #[error("Import unsuccessful with status Undefined, error: {0}")]
+    ImportUndefined(String),
 }
+
 
 #[cfg(test)]
 mod tests {

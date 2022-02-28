@@ -108,17 +108,21 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         }
 
         let resp = req.send().await?;
-
-        let body = resp.text().await?;
-
-        let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
-
-        if let Some(err) = body_serialized.get("error") {
-            let msg = err.get("message").ok_or(Error::UnparsableError)?;
-            Err(Error::General(msg.to_string()))
-        } else {
-            Ok(body)
+        if resp.status() == 202u16 {
+            let headers = resp.headers();
+            if headers.contains_key("operation-location") {
+                return match headers.get("operation-location").unwrap().to_str() {
+                    Ok(p) => Ok(p.to_owned()),
+                    Err(_e) => Err(Error::InvalidOperationPath()),
+                }
+            }
+            else
+            {
+                return Err(Error::NoOperationLocation);
+            }
         }
+
+        Err(Error::ImportError(resp.status()))
     }
 
     pub(crate) async fn _patch_authed(
