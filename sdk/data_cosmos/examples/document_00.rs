@@ -85,7 +85,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             client
                 .clone()
                 .into_database_client(database.id.clone())
-                .list_collections(Context::new(), ListCollectionsOptions::new()),
+                .list_collections()
+                .into_stream(),
         )
         .next()
         .await

@@ -27,12 +27,11 @@ async fn create_and_delete_collection() {
         .into_future()
         .await
         .unwrap();
-    let collections =
-        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let collections = Box::pin(database_client.list_collections().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert!(collections.collections.len() == 1);
 
     // try to get the previously created collection
@@ -60,12 +59,11 @@ async fn create_and_delete_collection() {
         .into_future()
         .await
         .unwrap();
-    let collections =
-        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let collections = Box::pin(database_client.list_collections().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert!(collections.collections.len() == 0);
 
     database_client
@@ -105,12 +103,11 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collections =
-        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let collections = Box::pin(database_client.list_collections().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(collections.collections.len(), 1);
     assert_eq!(
         collection.collection.indexing_policy,
@@ -152,12 +149,11 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collections =
-        Box::pin(database_client.list_collections(Context::new(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let collections = Box::pin(database_client.list_collections().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(collections.collections.len(), 1);
     let eps: Vec<&ExcludedPath> = collections.collections[0]
         .indexing_policy

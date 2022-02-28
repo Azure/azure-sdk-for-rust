@@ -15,7 +15,6 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
 
     let client = setup::initialize("create_database_and_collection")?;
     let database_name = "test-create-database-and-collection";
-    let context = Context::new();
 
     // create database!
     log::info!("Creating a database with name '{}'...", database_name);
@@ -39,11 +38,10 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
 
     // list collections!
     log::info!("Listing all collections...");
-    let collections =
-        Box::pin(db_client.list_collections(context.clone(), ListCollectionsOptions::new()))
-            .next()
-            .await
-            .expect("No collection page")?;
+    let collections = Box::pin(db_client.list_collections().into_stream())
+        .next()
+        .await
+        .expect("No collection page")?;
     assert_eq!(collections.count, 1);
     log::info!("Successfully listed collections");
     log::debug!("The list_collection response: {:#?}", collections);

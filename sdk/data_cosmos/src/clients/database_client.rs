@@ -68,61 +68,8 @@ impl DatabaseClient {
     }
 
     /// List collections in the database
-    pub fn list_collections(
-        &self,
-        ctx: Context,
-        options: ListCollectionsOptions,
-    ) -> impl Stream<Item = crate::Result<ListCollectionsResponse>> + '_ {
-        unfold(State::Init, move |state: State| {
-            let this = self.clone();
-            let ctx = ctx.clone();
-            let options = options.clone();
-            async move {
-                let response = match state {
-                    State::Init => {
-                        let mut request = this.cosmos_client().prepare_request_pipeline(
-                            &format!("dbs/{}/colls", this.database_name()),
-                            http::Method::GET,
-                        );
-
-                        r#try!(options.decorate_request(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-                                .await
-                        );
-                        ListCollectionsResponse::try_from(response).await
-                    }
-                    State::Continuation(continuation_token) => {
-                        let continuation = Continuation::new(continuation_token.as_str());
-                        let mut request = this.cosmos_client().prepare_request_pipeline(
-                            &format!("dbs/{}/colls", self.database_name()),
-                            http::Method::GET,
-                        );
-
-                        r#try!(options.decorate_request(&mut request));
-                        r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.pipeline()
-                                .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-                                .await
-                        );
-                        ListCollectionsResponse::try_from(response).await
-                    }
-                    State::Done => return None,
-                };
-
-                let response = r#try!(response);
-
-                let next_state = response
-                    .continuation_token
-                    .clone()
-                    .map(State::Continuation)
-                    .unwrap_or(State::Done);
-
-                Some((Ok(response), next_state))
-            }
-        })
+    pub fn list_collections(&self) -> ListCollectionsBuilder {
+        ListCollectionsBuilder::new(self.clone())
     }
 
     /// Create a collection
