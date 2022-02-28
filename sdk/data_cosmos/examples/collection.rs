@@ -49,7 +49,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let db = client
             .clone()
             .into_database_client(db.id.clone())
-            .get_database(Context::new(), GetDatabaseOptions::default())
+            .get_database()
+            .into_future()
             .await?;
         println!("db {} found == {:?}", &db.database.id, &db);
     }
@@ -77,7 +78,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             let collection_response = database_client
                 .clone()
                 .into_collection_client(collection.id)
-                .get_collection(Context::new(), GetCollectionOptions::new())
+                .get_collection()
+                .into_future()
                 .await?;
 
             println!("\tcollection_response {:?}", collection_response);

@@ -40,19 +40,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_collection_client(collection_name2);
     let user_client = database_client.clone().into_user_client(user_name);
 
-    let get_database_response = database_client
-        .get_database(Context::new(), GetDatabaseOptions::new())
-        .await?;
+    let get_database_response = database_client.get_database().into_future().await?;
     println!("get_database_response == {:#?}", get_database_response);
 
-    let get_collection_response = collection_client
-        .get_collection(Context::new(), GetCollectionOptions::new())
-        .await?;
+    let get_collection_response = collection_client.get_collection().into_future().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let get_collection2_response = collection2_client
-        .get_collection(Context::new(), GetCollectionOptions::new())
-        .await?;
+    let get_collection2_response = collection2_client.get_collection().into_future().await?;
     println!(
         "get_collection2_response == {:#?}",
         get_collection2_response
@@ -152,12 +146,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let delete_user_response = user_client
-        .delete_user(
-            Context::new(),
-            DeleteUserOptions::new().consistency_level(ConsistencyLevel::Session(
-                delete_permission_response.session_token,
-            )),
-        )
+        .delete_user()
+        .consistency_level(ConsistencyLevel::Session(
+            delete_permission_response.session_token,
+        ))
+        .into_future()
         .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 

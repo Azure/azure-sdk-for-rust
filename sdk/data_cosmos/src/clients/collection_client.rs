@@ -42,21 +42,8 @@ impl CollectionClient {
     }
 
     /// Get a collection
-    pub async fn get_collection(
-        &self,
-        ctx: Context,
-        options: GetCollectionOptions,
-    ) -> crate::Result<GetCollectionResponse> {
-        let mut request = self.prepare_request_with_collection_name(http::Method::GET);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-            .await?;
-
-        Ok(GetCollectionResponse::try_from(response).await?)
+    pub fn get_collection(&self) -> GetCollectionBuilder {
+        GetCollectionBuilder::new(self.clone())
     }
 
     /// Delete a collection
