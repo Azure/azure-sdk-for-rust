@@ -33,7 +33,7 @@ impl ListUsersBuilder {
         context: Context => context,
     }
 
-    pub fn into_stream(self) -> GetUsers {
+    pub fn into_stream(self) -> ListUsers {
         let make_request = move |continuation: Option<String>| {
             let this = self.clone();
             let ctx = self.context.clone();
@@ -65,7 +65,7 @@ impl ListUsersBuilder {
     }
 }
 
-pub type GetUsers = Pageable<ListUsersResponse, crate::Error>;
+pub type ListUsers = Pageable<ListUsersResponse, crate::Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListUsersResponse {

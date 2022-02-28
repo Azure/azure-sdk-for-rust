@@ -2,33 +2,12 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Collection;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
 use azure_core::Response as HttpResponse;
+use azure_core::{collect_pinned_stream, headers, Pageable};
 use chrono::{DateTime, Utc};
-use futures::stream::unfold;
-use futures::Stream;
 
-/// Macro for short cutting a stream on error
-macro_rules! r#try {
-    ($expr:expr $(,)?) => {
-        match $expr {
-            Result::Ok(val) => val,
-            Result::Err(err) => {
-                return Some((Err(err.into()), State::Done));
-            }
-        }
-    };
-}
-
-/// Stream state
-#[derive(Debug, Clone, PartialEq)]
-enum State {
-    Init,
-    Continuation(String),
-    Done,
-}
 #[derive(Debug, Clone)]
 pub struct ListCollectionsBuilder {
     client: DatabaseClient,
@@ -53,76 +32,39 @@ impl ListCollectionsBuilder {
         context: Context => context,
     }
 
-    pub fn into_stream(
-        self,
-    ) -> impl Stream<Item = crate::Result<ListCollectionsResponse>> + 'static {
-        unfold(State::Init, move |state: State| {
+    pub fn into_stream(self) -> ListCollections {
+        let make_request = move |continuation: Option<String>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let response = match state {
-                    State::Init => {
-                        let mut request = this.client.cosmos_client().prepare_request_pipeline(
-                            &format!("dbs/{}/colls", this.client.database_name()),
-                            http::Method::GET,
-                        );
+                let mut request = this.client.cosmos_client().prepare_request_pipeline(
+                    &format!("dbs/{}/colls", this.client.database_name()),
+                    http::Method::GET,
+                );
 
-                        r#try!(azure_core::headers::add_optional_header2(
-                            &this.consistency_level,
-                            &mut request,
-                        ));
-                        r#try!(azure_core::headers::add_mandatory_header2(
-                            &this.max_item_count,
-                            &mut request,
-                        ));
-                        let response = r#try!(
-                            this.client
-                                .pipeline()
-                                .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-                                .await
-                        );
-                        ListCollectionsResponse::try_from(response).await
-                    }
-                    State::Continuation(continuation_token) => {
-                        let continuation = Continuation::new(continuation_token.as_str());
-                        let mut request = this.client.cosmos_client().prepare_request_pipeline(
-                            &format!("dbs/{}/colls", this.client.database_name()),
-                            http::Method::GET,
-                        );
+                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
+                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
 
-                        r#try!(azure_core::headers::add_optional_header2(
-                            &this.consistency_level,
-                            &mut request,
-                        ));
-                        r#try!(azure_core::headers::add_mandatory_header2(
-                            &this.max_item_count,
-                            &mut request,
-                        ));
-                        r#try!(continuation.add_as_header2(&mut request));
-                        let response = r#try!(
-                            this.client
-                                .pipeline()
-                                .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-                                .await
-                        );
-                        ListCollectionsResponse::try_from(response).await
-                    }
-                    State::Done => return None,
-                };
+                if let Some(c) = continuation {
+                    let h = http::HeaderValue::from_str(c.as_str())
+                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
+                    request.headers_mut().append(headers::CONTINUATION, h);
+                }
 
-                let response = r#try!(response);
-
-                let next_state = response
-                    .continuation_token
-                    .clone()
-                    .map(State::Continuation)
-                    .unwrap_or(State::Done);
-
-                Some((Ok(response), next_state))
+                let response = this
+                    .client
+                    .pipeline()
+                    .send(ctx.clone().insert(ResourceType::Collections), &mut request)
+                    .await?;
+                ListCollectionsResponse::try_from(response).await
             }
-        })
+        };
+
+        Pageable::new(make_request)
     }
 }
+
+pub type ListCollections = Pageable<ListCollectionsResponse, crate::Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListCollectionsResponse {
@@ -179,6 +121,8 @@ impl ListCollectionsResponse {
     }
 }
 
-/// The future returned by calling `into_future` on the builder.
-pub type ListCollections =
-    futures::future::BoxFuture<'static, crate::Result<ListCollectionsResponse>>;
+impl Continuable for ListCollectionsResponse {
+    fn continuation(&self) -> Option<String> {
+        self.continuation_token.clone()
+    }
+}
