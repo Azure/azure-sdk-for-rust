@@ -74,9 +74,13 @@ impl std::future::IntoFuture for GetDocumentBuilder {
 }
 
 #[derive(Debug, Clone)]
+// note(rylev): clippy seems to be falsely detecting that
+// one of the variants is much larger than the other (which
+// is not true)
+#[allow(clippy::large_enum_variant)]
 pub enum GetDocumentResponse<T> {
-    Found(Box<FoundDocumentResponse<T>>),
-    NotFound(Box<NotFoundDocumentResponse>),
+    Found(FoundDocumentResponse<T>),
+    NotFound(NotFoundDocumentResponse),
 }
 
 impl<T> GetDocumentResponse<T>
@@ -92,13 +96,13 @@ where
         let body = collect_pinned_stream(pinned_stream).await?;
 
         if has_been_found {
-            Ok(GetDocumentResponse::Found(Box::new(
+            Ok(GetDocumentResponse::Found(
                 FoundDocumentResponse::try_from(&headers, body).await?,
-            )))
+            ))
         } else {
-            Ok(GetDocumentResponse::NotFound(Box::new(
+            Ok(GetDocumentResponse::NotFound(
                 NotFoundDocumentResponse::try_from(&headers).await?,
-            )))
+            ))
         }
     }
 }
