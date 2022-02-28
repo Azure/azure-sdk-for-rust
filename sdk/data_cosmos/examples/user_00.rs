@@ -39,9 +39,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("list_users_response == {:#?}", users);
 
-    let get_user_response = user_client
-        .get_user(Context::new(), GetUserOptions::new())
-        .await?;
+    let get_user_response = user_client.get_user().into_future().await?;
     println!("get_user_response == {:#?}", get_user_response);
 
     let new_user = format!("{}replaced", user_name);

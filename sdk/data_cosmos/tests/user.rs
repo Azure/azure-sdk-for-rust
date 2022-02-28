@@ -43,9 +43,7 @@ async fn users() {
 
     assert_eq!(list_users_response.users.len(), 1);
 
-    let get_user_response = user_client
-        .get_user(Context::new(), GetUserOptions::new())
-        .await;
+    let get_user_response = user_client.get_user().into_future().await;
     assert!(get_user_response.is_ok());
     let retrieved_user = get_user_response.unwrap();
     assert_eq!(retrieved_user.user.id, USER_NAME);

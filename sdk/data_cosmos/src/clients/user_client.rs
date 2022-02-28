@@ -44,20 +44,8 @@ impl UserClient {
     }
 
     /// Get the user
-    pub async fn get_user(
-        &self,
-        ctx: Context,
-        options: GetUserOptions,
-    ) -> crate::Result<UserResponse> {
-        let mut request = self.prepare_request_with_user_name(http::Method::GET);
-
-        options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Users), &mut request)
-            .await?;
-
-        Ok(UserResponse::try_from(response).await?)
+    pub fn get_user(&self) -> GetUserBuilder {
+        GetUserBuilder::new(self.clone())
     }
 
     /// Replace the user
