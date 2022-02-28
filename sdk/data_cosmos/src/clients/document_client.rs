@@ -3,7 +3,6 @@ use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
 use azure_core::{Context, HttpClient, Request};
-use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 /// A client for Cosmos document resources.
@@ -59,25 +58,8 @@ impl DocumentClient {
     }
 
     /// Get a document
-    pub async fn get_document<T>(
-        &self,
-        ctx: Context,
-        options: GetDocumentOptions,
-    ) -> crate::Result<GetDocumentResponse<T>>
-    where
-        T: DeserializeOwned,
-    {
-        let mut request = self.prepare_request_pipeline_with_document_name(http::Method::GET);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .cosmos_client()
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
-            .await?;
-
-        GetDocumentResponse::try_from(response).await
+    pub fn get_document(&self) -> GetDocumentBuilder {
+        GetDocumentBuilder::new(self.clone())
     }
 
     /// replace a document in a collection

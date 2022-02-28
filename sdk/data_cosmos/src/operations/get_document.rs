@@ -4,26 +4,28 @@ use crate::resources::Document;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::prelude::*;
-use azure_core::{
-    collect_pinned_stream, Request as HttpRequest, Response as HttpResponse, SessionToken,
-};
+use azure_core::{collect_pinned_stream, Response as HttpResponse, SessionToken};
 use chrono::{DateTime, Utc};
 use http::{HeaderMap, StatusCode};
 use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
-pub struct GetDocumentOptions {
+pub struct GetDocumentBuilder {
+    client: DocumentClient,
     if_match_condition: Option<IfMatchCondition>,
     if_modified_since: Option<IfModifiedSince>,
     consistency_level: Option<ConsistencyLevel>,
+    context: Context,
 }
 
-impl GetDocumentOptions {
-    pub fn new() -> Self {
+impl GetDocumentBuilder {
+    pub(crate) fn new(client: DocumentClient) -> Self {
         Self {
+            client,
             if_match_condition: None,
             if_modified_since: None,
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
@@ -33,14 +35,41 @@ impl GetDocumentOptions {
         if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
-        azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
+    pub fn into_future<T: DeserializeOwned>(self) -> GetDocument<T> {
+        Box::pin(async move {
+            let mut request = self
+                .client
+                .prepare_request_pipeline_with_document_name(http::Method::GET);
 
-        request.set_body(azure_core::EMPTY_BODY.into());
+            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
 
-        Ok(())
+            request.set_body(azure_core::EMPTY_BODY.into());
+
+            let response = self
+                .client
+                .cosmos_client()
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Documents),
+                    &mut request,
+                )
+                .await?;
+
+            GetDocumentResponse::try_from(response).await
+        })
+    }
+}
+
+type GetDocument<T> = futures::future::BoxFuture<'static, crate::Result<GetDocumentResponse<T>>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for GetDocumentBuilder {
+    type Future = GetDocument;
+    type Output = <GetDocument as std::future::Future>::Output;
+    fn into_future(self) -> Self::Future {
+        Self::into_future(self)
     }
 }
 

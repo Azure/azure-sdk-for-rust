@@ -156,7 +156,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_document_response = collection_client
         .clone()
         .into_document_client(doc.id.clone(), &doc.id)?
-        .get_document::<MySampleStruct>(Context::new(), GetDocumentOptions::new())
+        .get_document()
+        .into_future::<MySampleStruct>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
