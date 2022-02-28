@@ -73,7 +73,8 @@ impl std::future::IntoFuture for CreateDatabaseBuilder {
     }
 }
 
-type CreateDatabase =
+/// The future returned by calling `into_future` on the builder.
+pub type CreateDatabase =
     futures::future::BoxFuture<'static, azure_core::error::Result<CreateDatabaseResponse>>;
 
 #[derive(Serialize)]

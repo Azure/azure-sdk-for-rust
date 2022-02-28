@@ -44,7 +44,8 @@ impl DeleteUserBuilder {
     }
 }
 
-type DeleteUser = futures::future::BoxFuture<'static, crate::Result<DeleteUserResponse>>;
+/// The future returned by calling `into_future` on the builder.
+pub type DeleteUser = futures::future::BoxFuture<'static, crate::Result<DeleteUserResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteUserBuilder {

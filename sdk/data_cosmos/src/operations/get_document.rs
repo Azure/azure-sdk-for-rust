@@ -33,8 +33,14 @@ impl GetDocumentBuilder {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        context: Context => context,
     }
 
+    /// Convert into a future
+    ///
+    /// We do not implement `std::future::IntoFuture` because it requires the ability for the
+    /// output of the future to be generic which is not possible in Rust (as of 1.59). Once
+    /// generic associated types (GATs) stabilize, this will become possible.
     pub fn into_future<T: DeserializeOwned>(self) -> GetDocument<T> {
         Box::pin(async move {
             let mut request = self
@@ -62,16 +68,9 @@ impl GetDocumentBuilder {
     }
 }
 
-type GetDocument<T> = futures::future::BoxFuture<'static, crate::Result<GetDocumentResponse<T>>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for GetDocumentBuilder {
-    type Future = GetDocument;
-    type Output = <GetDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
-        Self::into_future(self)
-    }
-}
+/// The future returned by calling `into_future` on the builder.
+pub type GetDocument<T> =
+    futures::future::BoxFuture<'static, crate::Result<GetDocumentResponse<T>>>;
 
 #[derive(Debug, Clone)]
 // note(rylev): clippy seems to be falsely detecting that
