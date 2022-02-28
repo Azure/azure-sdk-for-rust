@@ -12,33 +12,33 @@ use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct ListDatabases {
+pub struct ListDatabasesBuilder {
     client: CosmosClient,
     consistency_level: Option<ConsistencyLevel>,
     max_item_count: MaxItemCount,
-    context: Option<Context>,
+    context: Context,
 }
 
-impl ListDatabases {
-    pub fn new(client: CosmosClient) -> Self {
+impl ListDatabasesBuilder {
+    pub(crate) fn new(client: CosmosClient) -> Self {
         Self {
             client,
             consistency_level: None,
             max_item_count: MaxItemCount::new(-1),
-            context: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
-        context: Context => Some(context),
+        context: Context => context,
     }
 
-    pub fn into_stream(self) -> Pageable<ListDatabasesResponse, azure_core::error::Error> {
+    pub fn into_stream(self) -> ListDatabases {
         let make_request = move |continuation: Option<String>| {
             let this = self.clone();
-            let ctx = self.context.clone().unwrap_or_default();
+            let ctx = self.context.clone();
             async move {
                 let mut request = this
                     .client
@@ -80,6 +80,8 @@ impl ListDatabases {
         Pageable::new(make_request)
     }
 }
+
+pub type ListDatabases = Pageable<ListDatabasesResponse, azure_core::error::Error>;
 
 #[derive(Clone, PartialEq, PartialOrd, Debug)]
 pub struct ListDatabasesResponse {
