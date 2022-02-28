@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -102,11 +101,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let replace_document_response = client
         .into_document_client(doc.id.clone(), &doc.id)?
-        .replace_document(
-            Context::new(),
-            &doc,
-            ReplaceDocumentOptions::new().consistency_level(&query_documents_response),
-        )
+        .replace_document(doc)
+        .consistency_level(&query_documents_response)
+        .into_future()
         .await?;
     println!(
         "replace_document_response == {:#?}",

@@ -1,8 +1,7 @@
 use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
 use crate::operations::*;
-use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{Context, HttpClient, Request};
+use azure_core::{HttpClient, Request};
 use serde::Serialize;
 
 /// A client for Cosmos document resources.
@@ -63,23 +62,11 @@ impl DocumentClient {
     }
 
     /// replace a document in a collection
-    pub async fn replace_document<T: Serialize>(
+    pub fn replace_document<D: Serialize + Send + 'static>(
         &self,
-        ctx: Context,
-        document: &T,
-        options: ReplaceDocumentOptions,
-    ) -> crate::Result<ReplaceDocumentResponse> {
-        let mut request = self.prepare_request_pipeline_with_document_name(http::Method::PUT);
-
-        options.decorate_request(&mut request, document, self.partition_key_serialized())?;
-
-        let response = self
-            .cosmos_client()
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
-            .await?;
-
-        ReplaceDocumentResponse::try_from(response).await
+        document: D,
+    ) -> ReplaceDocumentBuilder<D> {
+        ReplaceDocumentBuilder::new(self.clone(), document)
     }
 
     /// Delete a document

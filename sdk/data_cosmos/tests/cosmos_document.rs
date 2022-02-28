@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::Context;
 use serde::{Deserialize, Serialize};
 
 mod setup;
@@ -252,18 +251,15 @@ async fn replace_document() {
         .clone()
         .into_document_client(document_data.id.clone(), &document_data.id)
         .unwrap()
-        .replace_document(
-            Context::new(),
-            &document_data,
-            ReplaceDocumentOptions::new()
-                .consistency_level(ConsistencyLevel::from(&documents))
-                .if_match_condition(IfMatchCondition::Match(
-                    documents.documents[0]
-                        .document_attributes
-                        .etag()
-                        .to_string(),
-                )),
-        )
+        .replace_document(document_data)
+        .consistency_level(ConsistencyLevel::from(&documents))
+        .if_match_condition(IfMatchCondition::Match(
+            documents.documents[0]
+                .document_attributes
+                .etag()
+                .to_string(),
+        ))
+        .into_future()
         .await
         .unwrap();
 
