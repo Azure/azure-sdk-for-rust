@@ -5,35 +5,67 @@ use azure_core::{
     collect_pinned_stream,
     headers::{continuation_token_from_headers_optional, session_token_from_headers},
     prelude::MaxItemCount,
-    Request as HttpRequest, Response as HttpResponse, SessionToken,
+    Response as HttpResponse, SessionToken,
 };
+use azure_core::{headers, Context, Continuable, Pageable};
 
 #[derive(Debug, Clone)]
-pub struct ListUsersOptions {
+pub struct ListUsersBuilder {
+    client: DatabaseClient,
     consistency_level: Option<ConsistencyLevel>,
     max_item_count: MaxItemCount,
+    context: Context,
 }
 
-impl ListUsersOptions {
-    pub fn new() -> Self {
+impl ListUsersBuilder {
+    pub(crate) fn new(client: DatabaseClient) -> Self {
         Self {
+            client,
             consistency_level: None,
             max_item_count: MaxItemCount::new(-1),
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
+        context: Context => context,
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        azure_core::headers::add_mandatory_header2(&self.max_item_count, request)?;
+    pub fn into_stream(self) -> GetUsers {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let ctx = self.context.clone();
+            async move {
+                let mut request = this.client.cosmos_client().prepare_request_pipeline(
+                    &format!("dbs/{}/users", this.client.database_name()),
+                    http::Method::GET,
+                );
 
-        Ok(())
+                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
+                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
+
+                if let Some(c) = continuation {
+                    let h = http::HeaderValue::from_str(c.as_str())
+                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
+                    request.headers_mut().append(headers::CONTINUATION, h);
+                }
+
+                let response = this
+                    .client
+                    .pipeline()
+                    .send(ctx.clone().insert(ResourceType::Users), &mut request)
+                    .await?;
+                ListUsersResponse::try_from(response).await
+            }
+        };
+
+        Pageable::new(make_request)
     }
 }
+
+pub type GetUsers = Pageable<ListUsersResponse, crate::Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListUsersResponse {
@@ -82,5 +114,11 @@ impl IntoIterator for ListUsersResponse {
 
     fn into_iter(self) -> Self::IntoIter {
         self.users.into_iter()
+    }
+}
+
+impl Continuable for ListUsersResponse {
+    fn continuation(&self) -> Option<String> {
+        self.continuation_token.clone()
     }
 }

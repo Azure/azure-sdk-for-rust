@@ -182,12 +182,3 @@ impl ListCollectionsResponse {
 /// The future returned by calling `into_future` on the builder.
 pub type ListCollections =
     futures::future::BoxFuture<'static, crate::Result<ListCollectionsResponse>>;
-
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for ListCollectionsBuilder {
-    type Future = ListCollections;
-    type Output = <ListCollections as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
-        Self::into_future(self)
-    }
-}

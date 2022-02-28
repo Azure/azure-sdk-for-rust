@@ -34,12 +34,11 @@ async fn users() {
 
     let _create_user_response = user_client.create_user().into_future().await.unwrap();
 
-    let list_users_response =
-        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let list_users_response = Box::pin(database_client.list_users().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
 
     assert_eq!(list_users_response.users.len(), 1);
 
@@ -57,24 +56,22 @@ async fn users() {
         .await
         .unwrap();
 
-    let list_users_response =
-        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let list_users_response = Box::pin(database_client.list_users().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(list_users_response.users.len(), 1);
 
     let user_client = database_client.clone().into_user_client(USER_NAME_REPLACED);
 
     let _delete_user_response = user_client.delete_user().into_future().await.unwrap();
 
-    let list_users_response =
-        Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
-            .next()
-            .await
-            .unwrap()
-            .unwrap();
+    let list_users_response = Box::pin(database_client.list_users().into_stream())
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(list_users_response.users.len(), 0);
 
     // delete the database
