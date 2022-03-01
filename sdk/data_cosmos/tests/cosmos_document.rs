@@ -6,6 +6,7 @@ mod setup;
 use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use collection::*;
+use futures::StreamExt;
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 struct MyDocument {
@@ -70,8 +71,10 @@ async fn create_and_delete_document() {
 
     let documents = collection_client
         .list_documents()
-        .execute::<MyDocument>()
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .documents;
     assert!(documents.len() == 1);
@@ -103,8 +106,10 @@ async fn create_and_delete_document() {
 
     let documents = collection_client
         .list_documents()
-        .execute::<MyDocument>()
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .documents;
     assert!(documents.len() == 0);
@@ -164,8 +169,10 @@ async fn query_documents() {
 
     let documents = collection_client
         .list_documents()
-        .execute::<MyDocument>()
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap()
         .documents;
     assert!(documents.len() == 1);
@@ -240,8 +247,10 @@ async fn replace_document() {
 
     let documents = collection_client
         .list_documents()
-        .execute::<MyDocument>()
+        .into_stream::<MyDocument>()
+        .next()
         .await
+        .unwrap()
         .unwrap();
     assert!(documents.documents.len() == 1);
 

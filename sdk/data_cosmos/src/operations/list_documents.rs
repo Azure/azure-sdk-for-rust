@@ -1,14 +1,90 @@
 use crate::headers::from_headers::*;
+use crate::prelude::*;
 use crate::resources::document::{Document, DocumentAttributes};
+use crate::resources::ResourceType;
 use crate::ResourceQuota;
-
 use azure_core::headers::{
-    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
+    self, continuation_token_from_headers_optional, item_count_from_headers,
+    session_token_from_headers,
 };
-use azure_core::SessionToken;
+use azure_core::{collect_pinned_stream, Response, SessionToken};
+use azure_core::{prelude::*, Pageable};
 use chrono::{DateTime, Utc};
-use http::response::Response;
 use serde::de::DeserializeOwned;
+
+#[derive(Debug, Clone)]
+pub struct ListDocumentsBuilder {
+    client: CollectionClient,
+    if_match_condition: Option<IfMatchCondition>,
+    consistency_level: Option<ConsistencyLevel>,
+    max_item_count: MaxItemCount,
+    a_im: ChangeFeed,
+    partition_range_id: Option<PartitionRangeId>,
+    context: Context,
+}
+
+impl ListDocumentsBuilder {
+    pub(crate) fn new(client: CollectionClient) -> Self {
+        Self {
+            client,
+            if_match_condition: None,
+            consistency_level: None,
+            max_item_count: MaxItemCount::new(-1),
+            a_im: ChangeFeed::None,
+            partition_range_id: None,
+            context: Context::new(),
+        }
+    }
+
+    setters! {
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        max_item_count: i32 => MaxItemCount::new(max_item_count),
+        a_im: ChangeFeed,
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
+        partition_range_id: String => Some(PartitionRangeId::new(partition_range_id)),
+    }
+
+    pub fn into_stream<T: DeserializeOwned>(self) -> ListDocuments<T> {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let ctx = self.context.clone();
+            async move {
+                let mut req = this.client.cosmos_client().prepare_request_pipeline(
+                    &format!(
+                        "dbs/{}/colls/{}/docs",
+                        this.client.database_client().database_name(),
+                        this.client.collection_name()
+                    ),
+                    http::Method::GET,
+                );
+
+                azure_core::headers::add_optional_header2(&this.if_match_condition, &mut req)?;
+                azure_core::headers::add_optional_header2(&this.consistency_level, &mut req)?;
+                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut req)?;
+                azure_core::headers::add_mandatory_header2(&this.a_im, &mut req)?;
+                azure_core::headers::add_optional_header2(&this.partition_range_id, &mut req)?;
+
+                if let Some(c) = continuation {
+                    let h = http::HeaderValue::from_str(c.as_str())
+                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
+                    req.headers_mut().append(headers::CONTINUATION, h);
+                }
+
+                let response = this
+                    .client
+                    .pipeline()
+                    .send(ctx.clone().insert(ResourceType::Documents), &mut req)
+                    .await?;
+
+                ListDocumentsResponse::try_from(response).await
+            }
+        };
+
+        Pageable::new(make_request)
+    }
+}
+
+pub type ListDocuments<T> = Pageable<ListDocumentsResponse<T>, crate::Error>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ListDocumentsResponseAttributes {
@@ -57,45 +133,22 @@ pub struct ListDocumentsResponseEntities<T> {
     pub entities: Vec<T>,
 }
 
-impl std::convert::TryFrom<&[u8]> for ListDocumentsResponseAttributes {
-    type Error = crate::Error;
-    fn try_from(body: &[u8]) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(body)?)
-    }
-}
-
-impl<T> std::convert::TryFrom<&[u8]> for ListDocumentsResponseEntities<T>
+impl<T> ListDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
-
-    fn try_from(body: &[u8]) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(body)?)
-    }
-}
-
-impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for ListDocumentsResponse<T>
-where
-    T: DeserializeOwned,
-{
-    type Error = crate::Error;
-
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        let headers = response.headers();
-        let body: &[u8] = response.body();
-
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", std::str::from_utf8(body));
+    pub(crate) async fn try_from(response: Response) -> crate::Result<Self> {
+        let (_status_code, headers, pinned_stream) = response.deconstruct();
+        let body: bytes::Bytes = collect_pinned_stream(pinned_stream).await?;
+        let headers = &headers;
 
         // we will proceed in three steps:
         // 1- Deserialize the result as DocumentAttributes. The extra field will be ignored.
         // 2- Deserialize the result a type T. The extra fields will be ignored.
         // 3- Zip 1 and 2 in the resulting structure.
         // There is a lot of data movement here, let's hope the compiler is smarter than me :)
-        let document_attributes = ListDocumentsResponseAttributes::try_from(body)?;
-        debug!("document_attributes == {:?}", document_attributes);
-        let entries = ListDocumentsResponseEntities::try_from(body)?;
+        let document_attributes: ListDocumentsResponseAttributes = serde_json::from_slice(&body)?;
+        let entries: ListDocumentsResponseEntities<T> = serde_json::from_slice(&body)?;
 
         let documents = document_attributes
             .documents
@@ -136,6 +189,12 @@ where
             continuation_token: continuation_token_from_headers_optional(headers)?,
             date: date_from_headers(headers)?,
         })
+    }
+}
+
+impl<T> Continuable for ListDocumentsResponse<T> {
+    fn continuation(&self) -> Option<String> {
+        self.continuation_token.clone()
     }
 }
 

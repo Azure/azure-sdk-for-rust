@@ -99,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .list_documents()
             .consistency_level(session_token.clone())
             .max_item_count(3);
-        let mut stream = Box::pin(stream.stream::<MySampleStruct>());
+        let mut stream = stream.into_stream::<MySampleStruct>();
         // TODO: As soon as the streaming functionality is stabilized
         // in Rust we can substitute this while let Some... into
         // for each (or whatever the Rust team picks).
@@ -158,8 +158,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let list_documents_response = collection_client
         .list_documents()
         .consistency_level(session_token)
-        .execute::<serde_json::Value>() // you can use this if you don't know/care about the return type!
-        .await?;
+        .into_stream::<serde_json::Value>() // you can use this if you don't know/care about the return type!
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(list_documents_response.documents.len(), 4);
 
     Ok(())

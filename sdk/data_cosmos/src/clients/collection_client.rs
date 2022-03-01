@@ -60,8 +60,8 @@ impl CollectionClient {
     }
 
     /// list documents in a collection
-    pub fn list_documents(&self) -> requests::ListDocumentsBuilder<'_, '_> {
-        requests::ListDocumentsBuilder::new(self)
+    pub fn list_documents(&self) -> ListDocumentsBuilder {
+        ListDocumentsBuilder::new(self.clone())
     }
 
     /// create a document in a collection

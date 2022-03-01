@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut documents = Vec::new();
 
     let stream = client.list_documents();
-    let mut stream = Box::pin(stream.stream::<serde_json::Value>());
+    let mut stream = stream.into_stream::<serde_json::Value>();
     while let Some(res) = stream.next().await {
         for doc in res?.documents {
             documents.push(doc);
