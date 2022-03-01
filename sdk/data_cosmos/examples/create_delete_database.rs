@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // account. Database do not implement Display but deref to &str so you can pass it to methods
     // both as struct or id.
 
-    let mut list_databases_stream = Box::pin(client.list_databases().into_stream());
+    let mut list_databases_stream = client.list_databases().into_stream();
     while let Some(list_databases_response) = list_databases_stream.next().await {
         println!("list_databases_response = {:#?}", list_databases_response?);
     }
@@ -60,8 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let get_collection_response = db_collection.get_collection().into_future().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
-        let stream = db_client.list_collections().into_stream();
-        let mut stream = Box::pin(stream);
+        let mut stream = db_client.list_collections().into_stream();
         while let Some(res) = stream.next().await {
             let res = res?;
             println!("res == {:#?}", res);
