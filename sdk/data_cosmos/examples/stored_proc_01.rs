@@ -54,8 +54,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let create_stored_procedure_response = stored_procedure_client
-        .create_stored_procedure()
-        .execute(function_body)
+        .create_stored_procedure(function_body)
+        .into_future()
         .await?;
     println!(
         "create_stored_procedure_response == {:#?}",
