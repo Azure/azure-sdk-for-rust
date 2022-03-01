@@ -2,7 +2,6 @@
 
 use std::assert_eq;
 
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
@@ -48,11 +47,8 @@ async fn users() {
     assert_eq!(retrieved_user.user.id, USER_NAME);
 
     let _replace_user_response = user_client
-        .replace_user(
-            Context::new(),
-            USER_NAME_REPLACED,
-            ReplaceUserOptions::new(),
-        )
+        .replace_user(USER_NAME_REPLACED)
+        .into_future()
         .await
         .unwrap();
 

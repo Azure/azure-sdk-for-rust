@@ -1,9 +1,7 @@
 use super::*;
 use crate::prelude::*;
-use crate::resources::user::UserResponse;
-use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::{Context, HttpClient, Pipeline, Request};
+use azure_core::{HttpClient, Pipeline, Request};
 
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
@@ -49,21 +47,8 @@ impl UserClient {
     }
 
     /// Replace the user
-    pub async fn replace_user<S: AsRef<str>>(
-        &self,
-        ctx: Context,
-        user_name: S,
-        options: ReplaceUserOptions,
-    ) -> crate::Result<UserResponse> {
-        let mut request = self.prepare_request_with_user_name(http::Method::PUT);
-
-        options.decorate_request(&mut request, user_name.as_ref())?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Users), &mut request)
-            .await?;
-
-        Ok(UserResponse::try_from(response).await?)
+    pub fn replace_user<S: Into<String>>(&self, user_name: S) -> ReplaceUserBuilder {
+        ReplaceUserBuilder::new(self.clone(), user_name.into())
     }
 
     /// Delete the user

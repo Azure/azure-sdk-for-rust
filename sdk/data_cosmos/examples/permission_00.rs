@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use std::error::Error;
 
@@ -110,19 +109,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .unwrap();
     println!("get_permission_response == {:#?}", get_permission_response);
 
-    let permission_mode = &get_permission_response.permission.permission_mode;
+    let permission_mode = get_permission_response.permission.permission_mode;
 
     // renew permission extending its validity for 60 seconds more.
     let replace_permission_response = permission_client
-        .replace_permission(
-            Context::new(),
-            ReplacePermissionOptions::new()
-                .expiry_seconds(600u64)
-                .consistency_level(ConsistencyLevel::Session(
-                    get_permission_response.session_token,
-                )),
-            permission_mode,
-        )
+        .replace_permission(permission_mode)
+        .expiry_seconds(600u64)
+        .consistency_level(ConsistencyLevel::Session(
+            get_permission_response.session_token,
+        ))
+        .into_future()
         .await
         .unwrap();
     println!(
