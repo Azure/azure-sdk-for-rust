@@ -32,7 +32,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_user_response = user_client.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
-    let users = Box::pin(database_client.list_users().into_stream())
+    let users = database_client
+        .list_users()
+        .into_stream()
         .next()
         .await
         .unwrap()?;

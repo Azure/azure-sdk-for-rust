@@ -1,5 +1,6 @@
 use futures::stream::unfold;
 use futures::Stream;
+use pin_project::pin_project;
 
 macro_rules! r#try {
     ($expr:expr $(,)?) => {
@@ -16,7 +17,9 @@ macro_rules! r#try {
 ///
 /// Internally uses the Azure specific continuation header to
 /// make repeated requests to Azure yielding a new page each time.
+#[pin_project]
 pub struct Pageable<T, E> {
+    #[pin]
     stream: std::pin::Pin<Box<dyn Stream<Item = Result<T, E>>>>,
 }
 
@@ -54,10 +57,11 @@ impl<T, E> Stream for Pageable<T, E> {
     type Item = Result<T, E>;
 
     fn poll_next(
-        mut self: std::pin::Pin<&mut Self>,
+        self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
-        std::pin::Pin::new(&mut self.stream).poll_next(cx)
+        let this = self.project();
+        this.stream.poll_next(cx)
     }
 }
 

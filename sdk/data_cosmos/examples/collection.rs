@@ -31,7 +31,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified account.
-    let databases = Box::pin(client.list_databases().into_stream())
+    let databases = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()?;
@@ -59,7 +61,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for db in databases.databases {
         let database_client = client.clone().into_database_client(db.id.clone());
-        let collections = Box::pin(database_client.list_collections().into_stream())
+        let collections = database_client
+            .list_collections()
+            .into_stream()
             .next()
             .await
             .unwrap()?;

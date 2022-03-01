@@ -17,7 +17,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let database_client = client.into_database_client("pollo");
     println!("database_name == {}", database_client.database_name());
 
-    let collections = Box::pin(database_client.list_collections().into_stream())
+    let collections = database_client
+        .list_collections()
+        .into_stream()
         .next()
         .await
         .unwrap()?;

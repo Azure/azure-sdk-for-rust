@@ -56,7 +56,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // an error (for example, the given key is not valid) you will receive a
     // specific azure_data_cosmos::Error. In this example we will look for a specific database
     // so we chain a filter operation.
-    let db = Box::pin(client.list_databases().into_stream())
+    let db = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()?
@@ -81,16 +83,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // we will create it. The collection creation is more complex and
     // has many options (such as indexing and so on).
     let collection = {
-        let collections = Box::pin(
-            client
-                .clone()
-                .into_database_client(database.id.clone())
-                .list_collections()
-                .into_stream(),
-        )
-        .next()
-        .await
-        .unwrap()?;
+        let collections = client
+            .clone()
+            .into_database_client(database.id.clone())
+            .list_collections()
+            .into_stream()
+            .next()
+            .await
+            .unwrap()?;
 
         if let Some(collection) = collections
             .collections
