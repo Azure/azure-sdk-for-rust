@@ -1,9 +1,8 @@
 use super::*;
 use crate::prelude::*;
-use crate::resources::permission::{PermissionMode, PermissionResponse};
-use crate::resources::ResourceType;
+use crate::resources::permission::PermissionMode;
 use crate::ReadonlyString;
-use azure_core::{Context, Pipeline, Request};
+use azure_core::{Pipeline, Request};
 
 /// A client for Cosmos permission resources.
 #[derive(Debug, Clone)]
@@ -49,22 +48,8 @@ impl PermissionClient {
     }
 
     /// Replace the permission
-    pub async fn replace_permission(
-        &self,
-        ctx: Context,
-        options: ReplacePermissionOptions,
-        permission_mode: &PermissionMode,
-    ) -> crate::Result<PermissionResponse> {
-        let mut request = self.prepare_request_with_permission_name(http::Method::PUT);
-
-        options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
-            .await?;
-
-        Ok(PermissionResponse::try_from(response).await?)
+    pub fn replace_permission(&self, permission_mode: PermissionMode) -> ReplacePermissionBuilder {
+        ReplacePermissionBuilder::new(self.clone(), permission_mode)
     }
 
     /// Get the permission
