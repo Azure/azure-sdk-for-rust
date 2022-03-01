@@ -85,7 +85,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             client
                 .clone()
                 .into_database_client(database.id.clone())
-                .list_collections(Context::new(), ListCollectionsOptions::new()),
+                .list_collections()
+                .into_stream(),
         )
         .next()
         .await
@@ -156,7 +157,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_document_response = collection_client
         .clone()
         .into_document_client(doc.id.clone(), &doc.id)?
-        .get_document::<MySampleStruct>(Context::new(), GetDocumentOptions::new())
+        .get_document()
+        .into_future::<MySampleStruct>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
@@ -170,12 +172,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // the etag received in the previous get_document. The etag is an opaque value that
         // changes every time the document is updated. If the passed etag is different in
         // CosmosDB it means something else updated the document before us!
-        let options = ReplaceDocumentOptions::new()
-            .if_match_condition(IfMatchCondition::Match(document.etag));
         let replace_document_response = collection_client
             .clone()
             .into_document_client(doc.id.clone(), &doc.id)?
-            .replace_document(Context::new(), &doc, options)
+            .replace_document(doc)
+            .if_match_condition(IfMatchCondition::Match(document.etag))
+            .into_future()
             .await?;
         println!(
             "replace_document_response == {:#?}",

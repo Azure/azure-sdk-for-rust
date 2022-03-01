@@ -101,12 +101,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let get_permission_response = permission_client
-        .get_permission(
-            Context::new(),
-            GetPermissionOptions::new().consistency_level(ConsistencyLevel::Session(
-                list_permissions_response.session_token,
-            )),
-        )
+        .get_permission()
+        .consistency_level(ConsistencyLevel::Session(
+            list_permissions_response.session_token,
+        ))
+        .into_future()
         .await
         .unwrap();
     println!("get_permission_response == {:#?}", get_permission_response);

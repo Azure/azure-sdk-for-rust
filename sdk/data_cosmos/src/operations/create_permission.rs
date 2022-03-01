@@ -72,7 +72,8 @@ impl CreatePermissionBuilder {
     }
 }
 
-type CreatePermission = futures::future::BoxFuture<'static, crate::Result<PermissionResponse>>;
+/// The future returned by calling `into_future` on the builder.
+pub type CreatePermission = futures::future::BoxFuture<'static, crate::Result<PermissionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreatePermissionBuilder {

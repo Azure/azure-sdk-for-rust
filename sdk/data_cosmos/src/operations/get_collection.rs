@@ -50,7 +50,8 @@ impl GetCollectionBuilder {
     }
 }
 
-type GetCollection = futures::future::BoxFuture<'static, crate::Result<GetCollectionResponse>>;
+/// The future returned by calling `into_future` on the builder.
+pub type GetCollection = futures::future::BoxFuture<'static, crate::Result<GetCollectionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetCollectionBuilder {

@@ -93,7 +93,9 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
     }
 }
 
-type CreateDocument = futures::future::BoxFuture<'static, crate::Result<CreateDocumentResponse>>;
+/// The future returned by calling `into_future` on the builder.
+pub type CreateDocument =
+    futures::future::BoxFuture<'static, crate::Result<CreateDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl<D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture

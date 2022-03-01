@@ -115,13 +115,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let id = format!("unique_id{}", 3);
     let partition_key = &id;
 
-    let response = client
+    let response: GetDocumentResponse<MySampleStruct> = client
         .clone()
         .into_document_client(id.clone(), partition_key)?
-        .get_document::<MySampleStruct>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(session_token),
-        )
+        .get_document()
+        .into_future()
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::Found(_)));
@@ -137,13 +135,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let replace_document_response = client
         .clone()
         .into_document_client(id.clone(), &id)?
-        .replace_document(
-            Context::new(),
-            &doc.document,
-            ReplaceDocumentOptions::new()
-                .consistency_level(ConsistencyLevel::from(&response))
-                .if_match_condition(IfMatchCondition::Match(doc.etag)), // use optimistic concurrency check
-        )
+        .replace_document(doc.document)
+        .consistency_level(ConsistencyLevel::from(&response))
+        .if_match_condition(IfMatchCondition::Match(doc.etag)) // use optimistic concurrency check
+        .into_future()
         .await?;
 
     println!(
@@ -155,14 +150,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // has_been_found == false
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
-
-    let response = client
+    let response: GetDocumentResponse<MySampleStruct> = client
         .clone()
         .into_document_client(id.clone(), &id)?
-        .get_document::<MySampleStruct>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(&response),
-        )
+        .get_document()
+        .consistency_level(&response)
+        .into_future()
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::NotFound(_)));

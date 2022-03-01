@@ -80,7 +80,8 @@ impl std::future::IntoFuture for CreateCollectionBuilder {
     }
 }
 
-type CreateCollection =
+/// The future returned by calling `into_future` on the builder.
+pub type CreateCollection =
     futures::future::BoxFuture<'static, crate::Result<CreateCollectionResponse>>;
 
 /// Body for the create collection request

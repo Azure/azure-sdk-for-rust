@@ -1,6 +1,6 @@
 use azure_core::Context;
 use azure_data_cosmos::prelude::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -32,16 +32,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_user_response = user_client.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
-    let users = Box::pin(database_client.list_users(Context::new(), ListUsersOptions::new()))
+    let users = Box::pin(database_client.list_users().into_stream())
         .next()
         .await
         .unwrap()?;
 
     println!("list_users_response == {:#?}", users);
 
-    let get_user_response = user_client
-        .get_user(Context::new(), GetUserOptions::new())
-        .await?;
+    let get_user_response = user_client.get_user().into_future().await?;
     println!("get_user_response == {:#?}", get_user_response);
 
     let new_user = format!("{}replaced", user_name);

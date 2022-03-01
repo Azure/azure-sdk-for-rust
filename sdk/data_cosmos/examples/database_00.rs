@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
@@ -25,11 +24,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("database == {:?}", db);
         let database = client.clone().into_database_client(db.name().to_owned());
 
-        let collections =
-            Box::pin(database.list_collections(Context::new(), ListCollectionsOptions::new()))
-                .next()
-                .await
-                .unwrap()?;
+        let collections = Box::pin(database.list_collections().into_stream())
+            .next()
+            .await
+            .unwrap()?;
         for collection in collections.collections {
             println!("collection == {:?}", collection);
             let collection_client = database.clone().into_collection_client(collection.id);
@@ -66,10 +64,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
                 println!("\nReplacing collection");
                 let replace_collection_response = collection_client
-                    .replace_collection(
-                        Context::new(),
-                        ReplaceCollectionOptions::new("/age").indexing_policy(indexing_policy_new),
-                    )
+                    .replace_collection("/age")
+                    .indexing_policy(indexing_policy_new)
+                    .into_future()
                     .await?;
                 println!(
                     "replace_collection_response == {:#?}",

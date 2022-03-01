@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -62,20 +61,18 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_document_response = client
         .clone()
         .into_document_client(doc.id.clone(), &doc.id)?
-        .get_document::<serde_json::Value>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(&create_document_response),
-        )
+        .get_document()
+        .consistency_level(&create_document_response)
+        .into_future::<serde_json::Value>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 
     let get_document_response = client
         .clone()
         .into_document_client("ciccia", &doc.id)?
-        .get_document::<serde_json::Value>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(&create_document_response),
-        )
+        .get_document()
+        .consistency_level(&create_document_response)
+        .into_future::<serde_json::Value>()
         .await?;
     println!(
         "get_document_response == {:#?}\n\n\n",
@@ -104,11 +101,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let replace_document_response = client
         .into_document_client(doc.id.clone(), &doc.id)?
-        .replace_document(
-            Context::new(),
-            &doc,
-            ReplaceDocumentOptions::new().consistency_level(&query_documents_response),
-        )
+        .replace_document(doc)
+        .consistency_level(&query_documents_response)
+        .into_future()
         .await?;
     println!(
         "replace_document_response == {:#?}",

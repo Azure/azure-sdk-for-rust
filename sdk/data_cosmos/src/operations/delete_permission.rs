@@ -48,7 +48,8 @@ impl DeletePermissionBuilder {
     }
 }
 
-type DeletePermission =
+/// The future returned by calling `into_future` on the builder.
+pub type DeletePermission =
     futures::future::BoxFuture<'static, crate::Result<DeletePermissionResponse>>;
 
 #[cfg(feature = "into_future")]

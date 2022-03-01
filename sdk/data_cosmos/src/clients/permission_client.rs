@@ -68,21 +68,8 @@ impl PermissionClient {
     }
 
     /// Get the permission
-    pub async fn get_permission(
-        &self,
-        ctx: Context,
-        options: GetPermissionOptions,
-    ) -> crate::Result<PermissionResponse> {
-        let mut request = self.prepare_request_with_permission_name(http::Method::GET);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
-            .await?;
-
-        Ok(PermissionResponse::try_from(response).await?)
+    pub fn get_permission(&self) -> GetPermissionBuilder {
+        GetPermissionBuilder::new(self.clone())
     }
 
     /// Delete the permission

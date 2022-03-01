@@ -47,7 +47,8 @@ impl DeleteCollectionBuilder {
     }
 }
 
-type DeleteCollection =
+/// The future returned by calling `into_future` on the builder.
+pub type DeleteCollection =
     futures::future::BoxFuture<'static, crate::Result<DeleteCollectionResponse>>;
 
 #[cfg(feature = "into_future")]

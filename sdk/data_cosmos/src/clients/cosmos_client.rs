@@ -168,8 +168,8 @@ impl CosmosClient {
     }
 
     /// List all databases
-    pub fn list_databases(&self) -> ListDatabases {
-        ListDatabases::new(self.clone())
+    pub fn list_databases(&self) -> ListDatabasesBuilder {
+        ListDatabasesBuilder::new(self.clone())
     }
 
     /// Convert into a [`DatabaseClient`]

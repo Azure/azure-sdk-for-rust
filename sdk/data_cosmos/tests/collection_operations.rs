@@ -1,6 +1,5 @@
 #![cfg(feature = "mock_transport_framework")]
 
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use azure_data_cosmos::resources::collection::*;
 use std::error::Error;
@@ -15,7 +14,6 @@ async fn collection_operations() -> Result<(), BoxedError> {
 
     let client = setup::initialize("collection_operations")?;
     let database_name = "test-collection-operations";
-    let context = Context::new();
 
     client.create_database(database_name).into_future().await?;
 
@@ -75,10 +73,9 @@ async fn collection_operations() -> Result<(), BoxedError> {
 
     // replace collection!
     let replace_collection_response = collection_client
-        .replace_collection(
-            context.clone(),
-            ReplaceCollectionOptions::new("/id").indexing_policy(new_indexing_policy),
-        )
+        .replace_collection("/id")
+        .indexing_policy(new_indexing_policy)
+        .into_future()
         .await?;
 
     assert_eq!(replace_collection_response.collection.id, collection_name);

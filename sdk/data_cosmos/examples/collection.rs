@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -60,12 +59,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for db in databases.databases {
         let database_client = client.clone().into_database_client(db.id.clone());
-        let collections = Box::pin(
-            database_client.list_collections(Context::new(), ListCollectionsOptions::new()),
-        )
-        .next()
-        .await
-        .unwrap()?;
+        let collections = Box::pin(database_client.list_collections().into_stream())
+            .next()
+            .await
+            .unwrap()?;
         println!(
             "database {} has {} collection(s)",
             db.id,

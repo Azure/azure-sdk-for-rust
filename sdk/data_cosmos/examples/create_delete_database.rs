@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -61,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let get_collection_response = db_collection.get_collection().into_future().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
-        let stream = db_client.list_collections(Context::new(), ListCollectionsOptions::new());
+        let stream = db_client.list_collections().into_stream();
         let mut stream = Box::pin(stream);
         while let Some(res) = stream.next().await {
             let res = res?;

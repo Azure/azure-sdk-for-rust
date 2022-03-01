@@ -67,7 +67,9 @@ impl DeleteDocumentBuilder {
     }
 }
 
-type DeleteDocument = futures::future::BoxFuture<'static, crate::Result<DeleteDocumentResponse>>;
+/// The future returned by calling `into_future` on the builder.
+pub type DeleteDocument =
+    futures::future::BoxFuture<'static, crate::Result<DeleteDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteDocumentBuilder {
