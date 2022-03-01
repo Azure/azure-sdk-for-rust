@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 use std::error::Error;
@@ -45,7 +44,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let new_user = format!("{}replaced", user_name);
 
     let replace_user_response = user_client
-        .replace_user(Context::new(), &new_user, ReplaceUserOptions::new())
+        .replace_user(new_user.clone())
+        .into_future()
         .await?;
     println!("replace_user_response == {:#?}", replace_user_response);
 
