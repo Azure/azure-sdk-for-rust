@@ -14,7 +14,6 @@ mod execute_stored_procedure_response;
 mod get_attachment_response;
 mod get_partition_key_ranges_response;
 mod list_triggers_response;
-mod list_user_defined_functions_response;
 mod replace_reference_attachment_response;
 
 pub use create_collection_response::CreateCollectionResponse;
