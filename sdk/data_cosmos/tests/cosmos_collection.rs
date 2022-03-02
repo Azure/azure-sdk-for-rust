@@ -3,7 +3,7 @@ mod setup;
 
 use azure_data_cosmos::prelude::*;
 use azure_data_cosmos::resources::collection::*;
-use futures::stream::StreamExt;
+use futures::StreamExt;
 
 #[tokio::test]
 async fn create_and_delete_collection() {

@@ -1,5 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
 mod setup;
@@ -97,8 +98,10 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let ret = document_client
         .list_attachments()
         .consistency_level(session_token.clone())
-        .execute()
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(0, ret.attachments.len());
 
     // create reference attachment
@@ -129,8 +132,10 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let ret = document_client
         .list_attachments()
         .consistency_level(&resp)
-        .execute()
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(2, ret.attachments.len());
 
     // get reference attachment, it must have the updated media link
@@ -169,8 +174,10 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let ret = document_client
         .list_attachments()
         .consistency_level(&resp_delete)
-        .execute()
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(1, ret.attachments.len());
 
     // delete the database

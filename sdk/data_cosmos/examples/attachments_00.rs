@@ -1,4 +1,5 @@
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -62,7 +63,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let document_client = client.into_document_client(doc.id.clone(), &doc.id)?;
 
     // list attachments
-    let ret = document_client.list_attachments().execute().await?;
+    let ret = document_client
+        .list_attachments()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     println!("list attachments == {:#?}", ret);
 
     // reference attachment
