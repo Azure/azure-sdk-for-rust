@@ -60,7 +60,10 @@ impl ListStoredProceduresBuilder {
                 let response = this
                     .client
                     .pipeline()
-                    .send(ctx.clone().insert(ResourceType::StoredProcedures), &mut request)
+                    .send(
+                        ctx.clone().insert(ResourceType::StoredProcedures),
+                        &mut request,
+                    )
                     .await?;
                 ListStoredProceduresResponse::try_from(response).await
             }
