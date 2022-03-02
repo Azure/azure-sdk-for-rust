@@ -205,6 +205,64 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Asynchronous operation status"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatus {
+    #[serde(flatten)]
+    pub operation_status_result: OperationStatusResult,
+    #[doc = "Additional properties from RP, only when operation is successful"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+impl OperationStatus {
+    pub fn new(operation_status_result: OperationStatusResult) -> Self {
+        Self {
+            operation_status_result,
+            properties: None,
+        }
+    }
+}
+#[doc = "The current status of an async operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusResult {
+    #[doc = "Fully qualified ID for the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Name of the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Operation status."]
+    pub status: String,
+    #[doc = "Percent of the operation that is complete."]
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<f64>,
+    #[doc = "The start time of the operation."]
+    #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
+    pub start_time: Option<String>,
+    #[doc = "The end time of the operation."]
+    #[serde(rename = "endTime", default, skip_serializing_if = "Option::is_none")]
+    pub end_time: Option<String>,
+    #[doc = "The operations list."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub operations: Vec<OperationStatusResult>,
+    #[doc = "The error detail."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+impl OperationStatusResult {
+    pub fn new(status: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            status,
+            percent_complete: None,
+            start_time: None,
+            end_time: None,
+            operations: Vec::new(),
+            error: None,
+        }
+    }
+}
 #[doc = "The Private Endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
@@ -452,6 +510,9 @@ pub mod redis_common_properties {
             skip_serializing_if = "Option::is_none"
         )]
         pub preferred_data_persistence_auth_method: Option<String>,
+        #[doc = "Zonal Configuration"]
+        #[serde(rename = "zonal-configuration", default, skip_serializing_if = "Option::is_none")]
+        pub zonal_configuration: Option<String>,
     }
     impl RedisConfiguration {
         pub fn new() -> Self {
@@ -754,12 +815,16 @@ pub struct RedisPatchSchedule {
     pub proxy_resource: ProxyResource,
     #[doc = "List of patch schedules for a Redis cache."]
     pub properties: ScheduleEntries,
+    #[doc = "The geo-location where the resource lives"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 impl RedisPatchSchedule {
     pub fn new(properties: ScheduleEntries) -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             properties,
+            location: None,
         }
     }
 }

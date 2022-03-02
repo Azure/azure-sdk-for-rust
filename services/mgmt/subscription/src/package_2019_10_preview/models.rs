@@ -417,21 +417,18 @@ impl SubscriptionCreationResult {
     }
 }
 #[doc = "Subscription list operation response."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionListResult {
     #[doc = "An array of subscriptions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Subscription>,
     #[doc = "The URL to get the next set of results."]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl SubscriptionListResult {
-    pub fn new(next_link: String) -> Self {
-        Self {
-            value: Vec::new(),
-            next_link,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The new name of the subscription."]

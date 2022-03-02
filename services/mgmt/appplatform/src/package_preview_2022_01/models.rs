@@ -2452,6 +2452,9 @@ pub struct OperationDetail {
     #[doc = "Operation display payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
+    #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
+    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    pub action_type: Option<operation_detail::ActionType>,
     #[doc = "Origin of the operation"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin: Option<String>,
@@ -2462,6 +2465,14 @@ pub struct OperationDetail {
 impl OperationDetail {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod operation_detail {
+    use super::*;
+    #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ActionType {
+        Internal,
     }
 }
 #[doc = "Operation display payload"]

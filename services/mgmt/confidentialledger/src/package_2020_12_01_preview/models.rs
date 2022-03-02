@@ -23,7 +23,7 @@ impl AadBasedSecurityPrincipal {
 #[doc = "Cert based security principal with Ledger RoleName"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertBasedSecurityPrincipal {
-    #[doc = "Base64 encoded public key of the user cert (.pem or .cer)"]
+    #[doc = "Public key of the user cert (.pem or .cer)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>,
     #[doc = "LedgerRole associated with the Security Principal of Ledger"]

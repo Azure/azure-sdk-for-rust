@@ -1834,6 +1834,83 @@ impl DeletedServerProperties {
         Self::default()
     }
 }
+#[doc = "Distributed availability group between box and Sql Managed Instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DistributedAvailabilityGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a distributed availability group."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DistributedAvailabilityGroupProperties>,
+}
+impl DistributedAvailabilityGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of a distributed availability group."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DistributedAvailabilityGroupProperties {
+    #[doc = "The name of the target database"]
+    #[serde(rename = "targetDatabase", default, skip_serializing_if = "Option::is_none")]
+    pub target_database: Option<String>,
+    #[doc = "The source endpoint"]
+    #[serde(rename = "sourceEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub source_endpoint: Option<String>,
+    #[doc = "The primary availability group name"]
+    #[serde(rename = "primaryAvailabilityGroupName", default, skip_serializing_if = "Option::is_none")]
+    pub primary_availability_group_name: Option<String>,
+    #[doc = "The secondary availability group name"]
+    #[serde(rename = "secondaryAvailabilityGroupName", default, skip_serializing_if = "Option::is_none")]
+    pub secondary_availability_group_name: Option<String>,
+    #[doc = "The replication mode of a distributed availability group. Parameter will be ignored during link creation."]
+    #[serde(rename = "replicationMode", default, skip_serializing_if = "Option::is_none")]
+    pub replication_mode: Option<distributed_availability_group_properties::ReplicationMode>,
+    #[doc = "The distributed availability group id"]
+    #[serde(rename = "distributedAvailabilityGroupId", default, skip_serializing_if = "Option::is_none")]
+    pub distributed_availability_group_id: Option<String>,
+    #[doc = "The source replica id"]
+    #[serde(rename = "sourceReplicaId", default, skip_serializing_if = "Option::is_none")]
+    pub source_replica_id: Option<String>,
+    #[doc = "The target replica id"]
+    #[serde(rename = "targetReplicaId", default, skip_serializing_if = "Option::is_none")]
+    pub target_replica_id: Option<String>,
+    #[doc = "The link state"]
+    #[serde(rename = "linkState", default, skip_serializing_if = "Option::is_none")]
+    pub link_state: Option<String>,
+    #[doc = "The last hardened lsn"]
+    #[serde(rename = "lastHardenedLsn", default, skip_serializing_if = "Option::is_none")]
+    pub last_hardened_lsn: Option<String>,
+}
+impl DistributedAvailabilityGroupProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod distributed_availability_group_properties {
+    use super::*;
+    #[doc = "The replication mode of a distributed availability group. Parameter will be ignored during link creation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ReplicationMode {
+        Async,
+        Sync,
+    }
+}
+#[doc = "A list of distributed availability groups in instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DistributedAvailabilityGroupsListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<DistributedAvailabilityGroup>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl DistributedAvailabilityGroupsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "DNS refresh configuration properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsRefreshConfigurationProperties {
@@ -2414,6 +2491,9 @@ pub struct ElasticPoolProperties {
     #[doc = "Maintenance configuration id assigned to the elastic pool. This configuration defines the period when the maintenance updates will will occur."]
     #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_configuration_id: Option<String>,
+    #[doc = "The number of secondary replicas associated with the elastic pool that are used to provide high availability."]
+    #[serde(rename = "highAvailabilityReplicaCount", default, skip_serializing_if = "Option::is_none")]
+    pub high_availability_replica_count: Option<i32>,
 }
 impl ElasticPoolProperties {
     pub fn new() -> Self {
@@ -2472,6 +2552,9 @@ pub struct ElasticPoolUpdateProperties {
     #[doc = "Maintenance configuration id assigned to the elastic pool. This configuration defines the period when the maintenance updates will will occur."]
     #[serde(rename = "maintenanceConfigurationId", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_configuration_id: Option<String>,
+    #[doc = "The number of secondary replicas associated with the elastic pool that are used to provide high availability. Applicable only to Hyperscale elastic pools."]
+    #[serde(rename = "highAvailabilityReplicaCount", default, skip_serializing_if = "Option::is_none")]
+    pub high_availability_replica_count: Option<i32>,
 }
 impl ElasticPoolUpdateProperties {
     pub fn new() -> Self {
@@ -3056,6 +3139,61 @@ pub mod geo_backup_policy_properties {
     pub enum State {
         Disabled,
         Enabled,
+    }
+}
+#[doc = "An IPv6 server firewall rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IPv6FirewallRule {
+    #[serde(flatten)]
+    pub proxy_resource_with_writable_name: ProxyResourceWithWritableName,
+    #[doc = "The properties of an IPv6 server firewall rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IPv6ServerFirewallRuleProperties>,
+}
+impl IPv6FirewallRule {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of IPv6 server firewall rules."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IPv6FirewallRuleList {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub values: Vec<IPv6FirewallRule>,
+}
+impl IPv6FirewallRuleList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The response to a list IPv6 firewall rules request"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IPv6FirewallRuleListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<IPv6FirewallRule>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl IPv6FirewallRuleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of an IPv6 server firewall rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IPv6ServerFirewallRuleProperties {
+    #[doc = "The start IP address of the firewall rule. Must be IPv6 format."]
+    #[serde(rename = "startIPv6Address", default, skip_serializing_if = "Option::is_none")]
+    pub start_i_pv6_address: Option<String>,
+    #[doc = "The end IP address of the firewall rule. Must be IPv6 format. Must be greater than or equal to startIpAddress."]
+    #[serde(rename = "endIPv6Address", default, skip_serializing_if = "Option::is_none")]
+    pub end_i_pv6_address: Option<String>,
+}
+impl IPv6ServerFirewallRuleProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Contains the information necessary to perform import operation for existing database."]
@@ -8982,6 +9120,53 @@ pub struct ServerSecurityAlertPolicy {
     pub properties: Option<SecurityAlertsPolicyProperties>,
 }
 impl ServerSecurityAlertPolicy {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Server trust certificate imported from box to enable connection between box and Sql Managed Instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServerTrustCertificate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a server trust certificate."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerTrustCertificateProperties>,
+}
+impl ServerTrustCertificate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of a server trust certificate."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServerTrustCertificateProperties {
+    #[doc = "The certificate public blob"]
+    #[serde(rename = "publicBlob", default, skip_serializing_if = "Option::is_none")]
+    pub public_blob: Option<String>,
+    #[doc = "The certificate thumbprint"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumbprint: Option<String>,
+    #[doc = "The certificate name"]
+    #[serde(rename = "certificateName", default, skip_serializing_if = "Option::is_none")]
+    pub certificate_name: Option<String>,
+}
+impl ServerTrustCertificateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of the server trust certificates which are used for secure communication between SQL On-Prem instance and the given Sql Managed Instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServerTrustCertificatesListResult {
+    #[doc = "Array of results."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ServerTrustCertificate>,
+    #[doc = "Link to retrieve next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl ServerTrustCertificatesListResult {
     pub fn new() -> Self {
         Self::default()
     }

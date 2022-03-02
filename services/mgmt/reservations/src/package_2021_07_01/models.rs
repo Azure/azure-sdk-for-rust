@@ -402,6 +402,15 @@ impl CurrentQuotaLimit {
 #[doc = "Quota properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CurrentQuotaLimitBase {
+    #[doc = "The quota request ID."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The name of the quota request."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Type of resource. \"Microsoft.Capacity/ServiceLimits\""]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
     #[doc = "Quota properties for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QuotaProperties>,
@@ -1047,10 +1056,10 @@ impl QuotaLimitsResponse {
 pub struct QuotaProperties {
     #[doc = "Quota properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i64>,
+    pub limit: Option<i32>,
     #[doc = "Current usage value for the resource."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
-    pub current_value: Option<i64>,
+    pub current_value: Option<i32>,
     #[doc = " The limit units, such as **count** and **bytes**. Use the unit field provided in the response of the GET quota operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
@@ -1927,7 +1936,7 @@ impl SplitRequest {
 pub struct SubRequest {
     #[doc = "Quota (resource limit)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<i64>,
+    pub limit: Option<i32>,
     #[doc = "Resource name provided by the resource provider. Use this property for quotaRequest parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<ResourceName>,

@@ -1823,7 +1823,7 @@ pub struct ManagedClusterSecurityProfileAzureDefender {
     #[doc = "Whether to enable Azure Defender"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
-    #[doc = "Resource ID of the Log Analytics workspace to be associated with Azure Defender.  When Azure Defender is enabled, this field is required and must be a valid workspace resource ID. When Azure Defender is disabled, leave the field empty."]
+    #[doc = "Resource ID of the Log Analytics workspace to be associated with Azure Defender.  When Azure Defender is enabled, this field is required and must be a valid workspace resource ID. When Azure Defender is disabled, this field should not be exists."]
     #[serde(rename = "logAnalyticsWorkspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_workspace_resource_id: Option<String>,
 }

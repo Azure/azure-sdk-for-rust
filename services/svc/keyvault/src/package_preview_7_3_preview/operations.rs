@@ -185,8 +185,6 @@ pub enum Error {
     #[error(transparent)]
     UnwrapKey(#[from] unwrap_key::Error),
     #[error(transparent)]
-    Export(#[from] export::Error),
-    #[error(transparent)]
     Release(#[from] release::Error),
     #[error(transparent)]
     GetDeletedKeys(#[from] get_deleted_keys::Error),
@@ -713,20 +711,6 @@ impl Client {
         parameters: impl Into<models::KeyOperationsParameters>,
     ) -> unwrap_key::Builder {
         unwrap_key::Builder {
-            client: self.clone(),
-            key_name: key_name.into(),
-            key_version: key_version.into(),
-            parameters: parameters.into(),
-        }
-    }
-    #[doc = "Exports a key."]
-    pub fn export(
-        &self,
-        key_name: impl Into<String>,
-        key_version: impl Into<String>,
-        parameters: impl Into<models::KeyExportParameters>,
-    ) -> export::Builder {
-        export::Builder {
             client: self.clone(),
             key_name: key_name.into(),
             key_version: key_version.into(),
@@ -4513,78 +4497,6 @@ pub mod unwrap_key {
                     http::StatusCode::OK => {
                         let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                         let rsp_value: models::KeyOperationResult =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Ok(rsp_value)
-                    }
-                    status_code => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::KeyVaultError =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Err(Error::DefaultResponse {
-                            status_code,
-                            value: rsp_value,
-                        })
-                    }
-                }
-            })
-        }
-    }
-}
-pub mod export {
-    use super::models;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::KeyVaultError,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
-    #[derive(Clone)]
-    pub struct Builder {
-        pub(crate) client: super::Client,
-        pub(crate) key_name: String,
-        pub(crate) key_version: String,
-        pub(crate) parameters: models::KeyExportParameters,
-    }
-    impl Builder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::KeyBundle, Error>> {
-            Box::pin(async move {
-                let url_str = &format!("{}/keys/{}/{}/export", self.client.endpoint(), &self.key_name, &self.key_version);
-                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                let mut req_builder = http::request::Builder::new();
-                req_builder = req_builder.method(http::Method::POST);
-                let credential = self.client.token_credential();
-                let token_response = credential
-                    .get_token(&self.client.scopes().join(" "))
-                    .await
-                    .map_err(Error::GetToken)?;
-                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", "7.3-preview");
-                req_builder = req_builder.header("content-type", "application/json");
-                let req_body = azure_core::to_json(&self.parameters).map_err(Error::Serialize)?;
-                req_builder = req_builder.uri(url.as_str());
-                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                match rsp_status {
-                    http::StatusCode::OK => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::KeyBundle =
                             serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                         Ok(rsp_value)
                     }

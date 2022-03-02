@@ -32,6 +32,18 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Action status"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ActionStatus {
+    #[doc = "Value indicating whether alert is suppressed."]
+    #[serde(rename = "isSuppressed", default, skip_serializing_if = "Option::is_none")]
+    pub is_suppressed: Option<bool>,
+}
+impl ActionStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "An alert created in alert management service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Alert {
@@ -295,6 +307,12 @@ pub struct Essentials {
     #[doc = "User who last modified the alert, in case of monitor service updates user would be 'system', otherwise name of the user."]
     #[serde(rename = "lastModifiedUserName", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_user_name: Option<String>,
+    #[doc = "Action status"]
+    #[serde(rename = "actionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub action_status: Option<ActionStatus>,
+    #[doc = "Alert description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 impl Essentials {
     pub fn new() -> Self {

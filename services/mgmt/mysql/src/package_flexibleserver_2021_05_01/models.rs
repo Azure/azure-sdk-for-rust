@@ -210,6 +210,39 @@ pub mod configuration_properties {
         False,
     }
 }
+#[doc = "The date encryption for cmk."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataEncryption {
+    #[doc = "Primary user identity resource id"]
+    #[serde(rename = "primaryUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
+    pub primary_user_assigned_identity_id: Option<String>,
+    #[doc = "Primary key uri"]
+    #[serde(rename = "primaryKeyUri", default, skip_serializing_if = "Option::is_none")]
+    pub primary_key_uri: Option<String>,
+    #[doc = "Geo backup user identity resource id as identity can't cross region, need identity in same region as geo backup"]
+    #[serde(rename = "geoBackupUserAssignedIdentityId", default, skip_serializing_if = "Option::is_none")]
+    pub geo_backup_user_assigned_identity_id: Option<String>,
+    #[doc = "Geo backup key uri as key vault can't cross region, need cmk in same region as geo backup"]
+    #[serde(rename = "geoBackupKeyUri", default, skip_serializing_if = "Option::is_none")]
+    pub geo_backup_key_uri: Option<String>,
+    #[doc = "The key type, AzureKeyVault for enable cmk, SystemManaged for disable cmk."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<data_encryption::Type>,
+}
+impl DataEncryption {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod data_encryption {
+    use super::*;
+    #[doc = "The key type, AzureKeyVault for enable cmk, SystemManaged for disable cmk."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        AzureKeyVault,
+        SystemManaged,
+    }
+}
 #[doc = "Represents a Database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Database {
@@ -419,6 +452,35 @@ pub mod high_availability {
         RemovingStandby,
     }
 }
+#[doc = "Properties to configure Identity for Bring your Own Keys"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Identity {
+    #[doc = "ObjectId from the KeyVault"]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "TenantId from the KeyVault"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Type of managed service identity."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<identity::Type>,
+    #[doc = "Metadata of user assigned identity."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl Identity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod identity {
+    use super::*;
+    #[doc = "Type of managed service identity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        UserAssigned,
+    }
+}
 #[doc = "Maintenance window of a server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaintenanceWindow {
@@ -588,6 +650,9 @@ impl Resource {
 pub struct Server {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
+    #[doc = "Properties to configure Identity for Bring your Own Keys"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<Identity>,
     #[doc = "Billing information related properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
@@ -602,6 +667,7 @@ impl Server {
     pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
             tracked_resource,
+            identity: None,
             sku: None,
             properties: None,
             system_data: None,
@@ -679,6 +745,9 @@ impl ServerEditionCapability {
 #[doc = "Parameters allowed to update for a server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerForUpdate {
+    #[doc = "Properties to configure Identity for Bring your Own Keys"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<Identity>,
     #[doc = "Billing information related properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
@@ -739,6 +808,9 @@ pub struct ServerProperties {
     #[doc = "The maximum number of replicas that a primary server can have."]
     #[serde(rename = "replicaCapacity", default, skip_serializing_if = "Option::is_none")]
     pub replica_capacity: Option<i32>,
+    #[doc = "The date encryption for cmk."]
+    #[serde(rename = "dataEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub data_encryption: Option<DataEncryption>,
     #[doc = "The state of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<server_properties::State>,
@@ -809,6 +881,9 @@ pub struct ServerPropertiesForUpdate {
     #[doc = "The replication role."]
     #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<ReplicationRole>,
+    #[doc = "The date encryption for cmk."]
+    #[serde(rename = "dataEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub data_encryption: Option<DataEncryption>,
 }
 impl ServerPropertiesForUpdate {
     pub fn new() -> Self {
@@ -960,6 +1035,21 @@ impl TrackedResource {
             tags: None,
             location,
         }
+    }
+}
+#[doc = "Metadata of user assigned identity."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentity {
+    #[doc = "Principal Id of user assigned identity"]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "Client Id of user assigned identity"]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+impl UserAssignedIdentity {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Virtual network subnet usage parameter"]

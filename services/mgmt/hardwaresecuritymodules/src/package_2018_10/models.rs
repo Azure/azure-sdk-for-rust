@@ -213,6 +213,7 @@ pub struct Resource {
     pub type_: Option<String>,
     #[doc = "The supported Azure location where the dedicated HSM should be created."]
     pub location: String,
+    #[doc = "SKU of the dedicated HSM"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "The Dedicated Hsm zones."]
@@ -250,6 +251,7 @@ impl ResourceListResult {
         Self::default()
     }
 }
+#[doc = "SKU of the dedicated HSM"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "SKU of the dedicated HSM"]
@@ -268,5 +270,17 @@ pub mod sku {
     pub enum Name {
         #[serde(rename = "SafeNet Luna Network HSM A790")]
         SafeNetLunaNetworkHsmA790,
+        #[serde(rename = "payShield10K_LMK1_CPS60")]
+        PayShield10KLmk1Cps60,
+        #[serde(rename = "payShield10K_LMK1_CPS250")]
+        PayShield10KLmk1Cps250,
+        #[serde(rename = "payShield10K_LMK1_CPS2500")]
+        PayShield10KLmk1Cps2500,
+        #[serde(rename = "payShield10K_LMK2_CPS60")]
+        PayShield10KLmk2Cps60,
+        #[serde(rename = "payShield10K_LMK2_CPS250")]
+        PayShield10KLmk2Cps250,
+        #[serde(rename = "payShield10K_LMK2_CPS2500")]
+        PayShield10KLmk2Cps2500,
     }
 }

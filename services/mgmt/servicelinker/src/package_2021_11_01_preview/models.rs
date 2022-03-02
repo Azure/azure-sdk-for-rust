@@ -121,6 +121,12 @@ pub struct LinkerProperties {
     #[doc = "The provisioning state. "]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
+    #[doc = "The VNet solution for linker"]
+    #[serde(rename = "vNetSolution", default, skip_serializing_if = "Option::is_none")]
+    pub v_net_solution: Option<VNetSolution>,
+    #[doc = "An option to store secret value in secure place"]
+    #[serde(rename = "secretStore", default, skip_serializing_if = "Option::is_none")]
+    pub secret_store: Option<SecretStore>,
 }
 impl LinkerProperties {
     pub fn new() -> Self {
@@ -302,6 +308,18 @@ impl SecretAuthInfo {
         }
     }
 }
+#[doc = "An option to store secret value in secure place"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SecretStore {
+    #[doc = "The key vault id to store secret"]
+    #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
+    pub key_vault_id: Option<String>,
+}
+impl SecretStore {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The authentication info when authType is servicePrincipal certificate"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalCertificateAuthInfo {
@@ -407,6 +425,29 @@ impl UserAssignedIdentityAuthInfo {
             client_id,
             subscription_id,
         }
+    }
+}
+#[doc = "The VNet solution for linker"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VNetSolution {
+    #[doc = "Type of VNet solution."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<v_net_solution::Type>,
+}
+impl VNetSolution {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod v_net_solution {
+    use super::*;
+    #[doc = "Type of VNet solution."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        #[serde(rename = "serviceEndpoint")]
+        ServiceEndpoint,
+        #[serde(rename = "privateLink")]
+        PrivateLink,
     }
 }
 #[doc = "The validation result for a linker."]

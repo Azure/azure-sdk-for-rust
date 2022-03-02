@@ -852,6 +852,15 @@ pub struct ListChannelWithKeysResponse {
     #[doc = "Channel settings definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub setting: Option<ChannelSettings>,
+    #[doc = "Provisioning state of the resource"]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<String>,
+    #[doc = "Entity tag of the resource"]
+    #[serde(rename = "entityTag", default, skip_serializing_if = "Option::is_none")]
+    pub entity_tag: Option<String>,
+    #[doc = "Changed time of the resource"]
+    #[serde(rename = "changedTime", default, skip_serializing_if = "Option::is_none")]
+    pub changed_time: Option<String>,
 }
 impl ListChannelWithKeysResponse {
     pub fn new() -> Self {

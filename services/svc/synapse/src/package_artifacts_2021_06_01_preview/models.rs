@@ -15944,6 +15944,148 @@ impl ScriptAction {
         }
     }
 }
+#[doc = "Script activity type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptActivity {
+    #[serde(flatten)]
+    pub execution_activity: ExecutionActivity,
+    #[doc = "Script activity properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: ScriptActivityTypeProperties,
+}
+impl ScriptActivity {
+    pub fn new(execution_activity: ExecutionActivity, type_properties: ScriptActivityTypeProperties) -> Self {
+        Self {
+            execution_activity,
+            type_properties,
+        }
+    }
+}
+#[doc = "Parameters of a script block."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScriptActivityParameter {
+    #[doc = "The name of the parameter. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<serde_json::Value>,
+    #[doc = "The type of the parameter."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<script_activity_parameter::Type>,
+    #[doc = "The value of the parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+    #[doc = "The direction of the parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub direction: Option<script_activity_parameter::Direction>,
+    #[doc = "The size of the output direction parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<i32>,
+}
+impl ScriptActivityParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod script_activity_parameter {
+    use super::*;
+    #[doc = "The type of the parameter."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Boolean,
+        DateTime,
+        DateTimeOffset,
+        Decimal,
+        Double,
+        Guid,
+        Int16,
+        Int32,
+        Int64,
+        Single,
+        String,
+        Timespan,
+    }
+    #[doc = "The direction of the parameter."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Direction {
+        Input,
+        Output,
+        InputOutput,
+    }
+}
+#[doc = "Script block of scripts."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptActivityScriptBlock {
+    #[doc = "The query text. Type: string (or Expression with resultType string)."]
+    pub text: serde_json::Value,
+    #[doc = "The type of the query. Type: string."]
+    #[serde(rename = "type")]
+    pub type_: script_activity_script_block::Type,
+    #[doc = "Array of script parameters. Type: array."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameters: Vec<ScriptActivityParameter>,
+}
+impl ScriptActivityScriptBlock {
+    pub fn new(text: serde_json::Value, type_: script_activity_script_block::Type) -> Self {
+        Self {
+            text,
+            type_,
+            parameters: Vec::new(),
+        }
+    }
+}
+pub mod script_activity_script_block {
+    use super::*;
+    #[doc = "The type of the query. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Query,
+        NonQuery,
+    }
+}
+#[doc = "Script activity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScriptActivityTypeProperties {
+    #[doc = "Array of script blocks. Type: array."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scripts: Vec<ScriptActivityScriptBlock>,
+    #[doc = "Log settings of script activity."]
+    #[serde(rename = "logSettings", default, skip_serializing_if = "Option::is_none")]
+    pub log_settings: Option<script_activity_type_properties::LogSettings>,
+}
+impl ScriptActivityTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod script_activity_type_properties {
+    use super::*;
+    #[doc = "Log settings of script activity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct LogSettings {
+        #[doc = "The destination of logs. Type: string."]
+        #[serde(rename = "logDestination")]
+        pub log_destination: log_settings::LogDestination,
+        #[doc = "Log location settings."]
+        #[serde(rename = "logLocationSettings", default, skip_serializing_if = "Option::is_none")]
+        pub log_location_settings: Option<LogLocationSettings>,
+    }
+    impl LogSettings {
+        pub fn new(log_destination: log_settings::LogDestination) -> Self {
+            Self {
+                log_destination,
+                log_location_settings: None,
+            }
+        }
+    }
+    pub mod log_settings {
+        use super::*;
+        #[doc = "The destination of logs. Type: string."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum LogDestination {
+            ActivityOutput,
+            ExternalStore,
+        }
+    }
+}
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretBase {

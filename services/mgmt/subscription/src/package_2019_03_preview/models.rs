@@ -18,8 +18,8 @@ impl AdPrincipal {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanceledSubscriptionId {
     #[doc = "The ID of the canceled subscription"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
 }
 impl CanceledSubscriptionId {
     pub fn new() -> Self {
@@ -30,8 +30,8 @@ impl CanceledSubscriptionId {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnabledSubscriptionId {
     #[doc = "The ID of the subscriptions that is being enabled"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
 }
 impl EnabledSubscriptionId {
     pub fn new() -> Self {
@@ -49,6 +49,24 @@ pub struct ErrorResponse {
     pub message: Option<String>,
 }
 impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Error response indicates that the service is not able to process the incoming request. The reason is provided in the error message."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorResponseBody {
+    #[doc = "Describes the format of Error response."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorResponse>,
+    #[doc = "Error code"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl ErrorResponseBody {
     pub fn new() -> Self {
         Self::default()
     }
@@ -211,8 +229,8 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RenamedSubscriptionId {
     #[doc = "The ID of the subscriptions that is being renamed"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
 }
 impl RenamedSubscriptionId {
     pub fn new() -> Self {
@@ -271,21 +289,18 @@ impl SubscriptionCreationResult {
     }
 }
 #[doc = "Subscription list operation response."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionListResult {
     #[doc = "An array of subscriptions."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<Subscription>,
     #[doc = "The URL to get the next set of results."]
-    #[serde(rename = "nextLink")]
-    pub next_link: String,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
 }
 impl SubscriptionListResult {
-    pub fn new(next_link: String) -> Self {
-        Self {
-            value: Vec::new(),
-            next_link,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The new name of the subscription."]
