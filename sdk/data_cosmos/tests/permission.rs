@@ -1,5 +1,6 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 
 mod setup;
 
@@ -54,10 +55,22 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let list_permissions_response = user1_client.list_permissions().execute().await.unwrap();
+    let list_permissions_response = user1_client
+        .list_permissions()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(list_permissions_response.permissions.len(), 1);
 
-    let list_permissions_response = user2_client.list_permissions().execute().await.unwrap();
+    let list_permissions_response = user2_client
+        .list_permissions()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(list_permissions_response.permissions.len(), 1);
 
     // delete the database

@@ -35,7 +35,6 @@ pub use execute_stored_procedure_response::ExecuteStoredProcedureResponse;
 pub use get_attachment_response::GetAttachmentResponse;
 pub use get_partition_key_ranges_response::GetPartitionKeyRangesResponse;
 pub use list_attachments_response::ListAttachmentsResponse;
-pub use list_permissions_response::ListPermissionsResponse;
 pub use list_stored_procedures_response::ListStoredProceduresResponse;
 pub use list_triggers_response::ListTriggersResponse;
 pub use list_user_defined_functions_response::ListUserDefinedFunctionsResponse;

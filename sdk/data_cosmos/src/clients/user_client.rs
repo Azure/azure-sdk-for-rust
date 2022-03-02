@@ -1,7 +1,7 @@
 use super::*;
 use crate::prelude::*;
-use crate::{requests, ReadonlyString};
-use azure_core::{HttpClient, Pipeline, Request};
+use crate::ReadonlyString;
+use azure_core::{Pipeline, Request};
 
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
@@ -57,8 +57,8 @@ impl UserClient {
     }
 
     /// List the user's permissions
-    pub fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, '_> {
-        requests::ListPermissionsBuilder::new(self)
+    pub fn list_permissions(&self) -> ListPermissionsBuilder {
+        ListPermissionsBuilder::new(self.clone())
     }
 
     /// Convert into a [`PermissionClient`]
@@ -78,10 +78,6 @@ impl UserClient {
             ),
             method,
         )
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
