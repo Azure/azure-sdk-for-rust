@@ -245,19 +245,19 @@ impl AddAsHeader for TentativeWritesAllowance {
 }
 
 /// Collections of partition keys grouped by physical partitions
-#[derive(Debug, Clone, Copy)]
-pub struct PartitionRangeId<'a>(&'a str);
+#[derive(Debug, Clone)]
+pub struct PartitionRangeId(String);
 
-impl<'a> PartitionRangeId<'a> {
+impl PartitionRangeId {
     /// A new partition range id from a string
-    pub fn new(id: &'a str) -> Self {
+    pub fn new(id: String) -> Self {
         Self(id)
     }
 }
 
-impl AddAsHeader for PartitionRangeId<'_> {
+impl AddAsHeader for PartitionRangeId {
     fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::HEADER_DOCUMENTDB_PARTITIONRANGEID, self.0)
+        builder.header(headers::HEADER_DOCUMENTDB_PARTITIONRANGEID, &self.0)
     }
 
     fn add_as_header2(
@@ -266,7 +266,7 @@ impl AddAsHeader for PartitionRangeId<'_> {
     ) -> Result<(), azure_core::HttpHeaderError> {
         request.headers_mut().append(
             headers::HEADER_DOCUMENTDB_PARTITIONRANGEID,
-            http::header::HeaderValue::from_str(self.0)?,
+            http::header::HeaderValue::from_str(&self.0)?,
         );
 
         Ok(())

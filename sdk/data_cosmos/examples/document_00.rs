@@ -145,8 +145,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("Listing documents...");
     let list_documents_response = collection_client
         .list_documents()
-        .execute::<MySampleStruct>()
-        .await?;
+        .into_stream::<MySampleStruct>()
+        .next()
+        .await
+        .unwrap()?;
     println!(
         "list_documents_response contains {} documents",
         list_documents_response.documents.len()

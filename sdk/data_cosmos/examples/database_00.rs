@@ -80,8 +80,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
             let documents = collection_client
                 .list_documents()
-                .execute::<Value>()
-                .await?;
+                .into_stream::<Value>()
+                .next()
+                .await
+                .unwrap()?;
             println!("\ndocuments as json == {:?}", documents);
         }
     }

@@ -1,6 +1,7 @@
 #![cfg(all(test, feature = "test_e2e"))]
 use azure_data_cosmos::prelude::*;
 use collection::*;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 
 mod setup;
@@ -83,8 +84,10 @@ async fn permission_token_usage() {
         .clone()
         .into_collection_client(COLLECTION_NAME)
         .list_documents()
-        .execute::<serde_json::Value>()
+        .into_stream::<serde_json::Value>()
+        .next()
         .await
+        .unwrap()
         .unwrap();
 
     let new_collection_client = new_database_client.into_collection_client(COLLECTION_NAME);

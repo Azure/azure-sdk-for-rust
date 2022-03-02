@@ -1,4 +1,5 @@
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
@@ -82,8 +83,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let list_documents_response = client
         .list_documents()
         .consistency_level(&get_document_response)
-        .execute::<serde_json::Value>()
-        .await?;
+        .into_stream::<serde_json::Value>()
+        .next()
+        .await
+        .unwrap()?;
     println!("list_documents_response == {:#?}", list_documents_response);
 
     let query_documents_response = client

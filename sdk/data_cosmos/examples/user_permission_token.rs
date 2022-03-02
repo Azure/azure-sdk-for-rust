@@ -1,4 +1,5 @@
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -42,9 +43,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // test list documents
     let list_documents_response = collection_client
         .list_documents()
-        .execute::<serde_json::Value>()
+        .into_stream::<serde_json::Value>()
+        .next()
         .await
-        .unwrap();
+        .unwrap()?;
     println!(
         "list_documents_response got {} document(s).",
         list_documents_response.documents.len()
@@ -86,9 +88,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_database_client(database_name.clone())
         .into_collection_client(collection_name.clone())
         .list_documents()
-        .execute::<serde_json::Value>()
+        .into_stream::<serde_json::Value>()
+        .next()
         .await
-        .unwrap();
+        .unwrap()?;
     println!(
         "second list_documents_response got {} document(s).",
         list_documents_response.documents.len()

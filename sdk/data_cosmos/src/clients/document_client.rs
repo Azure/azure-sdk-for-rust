@@ -1,7 +1,7 @@
 use super::{AttachmentClient, CollectionClient, CosmosClient, DatabaseClient};
 use crate::operations::*;
-use crate::{requests, ReadonlyString};
-use azure_core::{HttpClient, Request};
+use crate::ReadonlyString;
+use azure_core::Request;
 use serde::Serialize;
 
 /// A client for Cosmos document resources.
@@ -75,8 +75,8 @@ impl DocumentClient {
     }
 
     /// List all attachments for a document
-    pub fn list_attachments(&self) -> requests::ListAttachmentsBuilder<'_, '_> {
-        requests::ListAttachmentsBuilder::new(self)
+    pub fn list_attachments(&self) -> ListAttachmentsBuilder {
+        ListAttachmentsBuilder::new(self.clone())
     }
 
     /// Convert into an [`AttachmentClient`]
@@ -100,9 +100,5 @@ impl DocumentClient {
             ),
             method,
         )
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
     }
 }

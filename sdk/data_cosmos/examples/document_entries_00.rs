@@ -58,12 +58,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("Created 5 documents.");
 
     // Let's get 3 entries at a time.
-    let response = client
+    let mut paged = client
         .list_documents()
         .consistency_level(response.unwrap())
         .max_item_count(3i32)
-        .execute::<MySampleStruct>()
-        .await?;
+        .into_stream::<MySampleStruct>();
+
+    let response = paged.next().await.unwrap()?;
 
     assert_eq!(response.documents.len(), 3);
     println!("response == {:#?}", response);
@@ -72,16 +73,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // continuation_token must be present
     assert!(response.continuation_token.is_some());
 
-    let session_token = &response;
-    let ct = response.continuation_token.clone().unwrap();
-    println!("ct == {}", ct);
-
-    let response = client
-        .list_documents()
-        .consistency_level(session_token)
-        .continuation(ct.as_str())
-        .execute::<MySampleStruct>()
-        .await?;
+    let response = paged.next().await.unwrap()?;
 
     assert_eq!(response.documents.len(), 2);
     println!("response == {:#?}", response);
@@ -101,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .list_documents()
             .consistency_level(session_token.clone())
             .max_item_count(3);
-        let mut stream = Box::pin(stream.stream::<MySampleStruct>());
+        let mut stream = stream.into_stream::<MySampleStruct>();
         // TODO: As soon as the streaming functionality is completed
         // in Rust substitute this while let Some... into
         // for each (or whatever the Rust team picks).

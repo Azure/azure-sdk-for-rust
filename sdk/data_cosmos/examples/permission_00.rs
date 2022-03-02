@@ -1,4 +1,5 @@
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -92,8 +93,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             create_permission2_response.session_token,
         ))
-        .execute()
-        .await?;
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     println!(
         "list_permissions_response == {:#?}",
         list_permissions_response

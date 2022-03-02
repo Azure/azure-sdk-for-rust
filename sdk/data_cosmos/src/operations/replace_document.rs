@@ -94,7 +94,7 @@ pub type ReplaceDocument =
     futures::future::BoxFuture<'static, crate::Result<ReplaceDocumentResponse>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for ReplaceDocumentBuilder {
+impl<D: Serialize + Send + 'static> std::future::IntoFuture for ReplaceDocumentBuilder<D> {
     type Future = ReplaceDocument;
     type Output = <ReplaceDocument as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
