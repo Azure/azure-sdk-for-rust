@@ -19,7 +19,7 @@ impl std::fmt::Debug for TokenCredentialAuthorizationPolicy {
 }
 
 impl TokenCredentialAuthorizationPolicy {
-    pub(crate) fn new<T>(credential: Arc<dyn TokenCredential>, resource: T) -> Self
+    pub fn new<T>(credential: Arc<dyn TokenCredential>, resource: T) -> Self
     where
         T: Into<String>,
     {
