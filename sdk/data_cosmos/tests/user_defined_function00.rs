@@ -56,7 +56,7 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
         .list_user_defined_functions()
         .max_item_count(3)
         .consistency_level(&ret);
-    let mut stream = Box::pin(stream.stream());
+    let mut stream = stream.into_stream();
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
         assert_eq!(ret.item_count, 1);

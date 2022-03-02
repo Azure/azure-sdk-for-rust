@@ -84,8 +84,8 @@ impl CollectionClient {
     }
 
     /// list user defined functions in a collection
-    pub fn list_user_defined_functions(&self) -> requests::ListUserDefinedFunctionsBuilder<'_, '_> {
-        requests::ListUserDefinedFunctionsBuilder::new(self)
+    pub fn list_user_defined_functions(&self) -> ListUserDefinedFunctionsBuilder {
+        ListUserDefinedFunctionsBuilder::new(self.clone())
     }
 
     /// list triggers in a collection

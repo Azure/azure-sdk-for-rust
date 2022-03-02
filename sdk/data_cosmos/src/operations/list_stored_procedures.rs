@@ -60,7 +60,7 @@ impl ListStoredProceduresBuilder {
                 let response = this
                     .client
                     .pipeline()
-                    .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
+                    .send(ctx.clone().insert(ResourceType::StoredProcedures), &mut request)
                     .await?;
                 ListStoredProceduresResponse::try_from(response).await
             }
@@ -111,6 +111,7 @@ impl ListStoredProceduresResponse {
         })
     }
 }
+
 impl Continuable for ListStoredProceduresResponse {
     fn continuation(&self) -> Option<String> {
         self.continuation_token.clone()
