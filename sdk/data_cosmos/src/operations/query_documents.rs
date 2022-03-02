@@ -1,15 +1,137 @@
 use crate::headers::from_headers::*;
+use crate::prelude::*;
 use crate::resources::document::DocumentAttributes;
+use crate::resources::document::Query;
+use crate::resources::ResourceType;
 use crate::ResourceQuota;
+use azure_core::collect_pinned_stream;
 use azure_core::headers::{
-    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
+    self, continuation_token_from_headers_optional, item_count_from_headers,
+    session_token_from_headers,
 };
+use azure_core::prelude::*;
+use azure_core::Pageable;
+use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
 use http::response::Response;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use std::convert::TryInto;
+
+#[derive(Debug, Clone)]
+pub struct QueryDocumentsBuilder {
+    client: CollectionClient,
+    query: Query,
+    if_match_condition: Option<IfMatchCondition>,
+    if_modified_since: Option<IfModifiedSince>,
+    consistency_level: Option<ConsistencyLevel>,
+    max_item_count: MaxItemCount,
+    partition_key_serialized: Option<String>,
+    query_cross_partition: QueryCrossPartition,
+    #[allow(unused)]
+    parallelize_cross_partition_query: ParallelizeCrossPartition,
+    context: Context,
+}
+
+impl QueryDocumentsBuilder {
+    pub(crate) fn new(client: CollectionClient, query: Query) -> Self {
+        Self {
+            client,
+            query,
+            if_match_condition: None,
+            if_modified_since: None,
+            consistency_level: None,
+            max_item_count: MaxItemCount::new(-1),
+            partition_key_serialized: None,
+            query_cross_partition: QueryCrossPartition::No,
+            // TODO: use this in request
+            parallelize_cross_partition_query: ParallelizeCrossPartition::No,
+            context: Context::new(),
+        }
+    }
+
+    setters! {
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
+        max_item_count: i32 => MaxItemCount::new(max_item_count),
+        if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
+        query_cross_partition: bool => if query_cross_partition { QueryCrossPartition::Yes } else { QueryCrossPartition::No },
+        parallelize_cross_partition_query: bool => if parallelize_cross_partition_query { ParallelizeCrossPartition::Yes } else { ParallelizeCrossPartition::No },
+        context: Context => context,
+    }
+
+    pub fn partition_key<PK: serde::Serialize>(self, pk: &PK) -> Result<Self, serde_json::Error> {
+        Ok(Self {
+            partition_key_serialized: Some(crate::cosmos_entity::serialize_partition_key(pk)?),
+            ..self
+        })
+    }
+
+    pub fn into_stream<T>(self) -> QueryDocuments<T>
+    where
+        T: DeserializeOwned,
+    {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let ctx = self.context.clone();
+            async move {
+                let mut request = this.client.cosmos_client().prepare_request_pipeline(
+                    &format!(
+                        "dbs/{}/colls/{}/docs",
+                        this.client.database_client().database_name(),
+                        this.client.collection_name()
+                    ),
+                    http::Method::POST,
+                );
+
+                // signal that this is a query
+                request.headers_mut().insert(
+                    crate::headers::HEADER_DOCUMENTDB_ISQUERY,
+                    http::HeaderValue::from_str("true").unwrap(),
+                );
+                request.headers_mut().insert(
+                    http::header::CONTENT_TYPE,
+                    http::HeaderValue::from_str("application/query+json").unwrap(),
+                );
+
+                azure_core::headers::add_optional_header2(&this.if_match_condition, &mut request)?;
+                azure_core::headers::add_optional_header2(&this.if_modified_since, &mut request)?;
+                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
+                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
+                azure_core::headers::add_mandatory_header2(
+                    &this.query_cross_partition,
+                    &mut request,
+                )?;
+
+                request.set_body(bytes::Bytes::from(serde_json::to_string(&this.query)?).into());
+                if let Some(partition_key_serialized) = this.partition_key_serialized.as_ref() {
+                    crate::cosmos_entity::add_as_partition_key_header_serialized2(
+                        partition_key_serialized,
+                        &mut request,
+                    );
+                }
+
+                if let Some(c) = continuation {
+                    let h = http::HeaderValue::from_str(c.as_str())
+                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
+                    request.headers_mut().append(headers::CONTINUATION, h);
+                }
+
+                let response = this
+                    .client
+                    .pipeline()
+                    .send(ctx.clone().insert(ResourceType::Documents), &mut request)
+                    .await?;
+                QueryDocumentsResponse::try_from(response).await
+            }
+        };
+
+        Pageable::new(make_request)
+    }
+}
+
+pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, crate::Error>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DocumentQueryResult<T> {
@@ -36,14 +158,6 @@ pub struct QueryResponseMeta {
     pub rid: String,
     #[serde(rename = "_count")]
     pub count: u64,
-}
-
-impl std::convert::TryFrom<Response<bytes::Bytes>> for QueryResponseMeta {
-    type Error = crate::Error;
-
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(response.body())?)
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
@@ -92,17 +206,15 @@ impl<T> QueryDocumentsResponse<T> {
     }
 }
 
-impl<T> std::convert::TryFrom<Response<bytes::Bytes>> for QueryDocumentsResponse<T>
+impl<T> QueryDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    type Error = crate::Error;
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+        let (_status_code, headers, pinned_stream) = response.deconstruct();
+        let body = collect_pinned_stream(pinned_stream).await?;
 
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        let headers = response.headers();
-        let body = response.body();
-
-        let inner: Value = serde_json::from_slice(body)?;
+        let inner: Value = serde_json::from_slice(&body)?;
         let mut results = Vec::new();
         if let Value::Array(documents) = &inner["Documents"] {
             for doc in documents {
@@ -131,32 +243,31 @@ where
 
         Ok(QueryDocumentsResponse {
             results,
-            last_state_change: last_state_change_from_headers(headers)?,
-            resource_quota: resource_quota_from_headers(headers)?,
-            resource_usage: resource_usage_from_headers(headers)?,
-            lsn: lsn_from_headers(headers)?,
-            item_count: item_count_from_headers(headers)?,
-            schema_version: schema_version_from_headers(headers)?.to_owned(),
-            alt_content_path: alt_content_path_from_headers(headers)?.to_owned(),
-            content_path: content_path_from_headers(headers)?.to_owned(),
-            quorum_acked_lsn: quorum_acked_lsn_from_headers_optional(headers)?,
-            current_write_quorum: current_write_quorum_from_headers_optional(headers)?,
-            current_replica_set_size: current_replica_set_size_from_headers_optional(headers)?,
-            role: role_from_headers(headers)?,
-            global_committed_lsn: global_committed_lsn_from_headers(headers)?,
-            number_of_read_regions: number_of_read_regions_from_headers(headers)?,
-            transport_request_id: transport_request_id_from_headers(headers)?,
-            cosmos_llsn: cosmos_llsn_from_headers(headers)?,
-            cosmos_quorum_acked_llsn: cosmos_quorum_acked_llsn_from_headers_optional(headers)?,
-            session_token: session_token_from_headers(headers)?,
-            charge: request_charge_from_headers(headers)?,
-            service_version: service_version_from_headers(headers)?.to_owned(),
-            activity_id: activity_id_from_headers(headers)?,
-            gateway_version: gateway_version_from_headers(headers)?.to_owned(),
-            continuation_token: continuation_token_from_headers_optional(headers)?,
-            date: date_from_headers(headers)?,
-
-            query_response_meta: response.try_into()?,
+            last_state_change: last_state_change_from_headers(&headers)?,
+            resource_quota: resource_quota_from_headers(&headers)?,
+            resource_usage: resource_usage_from_headers(&headers)?,
+            lsn: lsn_from_headers(&headers)?,
+            item_count: item_count_from_headers(&headers)?,
+            schema_version: schema_version_from_headers(&headers)?.to_owned(),
+            alt_content_path: alt_content_path_from_headers(&headers)?.to_owned(),
+            content_path: content_path_from_headers(&headers)?.to_owned(),
+            quorum_acked_lsn: quorum_acked_lsn_from_headers_optional(&headers)?,
+            current_write_quorum: current_write_quorum_from_headers_optional(&headers)?,
+            current_replica_set_size: current_replica_set_size_from_headers_optional(&headers)?,
+            role: role_from_headers(&headers)?,
+            global_committed_lsn: global_committed_lsn_from_headers(&headers)?,
+            number_of_read_regions: number_of_read_regions_from_headers(&headers)?,
+            transport_request_id: transport_request_id_from_headers(&headers)?,
+            cosmos_llsn: cosmos_llsn_from_headers(&headers)?,
+            cosmos_quorum_acked_llsn: cosmos_quorum_acked_llsn_from_headers_optional(&headers)?,
+            session_token: session_token_from_headers(&headers)?,
+            charge: request_charge_from_headers(&headers)?,
+            service_version: service_version_from_headers(&headers)?.to_owned(),
+            activity_id: activity_id_from_headers(&headers)?,
+            gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
+            continuation_token: continuation_token_from_headers_optional(&headers)?,
+            date: date_from_headers(&headers)?,
+            query_response_meta: serde_json::from_slice(&body)?,
         })
     }
 }
@@ -308,5 +419,10 @@ impl<T> std::convert::TryFrom<QueryDocumentsResponse<T>> for QueryDocumentsRespo
             continuation_token: q.continuation_token,
             date: q.date,
         })
+    }
+}
+impl<T> Continuable for QueryDocumentsResponse<T> {
+    fn continuation(&self) -> Option<String> {
+        self.continuation_token.clone()
     }
 }

@@ -3,6 +3,7 @@ use crate::clients::*;
 use crate::operations::*;
 use crate::requests;
 use crate::resources::collection::PartitionKey;
+use crate::resources::document::Query;
 use crate::CosmosEntity;
 use crate::ReadonlyString;
 use azure_core::{HttpClient, Pipeline, Request};
@@ -73,18 +74,18 @@ impl CollectionClient {
     }
 
     /// query documents in a collection
-    pub fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_> {
-        requests::QueryDocumentsBuilder::new(self)
+    pub fn query_documents<Q: Into<Query>>(&self, query: Q) -> QueryDocumentsBuilder {
+        QueryDocumentsBuilder::new(self.clone(), query.into())
     }
 
     /// list stored procedures in a collection
-    pub fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, '_> {
-        requests::ListStoredProceduresBuilder::new(self)
+    pub fn list_stored_procedures(&self) -> ListStoredProceduresBuilder {
+        ListStoredProceduresBuilder::new(self.clone())
     }
 
     /// list user defined functions in a collection
-    pub fn list_user_defined_functions(&self) -> requests::ListUserDefinedFunctionsBuilder<'_, '_> {
-        requests::ListUserDefinedFunctionsBuilder::new(self)
+    pub fn list_user_defined_functions(&self) -> ListUserDefinedFunctionsBuilder {
+        ListUserDefinedFunctionsBuilder::new(self.clone())
     }
 
     /// list triggers in a collection

@@ -61,7 +61,7 @@ impl DocumentClient {
         GetDocumentBuilder::new(self.clone())
     }
 
-    /// replace a document in a collection
+    /// Replace a document in a collection
     pub fn replace_document<D: Serialize + Send + 'static>(
         &self,
         document: D,

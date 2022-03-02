@@ -13,10 +13,7 @@ mod delete_user_defined_function_response;
 mod execute_stored_procedure_response;
 mod get_attachment_response;
 mod get_partition_key_ranges_response;
-mod list_stored_procedures_response;
 mod list_triggers_response;
-mod list_user_defined_functions_response;
-mod query_documents_response;
 mod replace_reference_attachment_response;
 
 pub use create_collection_response::CreateCollectionResponse;
@@ -30,11 +27,5 @@ pub use delete_user_defined_function_response::DeleteUserDefinedFunctionResponse
 pub use execute_stored_procedure_response::ExecuteStoredProcedureResponse;
 pub use get_attachment_response::GetAttachmentResponse;
 pub use get_partition_key_ranges_response::GetPartitionKeyRangesResponse;
-pub use list_stored_procedures_response::ListStoredProceduresResponse;
 pub use list_triggers_response::ListTriggersResponse;
-pub use list_user_defined_functions_response::ListUserDefinedFunctionsResponse;
-pub use query_documents_response::{
-    QueryDocumentsResponse, QueryDocumentsResponseDocuments, QueryDocumentsResponseRaw,
-    QueryResponseMeta, QueryResult,
-};
 pub use replace_reference_attachment_response::ReplaceReferenceAttachmentResponse;
