@@ -113,11 +113,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // TASK 3
     println!("\nQuerying documents");
     let query_documents_response = collection_client
-        .query_documents()
+        .query_documents("SELECT * FROM A WHERE A.a_number < 600")
         .query_cross_partition(true) // this will perform a cross partition query! notice how simple it is!
         .consistency_level(session_token)
-        .execute::<MySampleStruct, _>("SELECT * FROM A WHERE A.a_number < 600") // there are other ways to construct a query, this is the simplest.
-        .await?
+        .into_stream::<MySampleStruct>() // there are other ways to construct a query, this is the simplest.
+        .next()
+        .await
+        .unwrap()?
         .into_documents() // queries can return Documents or Raw json (ie without etag, _rid, etc...). Since our query return docs we convert with this function.
         .unwrap(); // we know in advance that the conversion to Document will not fail since we SELECT'ed * FROM table
 

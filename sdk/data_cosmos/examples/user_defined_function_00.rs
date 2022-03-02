@@ -68,11 +68,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("Replace response object:\n{:#?}", ret);
 
     let ret = collection_client
-        .query_documents()
+        .query_documents("SELECT udf.test15(100)")
         .consistency_level(&ret)
         .max_item_count(2i32)
-        .execute::<serde_json::Value, _>("SELECT udf.test15(100)")
-        .await?
+        .into_stream::<serde_json::Value>()
+        .next()
+        .await
+        .unwrap()?
         .into_raw();
     println!("Query response object:\n{:#?}", ret);
 
