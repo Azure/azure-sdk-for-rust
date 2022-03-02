@@ -64,8 +64,8 @@ impl StoredProcedureClient {
     }
 
     /// Delete the stored procedure
-    pub fn delete_stored_procedure(&self) -> requests::DeleteStoredProcedureBuilder<'_, '_> {
-        requests::DeleteStoredProcedureBuilder::new(self)
+    pub fn delete_stored_procedure(&self) -> DeleteStoredProcedureBuilder {
+        DeleteStoredProcedureBuilder::new(self.clone())
     }
 
     pub(crate) fn prepare_request_with_stored_procedure_name(

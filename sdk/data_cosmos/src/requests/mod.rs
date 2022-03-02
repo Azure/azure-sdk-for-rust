@@ -11,7 +11,6 @@ mod create_or_replace_user_defined_function_builder;
 mod create_reference_attachment_builder;
 mod create_slug_attachment_builder;
 mod delete_attachment_builder;
-mod delete_stored_procedure_builder;
 mod delete_trigger_builder;
 mod delete_user_defined_function_builder;
 mod execute_stored_procedure_builder;
@@ -30,7 +29,6 @@ pub use create_or_replace_user_defined_function_builder::CreateOrReplaceUserDefi
 pub use create_reference_attachment_builder::CreateReferenceAttachmentBuilder;
 pub use create_slug_attachment_builder::CreateSlugAttachmentBuilder;
 pub use delete_attachment_builder::DeleteAttachmentBuilder;
-pub use delete_stored_procedure_builder::DeleteStoredProcedureBuilder;
 pub use delete_trigger_builder::DeleteTriggerBuilder;
 pub use delete_user_defined_function_builder::DeleteUserDefinedFunctionBuilder;
 pub use execute_stored_procedure_builder::ExecuteStoredProcedureBuilder;

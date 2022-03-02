@@ -79,7 +79,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let delete_stored_procedure_response = stored_procedure_client
         .delete_stored_procedure()
-        .execute()
+        .into_future()
         .await?;
     println!(
         "delete_stored_procedure_response == {:#?}",
