@@ -79,8 +79,8 @@ impl CollectionClient {
     }
 
     /// list stored procedures in a collection
-    pub fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, '_> {
-        requests::ListStoredProceduresBuilder::new(self)
+    pub fn list_stored_procedures(&self) -> ListStoredProceduresBuilder {
+        ListStoredProceduresBuilder::new(self.clone())
     }
 
     /// list user defined functions in a collection

@@ -6,6 +6,7 @@
 ///     response.setBody("Hello, " + personToGreet);
 /// }
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -46,8 +47,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_stored_procedure_client(stored_procedure_name);
 
-    let list_stored_procedures_response =
-        collection_client.list_stored_procedures().execute().await?;
+    let list_stored_procedures_response = collection_client
+        .list_stored_procedures()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     println!(
         "list_stored_procedures_response == {:#?}",
         list_stored_procedures_response
