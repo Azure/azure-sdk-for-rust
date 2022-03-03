@@ -3,8 +3,8 @@ use azure_core::{
     Error,
 };
 use chrono::{Duration, Utc};
+use futures::lock::Mutex;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 
 fn is_expired(token: TokenResponse) -> bool {
     token.expires_on < Utc::now() + Duration::seconds(20)
@@ -45,7 +45,9 @@ impl TokenCredential for AutoRefreshingTokenCredential {
                     *guard = Some(res);
                 }
                 Some(Err(err)) => {
-                    return Err(Error::HeaderNotFound("Box::new((*err))".to_string()));
+                    // TODO return a meaningful error here, once we decide how to proceed, introduce a new variant,
+                    // or migrate token credentials to return new errors with error kind.
+                    return Err(Error::HeaderNotFound(err.to_string()));
                 }
                 Some(Ok(token)) => {
                     if is_expired(token.clone()) {
