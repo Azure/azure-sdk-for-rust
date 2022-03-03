@@ -75,7 +75,7 @@ implement_from!(GetAttachmentResponse);
 implement_from!(CreateDocumentResponse);
 implement_from!(ReplaceDocumentResponse);
 implement_from!(DeleteDocumentResponse);
-implement_from!(CreateUserDefinedFunctionResponse);
+implement_from!(CreateOrReplaceUserDefinedFunctionResponse);
 implement_from!(DeleteUserDefinedFunctionResponse);
 implement_from!(ListUserDefinedFunctionsResponse);
 implement_from!(CreateOrReplaceTriggerResponse);

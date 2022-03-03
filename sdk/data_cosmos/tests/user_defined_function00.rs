@@ -48,8 +48,8 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
         .into_user_defined_function_client(USER_DEFINED_FUNCTION_NAME);
 
     let ret = user_defined_function_client
-        .create_user_defined_function()
-        .execute("body")
+        .create_user_defined_function("body")
+        .into_future()
         .await?;
 
     let stream = collection_client
@@ -63,9 +63,9 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
     }
 
     let ret = user_defined_function_client
-        .replace_user_defined_function()
+        .replace_user_defined_function(FN_BODY)
         .consistency_level(&ret)
-        .execute(FN_BODY)
+        .into_future()
         .await?;
 
     let query_stmt = format!("SELECT udf.{}(100)", USER_DEFINED_FUNCTION_NAME);
