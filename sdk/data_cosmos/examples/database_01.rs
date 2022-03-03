@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
-    let database_client = client.into_database_client("pollo");
+    let database_client = client.database_client("pollo");
     println!("database_name == {}", database_client.database_name());
 
     let collections = database_client
@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .unwrap()?;
     println!("collections == {:#?}", collections);
 
-    let collection_client = database_client.into_collection_client("cnt");
+    let collection_client = database_client.collection_client("cnt");
     let collection = collection_client.get_collection().into_future().await?;
     println!("collection == {:#?}", collection);
 

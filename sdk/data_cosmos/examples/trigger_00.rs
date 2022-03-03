@@ -57,9 +57,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.into_database_client(database);
-    let collection_client = database_client.into_collection_client(collection);
-    let trigger_client = collection_client.clone().into_trigger_client(trigger_name);
+    let database_client = client.database_client(database);
+    let collection_client = database_client.collection_client(collection);
+    let trigger_client = collection_client.clone().trigger_client(trigger_name);
 
     let ret = trigger_client
         .create_trigger("something", TriggerType::Post, TriggerOperation::All)

@@ -98,33 +98,33 @@ impl CollectionClient {
     }
 
     /// convert into a [`DocumentClient`]
-    pub fn into_document_client<S: Into<String>, PK: Serialize>(
-        self,
+    pub fn document_client<S: Into<String>, PK: Serialize>(
+        &self,
         document_name: S,
         partition_key: &PK,
     ) -> Result<DocumentClient, serde_json::Error> {
-        DocumentClient::new(self, document_name, partition_key)
+        DocumentClient::new(self.clone(), document_name, partition_key)
     }
 
     /// convert into a [`TriggerClient`]
-    pub fn into_trigger_client<S: Into<ReadonlyString>>(self, trigger_name: S) -> TriggerClient {
-        TriggerClient::new(self, trigger_name)
+    pub fn trigger_client<S: Into<ReadonlyString>>(&self, trigger_name: S) -> TriggerClient {
+        TriggerClient::new(self.clone(), trigger_name)
     }
 
     /// convert into a [`UserDefinedFunctionClient`]
-    pub fn into_user_defined_function_client<S: Into<ReadonlyString>>(
-        self,
+    pub fn user_defined_function_client<S: Into<ReadonlyString>>(
+        &self,
         user_defined_function_name: S,
     ) -> UserDefinedFunctionClient {
-        UserDefinedFunctionClient::new(self, user_defined_function_name)
+        UserDefinedFunctionClient::new(self.clone(), user_defined_function_name)
     }
 
     /// convert into a [`StoredProcedureClient`]
-    pub fn into_stored_procedure_client<S: Into<ReadonlyString>>(
-        self,
+    pub fn stored_procedure_client<S: Into<ReadonlyString>>(
+        &self,
         stored_procedure_name: S,
     ) -> StoredProcedureClient {
-        StoredProcedureClient::new(self, stored_procedure_name)
+        StoredProcedureClient::new(self.clone(), stored_procedure_name)
     }
 
     pub(crate) fn prepare_request_with_collection_name(

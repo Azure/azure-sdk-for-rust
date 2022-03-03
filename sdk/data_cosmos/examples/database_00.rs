@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for db in dbs.databases {
         println!("database == {:?}", db);
-        let database = client.clone().into_database_client(db.name().to_owned());
+        let database = client.database_client(db.name().to_owned());
 
         let collections = database
             .list_collections()
@@ -34,7 +34,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .unwrap()?;
         for collection in collections.collections {
             println!("collection == {:?}", collection);
-            let collection_client = database.clone().into_collection_client(collection.id);
+            let collection_client = database.collection_client(collection.id);
 
             if collection_client.collection_name() == "democ" {
                 println!("democ!");

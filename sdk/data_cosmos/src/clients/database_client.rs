@@ -62,16 +62,16 @@ impl DatabaseClient {
     }
 
     /// Convert into a [`CollectionClient`]
-    pub fn into_collection_client<S: Into<ReadonlyString>>(
-        self,
+    pub fn collection_client<S: Into<ReadonlyString>>(
+        &self,
         collection_name: S,
     ) -> CollectionClient {
-        CollectionClient::new(self, collection_name)
+        CollectionClient::new(self.clone(), collection_name)
     }
 
     /// Convert into a [`UserClient`]
-    pub fn into_user_client<S: Into<ReadonlyString>>(self, user_name: S) -> UserClient {
-        UserClient::new(self, user_name)
+    pub fn user_client<S: Into<ReadonlyString>>(&self, user_name: S) -> UserClient {
+        UserClient::new(self.clone(), user_name)
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {

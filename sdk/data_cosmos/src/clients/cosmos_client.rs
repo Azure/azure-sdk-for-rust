@@ -153,9 +153,9 @@ impl CosmosClient {
         ListDatabasesBuilder::new(self.clone())
     }
 
-    /// Convert into a [`DatabaseClient`]
-    pub fn into_database_client<S: Into<ReadonlyString>>(self, database_name: S) -> DatabaseClient {
-        DatabaseClient::new(self, database_name)
+    /// Create a [`DatabaseClient`].
+    pub fn database_client<S: Into<ReadonlyString>>(&self, database_name: S) -> DatabaseClient {
+        DatabaseClient::new(self.clone(), database_name)
     }
 
     /// Prepares' an `azure_core::Request`.

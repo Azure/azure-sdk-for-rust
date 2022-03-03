@@ -62,11 +62,11 @@ impl UserClient {
     }
 
     /// Convert into a [`PermissionClient`]
-    pub fn into_permission_client<S: Into<ReadonlyString>>(
-        self,
+    pub fn permission_client<S: Into<ReadonlyString>>(
+        &self,
         permission_name: S,
     ) -> PermissionClient {
-        PermissionClient::new(self, permission_name)
+        PermissionClient::new(self.clone(), permission_name)
     }
 
     pub(crate) fn prepare_request_with_user_name(&self, method: http::Method) -> Request {

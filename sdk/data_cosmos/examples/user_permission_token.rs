@@ -28,11 +28,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.clone().into_database_client(database_name.clone());
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(collection_name.clone());
-    let user_client = database_client.into_user_client(user_name);
+    let database_client = client.database_client(database_name.clone());
+    let collection_client = database_client.collection_client(collection_name.clone());
+    let user_client = database_client.user_client(user_name);
 
     let get_collection_response = collection_client.get_collection().into_future().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
@@ -53,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // create the first permission!
-    let permission_client = user_client.clone().into_permission_client("matrix");
+    let permission_client = user_client.clone().permission_client("matrix");
 
     let permission_mode = get_collection_response.collection.read_permission();
 
@@ -84,9 +82,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // let's list the documents with the new auth token
     let list_documents_response = client
-        .clone()
-        .into_database_client(database_name.clone())
-        .into_collection_client(collection_name.clone())
+        .database_client(database_name.clone())
+        .collection_client(collection_name.clone())
         .list_documents()
         .into_stream::<serde_json::Value>()
         .next()
@@ -113,9 +110,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let document = serde_json::from_str::<serde_json::Value>(data)?;
 
     match client
-        .clone()
-        .into_database_client(database_name.clone())
-        .into_collection_client(collection_name.clone())
+        .database_client(database_name.clone())
+        .collection_client(collection_name.clone())
         .create_document(document.clone())
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?
@@ -155,8 +151,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // now we have an "All" authorization_token
     // so the create_document should succeed!
     let create_document_response = client
-        .into_database_client(database_name)
-        .into_collection_client(collection_name)
+        .database_client(database_name)
+        .collection_client(collection_name)
         .create_document(document)
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?

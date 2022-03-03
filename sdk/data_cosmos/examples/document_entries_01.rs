@@ -37,8 +37,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-    let client = client.into_database_client(database_name);
-    let client = client.into_collection_client(collection_name);
+    let client = client.database_client(database_name);
+    let client = client.collection_client(collection_name);
 
     let mut doc = MySampleStruct {
         id: format!("unique_id{}", 500),
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let get_document_response = client
         .clone()
-        .into_document_client(doc.id.clone(), &doc.id)?
+        .document_client(doc.id.clone(), &doc.id)?
         .get_document()
         .consistency_level(&create_document_response)
         .into_future::<serde_json::Value>()
@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let get_document_response = client
         .clone()
-        .into_document_client("ciccia", &doc.id)?
+        .document_client("ciccia", &doc.id)?
         .get_document()
         .consistency_level(&create_document_response)
         .into_future::<serde_json::Value>()
@@ -105,7 +105,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     doc.a_number = 43;
 
     let replace_document_response = client
-        .into_document_client(doc.id.clone(), &doc.id)?
+        .document_client(doc.id.clone(), &doc.id)?
         .replace_document(doc)
         .consistency_level(&query_documents_response)
         .into_future()

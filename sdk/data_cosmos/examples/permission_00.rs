@@ -31,14 +31,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.into_database_client(database_name);
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(collection_name);
-    let collection2_client = database_client
-        .clone()
-        .into_collection_client(collection_name2);
-    let user_client = database_client.clone().into_user_client(user_name);
+    let database_client = client.database_client(database_name);
+    let collection_client = database_client.collection_client(collection_name);
+    let collection2_client = database_client.collection_client(collection_name2);
+    let user_client = database_client.user_client(user_name);
 
     let get_database_response = database_client.get_database().into_future().await?;
     println!("get_database_response == {:#?}", get_database_response);
@@ -56,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create_user_response == {:#?}", create_user_response);
 
     // create the first permission!
-    let permission_client = user_client.clone().into_permission_client("matrix");
+    let permission_client = user_client.clone().permission_client("matrix");
     let permission_mode = get_collection_response.collection.read_permission();
 
     let create_permission_response = permission_client
@@ -72,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // create the second permission!
-    let permission_client = user_client.clone().into_permission_client("neo".to_owned());
+    let permission_client = user_client.clone().permission_client("neo".to_owned());
     let permission_mode = get_collection2_response.collection.all_permission();
 
     let create_permission2_response = permission_client

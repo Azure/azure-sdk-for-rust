@@ -84,8 +84,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // has many options (such as indexing and so on).
     let collection = {
         let collections = client
-            .clone()
-            .into_database_client(database.id.clone())
+            .database_client(database.id.clone())
             .list_collections()
             .into_stream()
             .next()
@@ -101,7 +100,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         } else {
             client
                 .clone()
-                .into_database_client(database.id.clone())
+                .database_client(database.id.clone())
                 .create_collection(COLLECTION, "/id")
                 .into_future()
                 .await?
@@ -125,8 +124,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // Notice how easy it is! :)
     // First we construct a "collection" specific client so we
     // do not need to specify it over and over.
-    let database_client = client.clone().into_database_client(database.id.clone());
-    let collection_client = database_client.into_collection_client(collection.id);
+    let database_client = client.database_client(database.id.clone());
+    let collection_client = database_client.collection_client(collection.id);
 
     // The method create_document will return, upon success,
     // the document attributes.
@@ -158,7 +157,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("getting document by id {}", &doc.id);
     let get_document_response = collection_client
         .clone()
-        .into_document_client(doc.id.clone(), &doc.id)?
+        .document_client(doc.id.clone(), &doc.id)?
         .get_document()
         .into_future::<MySampleStruct>()
         .await?;
@@ -176,7 +175,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // CosmosDB it means something else updated the document before us!
         let replace_document_response = collection_client
             .clone()
-            .into_document_client(doc.id.clone(), &doc.id)?
+            .document_client(doc.id.clone(), &doc.id)?
             .replace_document(doc)
             .if_match_condition(IfMatchCondition::Match(document.etag))
             .into_future()
@@ -189,9 +188,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // We will perform some cleanup. First we delete the collection...
     client
-        .clone()
-        .into_database_client(DATABASE.to_owned())
-        .into_collection_client(COLLECTION.to_owned())
+        .database_client(DATABASE.to_owned())
+        .collection_client(COLLECTION.to_owned())
         .delete_collection()
         .into_future()
         .await?;
@@ -199,7 +197,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // And then we delete the database.
     client
-        .into_database_client(database.id)
+        .database_client(database.id)
         .delete_database()
         .into_future()
         .await?;

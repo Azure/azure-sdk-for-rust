@@ -38,8 +38,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-    let client = client.into_database_client(database_name);
-    let client = client.into_collection_client(collection_name);
+    let client = client.database_client(database_name);
+    let client = client.collection_client(collection_name);
 
     let id = format!("unique_id{}", 100);
 
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }
     };
 
-    let document_client = client.into_document_client(doc.id.clone(), &doc.id)?;
+    let document_client = client.document_client(doc.id.clone(), &doc.id)?;
 
     // list attachments
     let ret = document_client
@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // reference attachment
     println!("creating");
-    let attachment_client = document_client.clone().into_attachment_client("myref06");
+    let attachment_client = document_client.attachment_client("myref06");
     let resp = attachment_client
         .create_attachment(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let session_token: ConsistencyLevel = resp.into();
 
     println!("replacing");
-    let attachment_client = document_client.clone().into_attachment_client("myref06");
+    let attachment_client = document_client.attachment_client("myref06");
     let resp = attachment_client
         .replace_attachment(
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // slug attachment
     println!("creating slug attachment");
-    let attachment_client = document_client.into_attachment_client("slug00".to_owned());
+    let attachment_client = document_client.attachment_client("slug00".to_owned());
     let resp = attachment_client
         .create_slug("FFFFF".into())
         .consistency_level(&resp_delete)

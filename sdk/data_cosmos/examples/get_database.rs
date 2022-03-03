@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.into_database_client(database_name.clone());
+    let database_client = client.database_client(database_name.clone());
 
     let mut context = Context::new();
 

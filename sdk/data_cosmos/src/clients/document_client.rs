@@ -76,12 +76,12 @@ impl DocumentClient {
         ListAttachmentsBuilder::new(self.clone())
     }
 
-    /// Convert into an [`AttachmentClient`]
-    pub fn into_attachment_client<S: Into<ReadonlyString>>(
-        self,
+    /// Get an [`AttachmentClient`].
+    pub fn attachment_client<S: Into<ReadonlyString>>(
+        &self,
         attachment_name: S,
     ) -> AttachmentClient {
-        AttachmentClient::new(self, attachment_name)
+        AttachmentClient::new(self.clone(), attachment_name)
     }
 
     pub(crate) fn prepare_request_pipeline_with_document_name(
