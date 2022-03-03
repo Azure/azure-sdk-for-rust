@@ -89,8 +89,8 @@ impl CollectionClient {
     }
 
     /// list triggers in a collection
-    pub fn list_triggers(&self) -> requests::ListTriggersBuilder<'_, '_> {
-        requests::ListTriggersBuilder::new(self)
+    pub fn list_triggers(&self) -> ListTriggersBuilder {
+        ListTriggersBuilder::new(self.clone())
     }
 
     /// list the partition key ranges in a collection

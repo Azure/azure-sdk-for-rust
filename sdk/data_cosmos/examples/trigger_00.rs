@@ -76,11 +76,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut last_session_token: Option<ConsistencyLevel> = None;
 
-    let stream = collection_client
+    let mut stream = collection_client
         .list_triggers()
         .max_item_count(3)
-        .consistency_level(&ret);
-    let mut stream = Box::pin(stream.stream());
+        .consistency_level(&ret)
+        .into_stream();
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
         println!(

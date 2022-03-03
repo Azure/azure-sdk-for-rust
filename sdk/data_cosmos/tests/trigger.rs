@@ -90,7 +90,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
         .list_triggers()
         .max_item_count(3)
         .consistency_level(&ret);
-    let mut stream = Box::pin(stream.stream());
+    let mut stream = stream.into_stream();
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
         last_session_token = Some(ConsistencyLevel::Session(ret.session_token));

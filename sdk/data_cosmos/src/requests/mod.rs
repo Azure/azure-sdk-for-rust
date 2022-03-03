@@ -16,7 +16,6 @@ mod delete_user_defined_function_builder;
 mod execute_stored_procedure_builder;
 mod get_attachment_builder;
 mod get_partition_key_ranges_builder;
-mod list_triggers_builder;
 mod replace_reference_attachment_builder;
 mod replace_slug_attachment_builder;
 
@@ -30,6 +29,5 @@ pub use delete_user_defined_function_builder::DeleteUserDefinedFunctionBuilder;
 pub use execute_stored_procedure_builder::ExecuteStoredProcedureBuilder;
 pub use get_attachment_builder::GetAttachmentBuilder;
 pub use get_partition_key_ranges_builder::GetPartitionKeyRangesBuilder;
-pub use list_triggers_builder::ListTriggersBuilder;
 pub use replace_reference_attachment_builder::ReplaceReferenceAttachmentBuilder;
 pub use replace_slug_attachment_builder::ReplaceSlugAttachmentBuilder;
