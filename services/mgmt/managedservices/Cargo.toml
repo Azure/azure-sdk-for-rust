@@ -24,7 +24,7 @@ tokio = { version = "1.0", features = ["macros"] }
 all-features = true
 
 [features]
-default = ["package-2019-09", "enable_reqwest"]
+default = ["package-preview-2022-01", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []

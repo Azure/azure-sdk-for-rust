@@ -184,7 +184,7 @@ impl SpecReadme {
     pub fn readme(&self) -> &Path {
         self.readme.as_path()
     }
-    pub fn configs(&self) -> Result<Vec<Configuration>> {
+    pub fn config(&self) -> Result<Configuration> {
         Ok(config_parser::parse_configurations_from_autorest_config_file(&self.readme)?)
     }
 }
