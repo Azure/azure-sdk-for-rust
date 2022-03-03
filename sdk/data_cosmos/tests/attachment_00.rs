@@ -144,7 +144,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .into_attachment_client("reference")
         .get()
         .consistency_level(&ret)
-        .execute()
+        .into_future()
         .await?;
     assert_eq!(
         "https://www.microsoft.com",
@@ -158,7 +158,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .into_attachment_client("slug")
         .get()
         .consistency_level(&reference_attachment)
-        .execute()
+        .into_future()
         .await
         .unwrap();
     assert_eq!("text/plain", slug_attachment.attachment.content_type);

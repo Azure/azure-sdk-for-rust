@@ -95,7 +95,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let ret = user_defined_function_client
         .delete_user_defined_function()
         .consistency_level(&ret)
-        .execute()
+        .into_future()
         .await?;
 
     println!("Delete response object:\n{:#?}", ret);

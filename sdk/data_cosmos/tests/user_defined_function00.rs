@@ -112,7 +112,7 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
     let _ret = user_defined_function_client
         .delete_user_defined_function()
         .consistency_level(&ret)
-        .execute()
+        .into_future()
         .await?;
 
     // delete the database

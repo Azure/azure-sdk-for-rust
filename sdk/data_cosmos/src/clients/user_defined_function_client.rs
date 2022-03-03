@@ -1,7 +1,8 @@
 use super::*;
+use crate::operations::*;
 use crate::resources::ResourceType;
 use crate::{requests, ReadonlyString};
-use azure_core::HttpClient;
+use azure_core::{HttpClient, Pipeline, Request};
 
 /// A client for Cosmos user defined function resources.
 #[derive(Debug, Clone)]
@@ -56,10 +57,8 @@ impl UserDefinedFunctionClient {
     }
 
     /// Delete the user defined function
-    pub fn delete_user_defined_function(
-        &self,
-    ) -> requests::DeleteUserDefinedFunctionBuilder<'_, '_> {
-        requests::DeleteUserDefinedFunctionBuilder::new(self)
+    pub fn delete_user_defined_function(&self) -> DeleteUserDefinedFunctionBuilder {
+        DeleteUserDefinedFunctionBuilder::new(self.clone())
     }
 
     pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
@@ -90,7 +89,27 @@ impl UserDefinedFunctionClient {
         )
     }
 
+    pub(crate) fn prepare_pipeline_with_user_defined_function_name(
+        &self,
+        method: http::Method,
+    ) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/colls/{}/udfs/{}",
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+                self.user_defined_function_name()
+            ),
+            method,
+        )
+    }
+
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
         self.cosmos_client().http_client()
+    }
+
+    /// Get a [`Pipeline`]
+    pub(crate) fn pipeline(&self) -> &Pipeline {
+        self.cosmos_client().pipeline()
     }
 }
