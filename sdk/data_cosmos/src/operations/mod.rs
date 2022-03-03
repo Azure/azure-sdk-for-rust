@@ -5,6 +5,7 @@
 mod create_collection;
 mod create_database;
 mod create_document;
+mod create_or_replace_slug_attachment;
 mod create_or_replace_trigger;
 mod create_or_replace_user_defined_function;
 mod create_permission;
@@ -44,6 +45,7 @@ mod replace_user;
 pub use create_collection::*;
 pub use create_database::*;
 pub use create_document::*;
+pub use create_or_replace_slug_attachment::*;
 pub use create_or_replace_trigger::*;
 pub use create_or_replace_user_defined_function::*;
 pub use create_permission::*;

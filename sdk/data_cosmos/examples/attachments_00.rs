@@ -121,10 +121,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("creating slug attachment");
     let attachment_client = document_client.into_attachment_client("slug00".to_owned());
     let resp = attachment_client
-        .create_slug()
+        .create_slug("FFFFF".into())
         .consistency_level(&resp_delete)
         .content_type("text/plain")
-        .execute("FFFFF")
+        .into_future()
         .await?;
 
     println!("create slug == {:#?}", resp);

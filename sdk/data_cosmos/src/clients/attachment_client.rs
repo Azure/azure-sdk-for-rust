@@ -5,6 +5,7 @@ use crate::ReadonlyString;
 use azure_core::HttpClient;
 use azure_core::Pipeline;
 use azure_core::Request;
+use bytes::Bytes;
 
 use super::*;
 
@@ -63,13 +64,13 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to create an attachment with a slug.
-    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_> {
-        requests::CreateSlugAttachmentBuilder::new(self)
+    pub fn create_slug(&self, body: Bytes) -> CreateOrReplaceSlugAttachmentBuilder {
+        CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), true, body)
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_> {
-        requests::ReplaceSlugAttachmentBuilder::new(self)
+    pub fn replace_slug(&self, body: Bytes) -> CreateOrReplaceSlugAttachmentBuilder {
+        CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), false, body)
     }
 
     /// Initiate a request to create an attachment.
@@ -97,6 +98,18 @@ impl AttachmentClient {
             ),
             method,
             ResourceType::Attachments,
+        )
+    }
+
+    pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/colls/{}/docs/{}/attachments",
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+                self.document_client().document_name(),
+            ),
+            method,
         )
     }
 

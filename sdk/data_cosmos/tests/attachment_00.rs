@@ -122,10 +122,10 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     // create slug attachment
     let attachment_client = document_client.clone().into_attachment_client("slug");
     let resp = attachment_client
-        .create_slug()
+        .create_slug("something cool here".into())
         .consistency_level(&resp)
         .content_type("text/plain")
-        .execute("something cool here")
+        .into_future()
         .await?;
 
     // list attachments, there must be two.
