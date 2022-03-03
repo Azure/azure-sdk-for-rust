@@ -1,10 +1,6 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
-use autorust_codegen::{
-    self, cargo_toml,
-    config_parser::{to_mod_name, to_tag_name},
-    get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme,
-};
+use autorust_codegen::{self, cargo_toml, get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
@@ -339,7 +335,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         fs::remove_dir_all(&src_folder).map_err(|source| Error::IoError { source })?;
     }
 
-    let mut feature_mod_names = Vec::new();
+    let mut tags = Vec::new();
     let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
 
     let mut box_properties = HashSet::new();
@@ -360,31 +356,22 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         });
     }
 
-    for tag in spec.config()?.tags() {
-        let tag_name = to_tag_name(&tag.tag);
+    let config = spec.config()?;
+    for tag in config.tags() {
+        let tag_name = tag.name();
         if skip_service_tags.contains(&(spec.spec(), tag_name.as_ref())) {
-            println!("  skipping {}", tag_name);
+            // println!("  skipping {}", tag_name);
             continue;
         }
         println!("  {}", tag_name);
-        // println!("  {}", api_version);
-        let mod_name = to_mod_name(&tag_name);
-        let mod_output_folder = path::join(&src_folder, &mod_name).map_err(|source| Error::PathError { source })?;
-        feature_mod_names.push((tag_name, mod_name));
-        // println!("  {}", mod_name);
-        // println!("  {:?}", mod_output_folder);
-        // for input_file in &config.input_files {
-        //     println!("  {}", input_file);
-        // }
+        let mod_output_folder = path::join(&src_folder, &tag.rust_mod_name()).map_err(|source| Error::PathError { source })?;
+        tags.push(tag);
         let input_files: Result<Vec<_>> = tag
-            .input_files
+            .input_files()
             .iter()
             .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
             .collect();
         let input_files = input_files?;
-        // for input_file in &input_files {
-        //     println!("  {:?}", input_file);
-        // }
         autorust_codegen::run(Config {
             output_folder: mod_output_folder,
             input_files,
@@ -394,17 +381,18 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             ..Config::default()
         })?;
     }
-    if feature_mod_names.is_empty() {
+    if tags.is_empty() {
         return Ok(());
     }
     cargo_toml::create(
         crate_name,
-        &feature_mod_names,
+        &tags,
+        config.tag(),
         &path::join(output_folder, "Cargo.toml").map_err(|source| Error::PathError { source })?,
     )
     .map_err(|source| Error::CargoTomlError { source })?;
     lib_rs::create(
-        &feature_mod_names,
+        &tags,
         &path::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
         false,
     )

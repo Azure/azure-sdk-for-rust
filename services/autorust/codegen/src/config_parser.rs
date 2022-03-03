@@ -65,15 +65,27 @@ pub struct BasicInformation {
 #[derive(Debug, Deserialize)]
 pub struct Tag {
     #[serde(rename(deserialize = "input-file"))]
-    pub input_files: Vec<String>,
+    input_files: Vec<String>,
 
     #[serde(skip_deserializing)]
-    pub tag: String,
+    tag: String,
 }
 
 impl Tag {
     pub fn input_files(&self) -> Vec<PathBuf> {
         self.input_files.iter().map(PathBuf::from).collect()
+    }
+
+    pub fn name(&self) -> &str {
+        &self.tag
+    }
+
+    pub fn rust_feature_name(&self) -> String {
+        to_rust_feature_name(&self.tag)
+    }
+
+    pub fn rust_mod_name(&self) -> String {
+        to_rust_mod_name(&self.rust_feature_name())
     }
 }
 
@@ -254,8 +266,8 @@ pub fn get_input_file_api_version(input_file: &str) -> Option<String> {
     }
 }
 
-/// Create a Rust tag name, based on the feature naem.
-pub fn to_tag_name(name: &str) -> String {
+/// Create a Rust feature name, based on the feature naem.
+fn to_rust_feature_name(name: &str) -> String {
     name.chars()
         .map(|x| match x {
             'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' => x,
@@ -265,7 +277,7 @@ pub fn to_tag_name(name: &str) -> String {
 }
 
 /// Create a Rust module name, based on the feature naem.
-pub fn to_mod_name(feature_name: &str) -> String {
+fn to_rust_mod_name(feature_name: &str) -> String {
     let mut name = feature_name.to_owned();
     if starts_with_number(&name) {
         name = format!("v{}", &name);
@@ -286,16 +298,16 @@ mod tests {
     }
 
     #[test]
-    fn test_tag_name() {
-        assert_eq!("2019-06", to_tag_name("2019-06"));
-        assert_eq!("2019_06", to_tag_name("2019.06"));
-        assert_eq!("2019_06", to_tag_name("2019!06"));
+    fn test_rust_feature_name() {
+        assert_eq!("2019-06", to_rust_feature_name("2019-06"));
+        assert_eq!("2019_06", to_rust_feature_name("2019.06"));
+        assert_eq!("2019_06", to_rust_feature_name("2019!06"));
     }
 
     #[test]
-    fn test_mod_name() {
-        assert_eq!("v2019_06", to_mod_name("2019-06"));
-        assert_eq!("v2018_10_01_disks", to_mod_name("2018-10-01-Disks"));
+    fn test_rust_mod_name() {
+        assert_eq!("v2019_06", to_rust_mod_name("2019-06"));
+        assert_eq!("v2018_10_01_disks", to_rust_mod_name("2018-10-01-Disks"));
     }
 
     #[test]

@@ -1,10 +1,6 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
-use autorust_codegen::{
-    self, cargo_toml,
-    config_parser::{to_mod_name, to_tag_name},
-    get_svc_readmes, lib_rs, path, Config, PropertyName, SpecReadme,
-};
+use autorust_codegen::{self, cargo_toml, get_svc_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../svc";
@@ -22,11 +18,11 @@ const SKIP_SERVICES: &[&str] = &[
 const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("agrifood", "package-2021-03-31-preview"), // duplicate params https://github.com/Azure/azure-sdk-for-rust/issues/501
     ("purview", "package-2021-05-01-preview"),  // need to box types
-    ("maps", "package-preview-2_0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
-    ("maps", "package-1_0-preview"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
-    ("servicefabric", "6_2"),                   // invalid model TimeBasedBackupScheduleDescription
-    ("servicefabric", "6_3"),                   // invalid model TimeBasedBackupScheduleDescription
-    ("servicefabric", "6_4"),                   // invalid model TimeBasedBackupScheduleDescription
+    ("maps", "package-preview-2.0"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
+    ("maps", "package-1.0-preview"),            // global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
+    ("servicefabric", "6.2"),                   // invalid model TimeBasedBackupScheduleDescription
+    ("servicefabric", "6.3"),                   // invalid model TimeBasedBackupScheduleDescription
+    ("servicefabric", "6.4"),                   // invalid model TimeBasedBackupScheduleDescription
     ("storagedatalake", "package-2018-11"),     // "invalid value: string \"ErrorResponse\", expected length 3"
     ("storagedatalake", "package-2018-06-preview"),
     ("storagedatalake", "package-2019-10"),
@@ -201,11 +197,8 @@ fn main() -> Result<()> {
 
 fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
-    let has_no_tags = spec
-        .config()?
-        .tags()
-        .iter()
-        .all(|x| skip_service_tags.contains(&(spec.spec(), x.tag.as_str())));
+    let config = spec.config()?;
+    let has_no_tags = config.tags().iter().all(|x| skip_service_tags.contains(&(spec.spec(), x.name())));
     if has_no_tags {
         println!("not generating {}", spec.spec());
         return Ok(());
@@ -220,7 +213,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         fs::remove_dir_all(&src_folder).map_err(|source| Error::IoError { source })?;
     }
 
-    let mut feature_mod_names = Vec::new();
+    let mut tags = Vec::new();
 
     let mut fix_case_properties = HashSet::new();
     for spec_title in FIX_CASE_PROPERTIES {
@@ -245,30 +238,22 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         });
     }
 
-    for tag in spec.config()?.tags() {
-        let tag_name = to_tag_name(tag.tag.as_str());
+    for tag in config.tags() {
+        let tag_name = tag.name();
         if skip_service_tags.contains(&(spec.spec(), tag_name.as_ref())) {
             // println!("  skipping {}", tag);
             continue;
         }
         println!("  {}", tag_name);
-        let mod_name = to_mod_name(&tag_name);
+        let mod_name = tag.rust_mod_name();
         let mod_output_folder = path::join(&src_folder, &mod_name).map_err(|source| Error::PathError { source })?;
-        feature_mod_names.push((tag_name, mod_name));
-        // println!("  {}", mod_name);
-        // println!("  {:?}", mod_output_folder);
-        // for input_file in &config.input_files {
-        //     println!("  {}", input_file);
-        // }
+        tags.push(tag);
         let input_files: Result<Vec<_>> = tag
-            .input_files
+            .input_files()
             .iter()
             .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
             .collect();
         let input_files = input_files?;
-        // for input_file in &input_files {
-        //     println!("  {:?}", input_file);
-        // }
         autorust_codegen::run(Config {
             output_folder: mod_output_folder,
             input_files,
@@ -279,17 +264,18 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             ..Config::default()
         })?;
     }
-    if feature_mod_names.is_empty() {
+    if tags.is_empty() {
         return Ok(());
     }
     cargo_toml::create(
         crate_name,
-        &feature_mod_names,
+        &tags,
+        config.tag(),
         &path::join(output_folder, "Cargo.toml").map_err(|source| Error::PathError { source })?,
     )
     .map_err(|source| Error::CargoTomlError { source })?;
     lib_rs::create(
-        &feature_mod_names,
+        &tags,
         &path::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
         false,
     )

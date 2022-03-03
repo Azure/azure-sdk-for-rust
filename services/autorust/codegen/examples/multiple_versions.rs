@@ -28,7 +28,7 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
                 Ok(spec) => {
                     let versions = spec.api_versions();
                     if versions.len() > 1 {
-                        println!("{} {}", readme.spec(), &tag.tag);
+                        println!("{} {}", readme.spec(), &tag.name());
                         for version in versions {
                             println!("  {}", version);
                         }
