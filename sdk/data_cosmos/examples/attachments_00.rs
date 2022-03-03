@@ -75,12 +75,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("creating");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
     let resp = attachment_client
-        .create_reference()
-        .consistency_level(ret)
-        .execute(
+        .create_reference(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
         )
+        .consistency_level(ret)
+        .into_future()
         .await?;
     println!("create reference == {:#?}", resp);
 
@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp = attachment_client
         .get()
         .consistency_level(session_token)
-        .execute()
+        .into_future()
         .await?;
 
     println!("get attachment == {:#?}", resp);
@@ -113,7 +113,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp_delete = attachment_client
         .delete()
         .consistency_level(&resp)
-        .execute()
+        .into_future()
         .await?;
     println!("delete attachment == {:#?}", resp_delete);
 
@@ -121,10 +121,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("creating slug attachment");
     let attachment_client = document_client.into_attachment_client("slug00".to_owned());
     let resp = attachment_client
-        .create_slug()
+        .create_slug("FFFFF".into())
         .consistency_level(&resp_delete)
         .content_type("text/plain")
-        .execute("FFFFF")
+        .into_future()
         .await?;
 
     println!("create slug == {:#?}", resp);
@@ -133,7 +133,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp_delete = attachment_client
         .delete()
         .consistency_level(&resp)
-        .execute()
+        .into_future()
         .await?;
     println!("delete attachment == {:#?}", resp_delete);
 

@@ -107,9 +107,9 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     // create reference attachment
     let attachment_client = document_client.clone().into_attachment_client("reference");
     let resp = attachment_client
-        .create_reference()
+        .create_reference("https://www.bing.com", "image/jpeg")
         .consistency_level(&ret)
-        .execute("https://www.bing.com", "image/jpeg")
+        .into_future()
         .await?;
 
     // replace reference attachment
@@ -122,10 +122,10 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     // create slug attachment
     let attachment_client = document_client.clone().into_attachment_client("slug");
     let resp = attachment_client
-        .create_slug()
+        .create_slug("something cool here".into())
         .consistency_level(&resp)
         .content_type("text/plain")
-        .execute("something cool here")
+        .into_future()
         .await?;
 
     // list attachments, there must be two.
@@ -144,7 +144,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .into_attachment_client("reference")
         .get()
         .consistency_level(&ret)
-        .execute()
+        .into_future()
         .await?;
     assert_eq!(
         "https://www.microsoft.com",
@@ -158,7 +158,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .into_attachment_client("slug")
         .get()
         .consistency_level(&reference_attachment)
-        .execute()
+        .into_future()
         .await
         .unwrap();
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
@@ -167,7 +167,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let resp_delete = attachment_client
         .delete()
         .consistency_level(&slug_attachment)
-        .execute()
+        .into_future()
         .await?;
 
     // list attachments, there must be one.

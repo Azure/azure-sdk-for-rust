@@ -66,22 +66,22 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
     let trigger_client = collection_client.clone().into_trigger_client(TRIGGER_NAME);
 
     let ret = trigger_client
-        .create_trigger()
-        .execute(
+        .create_trigger(
             "something",
             trigger::TriggerType::Post,
             trigger::TriggerOperation::All,
         )
+        .into_future()
         .await?;
 
     let ret = trigger_client
-        .replace_trigger()
-        .consistency_level(ret)
-        .execute(
+        .replace_trigger(
             TRIGGER_BODY,
             trigger::TriggerType::Post,
             trigger::TriggerOperation::All,
         )
+        .consistency_level(ret)
+        .into_future()
         .await?;
 
     let mut last_session_token: Option<ConsistencyLevel> = None;
@@ -90,7 +90,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
         .list_triggers()
         .max_item_count(3)
         .consistency_level(&ret);
-    let mut stream = Box::pin(stream.stream());
+    let mut stream = stream.into_stream();
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
         last_session_token = Some(ConsistencyLevel::Session(ret.session_token));
@@ -99,7 +99,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
     let _ret = trigger_client
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
-        .execute()
+        .into_future()
         .await?;
 
     // delete the database
