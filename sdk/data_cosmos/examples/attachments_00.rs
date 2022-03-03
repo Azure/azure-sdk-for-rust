@@ -38,8 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-    let client = client.database(database_name);
-    let client = client.collection(collection_name);
+    let client = client.database(database_name).collection(collection_name);
 
     let id = format!("unique_id{}", 100);
 

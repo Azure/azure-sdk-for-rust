@@ -25,8 +25,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .unwrap()?;
     println!("collections == {:#?}", collections);
 
-    let collection = database.collection("cnt");
-    let collection = collection.get_collection().into_future().await?;
+    let collection = database
+        .collection("cnt")
+        .get_collection()
+        .into_future()
+        .await?;
     println!("collection == {:#?}", collection);
 
     Ok(())

@@ -60,7 +60,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let get_document_response = client
-        .clone()
         .document(doc.id.clone(), &doc.id)?
         .get_document()
         .consistency_level(&create_document_response)
@@ -69,7 +68,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("get_document_response == {:#?}", get_document_response);
 
     let get_document_response = client
-        .clone()
         .document("ciccia", &doc.id)?
         .get_document()
         .consistency_level(&create_document_response)
