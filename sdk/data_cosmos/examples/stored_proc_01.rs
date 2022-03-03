@@ -41,11 +41,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.database_client(database_name);
-    let collection_client = database_client.collection_client(collection_name);
-    let stored_procedure_client = collection_client.stored_procedure_client(stored_procedure_name);
+    let database = client.database(database_name);
+    let collection = database.collection(collection_name);
+    let stored_procedure = collection.stored_procedure(stored_procedure_name);
 
-    let list_stored_procedures_response = collection_client
+    let list_stored_procedures_response = collection
         .list_stored_procedures()
         .into_stream()
         .next()
@@ -56,7 +56,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         list_stored_procedures_response
     );
 
-    let create_stored_procedure_response = stored_procedure_client
+    let create_stored_procedure_response = stored_procedure
         .create_stored_procedure(function_body)
         .into_future()
         .await?;
@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         create_stored_procedure_response
     );
 
-    let execute_stored_procedure_response = stored_procedure_client
+    let execute_stored_procedure_response = stored_procedure
         .execute_stored_procedure()
         .parameters(["Robert"])
         .into_future::<serde_json::Value>()
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         execute_stored_procedure_response.payload
     );
 
-    let delete_stored_procedure_response = stored_procedure_client
+    let delete_stored_procedure_response = stored_procedure
         .delete_stored_procedure()
         .into_future()
         .await?;

@@ -31,15 +31,15 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.database_client(database_name);
-    let collection_client = database_client.collection_client(collection_name);
-    let collection2_client = database_client.collection_client(collection_name2);
-    let user_client = database_client.user_client(user_name);
+    let database = client.database(database_name);
+    let collection = database.collection(collection_name);
+    let collection2_client = database.collection(collection_name2);
+    let user = database.user(user_name);
 
-    let get_database_response = database_client.get_database().into_future().await?;
+    let get_database_response = database.get_database().into_future().await?;
     println!("get_database_response == {:#?}", get_database_response);
 
-    let get_collection_response = collection_client.get_collection().into_future().await?;
+    let get_collection_response = collection.get_collection().into_future().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
     let get_collection2_response = collection2_client.get_collection().into_future().await?;
@@ -48,14 +48,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         get_collection2_response
     );
 
-    let create_user_response = user_client.create_user().into_future().await?;
+    let create_user_response = user.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // create the first permission!
-    let permission_client = user_client.clone().permission_client("matrix");
+    let permission = user.permission("matrix");
     let permission_mode = get_collection_response.collection.read_permission();
 
-    let create_permission_response = permission_client
+    let create_permission_response = permission
         .create_permission(permission_mode)
         .consistency_level(&create_user_response)
         .expiry_seconds(18000u64)
@@ -68,10 +68,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // create the second permission!
-    let permission_client = user_client.clone().permission_client("neo".to_owned());
+    let permission = user.permission("neo".to_owned());
     let permission_mode = get_collection2_response.collection.all_permission();
 
-    let create_permission2_response = permission_client
+    let create_permission2_response = permission
         .create_permission(permission_mode)
         .consistency_level(&create_user_response)
         .into_future()
@@ -82,9 +82,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         "create_permission2_response == {:#?}",
         create_permission2_response
     );
-    let user_client = user_client.clone();
+    let user = user;
 
-    let list_permissions_response = user_client
+    let list_permissions_response = user
         .list_permissions()
         .consistency_level(ConsistencyLevel::Session(
             create_permission2_response.session_token,
@@ -98,7 +98,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         list_permissions_response
     );
 
-    let get_permission_response = permission_client
+    let get_permission_response = permission
         .get_permission()
         .consistency_level(ConsistencyLevel::Session(
             list_permissions_response.session_token,
@@ -111,7 +111,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let permission_mode = get_permission_response.permission.permission_mode;
 
     // renew permission extending its validity for 60 seconds more.
-    let replace_permission_response = permission_client
+    let replace_permission_response = permission
         .replace_permission(permission_mode)
         .expiry_seconds(600u64)
         .consistency_level(ConsistencyLevel::Session(
@@ -125,7 +125,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         replace_permission_response
     );
 
-    let delete_permission_response = permission_client
+    let delete_permission_response = permission
         .delete_permission()
         .consistency_level(ConsistencyLevel::Session(
             replace_permission_response.session_token,
@@ -139,7 +139,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         delete_permission_response
     );
 
-    let delete_user_response = user_client
+    let delete_user_response = user
         .delete_user()
         .consistency_level(ConsistencyLevel::Session(
             delete_permission_response.session_token,

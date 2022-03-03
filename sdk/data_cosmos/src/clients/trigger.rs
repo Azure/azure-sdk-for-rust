@@ -7,35 +7,35 @@ use azure_core::{Pipeline, Request};
 /// A client for Cosmos trigger resources.
 #[derive(Debug, Clone)]
 pub struct TriggerClient {
-    collection_client: CollectionClient,
+    collection: CollectionClient,
     trigger_name: ReadonlyString,
 }
 
 impl TriggerClient {
     /// Create a new trigger client
     pub(crate) fn new<S: Into<ReadonlyString>>(
-        collection_client: CollectionClient,
+        collection: CollectionClient,
         trigger_name: S,
     ) -> Self {
         Self {
-            collection_client,
+            collection,
             trigger_name: trigger_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`]
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        self.collection_client.cosmos_client()
+    pub fn client(&self) -> &CosmosClient {
+        self.collection.client()
     }
 
     /// Get a [`DatabaseClient`]
-    pub fn database_client(&self) -> &DatabaseClient {
-        self.collection_client.database_client()
+    pub fn database(&self) -> &DatabaseClient {
+        self.collection.database()
     }
 
     /// Get a [`CollectionClient`]
-    pub fn collection_client(&self) -> &CollectionClient {
-        &self.collection_client
+    pub fn collection(&self) -> &CollectionClient {
+        &self.collection
     }
 
     /// Get the trigger name
@@ -91,11 +91,11 @@ impl TriggerClient {
     }
 
     pub(crate) fn prepare_pipeline_with_trigger_name(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+        self.client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/triggers/{}",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
+                self.database().database_name(),
+                self.collection().collection_name(),
                 self.trigger_name()
             ),
             method,
@@ -103,17 +103,17 @@ impl TriggerClient {
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+        self.client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/triggers",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
+                self.database().database_name(),
+                self.collection().collection_name(),
             ),
             method,
         )
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.cosmos_client().pipeline()
+        self.client().pipeline()
     }
 }

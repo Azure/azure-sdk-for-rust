@@ -55,7 +55,7 @@ impl GetDocumentBuilder {
 
             let response = self
                 .client
-                .cosmos_client()
+                .client()
                 .pipeline()
                 .send(
                     self.context.clone().insert(ResourceType::Documents),

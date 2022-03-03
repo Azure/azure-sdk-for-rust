@@ -47,11 +47,11 @@ impl ListAttachmentsBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let mut request = this.client.cosmos_client().prepare_request_pipeline(
+                let mut request = this.client.client().prepare_request_pipeline(
                     &format!(
                         "dbs/{}/colls/{}/docs/{}/attachments",
-                        this.client.database_client().database_name(),
-                        this.client.collection_client().collection_name(),
+                        this.client.database().database_name(),
+                        this.client.collection().collection_name(),
                         this.client.document_name()
                     ),
                     http::Method::GET,
@@ -74,7 +74,7 @@ impl ListAttachmentsBuilder {
 
                 let response = this
                     .client
-                    .cosmos_client()
+                    .client()
                     .pipeline()
                     .send(ctx.clone().insert(ResourceType::Attachments), &mut request)
                     .await?;

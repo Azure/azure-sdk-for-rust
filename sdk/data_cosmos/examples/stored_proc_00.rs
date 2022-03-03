@@ -30,9 +30,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     let ret = client
-        .database_client(database)
-        .collection_client(collection)
-        .stored_procedure_client("test_proc")
+        .database(database)
+        .collection(collection)
+        .stored_procedure("test_proc")
         .execute_stored_procedure()
         .parameters(["Robert"])
         .into_future::<serde_json::Value>()

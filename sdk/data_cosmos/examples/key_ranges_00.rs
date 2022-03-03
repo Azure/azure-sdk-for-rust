@@ -22,8 +22,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let client = client.database_client(database);
-    let client = client.collection_client(collection);
+    let client = client.database(database);
+    let client = client.collection(collection);
 
     let resp = client.get_partition_key_ranges().into_future().await?;
     println!("resp == {:#?}", resp);

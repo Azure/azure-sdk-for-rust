@@ -42,7 +42,7 @@ impl CreateCollectionBuilder {
 
     pub fn into_future(self) -> CreateCollection {
         Box::pin(async move {
-            let mut request = self.client.cosmos_client().prepare_request_pipeline(
+            let mut request = self.client.client().prepare_request_pipeline(
                 &format!("dbs/{}/colls", self.client.database_name()),
                 http::Method::POST,
             );

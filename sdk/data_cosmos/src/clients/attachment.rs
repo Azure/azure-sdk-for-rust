@@ -8,40 +8,40 @@ use super::*;
 /// A client for Cosmos attachment resources.
 #[derive(Debug, Clone)]
 pub struct AttachmentClient {
-    document_client: DocumentClient,
+    document: DocumentClient,
     attachment_name: ReadonlyString,
 }
 
 impl AttachmentClient {
     /// Create a new client
     pub(crate) fn new<S: Into<ReadonlyString>>(
-        document_client: DocumentClient,
+        document: DocumentClient,
         attachment_name: S,
     ) -> Self {
         Self {
-            document_client,
+            document,
             attachment_name: attachment_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`].
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        self.document_client().cosmos_client()
+    pub fn client(&self) -> &CosmosClient {
+        self.document().client()
     }
 
     /// Get a [`DatabaseClient`].
-    pub fn database_client(&self) -> &DatabaseClient {
-        self.document_client().database_client()
+    pub fn database(&self) -> &DatabaseClient {
+        self.document().database()
     }
 
     /// Get a [`CollectionClient`].
-    pub fn collection_client(&self) -> &CollectionClient {
-        self.document_client().collection_client()
+    pub fn collection(&self) -> &CollectionClient {
+        self.document().collection()
     }
 
     /// Get a [`DocumentClient`].
-    pub fn document_client(&self) -> &DocumentClient {
-        &self.document_client
+    pub fn document(&self) -> &DocumentClient {
+        &self.document
     }
 
     /// Get the attachment name.
@@ -83,6 +83,7 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to replace an attachment.
+<<<<<<< HEAD:sdk/data_cosmos/src/clients/attachment_client.rs
     pub fn replace_attachment<M, C>(
         &self,
         media: M,
@@ -98,27 +99,56 @@ impl AttachmentClient {
             media.into(),
             content_type.into(),
         )
+=======
+    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
+        requests::ReplaceReferenceAttachmentBuilder::new(self)
+    }
+
+    /// Get a raw [`HttpClient`].
+    pub(crate) fn http_client(&self) -> &dyn HttpClient {
+        self.client().http_client()
+>>>>>>> 495b38c8e... Remove `_client` suffix from cosmos methods:sdk/data_cosmos/src/clients/attachment.rs
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+        self.client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-                self.document_client().document_name(),
+                self.database().database_name(),
+                self.collection().collection_name(),
+                self.document().document_name(),
             ),
             method,
         )
     }
 
-    pub(crate) fn prepare_pipeline_with_attachment_name(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+<<<<<<< HEAD:sdk/data_cosmos/src/clients/attachment_client.rs
+=======
+    pub(crate) fn prepare_request_with_attachment_name(
+        &self,
+        method: http::Method,
+    ) -> http::request::Builder {
+        self.client().prepare_request(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments/{}",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-                self.document_client().document_name(),
+                self.database().database_name(),
+                self.collection().collection_name(),
+                self.document().document_name(),
+                self.attachment_name()
+            ),
+            method,
+            ResourceType::Attachments,
+        )
+    }
+
+>>>>>>> 495b38c8e... Remove `_client` suffix from cosmos methods:sdk/data_cosmos/src/clients/attachment.rs
+    pub(crate) fn prepare_pipeline_with_attachment_name(&self, method: http::Method) -> Request {
+        self.client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/colls/{}/docs/{}/attachments/{}",
+                self.database().database_name(),
+                self.collection().collection_name(),
+                self.document().document_name(),
                 self.attachment_name()
             ),
             method,
@@ -126,6 +156,6 @@ impl AttachmentClient {
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.cosmos_client().pipeline()
+        self.client().pipeline()
     }
 }

@@ -18,7 +18,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     client.create_database(database_name).into_future().await?;
 
     // create collection!
-    let db_client = client.clone().into_database_client(database_name.clone());
+    let db_client = client.clone().into_database(database_name.clone());
 
     let collection_name = "sample_collection";
     log::info!("Creating a collection with name '{}'...", collection_name);
@@ -36,10 +36,10 @@ async fn collection_operations() -> Result<(), BoxedError> {
         create_collection_response
     );
 
-    let collection_client = db_client.clone().into_collection_client(collection_name);
+    let collection = db_client.clone().into_collection(collection_name);
 
     // get collection!
-    let get_collection_response = collection_client.get_collection().into_future().await?;
+    let get_collection_response = collection.get_collection().into_future().await?;
 
     assert_eq!(get_collection_response.collection.id, collection_name);
 
@@ -72,7 +72,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
         .push("/\"excludeme\"/?".to_owned().into());
 
     // replace collection!
-    let replace_collection_response = collection_client
+    let replace_collection_response = collection
         .replace_collection("/id")
         .indexing_policy(new_indexing_policy)
         .into_future()
@@ -104,7 +104,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     );
 
     // delete collection!
-    let delete_collection_response = collection_client.delete_collection().into_future().await?;
+    let delete_collection_response = collection.delete_collection().into_future().await?;
 
     log::info!("Successfully deleted collection");
     log::debug!(

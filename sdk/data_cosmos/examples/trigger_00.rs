@@ -57,17 +57,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.database_client(database);
-    let collection_client = database_client.collection_client(collection);
-    let trigger_client = collection_client.clone().trigger_client(trigger_name);
+    let database = client.database(database);
+    let collection = database.collection(collection);
+    let trigger = collection.clone().trigger(trigger_name);
 
-    let ret = trigger_client
+    let ret = trigger
         .create_trigger("something", TriggerType::Post, TriggerOperation::All)
         .into_future()
         .await?;
     println!("Create response object:\n{:#?}", ret);
 
-    let ret = trigger_client
+    let ret = trigger
         .replace_trigger(TRIGGER_BODY, TriggerType::Post, TriggerOperation::All)
         .consistency_level(ret)
         .into_future()
@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let mut last_session_token: Option<ConsistencyLevel> = None;
 
-    let mut stream = collection_client
+    let mut stream = collection
         .list_triggers()
         .max_item_count(3)
         .consistency_level(&ret)
@@ -90,7 +90,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         last_session_token = Some(ConsistencyLevel::Session(ret.session_token));
     }
 
-    let ret = trigger_client
+    let ret = trigger
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
         .into_future()

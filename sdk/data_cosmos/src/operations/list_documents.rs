@@ -49,10 +49,10 @@ impl ListDocumentsBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let mut req = this.client.cosmos_client().prepare_request_pipeline(
+                let mut req = this.client.client().prepare_request_pipeline(
                     &format!(
                         "dbs/{}/colls/{}/docs",
-                        this.client.database_client().database_name(),
+                        this.client.database().database_name(),
                         this.client.collection_name()
                     ),
                     http::Method::GET,

@@ -57,7 +57,7 @@ impl CreateOrReplaceSlugAttachmentBuilder {
             azure_core::headers::add_optional_header2(&self.consistency_level, &mut req)?;
 
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
-                self.client.document_client().partition_key_serialized(),
+                self.client.document().partition_key_serialized(),
                 &mut req,
             );
             let body = self.body;

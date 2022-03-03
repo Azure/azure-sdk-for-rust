@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.database_client(database_name.clone());
+    let database = client.database(database_name.clone());
 
     let mut context = Context::new();
 
@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     context.insert(custom_headers);
 
-    let response = database_client
+    let response = database
         .get_database()
         .context(context)
         .into_future()

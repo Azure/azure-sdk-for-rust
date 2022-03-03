@@ -24,10 +24,10 @@ impl CreateUserBuilder {
 
     pub fn into_future(self) -> CreateUser {
         Box::pin(async move {
-            let mut request = self.client.cosmos_client().prepare_request_pipeline(
+            let mut request = self.client.client().prepare_request_pipeline(
                 &format!(
                     "dbs/{}/users",
-                    self.client.database_client().database_name()
+                    self.client.database().database_name()
                 ),
                 http::Method::POST,
             );

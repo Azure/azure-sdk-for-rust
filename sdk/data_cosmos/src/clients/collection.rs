@@ -11,29 +11,29 @@ use serde::Serialize;
 /// A client for Cosmos collection resources.
 #[derive(Debug, Clone)]
 pub struct CollectionClient {
-    database_client: DatabaseClient,
+    database: DatabaseClient,
     collection_name: ReadonlyString,
 }
 
 impl CollectionClient {
     pub(crate) fn new<S: Into<ReadonlyString>>(
-        database_client: DatabaseClient,
+        database: DatabaseClient,
         collection_name: S,
     ) -> Self {
         Self {
-            database_client,
+            database,
             collection_name: collection_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`].
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        self.database_client.cosmos_client()
+    pub fn client(&self) -> &CosmosClient {
+        self.database.client()
     }
 
     /// Get a [`DatabaseClient`].
-    pub fn database_client(&self) -> &DatabaseClient {
-        &self.database_client
+    pub fn database(&self) -> &DatabaseClient {
+        &self.database
     }
 
     /// Get the collection name
@@ -98,7 +98,7 @@ impl CollectionClient {
     }
 
     /// convert into a [`DocumentClient`]
-    pub fn document_client<S: Into<String>, PK: Serialize>(
+    pub fn document<S: Into<String>, PK: Serialize>(
         &self,
         document_name: S,
         partition_key: &PK,
@@ -107,12 +107,12 @@ impl CollectionClient {
     }
 
     /// convert into a [`TriggerClient`]
-    pub fn trigger_client<S: Into<ReadonlyString>>(&self, trigger_name: S) -> TriggerClient {
+    pub fn trigger<S: Into<ReadonlyString>>(&self, trigger_name: S) -> TriggerClient {
         TriggerClient::new(self.clone(), trigger_name)
     }
 
     /// convert into a [`UserDefinedFunctionClient`]
-    pub fn user_defined_function_client<S: Into<ReadonlyString>>(
+    pub fn user_defined_function<S: Into<ReadonlyString>>(
         &self,
         user_defined_function_name: S,
     ) -> UserDefinedFunctionClient {
@@ -120,7 +120,7 @@ impl CollectionClient {
     }
 
     /// convert into a [`StoredProcedureClient`]
-    pub fn stored_procedure_client<S: Into<ReadonlyString>>(
+    pub fn stored_procedure<S: Into<ReadonlyString>>(
         &self,
         stored_procedure_name: S,
     ) -> StoredProcedureClient {
@@ -133,24 +133,22 @@ impl CollectionClient {
     ) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}",
-            self.database_client().database_name(),
+            self.database().database_name(),
             self.collection_name()
         );
-        self.cosmos_client()
-            .prepare_request_pipeline(path, http_method)
+        self.client().prepare_request_pipeline(path, http_method)
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.cosmos_client().pipeline()
+        self.client().pipeline()
     }
 
     pub(crate) fn prepare_doc_request_pipeline(&self, http_method: http::Method) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}/docs",
-            self.database_client().database_name(),
+            self.database().database_name(),
             self.collection_name()
         );
-        self.cosmos_client()
-            .prepare_request_pipeline(path, http_method)
+        self.client().prepare_request_pipeline(path, http_method)
     }
 }

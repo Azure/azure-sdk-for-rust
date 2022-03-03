@@ -7,34 +7,31 @@ use azure_core::{Pipeline, Request};
 /// A client for Cosmos permission resources.
 #[derive(Debug, Clone)]
 pub struct PermissionClient {
-    user_client: UserClient,
+    user: UserClient,
     permission_name: ReadonlyString,
 }
 
 impl PermissionClient {
-    pub(crate) fn new<S: Into<ReadonlyString>>(
-        user_client: UserClient,
-        permission_name: S,
-    ) -> Self {
+    pub(crate) fn new<S: Into<ReadonlyString>>(user: UserClient, permission_name: S) -> Self {
         Self {
-            user_client,
+            user,
             permission_name: permission_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`
-    pub fn cosmos_client(&self) -> &CosmosClient {
-        self.user_client.cosmos_client()
+    pub fn client(&self) -> &CosmosClient {
+        self.user.client()
     }
 
     /// Get a [`DatabaseClient`]
-    pub fn database_client(&self) -> &DatabaseClient {
-        self.user_client.database_client()
+    pub fn database(&self) -> &DatabaseClient {
+        self.user.database()
     }
 
     /// Get the [`UserClient`]
-    pub fn user_client(&self) -> &UserClient {
-        &self.user_client
+    pub fn user(&self) -> &UserClient {
+        &self.user
     }
 
     /// Get the permission's name
@@ -63,11 +60,11 @@ impl PermissionClient {
     }
 
     pub(crate) fn prepare_request_with_permission_name(&self, method: http::Method) -> Request {
-        self.cosmos_client().prepare_request_pipeline(
+        self.client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/users/{}/permissions/{}",
-                self.database_client().database_name(),
-                self.user_client().user_name(),
+                self.database().database_name(),
+                self.user().user_name(),
                 self.permission_name()
             ),
             method,
@@ -75,6 +72,6 @@ impl PermissionClient {
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.cosmos_client().pipeline()
+        self.client().pipeline()
     }
 }

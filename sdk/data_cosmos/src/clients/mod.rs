@@ -14,27 +14,27 @@
 //!
 //! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`
 //! let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-//! let client = client.into_database_client(database_name);
+//! let client = client.into_database(database_name);
 //! ```
 
-mod attachment_client;
-mod collection_client;
-mod cosmos_client;
-mod database_client;
-mod document_client;
-mod permission_client;
-mod stored_procedure_client;
-mod trigger_client;
-mod user_client;
-mod user_defined_function_client;
+mod attachment;
+mod collection;
+mod cosmos;
+mod database;
+mod document;
+mod permission;
+mod stored_procedure;
+mod trigger;
+mod user;
+mod user_defined_function;
 
-pub use attachment_client::AttachmentClient;
-pub use collection_client::CollectionClient;
-pub use cosmos_client::{CosmosClient, CosmosOptions};
-pub use database_client::DatabaseClient;
-pub use document_client::DocumentClient;
-pub use permission_client::PermissionClient;
-pub use stored_procedure_client::StoredProcedureClient;
-pub use trigger_client::TriggerClient;
-pub use user_client::UserClient;
-pub use user_defined_function_client::UserDefinedFunctionClient;
+pub use attachment::AttachmentClient;
+pub use collection::CollectionClient;
+pub use cosmos::{CosmosClient, CosmosOptions};
+pub use database::DatabaseClient;
+pub use document::DocumentClient;
+pub use permission::PermissionClient;
+pub use stored_procedure::StoredProcedureClient;
+pub use trigger::TriggerClient;
+pub use user::UserClient;
+pub use user_defined_function::UserDefinedFunctionClient;

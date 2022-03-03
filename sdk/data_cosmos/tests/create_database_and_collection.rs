@@ -24,7 +24,7 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
     assert_eq!(db.database.id, database_name);
 
     // create collection!
-    let db_client = client.clone().into_database_client(database_name.clone());
+    let db_client = client.clone().into_database(database_name.clone());
     let collection_name = "panzadoro";
     log::info!("Creating a collection with name '{}'...", collection_name);
     let collection = db_client

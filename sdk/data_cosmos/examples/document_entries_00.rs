@@ -39,8 +39,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = permission::AuthorizationToken::primary_from_base64(&master_key)?;
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-    let client = client.database_client(database_name);
-    let client = client.collection_client(collection_name);
+    let client = client.database(database_name);
+    let client = client.collection(collection_name);
 
     let mut response = None;
     for i in 0u64..5 {
@@ -108,7 +108,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let partition_key = &id;
 
     let response: GetDocumentResponse<MySampleStruct> = client
-        .document_client(id.clone(), partition_key)?
+        .document(id.clone(), partition_key)?
         .get_document()
         .into_future()
         .await?;
@@ -124,7 +124,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("\n\nReplacing document");
     let replace_document_response = client
-        .document_client(id.clone(), &id)?
+        .document(id.clone(), &id)?
         .replace_document(doc.document)
         .consistency_level(ConsistencyLevel::from(&response))
         .if_match_condition(IfMatchCondition::Match(doc.etag)) // use optimistic concurrency check
@@ -141,7 +141,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
     let response: GetDocumentResponse<MySampleStruct> = client
-        .document_client(id.clone(), &id)?
+        .document(id.clone(), &id)?
         .get_document()
         .consistency_level(&response)
         .into_future()
@@ -153,7 +153,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     for i in 0u64..5 {
         let id = format!("unique_id{}", i);
         client
-            .document_client(id.clone(), &id)?
+            .document(id.clone(), &id)?
             .delete_document()
             .into_future()
             .await?;
