@@ -6,8 +6,6 @@
 
 #![allow(missing_docs)]
 
-mod get_partition_key_ranges_builder;
 mod replace_reference_attachment_builder;
 
-pub use get_partition_key_ranges_builder::GetPartitionKeyRangesBuilder;
 pub use replace_reference_attachment_builder::ReplaceReferenceAttachmentBuilder;

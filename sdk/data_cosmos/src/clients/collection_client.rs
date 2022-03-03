@@ -1,12 +1,11 @@
 use super::{DatabaseClient, UserDefinedFunctionClient};
 use crate::clients::*;
 use crate::operations::*;
-use crate::requests;
 use crate::resources::collection::PartitionKey;
 use crate::resources::document::Query;
 use crate::CosmosEntity;
 use crate::ReadonlyString;
-use azure_core::{HttpClient, Pipeline, Request};
+use azure_core::{Pipeline, Request};
 use serde::Serialize;
 
 /// A client for Cosmos collection resources.
@@ -94,8 +93,8 @@ impl CollectionClient {
     }
 
     /// list the partition key ranges in a collection
-    pub fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_> {
-        requests::GetPartitionKeyRangesBuilder::new(self)
+    pub fn get_partition_key_ranges(&self) -> GetPartitionKeyRangesBuilder {
+        GetPartitionKeyRangesBuilder::new(self.clone())
     }
 
     /// convert into a [`DocumentClient`]
@@ -139,10 +138,6 @@ impl CollectionClient {
         );
         self.cosmos_client()
             .prepare_request_pipeline(path, http_method)
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
