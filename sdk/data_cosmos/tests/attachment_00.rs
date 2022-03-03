@@ -167,7 +167,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let resp_delete = attachment_client
         .delete()
         .consistency_level(&slug_attachment)
-        .execute()
+        .into_future()
         .await?;
 
     // list attachments, there must be one.

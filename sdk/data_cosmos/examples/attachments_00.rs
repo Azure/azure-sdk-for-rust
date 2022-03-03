@@ -113,7 +113,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp_delete = attachment_client
         .delete()
         .consistency_level(&resp)
-        .execute()
+        .into_future()
         .await?;
     println!("delete attachment == {:#?}", resp_delete);
 
@@ -133,7 +133,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp_delete = attachment_client
         .delete()
         .consistency_level(&resp)
-        .execute()
+        .into_future()
         .await?;
     println!("delete attachment == {:#?}", resp_delete);
 

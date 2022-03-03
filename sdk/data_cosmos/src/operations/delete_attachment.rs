@@ -1,9 +1,77 @@
 use crate::headers::from_headers::*;
+use crate::prelude::*;
 use crate::ResourceQuota;
+
 use azure_core::headers::session_token_from_headers;
+use azure_core::prelude::*;
+use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
 use chrono::{DateTime, Utc};
-use http::response::Response;
+
+#[derive(Debug, Clone)]
+pub struct DeleteAttachmentBuilder {
+    client: AttachmentClient,
+    if_match_condition: Option<IfMatchCondition>,
+    consistency_level: Option<ConsistencyLevel>,
+    context: Context,
+}
+
+impl DeleteAttachmentBuilder {
+    pub(crate) fn new(client: AttachmentClient) -> Self {
+        Self {
+            client,
+            if_match_condition: None,
+            consistency_level: None,
+            context: Context::new(),
+        }
+    }
+
+    setters! {
+        consistency_level: ConsistencyLevel => Some(consistency_level),
+        if_match_condition: IfMatchCondition => Some(if_match_condition),
+        context: Context => context,
+    }
+
+    pub fn into_future(self) -> DeleteAttachment {
+        Box::pin(async move {
+            let mut request = self
+                .client
+                .prepare_pipeline_with_attachment_name(http::Method::DELETE);
+
+            // add trait headers
+            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+
+            crate::cosmos_entity::add_as_partition_key_header_serialized2(
+                self.client.document_client().partition_key_serialized(),
+                &mut request,
+            );
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Attachments),
+                    &mut request,
+                )
+                .await?;
+
+            DeleteAttachmentResponse::try_from(response).await
+        })
+    }
+}
+
+/// The future returned by calling `into_future` on the builder.
+pub type DeleteAttachment =
+    futures::future::BoxFuture<'static, crate::Result<DeleteAttachmentResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for DeleteAttachment {
+    type Future = CreateUser;
+    type Output = <CreateUser as std::future::Future>::Output;
+    fn into_future(self) -> Self::Future {
+        Self::into_future(self)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DeleteAttachmentResponse {
@@ -31,15 +99,9 @@ pub struct DeleteAttachmentResponse {
     pub date: DateTime<Utc>,
 }
 
-impl std::convert::TryFrom<Response<bytes::Bytes>> for DeleteAttachmentResponse {
-    type Error = crate::Error;
-
-    fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
+impl DeleteAttachmentResponse {
+    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let headers = response.headers();
-        let body = response.body();
-
-        debug!("headers == {:#?}", headers);
-        debug!("body == {:#?}", body);
 
         Ok(Self {
             max_media_storage_usage_mb: max_media_storage_usage_mb_from_headers(headers)?,
