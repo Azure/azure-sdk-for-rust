@@ -73,9 +73,17 @@ impl AttachmentClient {
         CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), false, body)
     }
 
-    /// Initiate a request to create an attachment.
-    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_> {
-        requests::CreateReferenceAttachmentBuilder::new(self)
+    /// Initiate a request to create ant.
+    pub fn create_reference<M, C>(
+        &self,
+        media: M,
+        content_type: C,
+    ) -> CreateReferenceAttachmentBuilder
+    where
+        M: Into<String>,
+        C: Into<String>,
+    {
+        CreateReferenceAttachmentBuilder::new(self.clone(), media.into(), content_type.into())
     }
 
     /// Initiate a request to replace an attachment.
@@ -86,19 +94,6 @@ impl AttachmentClient {
     /// Get a raw [`HttpClient`].
     pub(crate) fn http_client(&self) -> &dyn HttpClient {
         self.cosmos_client().http_client()
-    }
-
-    pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}/docs/{}/attachments",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-                self.document_client().document_name(),
-            ),
-            method,
-            ResourceType::Attachments,
-        )
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {

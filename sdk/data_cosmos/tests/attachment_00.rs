@@ -107,9 +107,9 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     // create reference attachment
     let attachment_client = document_client.clone().into_attachment_client("reference");
     let resp = attachment_client
-        .create_reference()
+        .create_reference("https://www.bing.com", "image/jpeg")
         .consistency_level(&ret)
-        .execute("https://www.bing.com", "image/jpeg")
+        .into_future()
         .await?;
 
     // replace reference attachment

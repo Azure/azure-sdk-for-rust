@@ -75,12 +75,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("creating");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
     let resp = attachment_client
-        .create_reference()
-        .consistency_level(ret)
-        .execute(
+        .create_reference(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
         )
+        .consistency_level(ret)
+        .into_future()
         .await?;
     println!("create reference == {:#?}", resp);
 
