@@ -8,7 +8,7 @@ pub mod lib_rs;
 pub mod path;
 pub mod spec;
 mod status_codes;
-use config_parser::Tag;
+use config_parser::Configuration;
 use proc_macro2::TokenStream;
 use std::{
     collections::HashSet,
@@ -184,7 +184,7 @@ impl SpecReadme {
     pub fn readme(&self) -> &Path {
         self.readme.as_path()
     }
-    pub fn configs(&self) -> Result<Vec<Tag>> {
+    pub fn config(&self) -> Result<Configuration> {
         Ok(config_parser::parse_configurations_from_autorest_config_file(&self.readme)?)
     }
 }

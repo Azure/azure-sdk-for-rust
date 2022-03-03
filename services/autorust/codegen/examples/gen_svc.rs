@@ -201,11 +201,12 @@ fn main() -> Result<()> {
 
 fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
-    let has_no_configs = spec
-        .configs()?
+    let has_no_tags = spec
+        .config()?
+        .tags()
         .iter()
         .all(|x| skip_service_tags.contains(&(spec.spec(), x.tag.as_str())));
-    if has_no_configs {
+    if has_no_tags {
         println!("not generating {}", spec.spec());
         return Ok(());
     }
@@ -244,22 +245,22 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         });
     }
 
-    for config in spec.configs()? {
-        let tag = to_tag_name(config.tag.as_str());
-        if skip_service_tags.contains(&(spec.spec(), tag.as_ref())) {
+    for tag in spec.config()?.tags() {
+        let tag_name = to_tag_name(tag.tag.as_str());
+        if skip_service_tags.contains(&(spec.spec(), tag_name.as_ref())) {
             // println!("  skipping {}", tag);
             continue;
         }
-        println!("  {}", tag);
-        let mod_name = to_mod_name(&tag);
+        println!("  {}", tag_name);
+        let mod_name = to_mod_name(&tag_name);
         let mod_output_folder = path::join(&src_folder, &mod_name).map_err(|source| Error::PathError { source })?;
-        feature_mod_names.push((tag, mod_name));
+        feature_mod_names.push((tag_name, mod_name));
         // println!("  {}", mod_name);
         // println!("  {:?}", mod_output_folder);
         // for input_file in &config.input_files {
         //     println!("  {}", input_file);
         // }
-        let input_files: Result<Vec<_>> = config
+        let input_files: Result<Vec<_>> = tag
             .input_files
             .iter()
             .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
