@@ -70,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let execute_stored_procedure_response = stored_procedure_client
         .execute_stored_procedure()
         .parameters(["Robert"])
-        .execute::<serde_json::Value>()
+        .into_future::<serde_json::Value>()
         .await?;
 
     println!(

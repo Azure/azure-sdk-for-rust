@@ -6,10 +6,8 @@
 
 #![allow(missing_docs)]
 
-mod execute_stored_procedure_builder;
 mod get_partition_key_ranges_builder;
 mod replace_reference_attachment_builder;
 
-pub use execute_stored_procedure_builder::ExecuteStoredProcedureBuilder;
 pub use get_partition_key_ranges_builder::GetPartitionKeyRangesBuilder;
 pub use replace_reference_attachment_builder::ReplaceReferenceAttachmentBuilder;
