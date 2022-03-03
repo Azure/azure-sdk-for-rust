@@ -91,7 +91,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp = attachment_client
         .get()
         .consistency_level(session_token)
-        .execute()
+        .into_future()
         .await?;
 
     println!("get attachment == {:#?}", resp);

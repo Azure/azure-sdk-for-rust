@@ -65,9 +65,9 @@ pub type DeleteAttachment =
     futures::future::BoxFuture<'static, crate::Result<DeleteAttachmentResponse>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for DeleteAttachment {
-    type Future = CreateUser;
-    type Output = <CreateUser as std::future::Future>::Output;
+impl std::future::IntoFuture for DeleteAttachmentBuilder {
+    type Future = DeleteAttachment;
+    type Output = <DeleteAttachment as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)
     }

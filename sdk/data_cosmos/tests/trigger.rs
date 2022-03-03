@@ -99,7 +99,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
     let _ret = trigger_client
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
-        .execute()
+        .into_future()
         .await?;
 
     // delete the database

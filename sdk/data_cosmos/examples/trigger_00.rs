@@ -93,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let ret = trigger_client
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
-        .execute()
+        .into_future()
         .await?;
     println!("Delete response object:\n{:#?}", ret);
 

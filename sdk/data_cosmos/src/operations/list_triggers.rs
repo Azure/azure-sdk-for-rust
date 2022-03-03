@@ -74,15 +74,6 @@ impl ListTriggersBuilder {
     }
 }
 
-#[cfg(feature = "into_future")]
-impl std::future::IntoFuture for ListTriggers {
-    type Future = CreateCollection;
-    type Output = <CreateCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
-        Self::into_future(self)
-    }
-}
-
 /// The future returned by calling `into_future` on the builder.
 pub type ListTriggers = Pageable<ListTriggersResponse, crate::Error>;
 
