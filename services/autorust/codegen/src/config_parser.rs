@@ -26,7 +26,7 @@ pub enum Error {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Configuration {
+pub struct Tag {
     #[serde(rename(deserialize = "input-file"))]
     pub input_files: Vec<String>,
 
@@ -34,7 +34,7 @@ pub struct Configuration {
     pub tag: String,
 }
 
-impl Configuration {
+impl Tag {
     pub fn input_files(&self) -> Vec<PathBuf> {
         self.input_files.iter().map(PathBuf::from).collect()
     }
@@ -42,8 +42,8 @@ impl Configuration {
 
 /// Receives the AutoRest configuration file and parses it to its various configurations (by tags/API versions),
 /// according to its extension.
-/// e.g. for "path/to/config.md", it will get parsed as CommonMark [Literate Configuration](http://azure.github.io/autorest/user/literate-file-formats/configuration.html).
-pub fn parse_configurations_from_autorest_config_file(config_file: &Path) -> Result<Vec<Configuration>> {
+/// e.g. for "path/to/config.md", it will get parsed as CommonMark [Literate Tag](http://azure.github.io/autorest/user/literate-file-formats/configuration.html).
+pub fn parse_configurations_from_autorest_config_file(config_file: &Path) -> Result<Vec<Tag>> {
     let extension = config_file
         .extension()
         .ok_or_else(|| Error::ExpectedMd(config_file.to_path_buf()))?;
@@ -77,33 +77,33 @@ mod literate_config {
 
     /// Receives the configurations for all tags/versions from the received
     /// [Literate Configuration](http://azure.github.io/autorest/user/literate-file-formats/configuration.html) [CommonMark](https://commonmark.org/) file.
-    pub(crate) fn parse_configurations_from_cmark_config(cmark_content: &str) -> Result<Vec<Configuration>> {
+    pub(crate) fn parse_configurations_from_cmark_config(cmark_content: &str) -> Result<Vec<Tag>> {
         let arena = Arena::new();
         let root = parse_document(&arena, cmark_content, &ComrakOptions::default());
 
         // Get the AST node corresponding with "## Configuration".
         let configuration_heading_node = get_configuration_section_heading_node(root).ok_or(Error::NoConfigurationHeading)?;
 
-        let mut configurations = Vec::new();
+        let mut tags = Vec::new();
 
         // Traverse all next AST nodes until next level-2 heading node (e.g. "## Another Heading"),
         // in search of level-3 headings representing tags (e.g. "### Tag: package-2020-01") to parse the configuration from.
         let mut current_node = configuration_heading_node.next_sibling();
         while let Some(node) = current_node {
-            if let Some(tag) = get_tag(node) {
+            if let Some(tag_name) = get_tag_name(node) {
                 // Extract the configuration from the first node inside the tag heading ("Tag: ..."),
                 // by looking at the first YAML code block.
                 let code_block = extract_configuration_code_block_node(node)?.ok_or(Error::ExpectedYamlCodeBlock)?;
-                let mut configuration: Configuration = serde_yaml::from_str(&code_block).map_err(|_| Error::ConfigurationBlockYaml)?;
-                configuration.tag = tag;
-                configurations.push(configuration);
+                let mut tag: Tag = serde_yaml::from_str(&code_block).map_err(|_| Error::ConfigurationBlockYaml)?;
+                tag.tag = tag_name;
+                tags.push(tag);
             } else if is_header_at_level(node, 2) {
                 break;
             }
             current_node = node.next_sibling();
         }
 
-        Ok(configurations)
+        Ok(tags)
     }
 
     // based on https://github.com/kivikakk/comrak/blob/main/examples/headers.rs
@@ -147,7 +147,7 @@ mod literate_config {
 
     /// Returns the node tag if it is one.
     /// (e.g. "### Tag: package-2020-01")
-    fn get_tag<'a>(node: &'a AstNode<'a>) -> Option<String> {
+    fn get_tag_name<'a>(node: &'a AstNode<'a>) -> Option<String> {
         if is_header_at_level(node, 3) {
             let mut text = Vec::new();
             collect_text(node, &mut text);
