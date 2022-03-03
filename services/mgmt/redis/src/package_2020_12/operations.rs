@@ -2857,6 +2857,11 @@ pub mod private_endpoint_connections {
     }
     pub mod put {
         use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Created201(models::PrivateEndpointConnection),
+            NoContent204,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -2889,7 +2894,7 @@ pub mod private_endpoint_connections {
             pub(crate) properties: models::PrivateEndpointConnection,
         }
         impl Builder {
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::PrivateEndpointConnection, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cache/redis/{}/privateEndpointConnections/{}",
@@ -2920,8 +2925,9 @@ pub mod private_endpoint_connections {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::PrivateEndpointConnection =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+                            Ok(Response::Created201(rsp_value))
                         }
+                        http::StatusCode::NO_CONTENT => Ok(Response::NoContent204),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ErrorResponse =

@@ -357,6 +357,9 @@ pub struct ApplicationPackageLockingPolicyDefinition {
     #[doc = "The deny assignment excluded actions."]
     #[serde(rename = "allowedActions", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_actions: Vec<String>,
+    #[doc = "The deny assignment excluded data actions."]
+    #[serde(rename = "allowedDataActions", default, skip_serializing_if = "Vec::is_empty")]
+    pub allowed_data_actions: Vec<String>,
 }
 impl ApplicationPackageLockingPolicyDefinition {
     pub fn new() -> Self {
@@ -504,18 +507,51 @@ pub enum DeploymentMode {
     Incremental,
     Complete,
 }
-#[doc = "Error response indicates managed application is not able to process the incoming request. The reason is provided in the error message."]
+#[doc = "The resource management error additional info."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The additional info."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The error detail."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorDetail {
+    #[doc = "The error code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The error target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "The error details."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
-    #[doc = "Http status code."]
-    #[serde(rename = "httpStatus", default, skip_serializing_if = "Option::is_none")]
-    pub http_status: Option<String>,
-    #[doc = "Error code."]
-    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
-    pub error_code: Option<String>,
-    #[doc = "Error message indicating why the operation failed."]
-    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
-    pub error_message: Option<String>,
+    #[doc = "The error detail."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
 }
 impl ErrorResponse {
     pub fn new() -> Self {
@@ -789,21 +825,6 @@ pub mod operation {
         pub fn new() -> Self {
             Self::default()
         }
-    }
-}
-#[doc = "Result of the request to list Microsoft.Solutions operations. It contains a list of operations and a URL link to get the next set of results."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct OperationListResult {
-    #[doc = "List of Microsoft.Solutions operations."]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<Operation>,
-    #[doc = "URL to get the next set of operation list results if there are any."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl OperationListResult {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "Plan for the managed application."]

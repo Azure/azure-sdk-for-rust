@@ -361,6 +361,9 @@ pub struct ApplicationPackageLockingPolicyDefinition {
     #[doc = "The deny assignment excluded actions."]
     #[serde(rename = "allowedActions", default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_actions: Vec<String>,
+    #[doc = "The deny assignment excluded data actions."]
+    #[serde(rename = "allowedDataActions", default, skip_serializing_if = "Vec::is_empty")]
+    pub allowed_data_actions: Vec<String>,
 }
 impl ApplicationPackageLockingPolicyDefinition {
     pub fn new() -> Self {

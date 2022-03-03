@@ -1695,7 +1695,7 @@ pub mod quota {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::QuotaRequestOneResourceSubmitResponse),
+            Ok200(models::CurrentQuotaLimitBase),
             Created201(models::QuotaRequestSubmitResponse201),
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1759,7 +1759,7 @@ pub mod quota {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::QuotaRequestOneResourceSubmitResponse =
+                            let rsp_value: models::CurrentQuotaLimitBase =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(Response::Ok200(rsp_value))
                         }
@@ -1787,7 +1787,7 @@ pub mod quota {
         use super::models;
         #[derive(Debug)]
         pub enum Response {
-            Ok200(models::QuotaRequestOneResourceSubmitResponse),
+            Ok200(models::CurrentQuotaLimitBase),
             Created201(models::QuotaRequestSubmitResponse201),
         }
         #[derive(Debug, thiserror :: Error)]
@@ -1851,7 +1851,7 @@ pub mod quota {
                     match rsp_status {
                         http::StatusCode::OK => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::QuotaRequestOneResourceSubmitResponse =
+                            let rsp_value: models::CurrentQuotaLimitBase =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(Response::Ok200(rsp_value))
                         }

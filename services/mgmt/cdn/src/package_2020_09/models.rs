@@ -407,9 +407,9 @@ pub struct AfdOriginUpdatePropertiesParameters {
     #[doc = "Weight of the origin in given origin group for load balancing. Must be between 1 and 1000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<i32>,
-    #[doc = "The properties of the private link resource for private origin."]
+    #[doc = "Describes the properties of an existing Shared Private Link Resource to use when connecting to a private origin."]
     #[serde(rename = "sharedPrivateLinkResource", default, skip_serializing_if = "Option::is_none")]
-    pub shared_private_link_resource: Option<serde_json::Value>,
+    pub shared_private_link_resource: Option<SharedPrivateLinkResourceProperties>,
     #[doc = "Whether to enable health probes to be made against backends defined under backendPools. Health probes can only be disabled if there is a single enabled backend in single enabled backend pool."]
     #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
     pub enabled_state: Option<afd_origin_update_properties_parameters::EnabledState>,
@@ -3658,9 +3658,9 @@ pub struct RouteUpdatePropertiesParameters {
     #[doc = "The route patterns of the rule."]
     #[serde(rename = "patternsToMatch", default, skip_serializing_if = "Vec::is_empty")]
     pub patterns_to_match: Vec<String>,
-    #[doc = "compression settings."]
+    #[doc = "settings for compression."]
     #[serde(rename = "compressionSettings", default, skip_serializing_if = "Option::is_none")]
-    pub compression_settings: Option<serde_json::Value>,
+    pub compression_settings: Option<CompressionSettings>,
     #[doc = "Defines how CDN caches requests that include query strings. You can ignore any query strings when caching, bypass caching to prevent requests that contain query strings from being cached, or cache every request with a unique URL."]
     #[serde(rename = "queryStringCachingBehavior", default, skip_serializing_if = "Option::is_none")]
     pub query_string_caching_behavior: Option<route_update_properties_parameters::QueryStringCachingBehavior>,

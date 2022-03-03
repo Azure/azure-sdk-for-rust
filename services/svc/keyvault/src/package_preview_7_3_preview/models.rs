@@ -1020,7 +1020,7 @@ pub struct JsonWebKey {
     #[doc = "RSA public exponent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub e: Option<String>,
-    #[doc = "RSA private exponent, or the D component of an EC or OKP private key."]
+    #[doc = "RSA private exponent, or the D component of an EC private key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub d: Option<String>,
     #[doc = "RSA private key parameter."]
@@ -1047,7 +1047,7 @@ pub struct JsonWebKey {
     #[doc = "Elliptic curve name. For valid values, see JsonWebKeyCurveName."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crv: Option<json_web_key::Crv>,
-    #[doc = "X component of an EC or OKP public key."]
+    #[doc = "X component of an EC public key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x: Option<String>,
     #[doc = "Y component of an EC public key."]
@@ -1076,10 +1076,6 @@ pub mod json_web_key {
         Oct,
         #[serde(rename = "oct-HSM")]
         OctHsm,
-        #[serde(rename = "OKP")]
-        Okp,
-        #[serde(rename = "OKP-HSM")]
-        OkpHsm,
     }
     #[doc = "Elliptic curve name. For valid values, see JsonWebKeyCurveName."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1092,7 +1088,6 @@ pub mod json_web_key {
         P521,
         #[serde(rename = "P-256K")]
         P256k,
-        Ed25519,
     }
 }
 #[doc = "The attributes of a key managed by the key vault service."]
@@ -1212,10 +1207,6 @@ pub mod key_create_parameters {
         Oct,
         #[serde(rename = "oct-HSM")]
         OctHsm,
-        #[serde(rename = "OKP")]
-        Okp,
-        #[serde(rename = "OKP-HSM")]
-        OkpHsm,
     }
     #[doc = "Elliptic curve name. For valid values, see JsonWebKeyCurveName."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1228,7 +1219,6 @@ pub mod key_create_parameters {
         P521,
         #[serde(rename = "P-256K")]
         P256k,
-        Ed25519,
     }
 }
 #[doc = "The export key parameters."]
@@ -1451,10 +1441,6 @@ pub mod key_properties {
         Oct,
         #[serde(rename = "oct-HSM")]
         OctHsm,
-        #[serde(rename = "OKP")]
-        Okp,
-        #[serde(rename = "OKP-HSM")]
-        OkpHsm,
     }
     #[doc = "Elliptic curve name. For valid values, see JsonWebKeyCurveName."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1467,7 +1453,6 @@ pub mod key_properties {
         P521,
         #[serde(rename = "P-256K")]
         P256k,
-        Ed25519,
     }
 }
 #[doc = "The release key parameters."]
@@ -1509,6 +1494,9 @@ pub struct KeyReleasePolicy {
     #[doc = "Content type and version of key release policy"]
     #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
     pub content_type: Option<String>,
+    #[doc = "Defines the mutability state of the policy. Once marked immutable, this flag cannot be reset and the policy cannot be changed under any circumstances."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub immutable: Option<bool>,
     #[doc = "Blob encoding the policy rules under which the key can be released."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub data: Option<String>,
@@ -1616,8 +1604,6 @@ pub mod key_sign_parameters {
         Es512,
         #[serde(rename = "ES256K")]
         Es256k,
-        #[serde(rename = "EdDSA")]
-        EdDsa,
     }
 }
 #[doc = "The key update parameters."]
@@ -1694,8 +1680,6 @@ pub mod key_verify_parameters {
         Es512,
         #[serde(rename = "ES256K")]
         Es256k,
-        #[serde(rename = "EdDSA")]
-        EdDsa,
     }
 }
 #[doc = "The key verify result."]

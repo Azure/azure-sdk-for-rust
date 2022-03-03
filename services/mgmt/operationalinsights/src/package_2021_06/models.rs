@@ -1239,18 +1239,9 @@ impl Table {
 #[doc = "Table properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableProperties {
-    #[doc = "The data table data retention in days, between 7 and 730. Setting this property to null will default to the workspace retention."]
+    #[doc = "The data table data retention in days, between 30 and 730. Setting this property to null will default to the workspace retention."]
     #[serde(rename = "retentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i32>,
-    #[doc = "Specifies if IsTroubleshootingEnabled property can be set for this table."]
-    #[serde(rename = "isTroubleshootingAllowed", default, skip_serializing_if = "Option::is_none")]
-    pub is_troubleshooting_allowed: Option<bool>,
-    #[doc = "Enable or disable troubleshoot for this table."]
-    #[serde(rename = "isTroubleshootEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub is_troubleshoot_enabled: Option<bool>,
-    #[doc = "Last time when troubleshooting was set for this table."]
-    #[serde(rename = "lastTroubleshootDate", default, skip_serializing_if = "Option::is_none")]
-    pub last_troubleshoot_date: Option<String>,
 }
 impl TableProperties {
     pub fn new() -> Self {

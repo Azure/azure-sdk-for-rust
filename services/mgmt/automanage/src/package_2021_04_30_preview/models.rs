@@ -417,6 +417,50 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "The Service Principal Id for the subscription."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServicePrincipal {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The Service Principal properties for the subscription."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServicePrincipalProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl ServicePrincipal {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list of ServicePrincipals."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServicePrincipalListResult {
+    #[doc = "The list of servicePrincipals."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub value: Vec<ServicePrincipal>,
+}
+impl ServicePrincipalListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The Service Principal properties for the subscription."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServicePrincipalProperties {
+    #[doc = "The Service Principal Id for the subscription."]
+    #[serde(rename = "servicePrincipalId", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_id: Option<String>,
+    #[doc = "Returns the contributor RBAC Role exist or not for the Service Principal Id."]
+    #[serde(rename = "authorizationSet", default, skip_serializing_if = "Option::is_none")]
+    pub authorization_set: Option<bool>,
+}
+impl ServicePrincipalProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {

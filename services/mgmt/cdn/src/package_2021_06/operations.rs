@@ -146,6 +146,8 @@ impl Client {
 #[allow(non_camel_case_types)]
 pub enum Error {
     #[error(transparent)]
+    CheckEndpointNameAvailability(#[from] check_endpoint_name_availability::Error),
+    #[error(transparent)]
     AfdProfiles_ListResourceUsage(#[from] afd_profiles::list_resource_usage::Error),
     #[error(transparent)]
     AfdProfiles_CheckHostNameAvailability(#[from] afd_profiles::check_host_name_availability::Error),
@@ -357,6 +359,351 @@ pub enum Error {
     Policies_Delete(#[from] policies::delete::Error),
     #[error(transparent)]
     ManagedRuleSets_List(#[from] managed_rule_sets::list::Error),
+}
+impl Client {
+    pub fn check_endpoint_name_availability(
+        &self,
+        check_endpoint_name_availability_input: impl Into<models::CheckEndpointNameAvailabilityInput>,
+        subscription_id: impl Into<String>,
+        resource_group_name: impl Into<String>,
+    ) -> check_endpoint_name_availability::Builder {
+        check_endpoint_name_availability::Builder {
+            client: self.clone(),
+            check_endpoint_name_availability_input: check_endpoint_name_availability_input.into(),
+            subscription_id: subscription_id.into(),
+            resource_group_name: resource_group_name.into(),
+        }
+    }
+    pub fn check_name_availability(
+        &self,
+        check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
+    ) -> check_name_availability::Builder {
+        check_name_availability::Builder {
+            client: self.clone(),
+            check_name_availability_input: check_name_availability_input.into(),
+        }
+    }
+    pub fn check_name_availability_with_subscription(
+        &self,
+        check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
+        subscription_id: impl Into<String>,
+    ) -> check_name_availability_with_subscription::Builder {
+        check_name_availability_with_subscription::Builder {
+            client: self.clone(),
+            check_name_availability_input: check_name_availability_input.into(),
+            subscription_id: subscription_id.into(),
+        }
+    }
+    pub fn validate_probe(
+        &self,
+        validate_probe_input: impl Into<models::ValidateProbeInput>,
+        subscription_id: impl Into<String>,
+    ) -> validate_probe::Builder {
+        validate_probe::Builder {
+            client: self.clone(),
+            validate_probe_input: validate_probe_input.into(),
+            subscription_id: subscription_id.into(),
+        }
+    }
+}
+pub mod check_endpoint_name_availability {
+    use super::models;
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::AfdErrorResponse,
+        },
+        #[error("Failed to parse request URL")]
+        ParseUrl(#[source] url::ParseError),
+        #[error("Failed to build request")]
+        BuildRequest(#[source] http::Error),
+        #[error("Failed to serialize request body")]
+        Serialize(#[source] serde_json::Error),
+        #[error("Failed to get access token")]
+        GetToken(#[source] azure_core::Error),
+        #[error("Failed to execute request")]
+        SendRequest(#[source] azure_core::Error),
+        #[error("Failed to get response bytes")]
+        ResponseBytes(#[source] azure_core::StreamError),
+        #[error("Failed to deserialize response, body: {1:?}")]
+        Deserialize(#[source] serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) check_endpoint_name_availability_input: models::CheckEndpointNameAvailabilityInput,
+        pub(crate) subscription_id: String,
+        pub(crate) resource_group_name: String,
+    }
+    impl Builder {
+        pub fn into_future(
+            self,
+        ) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckEndpointNameAvailabilityOutput, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/checkEndpointNameAvailability",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::POST);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", "2021-06-01");
+                req_builder = req_builder.header("content-type", "application/json");
+                let req_body = azure_core::to_json(&self.check_endpoint_name_availability_input).map_err(Error::Serialize)?;
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::CheckEndpointNameAvailabilityOutput =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::AfdErrorResponse =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
+    }
+}
+pub mod check_name_availability {
+    use super::models;
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::ErrorResponse,
+        },
+        #[error("Failed to parse request URL")]
+        ParseUrl(#[source] url::ParseError),
+        #[error("Failed to build request")]
+        BuildRequest(#[source] http::Error),
+        #[error("Failed to serialize request body")]
+        Serialize(#[source] serde_json::Error),
+        #[error("Failed to get access token")]
+        GetToken(#[source] azure_core::Error),
+        #[error("Failed to execute request")]
+        SendRequest(#[source] azure_core::Error),
+        #[error("Failed to get response bytes")]
+        ResponseBytes(#[source] azure_core::StreamError),
+        #[error("Failed to deserialize response, body: {1:?}")]
+        Deserialize(#[source] serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
+    }
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameAvailabilityOutput, Error>> {
+            Box::pin(async move {
+                let url_str = &format!("{}/providers/Microsoft.Cdn/checkNameAvailability", self.client.endpoint(),);
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::POST);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", "2021-06-01");
+                req_builder = req_builder.header("content-type", "application/json");
+                let req_body = azure_core::to_json(&self.check_name_availability_input).map_err(Error::Serialize)?;
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::CheckNameAvailabilityOutput =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::ErrorResponse =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
+    }
+}
+pub mod check_name_availability_with_subscription {
+    use super::models;
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::ErrorResponse,
+        },
+        #[error("Failed to parse request URL")]
+        ParseUrl(#[source] url::ParseError),
+        #[error("Failed to build request")]
+        BuildRequest(#[source] http::Error),
+        #[error("Failed to serialize request body")]
+        Serialize(#[source] serde_json::Error),
+        #[error("Failed to get access token")]
+        GetToken(#[source] azure_core::Error),
+        #[error("Failed to execute request")]
+        SendRequest(#[source] azure_core::Error),
+        #[error("Failed to get response bytes")]
+        ResponseBytes(#[source] azure_core::StreamError),
+        #[error("Failed to deserialize response, body: {1:?}")]
+        Deserialize(#[source] serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
+        pub(crate) subscription_id: String,
+    }
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameAvailabilityOutput, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Cdn/checkNameAvailability",
+                    self.client.endpoint(),
+                    &self.subscription_id
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::POST);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", "2021-06-01");
+                req_builder = req_builder.header("content-type", "application/json");
+                let req_body = azure_core::to_json(&self.check_name_availability_input).map_err(Error::Serialize)?;
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::CheckNameAvailabilityOutput =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::ErrorResponse =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
+    }
+}
+pub mod validate_probe {
+    use super::models;
+    #[derive(Debug, thiserror :: Error)]
+    pub enum Error {
+        #[error("HTTP status code {}", status_code)]
+        DefaultResponse {
+            status_code: http::StatusCode,
+            value: models::ErrorResponse,
+        },
+        #[error("Failed to parse request URL")]
+        ParseUrl(#[source] url::ParseError),
+        #[error("Failed to build request")]
+        BuildRequest(#[source] http::Error),
+        #[error("Failed to serialize request body")]
+        Serialize(#[source] serde_json::Error),
+        #[error("Failed to get access token")]
+        GetToken(#[source] azure_core::Error),
+        #[error("Failed to execute request")]
+        SendRequest(#[source] azure_core::Error),
+        #[error("Failed to get response bytes")]
+        ResponseBytes(#[source] azure_core::StreamError),
+        #[error("Failed to deserialize response, body: {1:?}")]
+        Deserialize(#[source] serde_json::Error, bytes::Bytes),
+    }
+    #[derive(Clone)]
+    pub struct Builder {
+        pub(crate) client: super::Client,
+        pub(crate) validate_probe_input: models::ValidateProbeInput,
+        pub(crate) subscription_id: String,
+    }
+    impl Builder {
+        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ValidateProbeOutput, Error>> {
+            Box::pin(async move {
+                let url_str = &format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Cdn/validateProbe",
+                    self.client.endpoint(),
+                    &self.subscription_id
+                );
+                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                let mut req_builder = http::request::Builder::new();
+                req_builder = req_builder.method(http::Method::POST);
+                let credential = self.client.token_credential();
+                let token_response = credential
+                    .get_token(&self.client.scopes().join(" "))
+                    .await
+                    .map_err(Error::GetToken)?;
+                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                url.query_pairs_mut().append_pair("api-version", "2021-06-01");
+                req_builder = req_builder.header("content-type", "application/json");
+                let req_body = azure_core::to_json(&self.validate_probe_input).map_err(Error::Serialize)?;
+                req_builder = req_builder.uri(url.as_str());
+                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                match rsp_status {
+                    http::StatusCode::OK => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::ValidateProbeOutput =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Ok(rsp_value)
+                    }
+                    status_code => {
+                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                        let rsp_value: models::ErrorResponse =
+                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                        Err(Error::DefaultResponse {
+                            status_code,
+                            value: rsp_value,
+                        })
+                    }
+                }
+            })
+        }
+    }
 }
 pub mod afd_profiles {
     use super::models;
@@ -4709,7 +5056,7 @@ pub mod security_policies {
             resource_group_name: impl Into<String>,
             profile_name: impl Into<String>,
             security_policy_name: impl Into<String>,
-            security_policy_properties: impl Into<models::SecurityPolicyProperties>,
+            security_policy_update_properties: impl Into<models::SecurityPolicyUpdateParameters>,
             subscription_id: impl Into<String>,
         ) -> patch::Builder {
             patch::Builder {
@@ -4717,7 +5064,7 @@ pub mod security_policies {
                 resource_group_name: resource_group_name.into(),
                 profile_name: profile_name.into(),
                 security_policy_name: security_policy_name.into(),
-                security_policy_properties: security_policy_properties.into(),
+                security_policy_update_properties: security_policy_update_properties.into(),
                 subscription_id: subscription_id.into(),
             }
         }
@@ -5027,7 +5374,7 @@ pub mod security_policies {
             pub(crate) resource_group_name: String,
             pub(crate) profile_name: String,
             pub(crate) security_policy_name: String,
-            pub(crate) security_policy_properties: models::SecurityPolicyProperties,
+            pub(crate) security_policy_update_properties: models::SecurityPolicyUpdateParameters,
             pub(crate) subscription_id: String,
         }
         impl Builder {
@@ -5052,7 +5399,7 @@ pub mod security_policies {
                     req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
                     url.query_pairs_mut().append_pair("api-version", "2021-06-01");
                     req_builder = req_builder.header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&self.security_policy_properties).map_err(Error::Serialize)?;
+                    let req_body = azure_core::to_json(&self.security_policy_update_properties).map_err(Error::Serialize)?;
                     req_builder = req_builder.uri(url.as_str());
                     let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
                     let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
@@ -10069,259 +10416,6 @@ pub mod custom_domains {
                     }
                 })
             }
-        }
-    }
-}
-impl Client {
-    pub fn check_name_availability(
-        &self,
-        check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
-    ) -> check_name_availability::Builder {
-        check_name_availability::Builder {
-            client: self.clone(),
-            check_name_availability_input: check_name_availability_input.into(),
-        }
-    }
-    pub fn check_name_availability_with_subscription(
-        &self,
-        check_name_availability_input: impl Into<models::CheckNameAvailabilityInput>,
-        subscription_id: impl Into<String>,
-    ) -> check_name_availability_with_subscription::Builder {
-        check_name_availability_with_subscription::Builder {
-            client: self.clone(),
-            check_name_availability_input: check_name_availability_input.into(),
-            subscription_id: subscription_id.into(),
-        }
-    }
-    pub fn validate_probe(
-        &self,
-        validate_probe_input: impl Into<models::ValidateProbeInput>,
-        subscription_id: impl Into<String>,
-    ) -> validate_probe::Builder {
-        validate_probe::Builder {
-            client: self.clone(),
-            validate_probe_input: validate_probe_input.into(),
-            subscription_id: subscription_id.into(),
-        }
-    }
-}
-pub mod check_name_availability {
-    use super::models;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
-    #[derive(Clone)]
-    pub struct Builder {
-        pub(crate) client: super::Client,
-        pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
-    }
-    impl Builder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameAvailabilityOutput, Error>> {
-            Box::pin(async move {
-                let url_str = &format!("{}/providers/Microsoft.Cdn/checkNameAvailability", self.client.endpoint(),);
-                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                let mut req_builder = http::request::Builder::new();
-                req_builder = req_builder.method(http::Method::POST);
-                let credential = self.client.token_credential();
-                let token_response = credential
-                    .get_token(&self.client.scopes().join(" "))
-                    .await
-                    .map_err(Error::GetToken)?;
-                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", "2021-06-01");
-                req_builder = req_builder.header("content-type", "application/json");
-                let req_body = azure_core::to_json(&self.check_name_availability_input).map_err(Error::Serialize)?;
-                req_builder = req_builder.uri(url.as_str());
-                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                match rsp_status {
-                    http::StatusCode::OK => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::CheckNameAvailabilityOutput =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Ok(rsp_value)
-                    }
-                    status_code => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::ErrorResponse =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Err(Error::DefaultResponse {
-                            status_code,
-                            value: rsp_value,
-                        })
-                    }
-                }
-            })
-        }
-    }
-}
-pub mod check_name_availability_with_subscription {
-    use super::models;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
-    #[derive(Clone)]
-    pub struct Builder {
-        pub(crate) client: super::Client,
-        pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
-        pub(crate) subscription_id: String,
-    }
-    impl Builder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::CheckNameAvailabilityOutput, Error>> {
-            Box::pin(async move {
-                let url_str = &format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Cdn/checkNameAvailability",
-                    self.client.endpoint(),
-                    &self.subscription_id
-                );
-                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                let mut req_builder = http::request::Builder::new();
-                req_builder = req_builder.method(http::Method::POST);
-                let credential = self.client.token_credential();
-                let token_response = credential
-                    .get_token(&self.client.scopes().join(" "))
-                    .await
-                    .map_err(Error::GetToken)?;
-                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", "2021-06-01");
-                req_builder = req_builder.header("content-type", "application/json");
-                let req_body = azure_core::to_json(&self.check_name_availability_input).map_err(Error::Serialize)?;
-                req_builder = req_builder.uri(url.as_str());
-                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                match rsp_status {
-                    http::StatusCode::OK => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::CheckNameAvailabilityOutput =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Ok(rsp_value)
-                    }
-                    status_code => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::ErrorResponse =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Err(Error::DefaultResponse {
-                            status_code,
-                            value: rsp_value,
-                        })
-                    }
-                }
-            })
-        }
-    }
-}
-pub mod validate_probe {
-    use super::models;
-    #[derive(Debug, thiserror :: Error)]
-    pub enum Error {
-        #[error("HTTP status code {}", status_code)]
-        DefaultResponse {
-            status_code: http::StatusCode,
-            value: models::ErrorResponse,
-        },
-        #[error("Failed to parse request URL")]
-        ParseUrl(#[source] url::ParseError),
-        #[error("Failed to build request")]
-        BuildRequest(#[source] http::Error),
-        #[error("Failed to serialize request body")]
-        Serialize(#[source] serde_json::Error),
-        #[error("Failed to get access token")]
-        GetToken(#[source] azure_core::Error),
-        #[error("Failed to execute request")]
-        SendRequest(#[source] azure_core::Error),
-        #[error("Failed to get response bytes")]
-        ResponseBytes(#[source] azure_core::StreamError),
-        #[error("Failed to deserialize response, body: {1:?}")]
-        Deserialize(#[source] serde_json::Error, bytes::Bytes),
-    }
-    #[derive(Clone)]
-    pub struct Builder {
-        pub(crate) client: super::Client,
-        pub(crate) validate_probe_input: models::ValidateProbeInput,
-        pub(crate) subscription_id: String,
-    }
-    impl Builder {
-        pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::ValidateProbeOutput, Error>> {
-            Box::pin(async move {
-                let url_str = &format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Cdn/validateProbe",
-                    self.client.endpoint(),
-                    &self.subscription_id
-                );
-                let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
-                let mut req_builder = http::request::Builder::new();
-                req_builder = req_builder.method(http::Method::POST);
-                let credential = self.client.token_credential();
-                let token_response = credential
-                    .get_token(&self.client.scopes().join(" "))
-                    .await
-                    .map_err(Error::GetToken)?;
-                req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
-                url.query_pairs_mut().append_pair("api-version", "2021-06-01");
-                req_builder = req_builder.header("content-type", "application/json");
-                let req_body = azure_core::to_json(&self.validate_probe_input).map_err(Error::Serialize)?;
-                req_builder = req_builder.uri(url.as_str());
-                let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
-                let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
-                let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
-                match rsp_status {
-                    http::StatusCode::OK => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::ValidateProbeOutput =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Ok(rsp_value)
-                    }
-                    status_code => {
-                        let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                        let rsp_value: models::ErrorResponse =
-                            serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                        Err(Error::DefaultResponse {
-                            status_code,
-                            value: rsp_value,
-                        })
-                    }
-                }
-            })
         }
     }
 }

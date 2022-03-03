@@ -476,6 +476,11 @@ pub mod applications {
     }
     pub mod update {
         use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::Application),
+            Accepted202,
+        }
         #[derive(Debug, thiserror :: Error)]
         pub enum Error {
             #[error("HTTP status code {}", status_code)]
@@ -511,7 +516,7 @@ pub mod applications {
                 self.parameters = Some(parameters.into());
                 self
             }
-            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<models::Application, Error>> {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
                 Box::pin(async move {
                     let url_str = &format!(
                         "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Solutions/applications/{}",
@@ -545,8 +550,9 @@ pub mod applications {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::Application =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
-                            Ok(rsp_value)
+                            Ok(Response::Ok200(rsp_value))
                         }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ErrorResponse =

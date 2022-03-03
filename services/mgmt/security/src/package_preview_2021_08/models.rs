@@ -276,11 +276,22 @@ pub struct StandardProperties {
     #[doc = "List of component objects containing component unique keys (such as assessment keys) to apply to standard scope.  Currently only supports assessment keys."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub components: Vec<StandardComponentProperties>,
+    #[doc = "List of all standard supported clouds."]
+    #[serde(rename = "supportedClouds", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_clouds: Vec<StandardSupportedClouds>,
 }
 impl StandardProperties {
     pub fn new() -> Self {
         Self::default()
     }
+}
+#[doc = "The cloud that the standard is supported on."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum StandardSupportedClouds {
+    #[serde(rename = "AWS")]
+    Aws,
+    #[serde(rename = "GCP")]
+    Gcp,
 }
 #[doc = "A list of key value pairs that describe the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -407,6 +407,9 @@ pub mod redis_common_properties {
         #[doc = "The max clients config"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub maxclients: Option<String>,
+        #[doc = "Zonal Configuration"]
+        #[serde(rename = "zonal-configuration", default, skip_serializing_if = "Option::is_none")]
+        pub zonal_configuration: Option<String>,
     }
     impl RedisConfiguration {
         pub fn new() -> Self {
@@ -705,12 +708,16 @@ pub struct RedisPatchSchedule {
     pub proxy_resource: ProxyResource,
     #[doc = "List of patch schedules for a Redis cache."]
     pub properties: ScheduleEntries,
+    #[doc = "The geo-location where the resource lives"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
 }
 impl RedisPatchSchedule {
     pub fn new(properties: ScheduleEntries) -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             properties,
+            location: None,
         }
     }
 }
