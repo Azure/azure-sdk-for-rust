@@ -212,7 +212,7 @@ pub struct Error {
     pub message: Option<String>,
     #[doc = "The key vault server error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<Error>,
+    pub innererror: Box<Option<Error>>,
 }
 impl Error {
     pub fn new() -> Self {
