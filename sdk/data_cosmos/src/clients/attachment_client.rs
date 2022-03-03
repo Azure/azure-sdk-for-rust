@@ -53,8 +53,8 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to get an attachment.
-    pub fn get(&self) -> requests::GetAttachmentBuilder<'_, '_> {
-        requests::GetAttachmentBuilder::new(self)
+    pub fn get(&self) -> GetAttachmentBuilder {
+        GetAttachmentBuilder::new(self.clone())
     }
 
     /// Initiate a request to delete an attachment.
