@@ -78,7 +78,7 @@ implement_from!(DeleteDocumentResponse);
 implement_from!(CreateUserDefinedFunctionResponse);
 implement_from!(DeleteUserDefinedFunctionResponse);
 implement_from!(ListUserDefinedFunctionsResponse);
-implement_from!(CreateTriggerResponse);
+implement_from!(CreateOrReplaceTriggerResponse);
 implement_from!(ListTriggersResponse);
 implement_from!(DeleteTriggerResponse);
 implement_from!(ListDocumentsResponse, T);

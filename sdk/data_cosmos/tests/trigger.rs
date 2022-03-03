@@ -66,22 +66,22 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
     let trigger_client = collection_client.clone().into_trigger_client(TRIGGER_NAME);
 
     let ret = trigger_client
-        .create_trigger()
-        .execute(
+        .create_trigger(
             "something",
             trigger::TriggerType::Post,
             trigger::TriggerOperation::All,
         )
+        .into_future()
         .await?;
 
     let ret = trigger_client
-        .replace_trigger()
-        .consistency_level(ret)
-        .execute(
+        .replace_trigger(
             TRIGGER_BODY,
             trigger::TriggerType::Post,
             trigger::TriggerOperation::All,
         )
+        .consistency_level(ret)
+        .into_future()
         .await?;
 
     let mut last_session_token: Option<ConsistencyLevel> = None;

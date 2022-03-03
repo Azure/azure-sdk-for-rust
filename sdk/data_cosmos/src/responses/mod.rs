@@ -5,7 +5,6 @@
 mod create_collection_response;
 mod create_reference_attachment_response;
 mod create_slug_attachment_response;
-mod create_trigger_response;
 mod create_user_defined_function_response;
 mod delete_trigger_response;
 mod delete_user_defined_function_response;
@@ -16,7 +15,6 @@ mod replace_reference_attachment_response;
 pub use create_collection_response::CreateCollectionResponse;
 pub use create_reference_attachment_response::CreateReferenceAttachmentResponse;
 pub use create_slug_attachment_response::CreateSlugAttachmentResponse;
-pub use create_trigger_response::CreateTriggerResponse;
 pub use create_user_defined_function_response::CreateUserDefinedFunctionResponse;
 pub use delete_trigger_response::DeleteTriggerResponse;
 pub use delete_user_defined_function_response::DeleteUserDefinedFunctionResponse;
