@@ -15,10 +15,10 @@ pub enum Error {
 pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: &Path) -> Result<()> {
     let file = File::create(path).map_err(|source| Error::IoError { source })?;
     let mut file = LineWriter::new(file);
-    let default = get_default_feature(tags, default_tag);
+    let default_feature = get_default_feature(tags, default_tag);
 
     // https://docs.rs/about/metadata
-    let docs_rs_features = docs_rs_features(tags, default_tag);
+    let docs_rs_features = docs_rs_features(tags, default_feature);
     let docs_rs_features: Vec<_> = docs_rs_features.iter().map(|s| format!("\"{}\"", s)).collect();
     let docs_rs_features = docs_rs_features.join(", ");
 
@@ -55,7 +55,7 @@ enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []
 "#,
-            crate_name, docs_rs_features, default
+            crate_name, docs_rs_features, default_feature
         )
         .as_bytes(),
     )
@@ -84,21 +84,21 @@ fn get_default_feature(tags: &[&Tag], default_tag: Option<&str>) -> String {
     }
 }
 
-const MAX_DOCS_RS_FEATURES: usize = 5;
+const MAX_DOCS_RS_FEATURES: usize = 4;
 
-pub fn docs_rs_features(tags: &[&Tag], default_tag: Option<&str>) -> Vec<String> {
-    let mut default_feature = None;
-    let mut features = Vec::new();
-    for tag in tags {
-        if Some(tag.name()) == default_tag {
-            default_feature = Some(tag.rust_feature_name());
-        } else {
-            features.push(tag.rust_feature_name());
-        }
-    }
-    if let Some(default_feature) = default_feature {
-        features.insert(0, default_feature);
-    }
+/// Get a list of features to document at docs.rs in addition the default
+pub fn docs_rs_features(tags: &[&Tag], default_feature: &str) -> Vec<String> {
+    let mut features: Vec<_> = tags
+        .iter()
+        .filter_map(|tag| {
+            let feature = tag.rust_feature_name();
+            if feature == default_feature {
+                None
+            } else {
+                Some(feature)
+            }
+        })
+        .collect();
     features.truncate(MAX_DOCS_RS_FEATURES);
     features
 }
