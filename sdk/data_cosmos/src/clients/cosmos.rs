@@ -1,9 +1,10 @@
 use super::DatabaseClient;
 use crate::operations::*;
 use crate::resources::permission::AuthorizationToken;
+use crate::resources::ResourceType;
 use crate::ReadonlyString;
 
-use azure_core::{ClientOptions, Pipeline, Request};
+use azure_core::{ClientOptions, Context, Pipeline, Request, Response};
 
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -170,6 +171,17 @@ impl CosmosClient {
     ) -> Request {
         let uri = format!("{}/{}", self.cloud_location.url(), uri_path);
         Request::new(uri.parse().unwrap(), http_method)
+    }
+
+    pub(crate) async fn send(
+        &self,
+        mut request: Request,
+        mut context: Context,
+        resource_type: ResourceType,
+    ) -> azure_core::Result<Response> {
+        self.pipeline
+            .send(context.insert(resource_type), &mut request)
+            .await
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {

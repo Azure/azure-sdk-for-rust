@@ -54,8 +54,8 @@ impl ListUsersBuilder {
 
                 let response = this
                     .client
-                    .pipeline()
-                    .send(ctx.clone().insert(ResourceType::Users), &mut request)
+                    .cosmos_client()
+                    .send(request, ctx.clone(), ResourceType::Users)
                     .await?;
                 ListUsersResponse::try_from(response).await
             }

@@ -37,11 +37,7 @@ impl ListCollectionsBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let mut request = this.client.cosmos_client().prepare_request_pipeline(
-                    &format!("dbs/{}/colls", this.client.database_name()),
-                    http::Method::GET,
-                );
-
+                let mut request = this.client.prepare_collections_pipeline(http::Method::GET);
                 azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
                 azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
 
@@ -53,8 +49,8 @@ impl ListCollectionsBuilder {
 
                 let response = this
                     .client
-                    .pipeline()
-                    .send(ctx.clone().insert(ResourceType::Collections), &mut request)
+                    .cosmos_client()
+                    .send(request, ctx.clone(), ResourceType::Collections)
                     .await?;
                 ListCollectionsResponse::try_from(response).await
             }
