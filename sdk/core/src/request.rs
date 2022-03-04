@@ -36,6 +36,16 @@ pub struct Request {
 }
 
 impl Request {
+    /// Create a new request with an empty body and no headers
+    pub fn new(uri: Uri, method: Method) -> Self {
+        Self {
+            uri,
+            method,
+            headers: HeaderMap::default(),
+            body: Body::Bytes(bytes::Bytes::new()),
+        }
+    }
+
     pub fn uri(&self) -> &Uri {
         &self.uri
     }

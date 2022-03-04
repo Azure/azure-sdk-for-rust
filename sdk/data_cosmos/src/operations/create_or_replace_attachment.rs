@@ -10,18 +10,25 @@ use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct CreateReferenceAttachmentBuilder {
+pub struct CreateOrReplaceAttachmentBuilder {
     client: AttachmentClient,
+    is_create: bool,
     media: String,
     content_type: String,
     consistency_level: Option<ConsistencyLevel>,
     context: Context,
 }
 
-impl CreateReferenceAttachmentBuilder {
-    pub(crate) fn new(client: AttachmentClient, media: String, content_type: String) -> Self {
+impl CreateOrReplaceAttachmentBuilder {
+    pub(crate) fn new(
+        client: AttachmentClient,
+        is_create: bool,
+        media: String,
+        content_type: String,
+    ) -> Self {
         Self {
             client,
+            is_create,
             media,
             content_type,
             consistency_level: None,
@@ -33,9 +40,14 @@ impl CreateReferenceAttachmentBuilder {
         context: Context => context,
     }
 
-    pub fn into_future(self) -> CreateReferenceAttachment {
+    pub fn into_future(self) -> CreateOrReplaceAttachment {
         Box::pin(async move {
-            let mut req = self.client.prepare_pipeline(http::Method::POST);
+            let mut req = if self.is_create {
+                self.client.prepare_pipeline(http::Method::POST)
+            } else {
+                self.client
+                    .prepare_pipeline_with_attachment_name(http::Method::PUT)
+            };
 
             azure_core::headers::add_optional_header2(&self.consistency_level, &mut req)?;
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
@@ -67,26 +79,26 @@ impl CreateReferenceAttachmentBuilder {
                     &mut req,
                 )
                 .await?;
-            CreateReferenceAttachmentResponse::try_from(response).await
+            CreateOrReplaceAttachmentResponse::try_from(response).await
         })
     }
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type CreateReferenceAttachment =
-    futures::future::BoxFuture<'static, crate::Result<CreateReferenceAttachmentResponse>>;
+pub type CreateOrReplaceAttachment =
+    futures::future::BoxFuture<'static, crate::Result<CreateOrReplaceAttachmentResponse>>;
 
 #[cfg(feature = "into_future")]
-impl std::future::IntoFuture for CreateReferenceAttachmentBuilder {
-    type Future = CreateReferenceAttachment;
-    type Output = <CreateReferenceAttachment as std::future::Future>::Output;
+impl std::future::IntoFuture for CreateOrReplaceAttachmentBuilder {
+    type Future = CreateOrReplaceAttachment;
+    type Output = <CreateOrReplaceAttachment as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct CreateReferenceAttachmentResponse {
+pub struct CreateOrReplaceAttachmentResponse {
     pub attachment: Attachment,
     pub max_media_storage_usage_mb: u64,
     pub media_storage_usage_mb: u64,
@@ -113,7 +125,7 @@ pub struct CreateReferenceAttachmentResponse {
     pub date: DateTime<Utc>,
 }
 
-impl CreateReferenceAttachmentResponse {
+impl CreateOrReplaceAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;

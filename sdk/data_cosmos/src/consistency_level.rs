@@ -1,7 +1,6 @@
 use crate::headers;
 use crate::operations::*;
 use crate::resources::user::UserResponse;
-use crate::responses::*;
 use azure_core::AddAsHeader;
 use http::request;
 use serde::de::DeserializeOwned;
@@ -68,8 +67,7 @@ implement_from!(CreateOrReplaceSlugAttachmentResponse);
 implement_from!(GetCollectionResponse);
 implement_from!(UserResponse);
 implement_from!(DeleteAttachmentResponse);
-implement_from!(ReplaceReferenceAttachmentResponse);
-implement_from!(CreateReferenceAttachmentResponse);
+implement_from!(CreateOrReplaceAttachmentResponse);
 implement_from!(ListAttachmentsResponse);
 implement_from!(GetAttachmentResponse);
 implement_from!(CreateDocumentResponse);
