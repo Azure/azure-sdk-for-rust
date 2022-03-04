@@ -18,7 +18,7 @@ pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: 
     let default_feature = get_default_feature(tags, default_tag);
 
     // https://docs.rs/about/metadata
-    let docs_rs_features = docs_rs_features(tags, default_feature);
+    let docs_rs_features = docs_rs_features(tags, &default_feature);
     let docs_rs_features: Vec<_> = docs_rs_features.iter().map(|s| format!("\"{}\"", s)).collect();
     let docs_rs_features = docs_rs_features.join(", ");
 
