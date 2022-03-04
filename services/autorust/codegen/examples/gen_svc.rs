@@ -2,7 +2,7 @@
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
 use autorust_codegen::{
     self,
-    cargo_toml::{self, docs_rs_features},
+    cargo_toml::{self},
     get_svc_readmes, lib_rs, path, Config, PropertyName, SpecReadme,
 };
 use std::{collections::HashSet, fs, path::PathBuf};
