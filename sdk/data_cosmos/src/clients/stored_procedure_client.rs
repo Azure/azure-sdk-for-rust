@@ -1,8 +1,7 @@
 use super::*;
 use crate::prelude::*;
-use crate::resources::ResourceType;
-use crate::{requests, ReadonlyString};
-use azure_core::{HttpClient, Pipeline, Request};
+use crate::ReadonlyString;
+use azure_core::{Pipeline, Request};
 
 /// A client for Cosmos stored procedure resources.
 #[derive(Debug, Clone)]
@@ -59,29 +58,13 @@ impl StoredProcedureClient {
     }
 
     /// Execute the stored procedure
-    pub fn execute_stored_procedure(&self) -> requests::ExecuteStoredProcedureBuilder<'_, '_> {
-        requests::ExecuteStoredProcedureBuilder::new(self)
+    pub fn execute_stored_procedure(&self) -> ExecuteStoredProcedureBuilder {
+        ExecuteStoredProcedureBuilder::new(self.clone())
     }
 
     /// Delete the stored procedure
     pub fn delete_stored_procedure(&self) -> DeleteStoredProcedureBuilder {
         DeleteStoredProcedureBuilder::new(self.clone())
-    }
-
-    pub(crate) fn prepare_request_with_stored_procedure_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}/sprocs/{}",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-                self.stored_procedure_name()
-            ),
-            method,
-            ResourceType::StoredProcedures,
-        )
     }
 
     pub(crate) fn prepare_pipeline_with_stored_procedure_name(
@@ -112,9 +95,5 @@ impl StoredProcedureClient {
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
         self.cosmos_client().pipeline()
-    }
-
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
     }
 }

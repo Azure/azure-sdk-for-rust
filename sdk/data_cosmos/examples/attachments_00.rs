@@ -75,7 +75,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("creating");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
     let resp = attachment_client
-        .create_reference(
+        .create_attachment(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
         )
@@ -100,12 +100,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("replacing");
     let attachment_client = document_client.clone().into_attachment_client("myref06");
     let resp = attachment_client
-        .replace_reference()
-        .consistency_level(session_token)
-        .execute(
+        .replace_attachment(
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
         )
+        .consistency_level(session_token)
+        .into_future()
         .await?;
     println!("replace reference == {:#?}", resp);
 

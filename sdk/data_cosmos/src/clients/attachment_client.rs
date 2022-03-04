@@ -1,10 +1,6 @@
 use crate::operations::*;
-use crate::requests;
-use crate::resources::ResourceType;
 use crate::ReadonlyString;
-use azure_core::HttpClient;
-use azure_core::Pipeline;
-use azure_core::Request;
+use azure_core::{Pipeline, Request};
 use bytes::Bytes;
 
 use super::*;
@@ -73,27 +69,35 @@ impl AttachmentClient {
         CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), false, body)
     }
 
-    /// Initiate a request to create ant.
-    pub fn create_reference<M, C>(
+    /// Initiate a request to create a reference attachment.
+    pub fn create_attachment<M, C>(
         &self,
         media: M,
         content_type: C,
-    ) -> CreateReferenceAttachmentBuilder
+    ) -> CreateOrReplaceAttachmentBuilder
     where
         M: Into<String>,
         C: Into<String>,
     {
-        CreateReferenceAttachmentBuilder::new(self.clone(), media.into(), content_type.into())
+        CreateOrReplaceAttachmentBuilder::new(self.clone(), true, media.into(), content_type.into())
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
-        requests::ReplaceReferenceAttachmentBuilder::new(self)
-    }
-
-    /// Get a raw [`HttpClient`].
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
+    pub fn replace_attachment<M, C>(
+        &self,
+        media: M,
+        content_type: C,
+    ) -> CreateOrReplaceAttachmentBuilder
+    where
+        M: Into<String>,
+        C: Into<String>,
+    {
+        CreateOrReplaceAttachmentBuilder::new(
+            self.clone(),
+            false,
+            media.into(),
+            content_type.into(),
+        )
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
@@ -105,23 +109,6 @@ impl AttachmentClient {
                 self.document_client().document_name(),
             ),
             method,
-        )
-    }
-
-    pub(crate) fn prepare_request_with_attachment_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}/docs/{}/attachments/{}",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-                self.document_client().document_name(),
-                self.attachment_name()
-            ),
-            method,
-            ResourceType::Attachments,
         )
     }
 

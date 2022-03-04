@@ -107,16 +107,16 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     // create reference attachment
     let attachment_client = document_client.clone().into_attachment_client("reference");
     let resp = attachment_client
-        .create_reference("https://www.bing.com", "image/jpeg")
+        .create_attachment("https://www.bing.com", "image/jpeg")
         .consistency_level(&ret)
         .into_future()
         .await?;
 
     // replace reference attachment
     let resp = attachment_client
-        .replace_reference()
+        .replace_attachment("https://www.microsoft.com", "image/jpeg")
         .consistency_level(&resp)
-        .execute("https://www.microsoft.com", "image/jpeg")
+        .into_future()
         .await?;
 
     // create slug attachment

@@ -107,9 +107,7 @@ extern crate azure_core;
 pub mod clients;
 pub mod operations;
 pub mod prelude;
-pub mod requests;
 pub mod resources;
-pub mod responses;
 
 mod authorization_policy;
 mod consistency_level;

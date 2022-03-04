@@ -13,12 +13,9 @@ pub struct DocumentClient {
 }
 
 impl DocumentClient {
-    /// This function creates a new instance of a DocumentClient. A document is identified by its
-    /// primary key and its partition key.
+    /// Create a new instance of a DocumentClient.
     ///
-    /// Partition key is eagerly evaluated: the json representation is generated as soon as you
-    /// call the `new` function. This avoids doing the serialization over and over, saving time.
-    /// It also releases the borrow since the serialized string is owned by the `DocumentClient`.
+    /// A document is identified by its primary key and its partition key.
     pub(crate) fn new<S: Into<String>, PK: Serialize>(
         collection_client: CollectionClient,
         document_name: S,

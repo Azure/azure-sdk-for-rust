@@ -8,17 +8,6 @@ use std::str::FromStr;
 
 const FIELDS: &[&str] = &["uri", "method", "headers", "body"];
 
-impl Request {
-    fn new(uri: Uri, method: Method, headers: HeaderMap, body: Body) -> Self {
-        Self {
-            uri,
-            method,
-            headers,
-            body,
-        }
-    }
-}
-
 impl<'de> Deserialize<'de> for Request {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -98,12 +87,12 @@ impl<'de> Visitor<'de> for RequestVisitor {
             );
         }
 
-        Ok(Self::Value::new(
-            Uri::from_str(uri.1).expect("expected a valid uri"),
-            Method::from_str(method.1).expect("expected a valid HTTP method"),
-            hm,
-            bytes::Bytes::from(body).into(),
-        ))
+        Ok(Self::Value {
+            uri: Uri::from_str(uri.1).expect("expected a valid uri"),
+            method: Method::from_str(method.1).expect("expected a valid HTTP method"),
+            headers: hm,
+            body: bytes::Bytes::from(body).into(),
+        })
     }
 }
 
