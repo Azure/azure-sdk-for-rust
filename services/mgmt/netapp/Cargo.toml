@@ -21,7 +21,7 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [package.metadata.docs.rs]
-features = ["package-netapp-2021-08-01", "package-netapp-2021-06-01", "package-netapp-2021-04-01", "package-netapp-2021-04-01-preview"]
+features = ["no-default-version", "package-netapp-2021-08-01", "package-netapp-2021-06-01", "package-netapp-2021-04-01", "package-netapp-2021-04-01-preview"]
 
 [features]
 default = ["package-netapp-2021-10-01", "enable_reqwest"]

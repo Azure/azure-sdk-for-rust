@@ -21,7 +21,7 @@ azure_identity = { path = "../../../sdk/identity", version = "0.1" }
 tokio = { version = "1.0", features = ["macros"] }
 
 [package.metadata.docs.rs]
-features = ["package-0_3-preview_0", "package-0_2-preview_1", "package-0_2-preview_0", "package-2021-01-01-preview"]
+features = ["no-default-version", "package-0_3-preview_0", "package-0_2-preview_1", "package-0_2-preview_0", "package-2021-01-01-preview"]
 
 [features]
 default = ["package-2021-01-01", "enable_reqwest"]
