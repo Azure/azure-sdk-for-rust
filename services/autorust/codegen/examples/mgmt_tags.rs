@@ -9,9 +9,9 @@ fn main() -> Result<()> {
     for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
         println!("{} {}", i + 1, spec.spec());
         for tag in spec.config()?.tags() {
-            println!("  {}", &tag.tag);
-            for input_file in &tag.input_files {
-                println!("    {}", input_file);
+            println!("  {}", &tag.name());
+            for input_file in &tag.input_files() {
+                println!("    {}", input_file.display());
             }
             tag_count += 1;
         }

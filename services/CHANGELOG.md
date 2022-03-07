@@ -1,6 +1,8 @@
 # 0.2 (2022-03)
 
-- generated from azure-rest-api-specs [commit from 2022-03-02](https://github.com/Azure/azure-rest-api-specs/commit/c56b44b794ff17caad4d31c6ab64b07e28253504)
+- [#672](https://github.com/Azure/azure-sdk-for-rust/pull/672) generated from azure-rest-api-specs [commit from 2022-03-02](https://github.com/Azure/azure-rest-api-specs/commit/c56b44b794ff17caad4d31c6ab64b07e28253504)
+- [#675](https://github.com/Azure/azure-sdk-for-rust/pull/675) use Basic Information tag for default version
+- [#634](https://github.com/Azure/azure-sdk-for-rust/issues/634) limit docs.rs to 5 API tags
 
 # 0.1 (2022-01)
 
