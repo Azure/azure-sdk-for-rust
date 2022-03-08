@@ -73,7 +73,7 @@ impl ExecuteStoredProcedureBuilder {
 
             let response = self
                 .client
-                .cosmos_client()
+                .client()
                 .pipeline()
                 .send(
                     self.context.clone().insert(ResourceType::StoredProcedures),

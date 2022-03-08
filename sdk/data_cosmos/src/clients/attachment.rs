@@ -83,7 +83,6 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to replace an attachment.
-<<<<<<< HEAD:sdk/data_cosmos/src/clients/attachment_client.rs
     pub fn replace_attachment<M, C>(
         &self,
         media: M,
@@ -99,15 +98,6 @@ impl AttachmentClient {
             media.into(),
             content_type.into(),
         )
-=======
-    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
-        requests::ReplaceReferenceAttachmentBuilder::new(self)
-    }
-
-    /// Get a raw [`HttpClient`].
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.client().http_client()
->>>>>>> 495b38c8e... Remove `_client` suffix from cosmos methods:sdk/data_cosmos/src/clients/attachment.rs
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
@@ -122,26 +112,6 @@ impl AttachmentClient {
         )
     }
 
-<<<<<<< HEAD:sdk/data_cosmos/src/clients/attachment_client.rs
-=======
-    pub(crate) fn prepare_request_with_attachment_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}/docs/{}/attachments/{}",
-                self.database().database_name(),
-                self.collection().collection_name(),
-                self.document().document_name(),
-                self.attachment_name()
-            ),
-            method,
-            ResourceType::Attachments,
-        )
-    }
-
->>>>>>> 495b38c8e... Remove `_client` suffix from cosmos methods:sdk/data_cosmos/src/clients/attachment.rs
     pub(crate) fn prepare_pipeline_with_attachment_name(&self, method: http::Method) -> Request {
         self.client().prepare_request_pipeline(
             &format!(
