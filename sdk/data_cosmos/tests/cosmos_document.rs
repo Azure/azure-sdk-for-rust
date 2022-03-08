@@ -36,7 +36,7 @@ async fn create_and_delete_document() {
         .await
         .unwrap();
 
-    let database = client.into_database(DATABASE_NAME);
+    let database = client.database(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -54,7 +54,7 @@ async fn create_and_delete_document() {
         .await
         .unwrap();
 
-    let collection = database.clone().into_collection(COLLECTION_NAME);
+    let collection = database.collection(COLLECTION_NAME);
 
     // create a new document
     let document_data = MyDocument {
@@ -78,10 +78,7 @@ async fn create_and_delete_document() {
     assert!(documents.len() == 1);
 
     // try to get the contents of the previously created document
-    let document = collection
-        .clone()
-        .into_document(DOCUMENT_NAME, &DOCUMENT_NAME)
-        .unwrap();
+    let document = collection.document(DOCUMENT_NAME, &DOCUMENT_NAME).unwrap();
 
     let document_after_get = document
         .get_document()
@@ -124,7 +121,7 @@ async fn query_documents() {
         .into_future()
         .await
         .unwrap();
-    let database = client.into_database(DATABASE_NAME);
+    let database = client.database(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -142,7 +139,7 @@ async fn query_documents() {
         .await
         .unwrap();
 
-    let collection = database.clone().into_collection(COLLECTION_NAME);
+    let collection = database.collection(COLLECTION_NAME);
 
     // create a new document
     let document_data = MyDocument {
@@ -198,7 +195,7 @@ async fn replace_document() {
         .into_future()
         .await
         .unwrap();
-    let database = client.into_database(DATABASE_NAME);
+    let database = client.database(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -216,7 +213,7 @@ async fn replace_document() {
         .await
         .unwrap();
 
-    let collection = database.clone().into_collection(COLLECTION_NAME);
+    let collection = database.collection(COLLECTION_NAME);
 
     // create a new document
     let mut document_data = MyDocument {
@@ -241,8 +238,7 @@ async fn replace_document() {
     // replace document with optimistic concurrency and session token
     document_data.hello = 190;
     collection
-        .clone()
-        .into_document(document_data.id.clone(), &document_data.id)
+        .document(document_data.id.clone(), &document_data.id)
         .unwrap()
         .replace_document(document_data)
         .consistency_level(ConsistencyLevel::from(&documents))
@@ -257,9 +253,7 @@ async fn replace_document() {
         .unwrap();
 
     // now get the replaced document
-    let document = collection
-        .into_document(DOCUMENT_NAME, &DOCUMENT_NAME)
-        .unwrap();
+    let document = collection.document(DOCUMENT_NAME, &DOCUMENT_NAME).unwrap();
     let document_after_get = document
         .get_document()
         .into_future::<MyDocument>()

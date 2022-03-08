@@ -14,7 +14,7 @@
 //!
 //! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`
 //! let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-//! let client = client.into_database(database_name);
+//! let client = client.database(database_name);
 //! ```
 
 mod attachment;

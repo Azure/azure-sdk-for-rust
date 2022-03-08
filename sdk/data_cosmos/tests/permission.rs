@@ -22,13 +22,13 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let database = client.into_database(DATABASE_NAME);
+    let database = client.database(DATABASE_NAME);
 
     // create two users
-    let user1_client = database.clone().into_user(USER_NAME1);
-    let _create_user_response = user1_client.create_user().into_future().await.unwrap();
-    let user2_client = database.clone().into_user(USER_NAME2);
-    let _create_user_response = user2_client.create_user().into_future().await.unwrap();
+    let user1 = database.user(USER_NAME1);
+    let _create_user_response = user1.create_user().into_future().await.unwrap();
+    let user2 = database.user(USER_NAME2);
+    let _create_user_response = user2.create_user().into_future().await.unwrap();
 
     // create a temp collection
     let create_collection_response = database
@@ -38,8 +38,8 @@ async fn permissions() {
         .unwrap();
 
     // create two permissions
-    let permission_user1 = user1_client.permission(PERMISSION1);
-    let permission_user2 = user2_client.permission(PERMISSION2);
+    let permission_user1 = user1.permission(PERMISSION1);
+    let permission_user2 = user2.permission(PERMISSION2);
 
     let _create_permission_user1_response = permission_user1
         .create_permission(create_collection_response.collection.all_permission())
@@ -55,7 +55,7 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let list_permissions_response = user1_client
+    let list_permissions_response = user1
         .list_permissions()
         .into_stream()
         .next()
@@ -64,7 +64,7 @@ async fn permissions() {
         .unwrap();
     assert_eq!(list_permissions_response.permissions.len(), 1);
 
-    let list_permissions_response = user2_client
+    let list_permissions_response = user2
         .list_permissions()
         .into_stream()
         .next()

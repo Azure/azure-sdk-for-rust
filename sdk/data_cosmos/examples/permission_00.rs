@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let database = client.database(database_name);
     let collection = database.collection(collection_name);
-    let collection2_client = database.collection(collection_name2);
+    let collection2 = database.collection(collection_name2);
     let user = database.user(user_name);
 
     let get_database_response = database.get_database().into_future().await?;
@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_collection_response = collection.get_collection().into_future().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let get_collection2_response = collection2_client.get_collection().into_future().await?;
+    let get_collection2_response = collection2.get_collection().into_future().await?;
     println!(
         "get_collection2_response == {:#?}",
         get_collection2_response

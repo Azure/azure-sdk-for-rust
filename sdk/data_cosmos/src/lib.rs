@@ -64,9 +64,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let client = CosmosClient::new(account.clone(), authorization_token, CosmosOptions::default());
 
     // We know the database so we can obtain a database client.
-    let database = client.into_database(database_name);
+    let database = client.database(database_name);
     // We know the collection so we can obtain a collection client.
-    let collection = database.into_collection(collection_name);
+    let collection = database.collection(collection_name);
 
     // Insert 10 documents
     println!("Inserting 10 documents...");

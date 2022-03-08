@@ -24,10 +24,10 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
     assert_eq!(db.database.id, database_name);
 
     // create collection!
-    let db_client = client.clone().into_database(database_name.clone());
+    let database = client.database(database_name.clone());
     let collection_name = "panzadoro";
     log::info!("Creating a collection with name '{}'...", collection_name);
-    let collection = db_client
+    let collection = database
         .create_collection(collection_name, "/id")
         .into_future()
         .await?;
@@ -37,7 +37,7 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
 
     // list collections!
     log::info!("Listing all collections...");
-    let collections = Box::pin(db_client.list_collections().into_stream())
+    let collections = Box::pin(database.list_collections().into_stream())
         .next()
         .await
         .expect("No collection page")?;
@@ -47,7 +47,7 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
 
     // delete database
     log::info!("Deleting the database...");
-    let deleted_database = db_client.delete_database().into_future().await?;
+    let deleted_database = database.delete_database().into_future().await?;
     log::info!("Successfully deleted database");
     log::debug!("The delete_database response: {:#?}", deleted_database);
 

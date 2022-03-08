@@ -18,12 +18,12 @@ async fn collection_operations() -> Result<(), BoxedError> {
     client.create_database(database_name).into_future().await?;
 
     // create collection!
-    let db_client = client.clone().into_database(database_name.clone());
+    let database = client.database(database_name.clone());
 
     let collection_name = "sample_collection";
     log::info!("Creating a collection with name '{}'...", collection_name);
 
-    let create_collection_response = db_client
+    let create_collection_response = database
         .create_collection(collection_name, "/id")
         .into_future()
         .await?;
@@ -36,7 +36,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
         create_collection_response
     );
 
-    let collection = db_client.clone().into_collection(collection_name);
+    let collection = database.collection(collection_name);
 
     // get collection!
     let get_collection_response = collection.get_collection().into_future().await?;
@@ -112,7 +112,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
         delete_collection_response
     );
 
-    db_client.delete_database().into_future().await.unwrap();
+    database.delete_database().into_future().await.unwrap();
 
     Ok(())
 }

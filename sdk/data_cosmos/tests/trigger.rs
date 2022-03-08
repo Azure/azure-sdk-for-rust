@@ -49,7 +49,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
         .await
         .unwrap();
 
-    let database = client.into_database(DATABASE_NAME);
+    let database = client.database(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = {
@@ -60,8 +60,8 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
             .unwrap()
     };
 
-    let collection = database.clone().into_collection(COLLECTION_NAME);
-    let trigger = collection.clone().into_trigger(TRIGGER_NAME);
+    let collection = database.collection(COLLECTION_NAME);
+    let trigger = collection.trigger(TRIGGER_NAME);
 
     let ret = trigger
         .create_trigger(

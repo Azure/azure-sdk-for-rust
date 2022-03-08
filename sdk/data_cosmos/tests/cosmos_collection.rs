@@ -18,7 +18,7 @@ async fn create_and_delete_collection() {
         .await
         .unwrap();
 
-    let database = client.into_database(DATABASE_NAME);
+    let database = client.database(DATABASE_NAME);
 
     // create a new collection
     let collection = database
@@ -34,10 +34,11 @@ async fn create_and_delete_collection() {
     assert!(collections.collections.len() == 1);
 
     // try to get the previously created collection
-    let collection = database.clone().into_collection(COLLECTION_NAME);
+    let rid = collection.collection.rid;
+    let collection = database.collection(COLLECTION_NAME);
 
     let collection_after_get = collection.get_collection().into_future().await.unwrap();
-    assert!(collection.collection.rid == collection_after_get.collection.rid);
+    assert!(rid == collection_after_get.collection.rid);
 
     // check GetPartitionKeyRanges: https://docs.microsoft.com/rest/api/cosmos-db/get-partition-key-ranges
     collection
@@ -70,7 +71,7 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let database = client.into_database(DATABASE_NAME);
+    let database = client.database(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -122,9 +123,8 @@ async fn replace_collection() {
         .excluded_paths
         .push("/\"excludeme\"/?".to_owned().into());
 
-    let collection = database.clone().into_collection(COLLECTION_NAME);
-
-    let _replace_collection_response = collection
+    let _replace_collection_response = database
+        .collection(COLLECTION_NAME)
         .replace_collection("/id")
         .indexing_policy(new_ip)
         .into_future()

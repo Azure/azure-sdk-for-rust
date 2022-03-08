@@ -31,7 +31,7 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
         .await
         .unwrap();
 
-    let database = client.into_database(DATABASE_NAME);
+    let database = client.database(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = database
@@ -40,10 +40,8 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
         .await
         .unwrap();
 
-    let collection = database.clone().into_collection(COLLECTION_NAME);
-    let user_defined_function = collection
-        .clone()
-        .into_user_defined_function(USER_DEFINED_FUNCTION_NAME);
+    let collection = database.collection(COLLECTION_NAME);
+    let user_defined_function = collection.user_defined_function(USER_DEFINED_FUNCTION_NAME);
 
     let ret = user_defined_function
         .create_user_defined_function("body")

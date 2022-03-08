@@ -44,8 +44,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // create collection!
     {
-        let db_client = client.database(database_name.clone());
-        let create_collection_response = db_client
+        let database = client.database(database_name.clone());
+        let create_collection_response = database
             .create_collection("panzadoro", "/id")
             .into_future()
             .await?;
@@ -55,12 +55,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             create_collection_response
         );
 
-        let db_collection = db_client.collection("panzadoro");
+        let db_collection = database.collection("panzadoro");
 
         let get_collection_response = db_collection.get_collection().into_future().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
-        let mut stream = db_client.list_collections().into_stream();
+        let mut stream = database.list_collections().into_stream();
         while let Some(res) = stream.next().await {
             let res = res?;
             println!("res == {:#?}", res);

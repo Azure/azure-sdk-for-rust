@@ -36,8 +36,7 @@ async fn create_and_delete_database() {
 
     // get the previously created database
     let database_after_get = client
-        .clone()
-        .into_database(DATABASE_NAME)
+        .database(DATABASE_NAME)
         .get_database()
         .into_future()
         .await
@@ -46,8 +45,7 @@ async fn create_and_delete_database() {
 
     // delete the database
     client
-        .clone()
-        .into_database(DATABASE_NAME)
+        .database(DATABASE_NAME)
         .delete_database()
         .into_future()
         .await
