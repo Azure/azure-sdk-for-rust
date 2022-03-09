@@ -38,38 +38,38 @@ impl AutoRefreshingTokenCredential {
 impl TokenCredential for AutoRefreshingTokenCredential {
     async fn get_token(&self, resource: &str) -> std::result::Result<TokenResponse, Error> {
         let rguard = self.current_token.read().await;
-        match rguard.as_ref() {
-            None => {
-                ();
-            }
-            Some(Err(err)) => {
-                return Err(Error::AuthorizationPolicy(err.to_string()));
-            }
+        let token = match rguard.as_ref() {
             Some(Ok(token)) => {
                 if !is_expired(token.clone()) {
-                    return Ok(token.clone());
-                };
+                    Some(token.clone())
+                } else {
+                    None
+                }
             }
-        }
+            _ => None,
+        };
         drop(rguard);
-        loop {
-            let mut guard = self.current_token.write().await;
-            match guard.as_ref() {
-                None => {
-                    let res = self.credential.get_token(resource).await;
-                    *guard = Some(res);
+        match token {
+            Some(token) => return Ok(token),
+            None => loop {
+                let mut guard = self.current_token.write().await;
+                match guard.as_ref() {
+                    None => {
+                        let res = self.credential.get_token(resource).await;
+                        *guard = Some(res);
+                    }
+                    Some(Err(err)) => {
+                        return Err(Error::AuthorizationPolicy(err.to_string()));
+                    }
+                    Some(Ok(token)) => {
+                        if is_expired(token.clone()) {
+                            *guard = None;
+                        } else {
+                            return Ok(token.clone());
+                        };
+                    }
                 }
-                Some(Err(err)) => {
-                    return Err(Error::AuthorizationPolicy(err.to_string()));
-                }
-                Some(Ok(token)) => {
-                    if is_expired(token.clone()) {
-                        *guard = None;
-                    } else {
-                        return Ok(token.clone());
-                    };
-                }
-            }
+            },
         }
     }
 }
