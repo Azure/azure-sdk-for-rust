@@ -6,9 +6,8 @@ use azure_core::{
 };
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
-use std::pin::Pin;
 
-type ListFileSystems = Pin<Box<Pageable<ListFileSystemsResponse, azure_core::Error>>>;
+type ListFileSystems = Pageable<ListFileSystemsResponse, azure_core::Error>;
 
 #[derive(Debug, Clone)]
 pub struct ListFileSystemsBuilder {
@@ -79,7 +78,7 @@ impl ListFileSystemsBuilder {
             }
         };
 
-        Box::pin(Pageable::new(make_request))
+        Pageable::new(make_request)
     }
 }
 
