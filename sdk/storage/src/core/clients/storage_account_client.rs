@@ -415,7 +415,7 @@ impl StorageAccountClient {
             request.body(azure_core::EMPTY_BODY)
         }?;
 
-        debug!("using request == {:#?}", request);
+        trace!("using request == {:#?}", request);
 
         Ok((request, url))
     }
