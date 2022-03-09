@@ -42,6 +42,8 @@ pub enum Error {
     Json(#[source] serde_json::Error),
     #[error("Other error")]
     Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
+    #[error("Other error")]
+    AuthorizationPolicy(String),
 }
 
 impl From<super::error::Error> for Error {
