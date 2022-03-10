@@ -1,19 +1,19 @@
-use std::fmt::{Debug};
-use azure_core::auth::TokenCredential;
-use getset::Getters;
-use serde::{Deserialize};
-use serde_json::{Map, Value};
-use chrono::{DateTime, Utc};
 use crate::client::API_VERSION_PARAM;
-use crate::Error;
 use crate::DeviceUpdateClient;
+use crate::Error;
+use azure_core::auth::TokenCredential;
+use chrono::{DateTime, Utc};
+use getset::Getters;
 use log::debug;
+use serde::Deserialize;
+use serde_json::{Map, Value};
+use std::fmt::Debug;
 
 #[derive(Debug, Deserialize, Getters)]
 #[getset(get = "pub")]
 #[serde(rename_all = "camelCase")]
 pub struct ImportManifestMetadata {
-    hashes: Map<String,Value>,
+    hashes: Map<String, Value>,
     size_in_bytes: u64,
     url: String,
 }
@@ -62,10 +62,10 @@ pub enum StepType {
 #[getset(get = "pub")]
 #[serde(rename_all = "camelCase")]
 pub struct Step {
-    description: String,
+    description: Option<String>,
     files: Vec<String>,
     handler: String,
-    handler_properties: Map<String,Value>,
+    handler_properties: Map<String, Value>,
     #[serde(rename = "type")]
     step_type: Option<StepType>,
     update_id: Option<UpdateId>,
@@ -81,7 +81,7 @@ pub struct Instructions {
 #[getset(get = "pub")]
 #[serde(rename_all = "camelCase")]
 pub struct Update {
-    compatibility: Vec<Map<String,Value>>,
+    compatibility: Vec<Map<String, Value>>,
     created_date_time: DateTime<Utc>,
     description: Option<String>,
     etag: String,
@@ -104,7 +104,7 @@ pub struct UpdateFile {
     etag: String,
     file_id: String,
     file_name: String,
-    hashes: Map<String,Value>,
+    hashes: Map<String, Value>,
     mime_type: String,
     scan_details: String,
     scan_result: String,
@@ -160,7 +160,6 @@ pub struct UpdateList {
 }
 
 impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
-
     /// Import new update version.
     /// POST https://{endpoint}/deviceupdate/{instanceId}/updates?action=import&api-version=2021-06-01-preview
     pub async fn import_update(
@@ -178,17 +177,16 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         let resp_body = self.post_authed(uri.to_string(), Some(import_json)).await?;
         debug!("Import response: {}", &resp_body);
 
-        loop{
+        loop {
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             let mut uri = self.device_update_url.clone();
             uri.set_path(&resp_body);
             debug!("Requesting operational status: {}", &uri);
             let resp_body = self.get_authed(uri.to_string()).await?;
             debug!("Operational status response: {}", &resp_body);
-            match serde_json::from_str::<UpdateOperation>(&resp_body)
-            {
+            match serde_json::from_str::<UpdateOperation>(&resp_body) {
                 Ok(status) => {
-                    let error:String = match status.error.clone() {
+                    let error: String = match status.error.clone() {
                         None => "not present".to_owned(),
                         Some(v) => v.to_string(),
                     };
@@ -199,12 +197,13 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
                         OperationStatus::Running => continue,
                         OperationStatus::Undefined => return Err(Error::ImportUndefined(error)),
                     }
-                },
-                Err(_e) => {},
+                }
+                Err(_e) => {
+                    return Err(Error::SerdeParse(_e));
+                }
             }
         }
     }
-
 
     /// Delete a specific update version.
     /// DELETE https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview
@@ -280,7 +279,6 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         Ok(response)
     }
 
-
     /// Get a list of all update file identifiers for the specified version.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files?api-version=2021-06-01-preview
     pub async fn list_files(
@@ -295,17 +293,21 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
-        let mut all_results = response.value;
+        let mut all_results: Vec<String> = Vec::new();
+
         loop {
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
+            all_results.append(&mut response.value);
+
             match response.next_link {
                 None => break,
                 Some(url) => {
-                    let resp_body = self.get_authed(url).await?;
-                    response = serde_json::from_str::<StringsList>(&resp_body)?;
-                    all_results.append(&mut response.value);
-                },
+                    uri = self.device_update_url.clone();
+                    uri.set_path("");
+                    uri.set_query(None);
+                    uri = uri.join(&url)?
+                }
             }
         }
         Ok(all_results)
@@ -323,17 +325,21 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
-        let mut all_results = response.value;
+        let mut all_results: Vec<String> = Vec::new();
+
         loop {
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
+            all_results.append(&mut response.value);
+
             match response.next_link {
                 None => break,
                 Some(url) => {
-                    let resp_body = self.get_authed(url).await?;
-                    response = serde_json::from_str::<StringsList>(&resp_body)?;
-                    all_results.append(&mut response.value);
-                },
+                    uri = self.device_update_url.clone();
+                    uri.set_path("");
+                    uri.set_query(None);
+                    uri = uri.join(&url)?
+                }
             }
         }
         Ok(all_results)
@@ -352,27 +358,35 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         let path = format!("deviceupdate/{instance_id}/updates/operations");
         let mut params = API_VERSION_PARAM.to_owned();
         match top {
-            None => {},
-            Some(t) => { params = format!("$top={t}&{params}"); }
+            None => {}
+            Some(t) => {
+                params = format!("$top={t}&{params}");
+            }
         }
         match filter {
-            None => {},
-            Some(f) => { params = format!("$filter={f}&{params}"); }
+            None => {}
+            Some(f) => {
+                params = format!("$filter={f}&{params}");
+            }
         }
         uri.set_path(&path);
         uri.set_query(Some(&params));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let mut response = serde_json::from_str::<UpdateOperationsList>(&resp_body)?;
-        let mut all_results = response.value;
+        let mut all_results: Vec<UpdateOperation> = Vec::new();
+
         loop {
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            let mut response = serde_json::from_str::<UpdateOperationsList>(&resp_body)?;
+            all_results.append(&mut response.value);
+
             match response.next_link {
                 None => break,
                 Some(url) => {
-                    let resp_body = self.get_authed(url).await?;
-                    response = serde_json::from_str::<UpdateOperationsList>(&resp_body)?;
-                    all_results.append(&mut response.value);
-                },
+                    uri = self.device_update_url.clone();
+                    uri.set_path("");
+                    uri.set_query(None);
+                    uri = uri.join(&url)?
+                }
             }
         }
         Ok(all_results)
@@ -380,26 +394,27 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
 
     /// Get a list of all update providers that have been imported to Device Update for IoT Hub.
     /// GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers?api-version=2021-06-01-preview
-    pub async fn list_providers(
-        &mut self,
-        instance_id: &str,
-    ) -> Result<Vec<String>, Error> {
+    pub async fn list_providers(&mut self, instance_id: &str) -> Result<Vec<String>, Error> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers");
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
-        let mut all_results = response.value;
+        let mut all_results: Vec<String> = Vec::new();
+
         loop {
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
+            all_results.append(&mut response.value);
+
             match response.next_link {
                 None => break,
                 Some(url) => {
-                    let resp_body = self.get_authed(url).await?;
-                    response = serde_json::from_str::<StringsList>(&resp_body)?;
-                    all_results.append(&mut response.value);
-                },
+                    uri = self.device_update_url.clone();
+                    uri.set_path("");
+                    uri.set_query(None);
+                    uri = uri.join(&url)?
+                }
             }
         }
         Ok(all_results)
@@ -418,29 +433,34 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         uri.set_path(&path);
         let mut params = API_VERSION_PARAM.to_owned();
         match search {
-            None => {},
-            Some(s) => { params = format!("{params}&$search={s}"); }
+            None => {}
+            Some(s) => {
+                params = format!("{params}&$search={s}");
+            }
         }
         match filter {
-            None => {},
-            Some(f) => { params = format!("{params}&$filter={f}"); }
+            None => {}
+            Some(f) => {
+                params = format!("{params}&$filter={f}");
+            }
         }
         uri.set_query(Some(&params));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        println!("Body: {:?}", resp_body);
-        let mut response = serde_json::from_str::<UpdateList>(&resp_body)?;
-        let mut all_results = response.value;
+        let mut all_results: Vec<Update> = Vec::new();
+
         loop {
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            let mut response = serde_json::from_str::<UpdateList>(&resp_body)?;
+            all_results.append(&mut response.value);
+
             match response.next_link {
                 None => break,
-                Some(path) => {
-                    let mut uri = self.device_update_url.clone();
-                    uri.set_path(&path);
-                    let resp_body = self.get_authed(uri.to_string()).await?;
-                    response = serde_json::from_str::<UpdateList>(&resp_body)?;
-                    all_results.append(&mut response.value);
-                },
+                Some(url) => {
+                    uri = self.device_update_url.clone();
+                    uri.set_path("");
+                    uri.set_query(None);
+                    uri = uri.join(&url)?
+                }
             }
         }
         Ok(all_results)
@@ -456,38 +476,43 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
         filter: Option<&str>,
     ) -> Result<Vec<String>, Error> {
         let mut uri = self.device_update_url.clone();
-        let path = format!("deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions");
+        let path = format!(
+            "deviceupdate/{instance_id}/updates/providers/{provider}/names/{name}/versions"
+        );
         uri.set_path(&path);
         let mut params = API_VERSION_PARAM.to_owned();
         match filter {
-            None => {},
-            Some(f) => { params = format!("{params}&$filter={f}"); }
+            None => {}
+            Some(f) => {
+                params = format!("{params}&$filter={f}");
+            }
         }
         uri.set_query(Some(&params));
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
-        let mut all_results = response.value;
+        let mut all_results: Vec<String> = Vec::new();
+
         loop {
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            let mut response = serde_json::from_str::<StringsList>(&resp_body)?;
+            all_results.append(&mut response.value);
+
             match response.next_link {
                 None => break,
                 Some(url) => {
-                    let resp_body = self.get_authed(url).await?;
-                    response = serde_json::from_str::<StringsList>(&resp_body)?;
-                    all_results.append(&mut response.value);
-                },
+                    uri = self.device_update_url.clone();
+                    uri.set_path("");
+                    uri.set_query(None);
+                    uri = uri.join(&url)?
+                }
             }
         }
         Ok(all_results)
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use chrono::{DateTime, Duration, Utc};
+    use chrono::DateTime;
     use mockito::{mock, Matcher};
     use serde_json::json;
 
@@ -497,41 +522,32 @@ mod tests {
 
     #[tokio::test]
     async fn can_import_update() {
+        let mut op_url = mockito::server_url();
+        op_url += "/op_location";
         let _m = mock("POST", "/deviceupdate/test-instance/updates")
-            .match_query(Matcher::UrlEncoded("api-version".into(), API_VERSION.into()))
+            .match_query(Matcher::UrlEncoded(
+                "api-version".into(),
+                API_VERSION.into(),
+            ))
+            .with_header("operation-location", "/op_location")
+            .with_status(202)
+            .create();
+        let _op = mock("GET", "/op_location")
             .with_header("content-type", "application/json")
             .with_body(
                 json!({
-                    "compatibility": [{"some":"json","...":"fields"},{"other":"pair"}],
                     "createdDateTime":"1999-09-10T21:59:22Z",
-                    "description":"Some description",
-                    "etag":"Some tag",
-                    "friendlyName":"Some friendly name",
-                    "importedDateTime":"1999-09-11T03:05:07.3845533+01:00",
-                    "installedCriteria":"Some criteria",
-                    "instructions":{"steps":[
-                        {
-                            "description":"firstDescr",
-                            "files":["file1","file2"],
-                            "handler":"someHandler",
-                            "handlerProperties":{"prop1":"val1","prop2":2u8},
-                            "type":"inline",
-                            "updateId":{"name":"s1name","provider":"s1prov","version":"s1vers"}
-                        },
-                        {
-                            "description":"secondDescr",
-                            "files":["file3","file4"],
-                            "handler":"someOtherHandler",
-                            "handlerProperties":{"prop3":"val3","prop4":999i32},
-                            "type":"reference",
-                            "updateId":{"name":"s2name","provider":"s2prov","version":"s2vers"}
-                        }]},
-                    "isDeployable":true,
-                    "manifestVersion":"someVersion",
-                    "referencedBy":[{"name":"s1name","provider":"s1prov","version":"s1vers"},{"name":"s2name","provider":"s2prov","version":"s2vers"}],
-                    "scanResult":"Scan good",
-                    "updateId":{"name":"someName","provider":"someProvider","version":"someVersion"},
-                    "updateType":"SomeType"
+                    "lastActionDateTime":"1999-09-10T03:05:07.3845533+01:00",
+                    "etag": "\"some_tag\"",
+                    "operationId": "some_op_id",
+                    "resourceLocation": "/deviceupdate/instance/updates/providers/xxx/names/yyy/versions/x.y.z?api-version=2021-06-01-preview",
+                    "status": "Succeeded",
+                    "traceId": "zzzzzzzzzzzzzzzz",
+                    "updateId": {
+                        "name": "somename",
+                        "provider": "someprov",
+                        "version": "x.y.z",
+                    }
                 })
                 .to_string(),
             )
@@ -542,15 +558,21 @@ mod tests {
         let mut client = mock_key_client!(&"test-du", &creds,);
 
         let update = client
-            .import_update("test-instance", r#"{"some":"json","...":"fields"}"#.to_owned())
+            .import_update(
+                "test-instance",
+                r#"{"some":"json","...":"fields"}"#.to_owned(),
+            )
             .await
             .unwrap();
-        assert_eq!(update.compatibility.len(),2);
-        assert_eq!(update.compatibility[0]["some"],"json");
-        assert_eq!(update.compatibility[0]["..."],"fields");
-        assert_eq!(update.compatibility[1]["other"],"pair");
-        assert_eq!(update.created_date_time, DateTime::parse_from_rfc3339("1999-09-10T21:59:22Z").unwrap());
-        assert_eq!(update.imported_date_time, DateTime::parse_from_rfc3339("1999-09-11T03:05:07.3845533+01:00").unwrap());
+        assert_eq!(update.etag, "\"some_tag\"");
+        assert_eq!(update.operation_id, "some_op_id");
+        assert_eq!(
+            update.created_date_time,
+            DateTime::parse_from_rfc3339("1999-09-10T21:59:22Z").unwrap()
+        );
+        assert_eq!(
+            update.last_action_date_time,
+            DateTime::parse_from_rfc3339("1999-09-10T02:05:07.3845533Z").unwrap()
+        );
     }
-
 }

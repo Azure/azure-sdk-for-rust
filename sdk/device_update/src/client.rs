@@ -69,8 +69,13 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
             .get(&uri)
             .bearer_auth(self.token.as_ref().unwrap().token.secret())
             .send()
-            .await
-            .unwrap();
+            .await;
+        let resp = match resp {
+            Ok(r) => r,
+            Err(_e) => {
+                return Err(Error::InvalidOperationPath());
+            }
+        };
         let body = resp.text().await.unwrap();
         Ok(body)
     }
@@ -114,10 +119,8 @@ impl<'a, T: TokenCredential> DeviceUpdateClient<'a, T> {
                 return match headers.get("operation-location").unwrap().to_str() {
                     Ok(p) => Ok(p.to_owned()),
                     Err(_e) => Err(Error::InvalidOperationPath()),
-                }
-            }
-            else
-            {
+                };
+            } else {
                 return Err(Error::NoOperationLocation);
             }
         }
