@@ -31,11 +31,11 @@ impl CreatePermissionBuilder {
 
     pub fn into_future(self) -> CreatePermission {
         Box::pin(async move {
-            let mut request = self.client.client().prepare_request_pipeline(
+            let mut request = self.client.cosmos_client().prepare_request_pipeline(
                 &format!(
                     "dbs/{}/users/{}/permissions",
-                    self.client.database().database_name(),
-                    self.client.user().user_name()
+                    self.client.database_client().database_name(),
+                    self.client.user_client().user_name()
                 ),
                 http::Method::POST,
             );

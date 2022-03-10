@@ -76,7 +76,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
 
             let response = self
                 .client
-                .client()
+                .cosmos_client()
                 .pipeline()
                 .send(
                     self.context.clone().insert(ResourceType::Documents),

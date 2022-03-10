@@ -22,17 +22,17 @@ impl UserDefinedFunctionClient {
     }
 
     /// Get a [`CosmosClient`]
-    pub fn client(&self) -> &CosmosClient {
-        self.collection.client()
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.collection.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
-    pub fn database(&self) -> &DatabaseClient {
-        self.collection.database()
+    pub fn database_client(&self) -> &DatabaseClient {
+        self.collection.database_client()
     }
 
     /// Get a [`CollectionClient`]
-    pub fn collection(&self) -> &CollectionClient {
+    pub fn collection_client(&self) -> &CollectionClient {
         &self.collection
     }
 
@@ -69,11 +69,11 @@ impl UserDefinedFunctionClient {
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
-        self.client().prepare_request_pipeline(
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/udfs",
-                self.database().database_name(),
-                self.collection().collection_name(),
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
             ),
             method,
         )
@@ -83,11 +83,11 @@ impl UserDefinedFunctionClient {
         &self,
         method: http::Method,
     ) -> Request {
-        self.client().prepare_request_pipeline(
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/udfs/{}",
-                self.database().database_name(),
-                self.collection().collection_name(),
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
                 self.user_defined_function_name()
             ),
             method,
@@ -96,6 +96,6 @@ impl UserDefinedFunctionClient {
 
     /// Get a [`Pipeline`]
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.client().pipeline()
+        self.cosmos_client().pipeline()
     }
 }

@@ -20,7 +20,7 @@ impl DatabaseClient {
     }
 
     /// Get a [`CosmosClient`].
-    pub fn client(&self) -> &CosmosClient {
+    pub fn cosmos_client(&self) -> &CosmosClient {
         &self.client
     }
 

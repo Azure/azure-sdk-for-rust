@@ -19,12 +19,12 @@ impl UserClient {
     }
 
     /// Get a [`CosmosClient`]
-    pub fn client(&self) -> &CosmosClient {
-        self.database().client()
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.database_client().cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
-    pub fn database(&self) -> &DatabaseClient {
+    pub fn database_client(&self) -> &DatabaseClient {
         &self.database
     }
 
@@ -64,10 +64,10 @@ impl UserClient {
     }
 
     pub(crate) fn prepare_request_with_user_name(&self, method: http::Method) -> Request {
-        self.client().prepare_request_pipeline(
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/users/{}",
-                self.database().database_name(),
+                self.database_client().database_name(),
                 self.user_name()
             ),
             method,
@@ -75,6 +75,6 @@ impl UserClient {
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.client().pipeline()
+        self.cosmos_client().pipeline()
     }
 }

@@ -27,12 +27,12 @@ impl CollectionClient {
     }
 
     /// Get a [`CosmosClient`].
-    pub fn client(&self) -> &CosmosClient {
-        self.database.client()
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.database.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`].
-    pub fn database(&self) -> &DatabaseClient {
+    pub fn database_client(&self) -> &DatabaseClient {
         &self.database
     }
 
@@ -133,22 +133,24 @@ impl CollectionClient {
     ) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}",
-            self.database().database_name(),
+            self.database_client().database_name(),
             self.collection_name()
         );
-        self.client().prepare_request_pipeline(path, http_method)
+        self.cosmos_client()
+            .prepare_request_pipeline(path, http_method)
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.client().pipeline()
+        self.cosmos_client().pipeline()
     }
 
     pub(crate) fn prepare_doc_request_pipeline(&self, http_method: http::Method) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}/docs",
-            self.database().database_name(),
+            self.database_client().database_name(),
             self.collection_name()
         );
-        self.client().prepare_request_pipeline(path, http_method)
+        self.cosmos_client()
+            .prepare_request_pipeline(path, http_method)
     }
 }

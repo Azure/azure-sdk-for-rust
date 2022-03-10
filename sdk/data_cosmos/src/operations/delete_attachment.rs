@@ -43,7 +43,7 @@ impl DeleteAttachmentBuilder {
             azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
 
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
-                self.client.document().partition_key_serialized(),
+                self.client.document_client().partition_key_serialized(),
                 &mut request,
             );
             let response = self

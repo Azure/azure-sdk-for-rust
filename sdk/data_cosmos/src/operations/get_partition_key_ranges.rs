@@ -34,10 +34,10 @@ impl GetPartitionKeyRangesBuilder {
 
     pub fn into_future(self) -> GetPartitionKeyRanges {
         Box::pin(async move {
-            let mut request = self.client.client().prepare_request_pipeline(
+            let mut request = self.client.cosmos_client().prepare_request_pipeline(
                 &format!(
                     "dbs/{}/colls/{}/pkranges",
-                    self.client.database().database_name(),
+                    self.client.database_client().database_name(),
                     self.client.collection_name()
                 ),
                 http::Method::GET,

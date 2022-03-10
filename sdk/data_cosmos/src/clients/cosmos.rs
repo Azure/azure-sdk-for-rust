@@ -154,7 +154,7 @@ impl CosmosClient {
     }
 
     /// Create a [`DatabaseClient`].
-    pub fn database<S: Into<ReadonlyString>>(&self, database_name: S) -> DatabaseClient {
+    pub fn database_client<S: Into<ReadonlyString>>(&self, database_name: S) -> DatabaseClient {
         DatabaseClient::new(self.clone(), database_name)
     }
 

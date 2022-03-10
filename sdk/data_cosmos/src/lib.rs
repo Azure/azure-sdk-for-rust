@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // We know the database so we can obtain a database client.
     let database = client.database(database_name);
     // We know the collection so we can obtain a collection client.
-    let collection = database.collection(collection_name);
+    let collection = database.collection_client(collection_name);
 
     // Insert 10 documents
     println!("Inserting 10 documents...");

@@ -25,22 +25,22 @@ impl AttachmentClient {
     }
 
     /// Get a [`CosmosClient`].
-    pub fn client(&self) -> &CosmosClient {
-        self.document().client()
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.document_client().cosmos_client()
     }
 
     /// Get a [`DatabaseClient`].
-    pub fn database(&self) -> &DatabaseClient {
-        self.document().database()
+    pub fn database_client(&self) -> &DatabaseClient {
+        self.document_client().database_client()
     }
 
     /// Get a [`CollectionClient`].
-    pub fn collection(&self) -> &CollectionClient {
-        self.document().collection()
+    pub fn collection_client(&self) -> &CollectionClient {
+        self.document_client().collection_client()
     }
 
     /// Get a [`DocumentClient`].
-    pub fn document(&self) -> &DocumentClient {
+    pub fn document_client(&self) -> &DocumentClient {
         &self.document
     }
 
@@ -101,24 +101,24 @@ impl AttachmentClient {
     }
 
     pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
-        self.client().prepare_request_pipeline(
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
-                self.database().database_name(),
-                self.collection().collection_name(),
-                self.document().document_name(),
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+                self.document_client().document_name(),
             ),
             method,
         )
     }
 
     pub(crate) fn prepare_pipeline_with_attachment_name(&self, method: http::Method) -> Request {
-        self.client().prepare_request_pipeline(
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments/{}",
-                self.database().database_name(),
-                self.collection().collection_name(),
-                self.document().document_name(),
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+                self.document_client().document_name(),
                 self.attachment_name()
             ),
             method,
@@ -126,6 +126,6 @@ impl AttachmentClient {
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.client().pipeline()
+        self.cosmos_client().pipeline()
     }
 }

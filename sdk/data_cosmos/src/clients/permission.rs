@@ -20,17 +20,17 @@ impl PermissionClient {
     }
 
     /// Get a [`CosmosClient`
-    pub fn client(&self) -> &CosmosClient {
-        self.user.client()
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.user.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
-    pub fn database(&self) -> &DatabaseClient {
-        self.user.database()
+    pub fn database_client(&self) -> &DatabaseClient {
+        self.user.database_client()
     }
 
     /// Get the [`UserClient`]
-    pub fn user(&self) -> &UserClient {
+    pub fn user_client(&self) -> &UserClient {
         &self.user
     }
 
@@ -60,11 +60,11 @@ impl PermissionClient {
     }
 
     pub(crate) fn prepare_request_with_permission_name(&self, method: http::Method) -> Request {
-        self.client().prepare_request_pipeline(
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/users/{}/permissions/{}",
-                self.database().database_name(),
-                self.user().user_name(),
+                self.database_client().database_name(),
+                self.user_client().user_name(),
                 self.permission_name()
             ),
             method,
@@ -72,6 +72,6 @@ impl PermissionClient {
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.client().pipeline()
+        self.cosmos_client().pipeline()
     }
 }

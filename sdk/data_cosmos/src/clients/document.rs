@@ -29,17 +29,17 @@ impl DocumentClient {
     }
 
     /// Get a [`CosmosClient`]
-    pub fn client(&self) -> &CosmosClient {
-        self.collection().client()
+    pub fn cosmos_client(&self) -> &CosmosClient {
+        self.collection_client().cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
-    pub fn database(&self) -> &DatabaseClient {
-        self.collection().database()
+    pub fn database_client(&self) -> &DatabaseClient {
+        self.collection_client().database_client()
     }
 
     /// Get a [`CollectionClient`]
-    pub fn collection(&self) -> &CollectionClient {
+    pub fn collection_client(&self) -> &CollectionClient {
         &self.collection
     }
 
@@ -85,11 +85,11 @@ impl DocumentClient {
         &self,
         method: http::Method,
     ) -> Request {
-        self.client().prepare_request_pipeline(
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}",
-                self.database().database_name(),
-                self.collection().collection_name(),
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
                 self.document_name()
             ),
             method,

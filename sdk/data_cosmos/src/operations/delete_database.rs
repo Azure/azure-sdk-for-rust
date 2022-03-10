@@ -28,7 +28,7 @@ impl DeleteDatabaseBuilder {
 
     pub fn into_future(self) -> DeleteDatabase {
         Box::pin(async move {
-            let mut request = self.client.client().prepare_request_pipeline(
+            let mut request = self.client.cosmos_client().prepare_request_pipeline(
                 &format!("dbs/{}", self.client.database_name()),
                 http::Method::DELETE,
             );
