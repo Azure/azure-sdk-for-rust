@@ -1,3 +1,6 @@
 {
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "rust-analyzer.cargo.features": [
+        "test_e2e"
+    ]
 }
