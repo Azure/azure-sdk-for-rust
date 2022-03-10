@@ -7976,16 +7976,28 @@ pub struct FactoryUpdateParameters {
     #[doc = "Identity properties of the factory resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<FactoryIdentity>,
-    #[doc = "Whether or not public network access is allowed for the data factory."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<factory_update_parameters::PublicNetworkAccess>,
+    #[doc = "Factory update resource properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<FactoryUpdateProperties>,
 }
 impl FactoryUpdateParameters {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod factory_update_parameters {
+#[doc = "Factory update resource properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FactoryUpdateProperties {
+    #[doc = "Whether or not public network access is allowed for the data factory."]
+    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    pub public_network_access: Option<factory_update_properties::PublicNetworkAccess>,
+}
+impl FactoryUpdateProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod factory_update_properties {
     use super::*;
     #[doc = "Whether or not public network access is allowed for the data factory."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -15249,6 +15261,44 @@ impl QuickBooksSource {
         }
     }
 }
+#[doc = "Linked service for Quickbase."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuickbaseLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Quickbase linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: QuickbaseLinkedServiceTypeProperties,
+}
+impl QuickbaseLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: QuickbaseLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Quickbase linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuickbaseLinkedServiceTypeProperties {
+    #[doc = "The url to connect Quickbase source. Type: string (or Expression with resultType string)."]
+    pub url: serde_json::Value,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "userToken")]
+    pub user_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl QuickbaseLinkedServiceTypeProperties {
+    pub fn new(url: serde_json::Value, user_token: SecretBase) -> Self {
+        Self {
+            url,
+            user_token,
+            encrypted_credential: None,
+        }
+    }
+}
 #[doc = "Enumerates possible frequency option for the schedule trigger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RecurrenceFrequency {
@@ -17265,6 +17315,148 @@ impl ScriptAction {
         }
     }
 }
+#[doc = "Script activity type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptActivity {
+    #[serde(flatten)]
+    pub execution_activity: ExecutionActivity,
+    #[doc = "Script activity properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: ScriptActivityTypeProperties,
+}
+impl ScriptActivity {
+    pub fn new(execution_activity: ExecutionActivity, type_properties: ScriptActivityTypeProperties) -> Self {
+        Self {
+            execution_activity,
+            type_properties,
+        }
+    }
+}
+#[doc = "Parameters of a script block."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScriptActivityParameter {
+    #[doc = "The name of the parameter. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<serde_json::Value>,
+    #[doc = "The type of the parameter."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<script_activity_parameter::Type>,
+    #[doc = "The value of the parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+    #[doc = "The direction of the parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub direction: Option<script_activity_parameter::Direction>,
+    #[doc = "The size of the output direction parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<i32>,
+}
+impl ScriptActivityParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod script_activity_parameter {
+    use super::*;
+    #[doc = "The type of the parameter."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Boolean,
+        DateTime,
+        DateTimeOffset,
+        Decimal,
+        Double,
+        Guid,
+        Int16,
+        Int32,
+        Int64,
+        Single,
+        String,
+        Timespan,
+    }
+    #[doc = "The direction of the parameter."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Direction {
+        Input,
+        Output,
+        InputOutput,
+    }
+}
+#[doc = "Script block of scripts."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptActivityScriptBlock {
+    #[doc = "The query text. Type: string (or Expression with resultType string)."]
+    pub text: serde_json::Value,
+    #[doc = "The type of the query. Type: string."]
+    #[serde(rename = "type")]
+    pub type_: script_activity_script_block::Type,
+    #[doc = "Array of script parameters. Type: array."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameters: Vec<ScriptActivityParameter>,
+}
+impl ScriptActivityScriptBlock {
+    pub fn new(text: serde_json::Value, type_: script_activity_script_block::Type) -> Self {
+        Self {
+            text,
+            type_,
+            parameters: Vec::new(),
+        }
+    }
+}
+pub mod script_activity_script_block {
+    use super::*;
+    #[doc = "The type of the query. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Query,
+        NonQuery,
+    }
+}
+#[doc = "Script activity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScriptActivityTypeProperties {
+    #[doc = "Array of script blocks. Type: array."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scripts: Vec<ScriptActivityScriptBlock>,
+    #[doc = "Log settings of script activity."]
+    #[serde(rename = "logSettings", default, skip_serializing_if = "Option::is_none")]
+    pub log_settings: Option<script_activity_type_properties::LogSettings>,
+}
+impl ScriptActivityTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod script_activity_type_properties {
+    use super::*;
+    #[doc = "Log settings of script activity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct LogSettings {
+        #[doc = "The destination of logs. Type: string."]
+        #[serde(rename = "logDestination")]
+        pub log_destination: log_settings::LogDestination,
+        #[doc = "Log location settings."]
+        #[serde(rename = "logLocationSettings", default, skip_serializing_if = "Option::is_none")]
+        pub log_location_settings: Option<LogLocationSettings>,
+    }
+    impl LogSettings {
+        pub fn new(log_destination: log_settings::LogDestination) -> Self {
+            Self {
+                log_destination,
+                log_location_settings: None,
+            }
+        }
+    }
+    pub mod log_settings {
+        use super::*;
+        #[doc = "The destination of logs. Type: string."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum LogDestination {
+            ActivityOutput,
+            ExternalStore,
+        }
+    }
+}
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretBase {
@@ -18021,6 +18213,41 @@ pub struct SkipErrorFile {
 impl SkipErrorFile {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Linked service for Smartsheet."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartsheetLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Smartsheet linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SmartsheetLinkedServiceTypeProperties,
+}
+impl SmartsheetLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: SmartsheetLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Smartsheet linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartsheetLinkedServiceTypeProperties {
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken")]
+    pub api_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl SmartsheetLinkedServiceTypeProperties {
+    pub fn new(api_token: SecretBase) -> Self {
+        Self {
+            api_token,
+            encrypted_credential: None,
+        }
     }
 }
 #[doc = "The snowflake dataset."]
@@ -19633,6 +19860,65 @@ impl TarReadSettings {
         }
     }
 }
+#[doc = "Linked service for TeamDesk."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TeamDeskLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "TeamDesk linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: TeamDeskLinkedServiceTypeProperties,
+}
+impl TeamDeskLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: TeamDeskLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "TeamDesk linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TeamDeskLinkedServiceTypeProperties {
+    #[doc = "The authentication type to use."]
+    #[serde(rename = "authenticationType")]
+    pub authentication_type: team_desk_linked_service_type_properties::AuthenticationType,
+    #[doc = "The url to connect TeamDesk source. Type: string (or Expression with resultType string)."]
+    pub url: serde_json::Value,
+    #[doc = "The username of the TeamDesk source. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBase>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken", default, skip_serializing_if = "Option::is_none")]
+    pub api_token: Option<SecretBase>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl TeamDeskLinkedServiceTypeProperties {
+    pub fn new(authentication_type: team_desk_linked_service_type_properties::AuthenticationType, url: serde_json::Value) -> Self {
+        Self {
+            authentication_type,
+            url,
+            user_name: None,
+            password: None,
+            api_token: None,
+            encrypted_credential: None,
+        }
+    }
+}
+pub mod team_desk_linked_service_type_properties {
+    use super::*;
+    #[doc = "The authentication type to use."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AuthenticationType {
+        Basic,
+        Token,
+    }
+}
 #[doc = "Linked service for Teradata data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TeradataLinkedService {
@@ -21020,6 +21306,65 @@ impl XmlSource {
             format_settings: None,
             additional_columns: None,
         }
+    }
+}
+#[doc = "Linked service for Zendesk."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ZendeskLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Zendesk linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: ZendeskLinkedServiceTypeProperties,
+}
+impl ZendeskLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: ZendeskLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Zendesk linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ZendeskLinkedServiceTypeProperties {
+    #[doc = "The authentication type to use."]
+    #[serde(rename = "authenticationType")]
+    pub authentication_type: zendesk_linked_service_type_properties::AuthenticationType,
+    #[doc = "The url to connect Zendesk source. Type: string (or Expression with resultType string)."]
+    pub url: serde_json::Value,
+    #[doc = "The username of the Zendesk source. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBase>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken", default, skip_serializing_if = "Option::is_none")]
+    pub api_token: Option<SecretBase>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl ZendeskLinkedServiceTypeProperties {
+    pub fn new(authentication_type: zendesk_linked_service_type_properties::AuthenticationType, url: serde_json::Value) -> Self {
+        Self {
+            authentication_type,
+            url,
+            user_name: None,
+            password: None,
+            api_token: None,
+            encrypted_credential: None,
+        }
+    }
+}
+pub mod zendesk_linked_service_type_properties {
+    use super::*;
+    #[doc = "The authentication type to use."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AuthenticationType {
+        Basic,
+        Token,
     }
 }
 #[doc = "The ZipDeflate compression read settings."]

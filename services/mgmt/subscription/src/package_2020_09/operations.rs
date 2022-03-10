@@ -435,7 +435,7 @@ pub mod subscription {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorResponseBody,
             },
             #[error("Failed to parse request URL")]
             ParseUrl(#[source] url::ParseError),
@@ -490,7 +490,7 @@ pub mod subscription {
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorResponse =
+                            let rsp_value: models::ErrorResponseBody =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
@@ -509,7 +509,7 @@ pub mod subscription {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorResponseBody,
             },
             #[error("Failed to parse request URL")]
             ParseUrl(#[source] url::ParseError),
@@ -565,7 +565,7 @@ pub mod subscription {
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorResponse =
+                            let rsp_value: models::ErrorResponseBody =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,
@@ -584,7 +584,7 @@ pub mod subscription {
             #[error("HTTP status code {}", status_code)]
             DefaultResponse {
                 status_code: http::StatusCode,
-                value: models::ErrorResponse,
+                value: models::ErrorResponseBody,
             },
             #[error("Failed to parse request URL")]
             ParseUrl(#[source] url::ParseError),
@@ -639,7 +639,7 @@ pub mod subscription {
                         }
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
-                            let rsp_value: models::ErrorResponse =
+                            let rsp_value: models::ErrorResponseBody =
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Err(Error::DefaultResponse {
                                 status_code,

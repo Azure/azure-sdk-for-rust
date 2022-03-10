@@ -1,7 +1,8 @@
 use super::*;
-use crate::resources::ResourceType;
-use crate::{requests, ReadonlyString};
-use azure_core::HttpClient;
+use crate::operations::*;
+use crate::resources::trigger::{TriggerOperation, TriggerType};
+use crate::ReadonlyString;
+use azure_core::{Pipeline, Request};
 
 /// A client for Cosmos trigger resources.
 #[derive(Debug, Clone)]
@@ -43,29 +44,54 @@ impl TriggerClient {
     }
 
     /// Create a trigger
-    pub fn create_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_> {
-        requests::CreateOrReplaceTriggerBuilder::new(self, true)
+    pub fn create_trigger<B, T, O>(
+        &self,
+        body: B,
+        trigger_type: T,
+        trigger_operation: O,
+    ) -> CreateOrReplaceTriggerBuilder
+    where
+        B: Into<String>,
+        T: Into<TriggerType>,
+        O: Into<TriggerOperation>,
+    {
+        CreateOrReplaceTriggerBuilder::new(
+            self.clone(),
+            true,
+            body.into(),
+            trigger_type.into(),
+            trigger_operation.into(),
+        )
     }
 
     /// Replace a trigger
-    pub fn replace_trigger(&self) -> requests::CreateOrReplaceTriggerBuilder<'_> {
-        requests::CreateOrReplaceTriggerBuilder::new(self, false)
+    pub fn replace_trigger<B, T, O>(
+        &self,
+        body: B,
+        trigger_type: T,
+        trigger_operation: O,
+    ) -> CreateOrReplaceTriggerBuilder
+    where
+        B: Into<String>,
+        T: Into<TriggerType>,
+        O: Into<TriggerOperation>,
+    {
+        CreateOrReplaceTriggerBuilder::new(
+            self.clone(),
+            false,
+            body.into(),
+            trigger_type.into(),
+            trigger_operation.into(),
+        )
     }
 
     /// Delete a trigger
-    pub fn delete_trigger(&self) -> requests::DeleteTriggerBuilder<'_, '_> {
-        requests::DeleteTriggerBuilder::new(self)
+    pub fn delete_trigger(&self) -> DeleteTriggerBuilder {
+        DeleteTriggerBuilder::new(self.clone())
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
-    }
-
-    pub(crate) fn prepare_request_with_trigger_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
+    pub(crate) fn prepare_pipeline_with_trigger_name(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/triggers/{}",
                 self.database_client().database_name(),
@@ -73,19 +99,21 @@ impl TriggerClient {
                 self.trigger_name()
             ),
             method,
-            ResourceType::Triggers,
         )
     }
 
-    pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
+    pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/triggers",
                 self.database_client().database_name(),
                 self.collection_client().collection_name(),
             ),
             method,
-            ResourceType::Triggers,
         )
+    }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline {
+        self.cosmos_client().pipeline()
     }
 }

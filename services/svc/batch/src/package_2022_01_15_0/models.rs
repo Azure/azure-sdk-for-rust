@@ -1702,7 +1702,7 @@ pub struct JobConstraints {
     #[doc = "If the Job does not complete within the time limit, the Batch service terminates it and any Tasks that are still running. In this case, the termination reason will be MaxWallClockTimeExpiry. If this property is not specified, there is no time limit on how long the Job may run."]
     #[serde(rename = "maxWallClockTime", default, skip_serializing_if = "Option::is_none")]
     pub max_wall_clock_time: Option<String>,
-    #[doc = "Note that this value specifically controls the number of retries. The Batch service will try each Task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries a Task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry Tasks. If the maximum retry count is -1, the Batch service retries Tasks without limit. The default value is 0 (no retries)."]
+    #[doc = "Note that this value specifically controls the number of retries. The Batch service will try each Task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries a Task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry Tasks. If the maximum retry count is -1, the Batch service retries the Task without limit, however this is not recommended for a start task or any task. The default value is 0 (no retries)"]
     #[serde(rename = "maxTaskRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_task_retry_count: Option<i32>,
 }
@@ -3572,7 +3572,7 @@ pub struct StartTask {
     #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
-    #[doc = "The Batch service retries a Task if its exit code is nonzero. Note that this value specifically controls the number of retries. The Batch service will try the Task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the Task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the Task. If the maximum retry count is -1, the Batch service retries the Task without limit."]
+    #[doc = "The Batch service retries a Task if its exit code is nonzero. Note that this value specifically controls the number of retries. The Batch service will try the Task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the Task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the Task. If the maximum retry count is -1, the Batch service retries the Task without limit, however this is not recommended for a start task or any task. The default value is 0 (no retries)"]
     #[serde(rename = "maxTaskRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_task_retry_count: Option<i32>,
     #[doc = "If true and the StartTask fails on a Node, the Batch service retries the StartTask up to its maximum retry count (maxTaskRetryCount). If the Task has still not completed successfully after all retries, then the Batch service marks the Node unusable, and will not schedule Tasks to it. This condition can be detected via the Compute Node state and failure info details. If false, the Batch service will not wait for the StartTask to complete. In this case, other Tasks can start executing on the Compute Node while the StartTask is still running; and even if the StartTask fails, new Tasks will continue to be scheduled on the Compute Node. The default is true."]
@@ -3845,7 +3845,7 @@ pub struct TaskConstraints {
     #[doc = "The default is 7 days, i.e. the Task directory will be retained for 7 days unless the Compute Node is removed or the Job is deleted."]
     #[serde(rename = "retentionTime", default, skip_serializing_if = "Option::is_none")]
     pub retention_time: Option<String>,
-    #[doc = "Note that this value specifically controls the number of retries for the Task executable due to a nonzero exit code. The Batch service will try the Task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the Task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the Task after the first attempt. If the maximum retry count is -1, the Batch service retries the Task without limit."]
+    #[doc = "Note that this value specifically controls the number of retries for the Task executable due to a nonzero exit code. The Batch service will try the Task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the Task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the Task after the first attempt. If the maximum retry count is -1, the Batch service retries the Task without limit, however this is not recommended for a start task or any task. The default value is 0 (no retries)"]
     #[serde(rename = "maxTaskRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_task_retry_count: Option<i32>,
 }

@@ -115,6 +115,9 @@ pub struct AgreementProperties {
     #[doc = "The mode of acceptance for an agreement."]
     #[serde(rename = "acceptanceMode", default, skip_serializing_if = "Option::is_none")]
     pub acceptance_mode: Option<agreement_properties::AcceptanceMode>,
+    #[doc = "Details about billing profile associated with agreement and available only for specific agreements."]
+    #[serde(rename = "billingProfileInfo", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile_info: Option<BillingProfileInfo>,
     #[doc = "The date from which the agreement is effective."]
     #[serde(rename = "effectiveDate", default, skip_serializing_if = "Option::is_none")]
     pub effective_date: Option<String>,
@@ -387,12 +390,33 @@ impl BillingProfileCreationRequest {
         Self::default()
     }
 }
+#[doc = "Details about billing profile associated with agreement and available only for specific agreements."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BillingProfileInfo {
+    #[doc = "The unique identifier for the billing profile."]
+    #[serde(rename = "billingProfileId", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile_id: Option<String>,
+    #[doc = "The name of the billing profile"]
+    #[serde(rename = "billingProfileDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub billing_profile_display_name: Option<String>,
+    #[doc = "Billing account name. This property is available for a specific type of agreement."]
+    #[serde(rename = "indirectRelationshipOrganizationName", default, skip_serializing_if = "Option::is_none")]
+    pub indirect_relationship_organization_name: Option<String>,
+}
+impl BillingProfileInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The list of billing profiles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingProfileListResult {
     #[doc = "The list of billing profiles."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub value: Vec<BillingProfile>,
+    #[doc = "Total number of records."]
+    #[serde(rename = "totalCount", default, skip_serializing_if = "Option::is_none")]
+    pub total_count: Option<f64>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1596,6 +1620,36 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The details of the error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OperationsErrorDetails {
+    #[doc = "Error code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "Error message indicating why the operation failed."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The target of the particular error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+}
+impl OperationsErrorDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Error response indicates that the service is not able to process the incoming request. The reason is provided in the error message."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OperationsErrorResponse {
+    #[doc = "The details of the error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<OperationsErrorDetails>,
+}
+impl OperationsErrorResponse {
     pub fn new() -> Self {
         Self::default()
     }

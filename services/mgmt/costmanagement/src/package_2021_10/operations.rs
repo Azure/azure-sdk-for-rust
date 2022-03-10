@@ -95,6 +95,9 @@ impl Client {
     pub fn generate_detailed_cost_report_operation_status(&self) -> generate_detailed_cost_report_operation_status::Client {
         generate_detailed_cost_report_operation_status::Client(self.clone())
     }
+    pub fn generate_reservation_details_report(&self) -> generate_reservation_details_report::Client {
+        generate_reservation_details_report::Client(self.clone())
+    }
     pub fn operations(&self) -> operations::Client {
         operations::Client(self.clone())
     }
@@ -163,6 +166,10 @@ pub enum Error {
     Query_Usage(#[from] query::usage::Error),
     #[error(transparent)]
     Query_UsageByExternalCloudProviderType(#[from] query::usage_by_external_cloud_provider_type::Error),
+    #[error(transparent)]
+    GenerateReservationDetailsReport_ByBillingAccountId(#[from] generate_reservation_details_report::by_billing_account_id::Error),
+    #[error(transparent)]
+    GenerateReservationDetailsReport_ByBillingProfileId(#[from] generate_reservation_details_report::by_billing_profile_id::Error),
     #[error(transparent)]
     Operations_List(#[from] operations::list::Error),
 }
@@ -2609,6 +2616,205 @@ pub mod query {
                                 serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
                             Ok(rsp_value)
                         }
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+}
+pub mod generate_reservation_details_report {
+    use super::models;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        pub fn by_billing_account_id(
+            &self,
+            billing_account_id: impl Into<String>,
+            start_date: impl Into<String>,
+            end_date: impl Into<String>,
+        ) -> by_billing_account_id::Builder {
+            by_billing_account_id::Builder {
+                client: self.0.clone(),
+                billing_account_id: billing_account_id.into(),
+                start_date: start_date.into(),
+                end_date: end_date.into(),
+            }
+        }
+        pub fn by_billing_profile_id(
+            &self,
+            billing_account_id: impl Into<String>,
+            billing_profile_id: impl Into<String>,
+            start_date: impl Into<String>,
+            end_date: impl Into<String>,
+        ) -> by_billing_profile_id::Builder {
+            by_billing_profile_id::Builder {
+                client: self.0.clone(),
+                billing_account_id: billing_account_id.into(),
+                billing_profile_id: billing_profile_id.into(),
+                start_date: start_date.into(),
+                end_date: end_date.into(),
+            }
+        }
+    }
+    pub mod by_billing_account_id {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::OperationStatus),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) billing_account_id: String,
+            pub(crate) start_date: String,
+            pub(crate) end_date: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/providers/Microsoft.CostManagement/generateReservationDetailsReport" , self . client . endpoint () , & self . billing_account_id) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
+                    let start_date = &self.start_date;
+                    url.query_pairs_mut().append_pair("startDate", start_date);
+                    let end_date = &self.end_date;
+                    url.query_pairs_mut().append_pair("endDate", end_date);
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OperationStatus =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
+                        status_code => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::ErrorResponse =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Err(Error::DefaultResponse {
+                                status_code,
+                                value: rsp_value,
+                            })
+                        }
+                    }
+                })
+            }
+        }
+    }
+    pub mod by_billing_profile_id {
+        use super::models;
+        #[derive(Debug)]
+        pub enum Response {
+            Ok200(models::OperationStatus),
+            Accepted202,
+        }
+        #[derive(Debug, thiserror :: Error)]
+        pub enum Error {
+            #[error("HTTP status code {}", status_code)]
+            DefaultResponse {
+                status_code: http::StatusCode,
+                value: models::ErrorResponse,
+            },
+            #[error("Failed to parse request URL")]
+            ParseUrl(#[source] url::ParseError),
+            #[error("Failed to build request")]
+            BuildRequest(#[source] http::Error),
+            #[error("Failed to serialize request body")]
+            Serialize(#[source] serde_json::Error),
+            #[error("Failed to get access token")]
+            GetToken(#[source] azure_core::Error),
+            #[error("Failed to execute request")]
+            SendRequest(#[source] azure_core::Error),
+            #[error("Failed to get response bytes")]
+            ResponseBytes(#[source] azure_core::StreamError),
+            #[error("Failed to deserialize response, body: {1:?}")]
+            Deserialize(#[source] serde_json::Error, bytes::Bytes),
+        }
+        #[derive(Clone)]
+        pub struct Builder {
+            pub(crate) client: super::super::Client,
+            pub(crate) billing_account_id: String,
+            pub(crate) billing_profile_id: String,
+            pub(crate) start_date: String,
+            pub(crate) end_date: String,
+        }
+        impl Builder {
+            pub fn into_future(self) -> futures::future::BoxFuture<'static, std::result::Result<Response, Error>> {
+                Box::pin(async move {
+                    let url_str = & format ! ("{}/providers/Microsoft.Billing/billingAccounts/{}/billingProfiles/{}/providers/Microsoft.CostManagement/generateReservationDetailsReport" , self . client . endpoint () , & self . billing_account_id , & self . billing_profile_id) ;
+                    let mut url = url::Url::parse(url_str).map_err(Error::ParseUrl)?;
+                    let mut req_builder = http::request::Builder::new();
+                    req_builder = req_builder.method(http::Method::POST);
+                    let credential = self.client.token_credential();
+                    let token_response = credential
+                        .get_token(&self.client.scopes().join(" "))
+                        .await
+                        .map_err(Error::GetToken)?;
+                    req_builder = req_builder.header(http::header::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                    url.query_pairs_mut().append_pair("api-version", "2021-10-01");
+                    let start_date = &self.start_date;
+                    url.query_pairs_mut().append_pair("startDate", start_date);
+                    let end_date = &self.end_date;
+                    url.query_pairs_mut().append_pair("endDate", end_date);
+                    let req_body = azure_core::EMPTY_BODY;
+                    req_builder = req_builder.header(http::header::CONTENT_LENGTH, 0);
+                    req_builder = req_builder.uri(url.as_str());
+                    let req = req_builder.body(req_body).map_err(Error::BuildRequest)?;
+                    let rsp = self.client.send(req).await.map_err(Error::SendRequest)?;
+                    let (rsp_status, rsp_headers, rsp_stream) = rsp.deconstruct();
+                    match rsp_status {
+                        http::StatusCode::OK => {
+                            let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
+                            let rsp_value: models::OperationStatus =
+                                serde_json::from_slice(&rsp_body).map_err(|source| Error::Deserialize(source, rsp_body.clone()))?;
+                            Ok(Response::Ok200(rsp_value))
+                        }
+                        http::StatusCode::ACCEPTED => Ok(Response::Accepted202),
                         status_code => {
                             let rsp_body = azure_core::collect_pinned_stream(rsp_stream).await.map_err(Error::ResponseBytes)?;
                             let rsp_value: models::ErrorResponse =

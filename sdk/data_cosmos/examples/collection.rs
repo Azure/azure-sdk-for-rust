@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use std::error::Error;
@@ -32,7 +31,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // The Cosmos' client exposes a lot of methods. This one lists the databases in the specified account.
-    let databases = Box::pin(client.list_databases().into_stream())
+    let databases = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()?;
@@ -49,7 +50,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let db = client
             .clone()
             .into_database_client(db.id.clone())
-            .get_database(Context::new(), GetDatabaseOptions::default())
+            .get_database()
+            .into_future()
             .await?;
         println!("db {} found == {:?}", &db.database.id, &db);
     }
@@ -59,12 +61,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for db in databases.databases {
         let database_client = client.clone().into_database_client(db.id.clone());
-        let collections = Box::pin(
-            database_client.list_collections(Context::new(), ListCollectionsOptions::new()),
-        )
-        .next()
-        .await
-        .unwrap()?;
+        let collections = database_client
+            .list_collections()
+            .into_stream()
+            .next()
+            .await
+            .unwrap()?;
         println!(
             "database {} has {} collection(s)",
             db.id,
@@ -77,7 +79,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             let collection_response = database_client
                 .clone()
                 .into_collection_client(collection.id)
-                .get_collection(Context::new(), GetCollectionOptions::new())
+                .get_collection()
+                .into_future()
                 .await?;
 
             println!("\tcollection_response {:?}", collection_response);

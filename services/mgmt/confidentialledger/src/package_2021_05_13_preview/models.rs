@@ -23,7 +23,7 @@ impl AadBasedSecurityPrincipal {
 #[doc = "Cert based security principal with Ledger RoleName"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertBasedSecurityPrincipal {
-    #[doc = "Base64 encoded public key of the user cert (.pem or .cer)"]
+    #[doc = "Public key of the user cert (.pem or .cer)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>,
     #[doc = "LedgerRole associated with the Security Principal of Ledger"]
@@ -83,7 +83,7 @@ pub struct ConfidentialLedger {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(flatten)]
-    pub location: Location,
+    pub resource_location: ResourceLocation,
     #[serde(flatten)]
     pub tags: Tags,
     #[doc = "Additional Confidential Ledger properties."]
@@ -208,18 +208,6 @@ pub enum LedgerRoleName {
     Contributor,
     Administrator,
 }
-#[doc = "Location of the ARM Resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Location {
-    #[doc = "The Azure location where the Confidential Ledger is running."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-}
-impl Location {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Object representing ProvisioningState for Confidential Ledger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ProvisioningState {
@@ -248,6 +236,18 @@ pub struct Resource {
     pub system_data: Option<SystemData>,
 }
 impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Location of the ARM Resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceLocation {
+    #[doc = "The Azure location where the Confidential Ledger is running."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+}
+impl ResourceLocation {
     pub fn new() -> Self {
         Self::default()
     }

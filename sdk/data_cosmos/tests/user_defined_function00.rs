@@ -1,7 +1,5 @@
 #![cfg(all(test, feature = "test_e2e"))]
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
-use azure_data_cosmos::responses::QueryDocumentsResponseRaw;
 use futures::stream::StreamExt;
 
 mod setup;
@@ -37,11 +35,8 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
 
     // create a temp collection
     let _create_collection_response = database_client
-        .create_collection(
-            Context::new(),
-            COLLECTION_NAME,
-            CreateCollectionOptions::new("/id"),
-        )
+        .create_collection(COLLECTION_NAME, "/id")
+        .into_future()
         .await
         .unwrap();
 
@@ -53,33 +48,35 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
         .into_user_defined_function_client(USER_DEFINED_FUNCTION_NAME);
 
     let ret = user_defined_function_client
-        .create_user_defined_function()
-        .execute("body")
+        .create_user_defined_function("body")
+        .into_future()
         .await?;
 
     let stream = collection_client
         .list_user_defined_functions()
         .max_item_count(3)
         .consistency_level(&ret);
-    let mut stream = Box::pin(stream.stream());
+    let mut stream = stream.into_stream();
     while let Some(ret) = stream.next().await {
         let ret = ret.unwrap();
         assert_eq!(ret.item_count, 1);
     }
 
     let ret = user_defined_function_client
-        .replace_user_defined_function()
+        .replace_user_defined_function(FN_BODY)
         .consistency_level(&ret)
-        .execute(FN_BODY)
+        .into_future()
         .await?;
 
     let query_stmt = format!("SELECT udf.{}(100)", USER_DEFINED_FUNCTION_NAME);
     let ret: QueryDocumentsResponseRaw<serde_json::Value> = collection_client
-        .query_documents()
+        .query_documents(Query::new(query_stmt))
         .consistency_level(&ret)
         .max_item_count(2i32)
-        .execute(&query_stmt)
-        .await?
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?
         .into_raw();
 
     assert_eq!(ret.item_count, 1);
@@ -90,11 +87,13 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
 
     let query_stmt = format!("SELECT udf.{}(10000)", USER_DEFINED_FUNCTION_NAME);
     let ret: QueryDocumentsResponseRaw<serde_json::Value> = collection_client
-        .query_documents()
+        .query_documents(Query::new(query_stmt))
         .consistency_level(&ret)
         .max_item_count(2i32)
-        .execute(&query_stmt)
-        .await?
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?
         .into_raw();
 
     assert_eq!(ret.item_count, 1);
@@ -113,13 +112,11 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
     let _ret = user_defined_function_client
         .delete_user_defined_function()
         .consistency_level(&ret)
-        .execute()
+        .into_future()
         .await?;
 
     // delete the database
-    database_client
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
-        .await?;
+    database_client.delete_database().into_future().await?;
 
     Ok(())
 }

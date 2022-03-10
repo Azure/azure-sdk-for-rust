@@ -1622,6 +1622,12 @@ pub mod job_details {
         Ch1,
         #[serde(rename = "DSM05")]
         Dsm05,
+        #[serde(rename = "BN7")]
+        Bn7,
+        #[serde(rename = "SN6")]
+        Sn6,
+        #[serde(rename = "PAR22")]
+        Par22,
     }
 }
 #[doc = "Job Properties"]

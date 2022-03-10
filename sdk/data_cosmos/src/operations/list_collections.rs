@@ -2,39 +2,69 @@ use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Collection;
 use crate::ResourceQuota;
-use azure_core::collect_pinned_stream;
 use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
-use azure_core::Request as HttpRequest;
 use azure_core::Response as HttpResponse;
+use azure_core::{collect_pinned_stream, headers, Pageable};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone)]
-pub struct ListCollectionsOptions {
+pub struct ListCollectionsBuilder {
+    client: DatabaseClient,
     consistency_level: Option<ConsistencyLevel>,
     max_item_count: MaxItemCount,
+    context: Context,
 }
 
-impl ListCollectionsOptions {
-    pub fn new() -> Self {
+impl ListCollectionsBuilder {
+    pub(crate) fn new(client: DatabaseClient) -> Self {
         Self {
+            client,
             max_item_count: MaxItemCount::new(-1),
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         max_item_count: i32 => MaxItemCount::new(max_item_count),
+        context: Context => context,
     }
 
-    pub fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        azure_core::headers::add_mandatory_header2(&self.max_item_count, request)?;
+    pub fn into_stream(self) -> ListCollections {
+        let make_request = move |continuation: Option<String>| {
+            let this = self.clone();
+            let ctx = self.context.clone();
+            async move {
+                let mut request = this.client.cosmos_client().prepare_request_pipeline(
+                    &format!("dbs/{}/colls", this.client.database_name()),
+                    http::Method::GET,
+                );
 
-        Ok(())
+                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
+                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
+
+                if let Some(c) = continuation {
+                    let h = http::HeaderValue::from_str(c.as_str())
+                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
+                    request.headers_mut().append(headers::CONTINUATION, h);
+                }
+
+                let response = this
+                    .client
+                    .pipeline()
+                    .send(ctx.clone().insert(ResourceType::Collections), &mut request)
+                    .await?;
+                ListCollectionsResponse::try_from(response).await
+            }
+        };
+
+        Pageable::new(make_request)
     }
 }
+
+pub type ListCollections = Pageable<ListCollectionsResponse, crate::Error>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListCollectionsResponse {
@@ -88,5 +118,11 @@ impl ListCollectionsResponse {
             gateway_version: gateway_version_from_headers(&headers)?.to_owned(),
             continuation_token: continuation_token_from_headers_optional(&headers)?,
         })
+    }
+}
+
+impl Continuable for ListCollectionsResponse {
+    fn continuation(&self) -> Option<String> {
+        self.continuation_token.clone()
     }
 }

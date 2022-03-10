@@ -1225,7 +1225,7 @@ pub struct SearchResults {
     #[doc = "Search job query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
-    #[doc = "Search results table's Description."]
+    #[doc = "Search job Description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Limit the search job to return up to specified number of rows."]
@@ -1237,7 +1237,7 @@ pub struct SearchResults {
     #[doc = "The timestamp to end the search by (UTC)"]
     #[serde(rename = "endSearchTime", default, skip_serializing_if = "Option::is_none")]
     pub end_search_time: Option<String>,
-    #[doc = "The table to search data from."]
+    #[doc = "The table used in the search job."]
     #[serde(rename = "sourceTable", default, skip_serializing_if = "Option::is_none")]
     pub source_table: Option<String>,
 }
@@ -1441,10 +1441,10 @@ impl Table {
 #[doc = "Table properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TableProperties {
-    #[doc = "The data table data retention in days, between 4 and 730. Setting this property to null will default to the workspace retention."]
+    #[doc = "The table retention in days, between 4 and 730. Setting this property to -1 will default to the workspace retention."]
     #[serde(rename = "retentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub retention_in_days: Option<i32>,
-    #[doc = "The table data total retention in days, between 4 and 2555. Setting this property to null will default to table retention."]
+    #[doc = "The table total retention in days, between 4 and 2555. Setting this property to -1 will default to table retention."]
     #[serde(rename = "totalRetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub total_retention_in_days: Option<i32>,
     #[doc = "The table data archive retention in days. Calculated as (totalRetentionInDays-retentionInDays)"]
@@ -1459,7 +1459,7 @@ pub struct TableProperties {
     #[doc = "Search job execution statistics."]
     #[serde(rename = "resultStatistics", default, skip_serializing_if = "Option::is_none")]
     pub result_statistics: Option<ResultStatistics>,
-    #[doc = "The table plan."]
+    #[doc = "Instruct the system how to handle and charge the logs ingested to this table."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<table_properties::Plan>,
     #[doc = "The timestamp that table plan was last modified (UTC)."]
@@ -1479,7 +1479,7 @@ impl TableProperties {
 }
 pub mod table_properties {
     use super::*;
-    #[doc = "The table plan."]
+    #[doc = "Instruct the system how to handle and charge the logs ingested to this table."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Plan {
         Basic,

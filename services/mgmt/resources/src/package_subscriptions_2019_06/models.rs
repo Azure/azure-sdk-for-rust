@@ -2,6 +2,21 @@
 #![allow(non_camel_case_types)]
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
+#[doc = "List of availability zones shared by the subscriptions."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AvailabilityZonePeers {
+    #[doc = "The availabilityZone."]
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
+    pub availability_zone: Option<String>,
+    #[doc = "Details of shared availability zone."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub peers: Vec<Peers>,
+}
+impl AvailabilityZonePeers {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Resource Name valid if not a reserved word, does not contain a reserved word and does not start with a reserved word"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckResourceNameResult {
@@ -29,6 +44,54 @@ pub mod check_resource_name_result {
         Reserved,
     }
 }
+#[doc = "Check zone peers request parameters."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckZonePeersRequest {
+    #[doc = "The Microsoft location."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "The peer Microsoft Azure subscription ID."]
+    #[serde(rename = "subscriptionIds", default, skip_serializing_if = "Vec::is_empty")]
+    pub subscription_ids: Vec<String>,
+}
+impl CheckZonePeersRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Result of the Check zone peers operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckZonePeersResult {
+    #[doc = "The subscription ID."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[doc = "the location of the subscription."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "The Availability Zones shared by the subscriptions."]
+    #[serde(rename = "availabilityZonePeers", default, skip_serializing_if = "Vec::is_empty")]
+    pub availability_zone_peers: Vec<AvailabilityZonePeers>,
+}
+impl CheckZonePeersResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The resource management error additional info."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The additional info."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Error description and code explaining why resource name is invalid."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDefinition {
@@ -40,6 +103,30 @@ pub struct ErrorDefinition {
     pub code: Option<String>,
 }
 impl ErrorDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The error detail."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorDetail {
+    #[doc = "The error code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The error target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "The error details."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
+    #[serde(rename = "additionalInfo", default, skip_serializing_if = "Vec::is_empty")]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+impl ErrorDetail {
     pub fn new() -> Self {
         Self::default()
     }
@@ -157,6 +244,21 @@ pub struct OperationListResult {
     pub next_link: Option<String>,
 }
 impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Information about shared availability zone."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Peers {
+    #[doc = "The subscription ID."]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[doc = "The availabilityZone."]
+    #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
+    pub availability_zone: Option<String>,
+}
+impl Peers {
     pub fn new() -> Self {
         Self::default()
     }

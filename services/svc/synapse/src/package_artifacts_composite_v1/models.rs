@@ -3592,6 +3592,29 @@ impl AzureTableStorageLinkedService {
         }
     }
 }
+#[doc = "Big data pool reference type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BigDataPoolParametrizationReference {
+    #[doc = "Big data pool reference type."]
+    #[serde(rename = "type")]
+    pub type_: big_data_pool_parametrization_reference::Type,
+    #[doc = "Reference big data pool name. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "referenceName")]
+    pub reference_name: serde_json::Value,
+}
+impl BigDataPoolParametrizationReference {
+    pub fn new(type_: big_data_pool_parametrization_reference::Type, reference_name: serde_json::Value) -> Self {
+        Self { type_, reference_name }
+    }
+}
+pub mod big_data_pool_parametrization_reference {
+    use super::*;
+    #[doc = "Big data pool reference type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        BigDataPoolReference,
+    }
+}
 #[doc = "Big data pool reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BigDataPoolReference {
@@ -13973,6 +13996,44 @@ impl QuickBooksSource {
         }
     }
 }
+#[doc = "Linked service for Quickbase."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuickbaseLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Quickbase linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: QuickbaseLinkedServiceTypeProperties,
+}
+impl QuickbaseLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: QuickbaseLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Quickbase linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct QuickbaseLinkedServiceTypeProperties {
+    #[doc = "The url to connect Quickbase source. Type: string (or Expression with resultType string)."]
+    pub url: serde_json::Value,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "userToken")]
+    pub user_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl QuickbaseLinkedServiceTypeProperties {
+    pub fn new(url: serde_json::Value, user_token: SecretBase) -> Self {
+        Self {
+            url,
+            user_token,
+            encrypted_credential: None,
+        }
+    }
+}
 #[doc = "Enumerates possible frequency option for the schedule trigger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum RecurrenceFrequency {
@@ -16055,6 +16116,148 @@ impl ScriptAction {
         }
     }
 }
+#[doc = "Script activity type."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptActivity {
+    #[serde(flatten)]
+    pub execution_activity: ExecutionActivity,
+    #[doc = "Script activity properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: ScriptActivityTypeProperties,
+}
+impl ScriptActivity {
+    pub fn new(execution_activity: ExecutionActivity, type_properties: ScriptActivityTypeProperties) -> Self {
+        Self {
+            execution_activity,
+            type_properties,
+        }
+    }
+}
+#[doc = "Parameters of a script block."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScriptActivityParameter {
+    #[doc = "The name of the parameter. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<serde_json::Value>,
+    #[doc = "The type of the parameter."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<script_activity_parameter::Type>,
+    #[doc = "The value of the parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<serde_json::Value>,
+    #[doc = "The direction of the parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub direction: Option<script_activity_parameter::Direction>,
+    #[doc = "The size of the output direction parameter."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size: Option<i32>,
+}
+impl ScriptActivityParameter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod script_activity_parameter {
+    use super::*;
+    #[doc = "The type of the parameter."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Boolean,
+        DateTime,
+        DateTimeOffset,
+        Decimal,
+        Double,
+        Guid,
+        Int16,
+        Int32,
+        Int64,
+        Single,
+        String,
+        Timespan,
+    }
+    #[doc = "The direction of the parameter."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Direction {
+        Input,
+        Output,
+        InputOutput,
+    }
+}
+#[doc = "Script block of scripts."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScriptActivityScriptBlock {
+    #[doc = "The query text. Type: string (or Expression with resultType string)."]
+    pub text: serde_json::Value,
+    #[doc = "The type of the query. Type: string."]
+    #[serde(rename = "type")]
+    pub type_: script_activity_script_block::Type,
+    #[doc = "Array of script parameters. Type: array."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameters: Vec<ScriptActivityParameter>,
+}
+impl ScriptActivityScriptBlock {
+    pub fn new(text: serde_json::Value, type_: script_activity_script_block::Type) -> Self {
+        Self {
+            text,
+            type_,
+            parameters: Vec::new(),
+        }
+    }
+}
+pub mod script_activity_script_block {
+    use super::*;
+    #[doc = "The type of the query. Type: string."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        Query,
+        NonQuery,
+    }
+}
+#[doc = "Script activity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScriptActivityTypeProperties {
+    #[doc = "Array of script blocks. Type: array."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub scripts: Vec<ScriptActivityScriptBlock>,
+    #[doc = "Log settings of script activity."]
+    #[serde(rename = "logSettings", default, skip_serializing_if = "Option::is_none")]
+    pub log_settings: Option<script_activity_type_properties::LogSettings>,
+}
+impl ScriptActivityTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod script_activity_type_properties {
+    use super::*;
+    #[doc = "Log settings of script activity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub struct LogSettings {
+        #[doc = "The destination of logs. Type: string."]
+        #[serde(rename = "logDestination")]
+        pub log_destination: log_settings::LogDestination,
+        #[doc = "Log location settings."]
+        #[serde(rename = "logLocationSettings", default, skip_serializing_if = "Option::is_none")]
+        pub log_location_settings: Option<LogLocationSettings>,
+    }
+    impl LogSettings {
+        pub fn new(log_destination: log_settings::LogDestination) -> Self {
+            Self {
+                log_destination,
+                log_location_settings: None,
+            }
+        }
+    }
+    pub mod log_settings {
+        use super::*;
+        #[doc = "The destination of logs. Type: string."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        pub enum LogDestination {
+            ActivityOutput,
+            ExternalStore,
+        }
+    }
+}
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretBase {
@@ -16628,6 +16831,41 @@ pub struct Sku {
 impl Sku {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Linked service for Smartsheet."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartsheetLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Smartsheet linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SmartsheetLinkedServiceTypeProperties,
+}
+impl SmartsheetLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: SmartsheetLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Smartsheet linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SmartsheetLinkedServiceTypeProperties {
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken")]
+    pub api_token: SecretBase,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl SmartsheetLinkedServiceTypeProperties {
+    pub fn new(api_token: SecretBase) -> Self {
+        Self {
+            api_token,
+            encrypted_credential: None,
+        }
     }
 }
 #[doc = "The snowflake dataset."]
@@ -18620,6 +18858,9 @@ impl SynapseNotebookActivity {
 pub struct SynapseNotebookActivityTypeProperties {
     #[doc = "Synapse notebook reference type."]
     pub notebook: SynapseNotebookReference,
+    #[doc = "Big data pool reference type."]
+    #[serde(rename = "sparkPool", default, skip_serializing_if = "Option::is_none")]
+    pub spark_pool: Option<BigDataPoolParametrizationReference>,
     #[doc = "Notebook parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
@@ -18628,6 +18869,7 @@ impl SynapseNotebookActivityTypeProperties {
     pub fn new(notebook: SynapseNotebookReference) -> Self {
         Self {
             notebook,
+            spark_pool: None,
             parameters: None,
         }
     }
@@ -18638,12 +18880,12 @@ pub struct SynapseNotebookReference {
     #[doc = "Synapse notebook reference type."]
     #[serde(rename = "type")]
     pub type_: synapse_notebook_reference::Type,
-    #[doc = "Reference notebook name."]
+    #[doc = "Reference notebook name. Type: string (or Expression with resultType string)."]
     #[serde(rename = "referenceName")]
-    pub reference_name: String,
+    pub reference_name: serde_json::Value,
 }
 impl SynapseNotebookReference {
-    pub fn new(type_: synapse_notebook_reference::Type, reference_name: String) -> Self {
+    pub fn new(type_: synapse_notebook_reference::Type, reference_name: serde_json::Value) -> Self {
         Self { type_, reference_name }
     }
 }
@@ -18664,12 +18906,44 @@ pub struct SynapseSparkJobActivityTypeProperties {
     #[doc = "User specified arguments to SynapseSparkJobDefinitionActivity."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub args: Vec<serde_json::Value>,
+    #[doc = "The main file used for the job, which will override the 'file' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<serde_json::Value>,
+    #[doc = "The fully-qualified identifier or the main class that is in the main definition file, which will override the 'className' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "className", default, skip_serializing_if = "Option::is_none")]
+    pub class_name: Option<serde_json::Value>,
+    #[doc = "Additional files used for reference in the main definition file, which will override the 'files' of the spark job definition you provide."]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub files: Vec<serde_json::Value>,
+    #[doc = "Big data pool reference type."]
+    #[serde(rename = "targetBigDataPool", default, skip_serializing_if = "Option::is_none")]
+    pub target_big_data_pool: Option<BigDataPoolParametrizationReference>,
+    #[doc = "Number of core and memory to be used for executors allocated in the specified Spark pool for the job, which will be used for overriding 'executorCores' and 'executorMemory' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "executorSize", default, skip_serializing_if = "Option::is_none")]
+    pub executor_size: Option<serde_json::Value>,
+    #[doc = "Spark configuration properties, which will override the 'conf' of the spark job definition you provide."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub conf: Option<serde_json::Value>,
+    #[doc = "Number of core and memory to be used for driver allocated in the specified Spark pool for the job, which will be used for overriding 'driverCores' and 'driverMemory' of the spark job definition you provide. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "driverSize", default, skip_serializing_if = "Option::is_none")]
+    pub driver_size: Option<serde_json::Value>,
+    #[doc = "Number of executors to launch for this job, which will override the 'numExecutors' of the spark job definition you provide."]
+    #[serde(rename = "numExecutors", default, skip_serializing_if = "Option::is_none")]
+    pub num_executors: Option<i64>,
 }
 impl SynapseSparkJobActivityTypeProperties {
     pub fn new(spark_job: SynapseSparkJobReference) -> Self {
         Self {
             spark_job,
             args: Vec::new(),
+            file: None,
+            class_name: None,
+            files: Vec::new(),
+            target_big_data_pool: None,
+            executor_size: None,
+            conf: None,
+            driver_size: None,
+            num_executors: None,
         }
     }
 }
@@ -18807,6 +19081,65 @@ impl TarReadSettings {
             compression_read_settings,
             preserve_compression_file_name_as_folder: None,
         }
+    }
+}
+#[doc = "Linked service for TeamDesk."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TeamDeskLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "TeamDesk linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: TeamDeskLinkedServiceTypeProperties,
+}
+impl TeamDeskLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: TeamDeskLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "TeamDesk linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TeamDeskLinkedServiceTypeProperties {
+    #[doc = "The authentication type to use."]
+    #[serde(rename = "authenticationType")]
+    pub authentication_type: team_desk_linked_service_type_properties::AuthenticationType,
+    #[doc = "The url to connect TeamDesk source. Type: string (or Expression with resultType string)."]
+    pub url: serde_json::Value,
+    #[doc = "The username of the TeamDesk source. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBase>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken", default, skip_serializing_if = "Option::is_none")]
+    pub api_token: Option<SecretBase>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl TeamDeskLinkedServiceTypeProperties {
+    pub fn new(authentication_type: team_desk_linked_service_type_properties::AuthenticationType, url: serde_json::Value) -> Self {
+        Self {
+            authentication_type,
+            url,
+            user_name: None,
+            password: None,
+            api_token: None,
+            encrypted_credential: None,
+        }
+    }
+}
+pub mod team_desk_linked_service_type_properties {
+    use super::*;
+    #[doc = "The authentication type to use."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AuthenticationType {
+        Basic,
+        Token,
     }
 }
 #[doc = "Linked service for Teradata data source."]
@@ -20323,6 +20656,65 @@ impl XmlSource {
             format_settings: None,
             additional_columns: None,
         }
+    }
+}
+#[doc = "Linked service for Zendesk."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ZendeskLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Zendesk linked service type properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: ZendeskLinkedServiceTypeProperties,
+}
+impl ZendeskLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: ZendeskLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Zendesk linked service type properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ZendeskLinkedServiceTypeProperties {
+    #[doc = "The authentication type to use."]
+    #[serde(rename = "authenticationType")]
+    pub authentication_type: zendesk_linked_service_type_properties::AuthenticationType,
+    #[doc = "The url to connect Zendesk source. Type: string (or Expression with resultType string)."]
+    pub url: serde_json::Value,
+    #[doc = "The username of the Zendesk source. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
+    pub user_name: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub password: Option<SecretBase>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "apiToken", default, skip_serializing_if = "Option::is_none")]
+    pub api_token: Option<SecretBase>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<serde_json::Value>,
+}
+impl ZendeskLinkedServiceTypeProperties {
+    pub fn new(authentication_type: zendesk_linked_service_type_properties::AuthenticationType, url: serde_json::Value) -> Self {
+        Self {
+            authentication_type,
+            url,
+            user_name: None,
+            password: None,
+            api_token: None,
+            encrypted_credential: None,
+        }
+    }
+}
+pub mod zendesk_linked_service_type_properties {
+    use super::*;
+    #[doc = "The authentication type to use."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum AuthenticationType {
+        Basic,
+        Token,
     }
 }
 #[doc = "The ZipDeflate compression read settings."]

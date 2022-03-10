@@ -126,7 +126,7 @@ impl Serialize for Reference {
     where
         S: Serializer,
     {
-        let mut str = self.file.clone().unwrap_or_else(String::new);
+        let mut str = self.file.clone().unwrap_or_default();
         let path = &self.path.join("/");
         if !path.is_empty() {
             str.push_str("#/");

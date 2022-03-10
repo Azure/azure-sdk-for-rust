@@ -3,30 +3,63 @@ use crate::prelude::*;
 use crate::ResourceQuota;
 
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
+use azure_core::Context;
+use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone, Default)]
-pub struct GetDatabaseOptions {
+#[derive(Debug, Clone)]
+pub struct GetDatabaseBuilder {
+    client: DatabaseClient,
     consistency_level: Option<ConsistencyLevel>,
+    context: Context,
 }
 
-impl GetDatabaseOptions {
-    pub fn new() -> Self {
+impl GetDatabaseBuilder {
+    pub(crate) fn new(client: DatabaseClient) -> Self {
         Self {
+            client,
             consistency_level: None,
+            context: Context::new(),
         }
     }
 
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
+        context: Context => context,
     }
 
-    pub(crate) fn decorate_request(&self, request: &mut HttpRequest) -> crate::Result<()> {
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        request.set_body(bytes::Bytes::from_static(&[]).into());
+    pub fn into_future(self) -> GetDatabase {
+        Box::pin(async move {
+            let mut request = self.client.cosmos_client().prepare_request_pipeline(
+                &format!("dbs/{}", self.client.database_name()),
+                http::Method::GET,
+            );
 
-        Ok(())
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            request.set_body(bytes::Bytes::from_static(&[]).into());
+            let response = self
+                .client
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Databases),
+                    &mut request,
+                )
+                .await?;
+
+            GetDatabaseResponse::try_from(response).await
+        })
+    }
+}
+
+/// The future returned by calling `into_future` on the builder.
+pub type GetDatabase = futures::future::BoxFuture<'static, crate::Result<GetDatabaseResponse>>;
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for GetDatabaseBuilder {
+    type Future = GetDatabase;
+    type Output = <GetDatabase as std::future::Future>::Output;
+    fn into_future(self) -> Self::Future {
+        Self::into_future(self)
     }
 }
 

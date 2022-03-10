@@ -1475,8 +1475,8 @@ impl EventGridEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubCaptureFileCreatedEventData {
     #[doc = "The path to the capture file."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub fileurl: Option<String>,
+    #[serde(rename = "fileUrl", default, skip_serializing_if = "Option::is_none")]
+    pub file_url: Option<String>,
     #[doc = "The file type of the capture file."]
     #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
     pub file_type: Option<String>,
@@ -3766,7 +3766,7 @@ pub struct StorageDirectoryDeletedEventData {
     pub url: Option<String>,
     #[doc = "Is this event for a recursive delete operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub recursive: Option<bool>,
+    pub recursive: Option<String>,
     #[doc = "An opaque string value representing the logical sequence of events for any particular directory name. Users can use standard string comparison to understand the relative sequence of two events on the same directory name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sequencer: Option<String>,

@@ -2,6 +2,8 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
+use crate::error::ResultExt;
+
 #[derive(Debug, Clone)]
 pub(crate) struct MockTransaction {
     pub(crate) name: String,
@@ -28,10 +30,7 @@ impl MockTransaction {
         self.number.fetch_add(1, Ordering::SeqCst)
     }
 
-    pub(crate) fn file_path(
-        &self,
-        create_when_not_exist: bool,
-    ) -> Result<PathBuf, super::MockFrameworkError> {
+    pub(crate) fn file_path(&self, create_when_not_exist: bool) -> crate::error::Result<PathBuf> {
         let mut path = PathBuf::from(workspace_root().map_err(|e| {
             super::MockFrameworkError::TransactionStorageError(format!(
                 "could not read the workspace_root from the cargo metadata: {}",
@@ -52,17 +51,16 @@ impl MockTransaction {
 
         if !path.exists() {
             if create_when_not_exist {
-                std::fs::create_dir_all(&path).map_err(|e| {
-                    super::MockFrameworkError::IOError(
-                        format!("cannot create transaction folder: {}", path.display()),
-                        e,
-                    )
-                })?;
+                std::fs::create_dir_all(&path)
+                    .with_context(crate::error::ErrorKind::MockFramework, || {
+                        format!("cannot create transaction folder: {}", path.display())
+                    })?;
             } else {
                 return Err(super::MockFrameworkError::MissingTransaction(format!(
                     "the transaction location '{}' does not exist",
                     path.canonicalize().unwrap_or(path).display()
-                )));
+                ))
+                .into());
             }
         }
 

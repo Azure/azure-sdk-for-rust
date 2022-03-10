@@ -80,7 +80,7 @@ jobs:
     name: Services Tests
     runs-on: ubuntu-20.04
     env:
-      RUSTFLAGS: -Dwarnings -Aunreachable-code -Aunused-assignments -Adead-code -Aclippy::new-without-default
+      RUSTFLAGS: -Dwarnings -Aunreachable-code -Aunused-assignments -Adead-code -Aclippy::new-without-default -Aclippy::unnecessary_to_owned
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1

@@ -248,6 +248,9 @@ pub struct GuestConfigurationAssignmentProperties {
     #[doc = "The list of VM Compliance data for VMSS"]
     #[serde(rename = "vmssVMList", default, skip_serializing_if = "Vec::is_empty")]
     pub vmss_vm_list: Vec<VmssvmInfo>,
+    #[doc = "Type of the resource - VMSS / VM"]
+    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    pub resource_type: Option<String>,
     #[doc = "parameter hash for the guest configuration assignment. "]
     #[serde(rename = "parameterHash", default, skip_serializing_if = "Option::is_none")]
     pub parameter_hash: Option<String>,

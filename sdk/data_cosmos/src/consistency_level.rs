@@ -1,7 +1,6 @@
 use crate::headers;
 use crate::operations::*;
 use crate::resources::user::UserResponse;
-use crate::responses::*;
 use azure_core::AddAsHeader;
 use http::request;
 use serde::de::DeserializeOwned;
@@ -64,21 +63,20 @@ macro_rules! implement_from {
     };
 }
 
-implement_from!(CreateSlugAttachmentResponse);
+implement_from!(CreateOrReplaceSlugAttachmentResponse);
 implement_from!(GetCollectionResponse);
 implement_from!(UserResponse);
 implement_from!(DeleteAttachmentResponse);
-implement_from!(ReplaceReferenceAttachmentResponse);
-implement_from!(CreateReferenceAttachmentResponse);
+implement_from!(CreateOrReplaceAttachmentResponse);
 implement_from!(ListAttachmentsResponse);
 implement_from!(GetAttachmentResponse);
 implement_from!(CreateDocumentResponse);
 implement_from!(ReplaceDocumentResponse);
 implement_from!(DeleteDocumentResponse);
-implement_from!(CreateUserDefinedFunctionResponse);
+implement_from!(CreateOrReplaceUserDefinedFunctionResponse);
 implement_from!(DeleteUserDefinedFunctionResponse);
 implement_from!(ListUserDefinedFunctionsResponse);
-implement_from!(CreateTriggerResponse);
+implement_from!(CreateOrReplaceTriggerResponse);
 implement_from!(ListTriggersResponse);
 implement_from!(DeleteTriggerResponse);
 implement_from!(ListDocumentsResponse, T);

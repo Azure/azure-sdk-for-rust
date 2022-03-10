@@ -1,27 +1,25 @@
-use azure_core::Context;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos.
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
-use std::borrow::Cow;
 use std::error::Error;
 
 // This is the stuct we want to use in our sample.
 // Make sure to have a collection with partition key "a_number" for this example to
 // work (you can create with this SDK too, check the examples folder for that task).
-#[derive(Serialize, Deserialize, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
 // Here we mark "a_number" as partition key.
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
     type Entity = u64;
 
-    fn partition_key(&'a self) -> Self::Entity {
+    fn partition_key(&self) -> Self::Entity {
         self.a_number
     }
 }
@@ -71,8 +69,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     for i in 0..10 {
         // define the document.
         let document_to_insert = MySampleStruct {
-            id: Cow::Owned(format!("unique_id{}", i)),
-            a_string: Cow::Borrowed("Something here"),
+            id: format!("unique_id{}", i),
+            a_string: "Something here".into(),
             a_number: i * 100, // this is the partition key
             a_timestamp: chrono::Utc::now().timestamp(),
         };
@@ -80,11 +78,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         // insert it and store the returned session token for later use!
         session_token = Some(
             collection_client
-                .create_document(
-                    Context::new(),
-                    &document_to_insert,
-                    CreateDocumentOptions::new().is_upsert(true),
-                )
+                .create_document(document_to_insert.clone())
+                .is_upsert(true)
+                .into_future()
                 .await?
                 .session_token, // get only the session token, if everything else was ok!
         );
@@ -103,7 +99,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .list_documents()
             .consistency_level(session_token.clone())
             .max_item_count(3);
-        let mut stream = Box::pin(stream.stream::<MySampleStruct>());
+        let mut stream = stream.into_stream::<MySampleStruct>();
         // TODO: As soon as the streaming functionality is stabilized
         // in Rust we can substitute this while let Some... into
         // for each (or whatever the Rust team picks).
@@ -117,11 +113,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // TASK 3
     println!("\nQuerying documents");
     let query_documents_response = collection_client
-        .query_documents()
+        .query_documents("SELECT * FROM A WHERE A.a_number < 600")
         .query_cross_partition(true) // this will perform a cross partition query! notice how simple it is!
         .consistency_level(session_token)
-        .execute::<MySampleStruct, _>("SELECT * FROM A WHERE A.a_number < 600") // there are other ways to construct a query, this is the simplest.
-        .await?
+        .into_stream::<MySampleStruct>() // there are other ways to construct a query, this is the simplest.
+        .next()
+        .await
+        .unwrap()?
         .into_documents() // queries can return Documents or Raw json (ie without etag, _rid, etc...). Since our query return docs we convert with this function.
         .unwrap(); // we know in advance that the conversion to Document will not fail since we SELECT'ed * FROM table
 
@@ -150,12 +148,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         collection_client
             .clone()
             .into_document_client(document.result.id.clone(), &document.result.a_number)?
-            .delete_document(
-                Context::new(),
-                DeleteDocumentOptions::new()
-                    .consistency_level(session_token.clone())
-                    .if_match_condition(&document.document_attributes),
-            )
+            .delete_document()
+            .consistency_level(session_token.clone())
+            .if_match_condition(&document.document_attributes)
+            .into_future()
             .await?;
     }
 
@@ -164,8 +160,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let list_documents_response = collection_client
         .list_documents()
         .consistency_level(session_token)
-        .execute::<serde_json::Value>() // you can use this if you don't know/care about the return type!
-        .await?;
+        .into_stream::<serde_json::Value>() // you can use this if you don't know/care about the return type!
+        .next()
+        .await
+        .unwrap()?;
     assert_eq!(list_documents_response.documents.len(), 4);
 
     Ok(())

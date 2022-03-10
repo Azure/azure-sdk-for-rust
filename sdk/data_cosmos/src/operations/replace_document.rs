@@ -7,40 +7,45 @@ use crate::ResourceQuota;
 use azure_core::headers::session_token_from_headers;
 use azure_core::prelude::*;
 use azure_core::SessionToken;
-use azure_core::{collect_pinned_stream, Request as HttpRequest, Response as HttpResponse};
+use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 
 #[derive(Debug, Clone)]
-pub struct ReplaceDocumentOptions {
+pub struct ReplaceDocumentBuilder<D> {
+    client: DocumentClient,
+    document: D,
     partition_key: Option<String>,
     indexing_directive: IndexingDirective,
     if_match_condition: Option<IfMatchCondition>,
     if_modified_since: Option<IfModifiedSince>,
     consistency_level: Option<ConsistencyLevel>,
     allow_tentative_writes: TentativeWritesAllowance,
+    context: Context,
 }
 
-impl ReplaceDocumentOptions {
-    pub fn new() -> Self {
+impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
+    pub(crate) fn new(client: DocumentClient, document: D) -> Self {
         Self {
+            client,
+            document,
             partition_key: None,
             indexing_directive: IndexingDirective::Default,
             if_match_condition: None,
             if_modified_since: None,
             consistency_level: None,
             allow_tentative_writes: TentativeWritesAllowance::Deny,
+            context: Context::new(),
         }
     }
-}
 
-impl ReplaceDocumentOptions {
     setters! {
         consistency_level: ConsistencyLevel => Some(consistency_level),
         if_match_condition: IfMatchCondition => Some(if_match_condition),
         if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
         allow_tentative_writes: TentativeWritesAllowance,
         indexing_directive: IndexingDirective,
+        context: Context => context,
     }
 
     pub fn partition_key<T: Serialize>(&mut self, partition_key: &T) -> crate::Result<()> {
@@ -48,31 +53,52 @@ impl ReplaceDocumentOptions {
         Ok(())
     }
 
-    pub fn decorate_request<'b, D>(
-        &self,
-        request: &mut HttpRequest,
-        document: &'b D,
-        serialized_partition_key: &str,
-    ) -> crate::Result<()>
-    where
-        D: Serialize,
-    {
-        let partition_key = self
-            .partition_key
-            .as_deref()
-            .unwrap_or(serialized_partition_key);
-        add_as_partition_key_header_serialized2(partition_key, request);
+    pub fn into_future(self) -> ReplaceDocument {
+        Box::pin(async move {
+            let mut request = self
+                .client
+                .prepare_request_pipeline_with_document_name(http::Method::PUT);
 
-        azure_core::headers::add_mandatory_header2(&self.indexing_directive, request)?;
-        azure_core::headers::add_optional_header2(&self.if_match_condition, request)?;
-        azure_core::headers::add_optional_header2(&self.if_modified_since, request)?;
-        azure_core::headers::add_optional_header2(&self.consistency_level, request)?;
-        azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, request)?;
+            let partition_key = self
+                .partition_key
+                .as_deref()
+                .unwrap_or_else(|| self.client.partition_key_serialized());
+            add_as_partition_key_header_serialized2(partition_key, &mut request);
 
-        let serialized = azure_core::to_json(document)?;
-        request.set_body(serialized.into());
+            azure_core::headers::add_mandatory_header2(&self.indexing_directive, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
+            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
 
-        Ok(())
+            let serialized = azure_core::to_json(&self.document)?;
+            request.set_body(serialized.into());
+
+            let response = self
+                .client
+                .cosmos_client()
+                .pipeline()
+                .send(
+                    self.context.clone().insert(ResourceType::Documents),
+                    &mut request,
+                )
+                .await?;
+
+            ReplaceDocumentResponse::try_from(response).await
+        })
+    }
+}
+
+/// The future returned by calling `into_future` on the builder.
+pub type ReplaceDocument =
+    futures::future::BoxFuture<'static, crate::Result<ReplaceDocumentResponse>>;
+
+#[cfg(feature = "into_future")]
+impl<D: Serialize + Send + 'static> std::future::IntoFuture for ReplaceDocumentBuilder<D> {
+    type Future = ReplaceDocument;
+    type Output = <ReplaceDocument as std::future::Future>::Output;
+    fn into_future(self) -> Self::Future {
+        Self::into_future(self)
     }
 }
 

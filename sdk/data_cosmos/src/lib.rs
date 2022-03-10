@@ -1,6 +1,7 @@
 #![allow(clippy::enum_variant_names)]
 #![allow(clippy::new_without_default)]
 #![allow(clippy::module_inception)]
+#![cfg_attr(feature = "into_future", feature(into_future))]
 
 /*!
 # The Cosmos DB crate.
@@ -29,10 +30,10 @@ struct MySampleStruct {
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct {
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
     type Entity = u64;
 
-    fn partition_key(&'a self) -> Self::Entity {
+    fn partition_key(&self) -> Self::Entity {
         self.a_number
     }
 }
@@ -80,11 +81,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         // insert it
         collection_client
-            .create_document(
-                Context::new(),
-                &document_to_insert,
-                CreateDocumentOptions::new().is_upsert(true),
-            )
+            .create_document(document_to_insert)
+            .is_upsert(true)
+            .into_future()
             .await?;
     }
     // wow that was easy and fast, wasn't it? :)
@@ -108,9 +107,7 @@ extern crate azure_core;
 pub mod clients;
 pub mod operations;
 pub mod prelude;
-pub mod requests;
 pub mod resources;
-pub mod responses;
 
 mod authorization_policy;
 mod consistency_level;

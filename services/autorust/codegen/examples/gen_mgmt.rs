@@ -1,10 +1,6 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
-use autorust_codegen::{
-    self, cargo_toml,
-    config_parser::{to_mod_name, to_tag_name},
-    get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme,
-};
+use autorust_codegen::{self, cargo_toml, get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
@@ -63,6 +59,7 @@ const SKIP_SERVICE_TAGS: &[(&str, &str)] = &[
     ("resources", "package-policy-2020-09"), // SchemaNotFound { ref_key: RefKey { file_path: "../../../azure-rest-api-specs/specification/resources/resource-manager/Microsoft.Authorization/stable/2020-09-01/dataPolicyManifests.json", name: "CloudError"
     ("security", "package-2020-01-preview-only"), // duplicate tag https://github.com/Azure/azure-rest-api-specs/pull/13828
     ("security", "package-2019-08-only"),    // defines `start_time_utc` param twice.
+    ("securityinsights", "package-2021-10"), // invalid unicode code point https://github.com/Azure/azure-rest-api-specs/pull/18068
 ];
 
 // because of a bug in compute specs, some properties need to be forced to be optional
@@ -191,8 +188,10 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-06-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-10-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
     ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/preview/2021-12-01-preview/dataprotection.json", "InnerError", "embeddedInnerError"),
+    ("../../../azure-rest-api-specs/specification/dataprotection/resource-manager/Microsoft.DataProtection/stable/2022-01-01/dataprotection.json", "InnerError", "embeddedInnerError"),
     // hardwaresecuritymodels
     ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/preview/2018-10-31-preview/dedicatedhsm.json", "Error", "innererror"),
+    ("../../../azure-rest-api-specs/specification/hardwaresecuritymodules/resource-manager/Microsoft.HardwareSecurityModules/stable/2021-11-30/dedicatedhsm.json", "Error", "innererror"),
     // logic
     ("../../../azure-rest-api-specs/specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/logic.json", "SwaggerSchema", "items"),
     // migrateprojects
@@ -337,7 +336,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         fs::remove_dir_all(&src_folder).map_err(|source| Error::IoError { source })?;
     }
 
-    let mut feature_mod_names = Vec::new();
+    let mut tags = Vec::new();
     let skip_service_tags: HashSet<&(&str, &str)> = SKIP_SERVICE_TAGS.iter().collect();
 
     let mut box_properties = HashSet::new();
@@ -358,31 +357,22 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         });
     }
 
-    for config in spec.configs()? {
-        let tag = to_tag_name(&config.tag);
-        if skip_service_tags.contains(&(spec.spec(), tag.as_ref())) {
-            println!("  skipping {}", tag);
+    let config = spec.config()?;
+    for tag in config.tags() {
+        let tag_name = tag.name();
+        if skip_service_tags.contains(&(spec.spec(), tag_name.as_ref())) {
+            // println!("  skipping {}", tag_name);
             continue;
         }
-        println!("  {}", tag);
-        // println!("  {}", api_version);
-        let mod_name = to_mod_name(&tag);
-        let mod_output_folder = path::join(&src_folder, &mod_name).map_err(|source| Error::PathError { source })?;
-        feature_mod_names.push((tag, mod_name));
-        // println!("  {}", mod_name);
-        // println!("  {:?}", mod_output_folder);
-        // for input_file in &config.input_files {
-        //     println!("  {}", input_file);
-        // }
-        let input_files: Result<Vec<_>> = config
-            .input_files
+        println!("  {}", tag_name);
+        let mod_output_folder = path::join(&src_folder, &tag.rust_mod_name()).map_err(|source| Error::PathError { source })?;
+        tags.push(tag);
+        let input_files: Result<Vec<_>> = tag
+            .input_files()
             .iter()
             .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
             .collect();
         let input_files = input_files?;
-        // for input_file in &input_files {
-        //     println!("  {:?}", input_file);
-        // }
         autorust_codegen::run(Config {
             output_folder: mod_output_folder,
             input_files,
@@ -392,17 +382,18 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             ..Config::default()
         })?;
     }
-    if feature_mod_names.is_empty() {
+    if tags.is_empty() {
         return Ok(());
     }
     cargo_toml::create(
         crate_name,
-        &feature_mod_names,
+        &tags,
+        config.tag(),
         &path::join(output_folder, "Cargo.toml").map_err(|source| Error::PathError { source })?,
     )
     .map_err(|source| Error::CargoTomlError { source })?;
     lib_rs::create(
-        &feature_mod_names,
+        &tags,
         &path::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
         false,
     )

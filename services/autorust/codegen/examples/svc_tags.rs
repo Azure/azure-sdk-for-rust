@@ -8,10 +8,10 @@ fn main() -> Result<()> {
     let mut tag_count = 0;
     for (i, spec) in get_svc_readmes()?.iter().enumerate() {
         println!("{} {}", i + 1, spec.spec());
-        for config in spec.configs()? {
-            println!("  {}", &config.tag);
-            for input_file in &config.input_files {
-                println!("    {}", input_file);
+        for tag in spec.config()?.tags() {
+            println!("  {}", &tag.name());
+            for input_file in &tag.input_files() {
+                println!("    {}", input_file.display());
             }
             tag_count += 1;
         }

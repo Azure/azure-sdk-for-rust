@@ -20,7 +20,7 @@ impl BlobDetails {
         }
     }
 }
-#[doc = "A job cost estimate."]
+#[doc = "The job cost billed by the provider. The final cost on your bill might be slightly different due to added taxes and currency conversion rates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CostEstimate {
     #[doc = "The currency code."]
@@ -103,7 +103,7 @@ pub struct JobDetails {
     #[doc = "The time when a job was successfully cancelled."]
     #[serde(rename = "cancellationTime", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_time: Option<String>,
-    #[doc = "A job cost estimate."]
+    #[doc = "The job cost billed by the provider. The final cost on your bill might be slightly different due to added taxes and currency conversion rates."]
     #[serde(rename = "costEstimate", default, skip_serializing_if = "Option::is_none")]
     pub cost_estimate: Option<CostEstimate>,
     #[doc = "An error response from Azure."]

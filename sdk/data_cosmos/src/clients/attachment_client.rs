@@ -1,7 +1,7 @@
-use crate::requests;
-use crate::resources::ResourceType;
+use crate::operations::*;
 use crate::ReadonlyString;
-use azure_core::HttpClient;
+use azure_core::{Pipeline, Request};
+use bytes::Bytes;
 
 use super::*;
 
@@ -50,42 +50,58 @@ impl AttachmentClient {
     }
 
     /// Initiate a request to get an attachment.
-    pub fn get(&self) -> requests::GetAttachmentBuilder<'_, '_> {
-        requests::GetAttachmentBuilder::new(self)
+    pub fn get(&self) -> GetAttachmentBuilder {
+        GetAttachmentBuilder::new(self.clone())
     }
 
     /// Initiate a request to delete an attachment.
-    pub fn delete(&self) -> requests::DeleteAttachmentBuilder<'_, '_> {
-        requests::DeleteAttachmentBuilder::new(self)
+    pub fn delete(&self) -> DeleteAttachmentBuilder {
+        DeleteAttachmentBuilder::new(self.clone())
     }
 
     /// Initiate a request to create an attachment with a slug.
-    pub fn create_slug(&self) -> requests::CreateSlugAttachmentBuilder<'_, '_> {
-        requests::CreateSlugAttachmentBuilder::new(self)
+    pub fn create_slug(&self, body: Bytes) -> CreateOrReplaceSlugAttachmentBuilder {
+        CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), true, body)
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_slug(&self) -> requests::ReplaceSlugAttachmentBuilder<'_, '_> {
-        requests::ReplaceSlugAttachmentBuilder::new(self)
+    pub fn replace_slug(&self, body: Bytes) -> CreateOrReplaceSlugAttachmentBuilder {
+        CreateOrReplaceSlugAttachmentBuilder::new(self.clone(), false, body)
     }
 
-    /// Initiate a request to create an attachment.
-    pub fn create_reference(&self) -> requests::CreateReferenceAttachmentBuilder<'_, '_> {
-        requests::CreateReferenceAttachmentBuilder::new(self)
+    /// Initiate a request to create a reference attachment.
+    pub fn create_attachment<M, C>(
+        &self,
+        media: M,
+        content_type: C,
+    ) -> CreateOrReplaceAttachmentBuilder
+    where
+        M: Into<String>,
+        C: Into<String>,
+    {
+        CreateOrReplaceAttachmentBuilder::new(self.clone(), true, media.into(), content_type.into())
     }
 
     /// Initiate a request to replace an attachment.
-    pub fn replace_reference(&self) -> requests::ReplaceReferenceAttachmentBuilder<'_, '_> {
-        requests::ReplaceReferenceAttachmentBuilder::new(self)
+    pub fn replace_attachment<M, C>(
+        &self,
+        media: M,
+        content_type: C,
+    ) -> CreateOrReplaceAttachmentBuilder
+    where
+        M: Into<String>,
+        C: Into<String>,
+    {
+        CreateOrReplaceAttachmentBuilder::new(
+            self.clone(),
+            false,
+            media.into(),
+            content_type.into(),
+        )
     }
 
-    /// Get a raw [`HttpClient`].
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
-    }
-
-    pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
+    pub(crate) fn prepare_pipeline(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments",
                 self.database_client().database_name(),
@@ -93,15 +109,11 @@ impl AttachmentClient {
                 self.document_client().document_name(),
             ),
             method,
-            ResourceType::Attachments,
         )
     }
 
-    pub(crate) fn prepare_request_with_attachment_name(
-        &self,
-        method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
+    pub(crate) fn prepare_pipeline_with_attachment_name(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/docs/{}/attachments/{}",
                 self.database_client().database_name(),
@@ -110,7 +122,10 @@ impl AttachmentClient {
                 self.attachment_name()
             ),
             method,
-            ResourceType::Attachments,
         )
+    }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline {
+        self.cosmos_client().pipeline()
     }
 }

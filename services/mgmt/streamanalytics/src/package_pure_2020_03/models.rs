@@ -80,6 +80,47 @@ impl AzureDataLakeStoreOutputDataSourceProperties {
         Self::default()
     }
 }
+#[doc = "Defines the metadata of AzureFunctionOutputDataSource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureFunctionOutputDataSource {
+    #[serde(flatten)]
+    pub output_data_source: OutputDataSource,
+    #[doc = "The properties that are associated with an Azure Function output."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AzureFunctionOutputDataSourceProperties>,
+}
+impl AzureFunctionOutputDataSource {
+    pub fn new(output_data_source: OutputDataSource) -> Self {
+        Self {
+            output_data_source,
+            properties: None,
+        }
+    }
+}
+#[doc = "The properties that are associated with an Azure Function output."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureFunctionOutputDataSourceProperties {
+    #[doc = "The name of your Azure Functions app."]
+    #[serde(rename = "functionAppName", default, skip_serializing_if = "Option::is_none")]
+    pub function_app_name: Option<String>,
+    #[doc = "The name of the function in your Azure Functions app."]
+    #[serde(rename = "functionName", default, skip_serializing_if = "Option::is_none")]
+    pub function_name: Option<String>,
+    #[doc = "If you want to use an Azure Function from another subscription, you can do so by providing the key to access your function."]
+    #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+    #[doc = "A property that lets you set the maximum size for each output batch that's sent to your Azure function. The input unit is in bytes. By default, this value is 262,144 bytes (256 KB)."]
+    #[serde(rename = "maxBatchSize", default, skip_serializing_if = "Option::is_none")]
+    pub max_batch_size: Option<f64>,
+    #[doc = "A property that lets you specify the maximum number of events in each batch that's sent to Azure Functions. The default value is 100."]
+    #[serde(rename = "maxBatchCount", default, skip_serializing_if = "Option::is_none")]
+    pub max_batch_count: Option<f64>,
+}
+impl AzureFunctionOutputDataSourceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The binding to an Azure Machine Learning web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMachineLearningWebServiceFunctionBinding {
@@ -432,6 +473,9 @@ pub struct BlobDataSourceProperties {
     #[doc = "The time format. Wherever {time} appears in pathPattern, the value of this property is used as the time format instead."]
     #[serde(rename = "timeFormat", default, skip_serializing_if = "Option::is_none")]
     pub time_format: Option<String>,
+    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
+    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_mode: Option<AuthenticationMode>,
 }
 impl BlobDataSourceProperties {
     pub fn new() -> Self {
@@ -460,9 +504,6 @@ impl BlobOutputDataSource {
 pub struct BlobOutputDataSourceProperties {
     #[serde(flatten)]
     pub blob_data_source_properties: BlobDataSourceProperties,
-    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
-    pub authentication_mode: Option<AuthenticationMode>,
 }
 impl BlobOutputDataSourceProperties {
     pub fn new() -> Self {

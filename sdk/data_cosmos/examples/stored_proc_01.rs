@@ -6,6 +6,7 @@
 ///     response.setBody("Hello, " + personToGreet);
 /// }
 use azure_data_cosmos::prelude::*;
+use futures::StreamExt;
 use std::error::Error;
 
 #[tokio::main]
@@ -46,16 +47,20 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .clone()
         .into_stored_procedure_client(stored_procedure_name);
 
-    let list_stored_procedures_response =
-        collection_client.list_stored_procedures().execute().await?;
+    let list_stored_procedures_response = collection_client
+        .list_stored_procedures()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()?;
     println!(
         "list_stored_procedures_response == {:#?}",
         list_stored_procedures_response
     );
 
     let create_stored_procedure_response = stored_procedure_client
-        .create_stored_procedure()
-        .execute(function_body)
+        .create_stored_procedure(function_body)
+        .into_future()
         .await?;
     println!(
         "create_stored_procedure_response == {:#?}",
@@ -65,7 +70,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let execute_stored_procedure_response = stored_procedure_client
         .execute_stored_procedure()
         .parameters(["Robert"])
-        .execute::<serde_json::Value>()
+        .into_future::<serde_json::Value>()
         .await?;
 
     println!(
@@ -74,12 +79,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
     println!(
         "Response as JSON:\n{}",
-        execute_stored_procedure_response.payload.to_string()
+        execute_stored_procedure_response.payload
     );
 
     let delete_stored_procedure_response = stored_procedure_client
         .delete_stored_procedure()
-        .execute()
+        .into_future()
         .await?;
     println!(
         "delete_stored_procedure_response == {:#?}",

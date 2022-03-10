@@ -27,6 +27,9 @@ pub struct Compute {
     #[doc = "Describes how the VM will be evicted if space needs to be freed up. Only applicable to Spot VMs. For a non-spot VM, this will be an empty string."]
     #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
     pub eviction_policy: Option<String>,
+    #[doc = "Describes the extended location of the VM"]
+    #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
+    pub extended_location: Option<ExtendedLocationProperties>,
     #[doc = "Identifies if the VM runs on the Host Compatibility Layer."]
     #[serde(rename = "isHostCompatibilityLayerVm", default, skip_serializing_if = "Option::is_none")]
     pub is_host_compatibility_layer_vm: Option<String>,
@@ -102,6 +105,9 @@ pub struct Compute {
     #[doc = "This is the version of the VM image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
+    #[doc = "Information about the VMSS the VM belongs to (if applicable)"]
+    #[serde(rename = "virtualMachineScaleSet", default, skip_serializing_if = "Option::is_none")]
+    pub virtual_machine_scale_set: Option<VirtualMachineScaleSet>,
     #[doc = "This is the unique identifier for the VM."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
@@ -215,6 +221,21 @@ pub struct ErrorResponse {
     pub error: Option<String>,
 }
 impl ErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the extended location of the VM"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ExtendedLocationProperties {
+    #[doc = "The type of the extended location of the VM"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The name of the extended location of the VM"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl ExtendedLocationProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -639,6 +660,18 @@ pub struct VirtualHardDisk {
     pub uri: Option<String>,
 }
 impl VirtualHardDisk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Information about the VMSS the VM belongs to (if applicable)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct VirtualMachineScaleSet {
+    #[doc = "This is the ID of the VMSS the VM belongs to (if applicable)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl VirtualMachineScaleSet {
     pub fn new() -> Self {
         Self::default()
     }

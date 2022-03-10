@@ -32,6 +32,18 @@ impl Resource {
         Self::default()
     }
 }
+#[doc = "Action status"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ActionStatus {
+    #[doc = "Value indicating whether alert is suppressed."]
+    #[serde(rename = "isSuppressed", default, skip_serializing_if = "Option::is_none")]
+    pub is_suppressed: Option<bool>,
+}
+impl ActionStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "An alert created in alert management service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Alert {
@@ -145,6 +157,9 @@ pub struct AlertProperties {
     #[doc = "Monitor service which is the source of the alert object."]
     #[serde(rename = "monitorService", default, skip_serializing_if = "Option::is_none")]
     pub monitor_service: Option<alert_properties::MonitorService>,
+    #[doc = "Rule(monitor) which fired alert instance. Depending on the monitor service,  this would be ARM id or name of the rule."]
+    #[serde(rename = "alertRule", default, skip_serializing_if = "Option::is_none")]
+    pub alert_rule: Option<String>,
     #[doc = "Unique Id created by monitor service"]
     #[serde(rename = "sourceCreatedId", default, skip_serializing_if = "Option::is_none")]
     pub source_created_id: Option<String>,
@@ -166,6 +181,12 @@ pub struct AlertProperties {
     #[doc = "More details which are contextual to the monitor service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub payload: Option<serde_json::Value>,
+    #[doc = "Action status"]
+    #[serde(rename = "actionStatus", default, skip_serializing_if = "Option::is_none")]
+    pub action_status: Option<ActionStatus>,
+    #[doc = "Alert description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 impl AlertProperties {
     pub fn new() -> Self {

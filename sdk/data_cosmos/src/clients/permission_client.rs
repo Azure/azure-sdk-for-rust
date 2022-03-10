@@ -1,9 +1,8 @@
 use super::*;
 use crate::prelude::*;
-use crate::resources::permission::{PermissionMode, PermissionResponse};
-use crate::resources::ResourceType;
+use crate::resources::permission::PermissionMode;
 use crate::ReadonlyString;
-use azure_core::{Context, Pipeline, Request};
+use azure_core::{Pipeline, Request};
 
 /// A client for Cosmos permission resources.
 #[derive(Debug, Clone)]
@@ -44,84 +43,23 @@ impl PermissionClient {
     }
 
     /// Create the permission
-    pub async fn create_permission(
-        &self,
-        ctx: Context,
-        options: CreatePermissionOptions,
-        permission_mode: &PermissionMode<'_>,
-    ) -> crate::Result<PermissionResponse<'_>> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!(
-                "dbs/{}/users/{}/permissions",
-                self.database_client().database_name(),
-                self.user_client().user_name()
-            ),
-            http::Method::POST,
-        );
-
-        options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
-            .await?;
-
-        Ok(PermissionResponse::try_from(response).await?)
+    pub fn create_permission(&self, permission_mode: PermissionMode) -> CreatePermissionBuilder {
+        CreatePermissionBuilder::new(self.clone(), permission_mode)
     }
 
     /// Replace the permission
-    pub async fn replace_permission(
-        &self,
-        ctx: Context,
-        options: ReplacePermissionOptions,
-        permission_mode: &PermissionMode<'_>,
-    ) -> crate::Result<PermissionResponse<'_>> {
-        let mut request = self.prepare_request_with_permission_name(http::Method::PUT);
-
-        options.decorate_request(&mut request, self.permission_name(), permission_mode)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
-            .await?;
-
-        Ok(PermissionResponse::try_from(response).await?)
+    pub fn replace_permission(&self, permission_mode: PermissionMode) -> ReplacePermissionBuilder {
+        ReplacePermissionBuilder::new(self.clone(), permission_mode)
     }
 
     /// Get the permission
-    pub async fn get_permission(
-        &self,
-        ctx: Context,
-        options: GetPermissionOptions,
-    ) -> crate::Result<PermissionResponse<'_>> {
-        let mut request = self.prepare_request_with_permission_name(http::Method::GET);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
-            .await?;
-
-        Ok(PermissionResponse::try_from(response).await?)
+    pub fn get_permission(&self) -> GetPermissionBuilder {
+        GetPermissionBuilder::new(self.clone())
     }
 
     /// Delete the permission
-    pub async fn delete_permission(
-        &self,
-        ctx: Context,
-        options: DeletePermissionOptions,
-    ) -> crate::Result<DeletePermissionResponse> {
-        let mut request = self.prepare_request_with_permission_name(http::Method::DELETE);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Permissions), &mut request)
-            .await?;
-
-        Ok(DeletePermissionResponse::try_from(response).await?)
+    pub fn delete_permission(&self) -> DeletePermissionBuilder {
+        DeletePermissionBuilder::new(self.clone())
     }
 
     pub(crate) fn prepare_request_with_permission_name(&self, method: http::Method) -> Request {
@@ -136,7 +74,7 @@ impl PermissionClient {
         )
     }
 
-    fn pipeline(&self) -> &Pipeline {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         self.cosmos_client().pipeline()
     }
 }

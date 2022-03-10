@@ -1,11 +1,11 @@
 use super::{DatabaseClient, UserDefinedFunctionClient};
 use crate::clients::*;
 use crate::operations::*;
-use crate::requests;
-use crate::resources::ResourceType;
+use crate::resources::collection::PartitionKey;
+use crate::resources::document::Query;
 use crate::CosmosEntity;
 use crate::ReadonlyString;
-use azure_core::{Context, HttpClient, Pipeline, Request};
+use azure_core::{Pipeline, Request};
 use serde::Serialize;
 
 /// A client for Cosmos collection resources.
@@ -42,105 +42,59 @@ impl CollectionClient {
     }
 
     /// Get a collection
-    pub async fn get_collection(
-        &self,
-        ctx: Context,
-        options: GetCollectionOptions,
-    ) -> crate::Result<GetCollectionResponse> {
-        let mut request = self.prepare_request_with_collection_name(http::Method::GET);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-            .await?;
-
-        Ok(GetCollectionResponse::try_from(response).await?)
+    pub fn get_collection(&self) -> GetCollectionBuilder {
+        GetCollectionBuilder::new(self.clone())
     }
 
     /// Delete a collection
-    pub async fn delete_collection(
-        &self,
-        ctx: Context,
-        options: DeleteCollectionOptions,
-    ) -> crate::Result<DeleteCollectionResponse> {
-        let mut request = self.prepare_request_with_collection_name(http::Method::DELETE);
-
-        options.decorate_request(&mut request)?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-            .await?;
-
-        Ok(DeleteCollectionResponse::try_from(response).await?)
+    pub fn delete_collection(&self) -> DeleteCollectionBuilder {
+        DeleteCollectionBuilder::new(self.clone())
     }
 
     /// Replace a collection
-    pub async fn replace_collection(
+    pub fn replace_collection<P: Into<PartitionKey>>(
         &self,
-        ctx: Context,
-        options: ReplaceCollectionOptions,
-    ) -> crate::Result<ReplaceCollectionResponse> {
-        let mut request = self.prepare_request_with_collection_name(http::Method::PUT);
-
-        options.decorate_request(&mut request, self.collection_name())?;
-
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Collections), &mut request)
-            .await?;
-
-        Ok(ReplaceCollectionResponse::try_from(response).await?)
+        partition_key: P,
+    ) -> ReplaceCollectionBuilder {
+        ReplaceCollectionBuilder::new(self.clone(), partition_key.into())
     }
 
     /// list documents in a collection
-    pub fn list_documents(&self) -> requests::ListDocumentsBuilder<'_, '_> {
-        requests::ListDocumentsBuilder::new(self)
+    pub fn list_documents(&self) -> ListDocumentsBuilder {
+        ListDocumentsBuilder::new(self.clone())
     }
 
     /// create a document in a collection
-    pub async fn create_document<'a, D: Serialize + CosmosEntity<'a>>(
+    pub fn create_document<D: Serialize + CosmosEntity + Send + 'static>(
         &self,
-        ctx: Context,
-        document: &'a D,
-        options: CreateDocumentOptions,
-    ) -> crate::Result<CreateDocumentResponse> {
-        let mut request = self.prepare_doc_request_pipeline(http::Method::POST);
-
-        options.decorate_request(&mut request, document)?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Documents), &mut request)
-            .await?;
-
-        Ok(CreateDocumentResponse::try_from(response).await?)
+        document: D,
+    ) -> CreateDocumentBuilder<D> {
+        CreateDocumentBuilder::new(self.clone(), document)
     }
 
     /// query documents in a collection
-    pub fn query_documents(&self) -> requests::QueryDocumentsBuilder<'_, '_> {
-        requests::QueryDocumentsBuilder::new(self)
+    pub fn query_documents<Q: Into<Query>>(&self, query: Q) -> QueryDocumentsBuilder {
+        QueryDocumentsBuilder::new(self.clone(), query.into())
     }
 
     /// list stored procedures in a collection
-    pub fn list_stored_procedures(&self) -> requests::ListStoredProceduresBuilder<'_, '_> {
-        requests::ListStoredProceduresBuilder::new(self)
+    pub fn list_stored_procedures(&self) -> ListStoredProceduresBuilder {
+        ListStoredProceduresBuilder::new(self.clone())
     }
 
     /// list user defined functions in a collection
-    pub fn list_user_defined_functions(&self) -> requests::ListUserDefinedFunctionsBuilder<'_, '_> {
-        requests::ListUserDefinedFunctionsBuilder::new(self)
+    pub fn list_user_defined_functions(&self) -> ListUserDefinedFunctionsBuilder {
+        ListUserDefinedFunctionsBuilder::new(self.clone())
     }
 
     /// list triggers in a collection
-    pub fn list_triggers(&self) -> requests::ListTriggersBuilder<'_, '_> {
-        requests::ListTriggersBuilder::new(self)
+    pub fn list_triggers(&self) -> ListTriggersBuilder {
+        ListTriggersBuilder::new(self.clone())
     }
 
     /// list the partition key ranges in a collection
-    pub fn get_partition_key_ranges(&self) -> requests::GetPartitionKeyRangesBuilder<'_, '_> {
-        requests::GetPartitionKeyRangesBuilder::new(self)
+    pub fn get_partition_key_ranges(&self) -> GetPartitionKeyRangesBuilder {
+        GetPartitionKeyRangesBuilder::new(self.clone())
     }
 
     /// convert into a [`DocumentClient`]
@@ -173,7 +127,10 @@ impl CollectionClient {
         StoredProcedureClient::new(self, stored_procedure_name)
     }
 
-    fn prepare_request_with_collection_name(&self, http_method: http::Method) -> Request {
+    pub(crate) fn prepare_request_with_collection_name(
+        &self,
+        http_method: http::Method,
+    ) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}",
             self.database_client().database_name(),
@@ -183,15 +140,11 @@ impl CollectionClient {
             .prepare_request_pipeline(path, http_method)
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
-    }
-
     pub(crate) fn pipeline(&self) -> &Pipeline {
         self.cosmos_client().pipeline()
     }
 
-    fn prepare_doc_request_pipeline(&self, http_method: http::Method) -> Request {
+    pub(crate) fn prepare_doc_request_pipeline(&self, http_method: http::Method) -> Request {
         let path = &format!(
             "dbs/{}/colls/{}/docs",
             self.database_client().database_name(),

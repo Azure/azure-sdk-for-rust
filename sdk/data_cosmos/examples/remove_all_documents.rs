@@ -1,4 +1,3 @@
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
@@ -37,7 +36,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut documents = Vec::new();
 
     let stream = client.list_documents();
-    let mut stream = Box::pin(stream.stream::<serde_json::Value>());
+    let mut stream = stream.into_stream::<serde_json::Value>();
     while let Some(res) = stream.next().await {
         for doc in res?.documents {
             documents.push(doc);
@@ -74,7 +73,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         client
             .clone()
             .into_document_client(id.clone(), &partition_key)?
-            .delete_document(Context::new(), DeleteDocumentOptions::new())
+            .delete_document()
+            .into_future()
             .await?;
     }
 

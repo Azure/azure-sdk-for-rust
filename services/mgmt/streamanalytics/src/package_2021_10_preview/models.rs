@@ -96,7 +96,7 @@ impl AzureDataLakeStoreOutputDataSourceProperties {
 pub struct AzureFunctionOutputDataSource {
     #[serde(flatten)]
     pub output_data_source: OutputDataSource,
-    #[doc = "The properties that are associated with a DocumentDB output."]
+    #[doc = "The properties that are associated with an Azure Function output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureFunctionOutputDataSourceProperties>,
 }
@@ -108,7 +108,7 @@ impl AzureFunctionOutputDataSource {
         }
     }
 }
-#[doc = "The properties that are associated with a DocumentDB output."]
+#[doc = "The properties that are associated with an Azure Function output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureFunctionOutputDataSourceProperties {
     #[doc = "The name of your Azure Functions app."]
@@ -611,6 +611,9 @@ pub struct BlobDataSourceProperties {
     #[doc = "The time format. Wherever {time} appears in pathPattern, the value of this property is used as the time format instead."]
     #[serde(rename = "timeFormat", default, skip_serializing_if = "Option::is_none")]
     pub time_format: Option<String>,
+    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
+    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    pub authentication_mode: Option<AuthenticationMode>,
 }
 impl BlobDataSourceProperties {
     pub fn new() -> Self {
@@ -639,9 +642,6 @@ impl BlobOutputDataSource {
 pub struct BlobOutputDataSourceProperties {
     #[serde(flatten)]
     pub blob_data_source_properties: BlobDataSourceProperties,
-    #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
-    pub authentication_mode: Option<AuthenticationMode>,
 }
 impl BlobOutputDataSourceProperties {
     pub fn new() -> Self {

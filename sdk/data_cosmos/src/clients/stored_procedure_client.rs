@@ -1,7 +1,7 @@
 use super::*;
-use crate::resources::ResourceType;
-use crate::{requests, ReadonlyString};
-use azure_core::HttpClient;
+use crate::prelude::*;
+use crate::ReadonlyString;
+use azure_core::{Pipeline, Request};
 
 /// A client for Cosmos stored procedure resources.
 #[derive(Debug, Clone)]
@@ -42,42 +42,36 @@ impl StoredProcedureClient {
     }
 
     /// Create the stored procedure
-    pub fn create_stored_procedure(&self) -> requests::CreateStoredProcedureBuilder<'_, '_> {
-        requests::CreateStoredProcedureBuilder::new(self)
+    pub fn create_stored_procedure<S: Into<String>>(
+        &self,
+        function_body: S,
+    ) -> CreateStoredProcedureBuilder {
+        CreateStoredProcedureBuilder::new(self.clone(), function_body.into())
     }
 
     /// Replace the stored procedure
-    pub fn replace_stored_procedure(&self) -> requests::ReplaceStoredProcedureBuilder<'_, '_> {
-        requests::ReplaceStoredProcedureBuilder::new(self)
+    pub fn replace_stored_procedure<S: Into<String>>(
+        &self,
+        function_body: S,
+    ) -> ReplaceStoredProcedureBuilder {
+        ReplaceStoredProcedureBuilder::new(self.clone(), function_body.into())
     }
 
     /// Execute the stored procedure
-    pub fn execute_stored_procedure(&self) -> requests::ExecuteStoredProcedureBuilder<'_, '_> {
-        requests::ExecuteStoredProcedureBuilder::new(self)
+    pub fn execute_stored_procedure(&self) -> ExecuteStoredProcedureBuilder {
+        ExecuteStoredProcedureBuilder::new(self.clone())
     }
 
     /// Delete the stored procedure
-    pub fn delete_stored_procedure(&self) -> requests::DeleteStoredProcedureBuilder<'_, '_> {
-        requests::DeleteStoredProcedureBuilder::new(self)
+    pub fn delete_stored_procedure(&self) -> DeleteStoredProcedureBuilder {
+        DeleteStoredProcedureBuilder::new(self.clone())
     }
 
-    pub(crate) fn prepare_request(&self, method: http::Method) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
-            &format!(
-                "dbs/{}/colls/{}/sprocs",
-                self.database_client().database_name(),
-                self.collection_client().collection_name(),
-            ),
-            method,
-            ResourceType::StoredProcedures,
-        )
-    }
-
-    pub(crate) fn prepare_request_with_stored_procedure_name(
+    pub(crate) fn prepare_pipeline_with_stored_procedure_name(
         &self,
         method: http::Method,
-    ) -> http::request::Builder {
-        self.cosmos_client().prepare_request(
+    ) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
             &format!(
                 "dbs/{}/colls/{}/sprocs/{}",
                 self.database_client().database_name(),
@@ -85,11 +79,21 @@ impl StoredProcedureClient {
                 self.stored_procedure_name()
             ),
             method,
-            ResourceType::StoredProcedures,
         )
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
+    pub(crate) fn prepare_request_pipeline(&self, method: http::Method) -> Request {
+        self.cosmos_client().prepare_request_pipeline(
+            &format!(
+                "dbs/{}/colls/{}/sprocs",
+                self.database_client().database_name(),
+                self.collection_client().collection_name(),
+            ),
+            method,
+        )
+    }
+
+    pub(crate) fn pipeline(&self) -> &Pipeline {
+        self.cosmos_client().pipeline()
     }
 }

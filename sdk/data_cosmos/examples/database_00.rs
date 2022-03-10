@@ -1,4 +1,3 @@
-use azure_core::Context;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde_json::Value;
@@ -16,7 +15,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
 
-    let dbs = Box::pin(client.list_databases().into_stream())
+    let dbs = client
+        .list_databases()
+        .into_stream()
         .next()
         .await
         .unwrap()?;
@@ -25,11 +26,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         println!("database == {:?}", db);
         let database = client.clone().into_database_client(db.name().to_owned());
 
-        let collections =
-            Box::pin(database.list_collections(Context::new(), ListCollectionsOptions::new()))
-                .next()
-                .await
-                .unwrap()?;
+        let collections = database
+            .list_collections()
+            .into_stream()
+            .next()
+            .await
+            .unwrap()?;
         for collection in collections.collections {
             println!("collection == {:?}", collection);
             let collection_client = database.clone().into_collection_client(collection.id);
@@ -49,12 +51,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 }"#;
                 let document: Value = serde_json::from_str(data)?;
 
-                let options = CreateDocumentOptions::new()
-                    .is_upsert(true)
-                    .partition_key(&43u32)
-                    .unwrap();
                 let resp = collection_client
-                    .create_document(Context::new(), &document, options)
+                    .create_document(document)
+                    .is_upsert(true)
+                    .partition_key(&43u32)?
+                    .into_future()
                     .await?;
 
                 println!("resp == {:?}", resp);
@@ -67,10 +68,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
                 println!("\nReplacing collection");
                 let replace_collection_response = collection_client
-                    .replace_collection(
-                        Context::new(),
-                        ReplaceCollectionOptions::new("/age").indexing_policy(indexing_policy_new),
-                    )
+                    .replace_collection("/age")
+                    .indexing_policy(indexing_policy_new)
+                    .into_future()
                     .await?;
                 println!(
                     "replace_collection_response == {:#?}",
@@ -80,8 +80,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
             let documents = collection_client
                 .list_documents()
-                .execute::<Value>()
-                .await?;
+                .into_stream::<Value>()
+                .next()
+                .await
+                .unwrap()?;
             println!("\ndocuments as json == {:?}", documents);
         }
     }

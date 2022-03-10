@@ -450,6 +450,9 @@ pub struct OperationResourceMetricSpecification {
     #[doc = "Aggregation type for the metric."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "Supported aggregation types for the metric."]
+    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_aggregation_types: Vec<String>,
     #[doc = "Fill gaps in the metric with zero."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
@@ -1438,8 +1441,8 @@ pub struct StorageSyncApiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<StorageSyncErrorDetails>,
     #[doc = "Error Details object."]
-    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Option<StorageSyncInnerErrorDetails>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<StorageSyncInnerErrorDetails>,
 }
 impl StorageSyncApiError {
     pub fn new() -> Self {

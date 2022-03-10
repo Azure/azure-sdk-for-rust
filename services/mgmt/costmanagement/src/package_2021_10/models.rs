@@ -930,6 +930,9 @@ pub mod kpi_properties {
 #[doc = "A Cost management REST API operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Operation {
+    #[doc = "Operation id: {provider}/{resource}/{operation}."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     #[doc = "Operation name: {provider}/{resource}/{operation}."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -956,6 +959,9 @@ pub mod operation {
         #[doc = "Operation type: Read, write, delete, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub operation: Option<String>,
+        #[doc = "Operation description"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
     }
     impl Display {
         pub fn new() -> Self {
@@ -976,6 +982,31 @@ pub struct OperationListResult {
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The status of the long running operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OperationStatus {
+    #[doc = "The status of the long running operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<operation_status::Status>,
+    #[doc = "The URL to download the generated report."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ReportUrl>,
+}
+impl OperationStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod operation_status {
+    use super::*;
+    #[doc = "The status of the long running operation."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Running,
+        Completed,
+        Failed,
     }
 }
 #[doc = "Each pivot must contain a 'type' and 'name'."]
@@ -1185,15 +1216,12 @@ pub struct QueryFilter {
     #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<QueryFilter>,
-    #[doc = "The filter expression to be used in the export."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub not: Box<Option<QueryFilter>>,
     #[doc = "The comparison expression to be used in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dimension: Option<QueryComparisonExpression>,
+    pub dimensions: Option<QueryComparisonExpression>,
     #[doc = "The comparison expression to be used in the query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tag: Option<QueryComparisonExpression>,
+    pub tags: Option<QueryComparisonExpression>,
 }
 impl QueryFilter {
     pub fn new() -> Self {
@@ -1412,9 +1440,6 @@ pub struct ReportConfigFilter {
     #[doc = "The logical \"OR\" expression. Must have at least 2 items."]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub or: Vec<ReportConfigFilter>,
-    #[doc = "The filter expression to be used in the report."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub not: Box<Option<ReportConfigFilter>>,
     #[doc = "The comparison expression to be used in the report."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimensions: Option<ReportConfigComparisonExpression>,
@@ -1475,6 +1500,21 @@ pub struct ReportConfigTimePeriod {
 impl ReportConfigTimePeriod {
     pub fn new(from: String, to: String) -> Self {
         Self { from, to }
+    }
+}
+#[doc = "The URL to download the generated report."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ReportUrl {
+    #[doc = "The URL to download the generated report."]
+    #[serde(rename = "reportUrl", default, skip_serializing_if = "Option::is_none")]
+    pub report_url: Option<String>,
+    #[doc = "The time at which report URL becomes invalid."]
+    #[serde(rename = "validUntil", default, skip_serializing_if = "Option::is_none")]
+    pub valid_until: Option<String>,
+}
+impl ReportUrl {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The Resource model definition."]

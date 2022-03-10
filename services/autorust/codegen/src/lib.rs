@@ -184,7 +184,7 @@ impl SpecReadme {
     pub fn readme(&self) -> &Path {
         self.readme.as_path()
     }
-    pub fn configs(&self) -> Result<Vec<Configuration>> {
+    pub fn config(&self) -> Result<Configuration> {
         Ok(config_parser::parse_configurations_from_autorest_config_file(&self.readme)?)
     }
 }
@@ -226,7 +226,7 @@ pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
 }
 
 fn get_service_name(spec_name: &str) -> String {
-    spec_name.replace("azure", "").replace("_", "").replace("-", "").to_lowercase()
+    spec_name.replace("azure", "").replace('_', "").replace('-', "").to_lowercase()
 }
 
 #[cfg(test)]

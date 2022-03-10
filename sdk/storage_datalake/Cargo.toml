@@ -28,7 +28,6 @@ serde_json = "1.0"
 serde-xml-rs = "0.5"
 uuid = { version = "0.8", features = ["v4"] }
 url = "2.2"
-ring = "0.16"
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["full"] }

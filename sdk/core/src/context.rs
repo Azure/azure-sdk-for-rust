@@ -32,7 +32,7 @@ impl Context {
         // the `unwrap` below is safe.
         self.type_map
             .insert(TypeId::of::<E>(), Arc::new(entity))
-            .map(|displaced| displaced.downcast().unwrap())
+            .map(|displaced| displaced.downcast().expect("failed to unwrap downcast"))
     }
 
     /// Inserts an entity in the type map. If the an entity with the same type signature is
@@ -54,7 +54,7 @@ impl Context {
     {
         self.type_map
             .remove(&TypeId::of::<E>())
-            .map(|removed| removed.downcast().unwrap())
+            .map(|removed| removed.downcast().expect("failed to unwrap downcast"))
     }
 
     /// Returns a reference of the entity of the specified type signature, if it exists.
@@ -66,8 +66,7 @@ impl Context {
     {
         self.type_map
             .get(&TypeId::of::<E>())
-            .map(|item| item.downcast_ref())
-            .flatten()
+            .and_then(|item| item.downcast_ref())
     }
 
     /// Returns the number of entities in the type map.

@@ -53,9 +53,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = queue.get_metadata().execute().await?;
     println!("response == {:#?}", response);
 
-    // create two queue stored access policies
-    let mut queue_stored_acess_policies = Vec::new();
-    queue_stored_acess_policies.push(
+    // use two queue stored access policies
+    let queue_stored_acess_policies = vec![
         QueueStoredAccessPolicy::new(
             "first_sap_read_process",
             Utc::now() - Duration::hours(1),
@@ -63,15 +62,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         )
         .enable_read()
         .enable_process(),
-    );
-    queue_stored_acess_policies.push(
         QueueStoredAccessPolicy::new(
             "sap_admin",
             Utc::now() - chrono::Duration::hours(1),
             Utc::now() + chrono::Duration::hours(5),
         )
         .enable_all(),
-    );
+    ];
 
     let response = queue
         .set_acl()

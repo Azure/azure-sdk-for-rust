@@ -1,4 +1,4 @@
-use azure_core::{Context, Policy, PolicyResult, Request, Response};
+use azure_core::{Context, Policy, PolicyResult, Request};
 use http::header::AUTHORIZATION;
 use http::HeaderValue;
 use std::sync::Arc;
@@ -22,12 +22,11 @@ impl Policy for BearerTokenAuthorizationPolicy {
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
-    ) -> PolicyResult<Response> {
-        if next.is_empty() {
-            return Err(Box::new(azure_core::PipelineError::InvalidTailPolicy(
-                "Authorization policies cannot be the last policy of a pipeline".to_owned(),
-            )));
-        }
+    ) -> PolicyResult {
+        assert!(
+            !next.is_empty(),
+            "Authorization policies cannot be the last policy of a pipeline"
+        );
 
         let auth_header_value = format!("Bearer {}", &self.bearer_token);
 

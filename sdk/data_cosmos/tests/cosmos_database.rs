@@ -2,7 +2,6 @@
 
 mod setup;
 
-use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 
@@ -39,7 +38,8 @@ async fn create_and_delete_database() {
     let database_after_get = client
         .clone()
         .into_database_client(DATABASE_NAME)
-        .get_database(Context::new(), GetDatabaseOptions::new())
+        .get_database()
+        .into_future()
         .await
         .unwrap();
     assert!(database.database.rid == database_after_get.database.rid);
@@ -48,7 +48,8 @@ async fn create_and_delete_database() {
     client
         .clone()
         .into_database_client(DATABASE_NAME)
-        .delete_database(Context::new(), DeleteDatabaseOptions::new())
+        .delete_database()
+        .into_future()
         .await
         .unwrap();
 

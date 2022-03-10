@@ -564,6 +564,9 @@ pub struct OperationResourceMetricSpecification {
     #[doc = "Aggregation type for the metric."]
     #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
     pub aggregation_type: Option<String>,
+    #[doc = "Supported aggregation types for the metric."]
+    #[serde(rename = "supportedAggregationTypes", default, skip_serializing_if = "Vec::is_empty")]
+    pub supported_aggregation_types: Vec<String>,
     #[doc = "Fill gaps in the metric with zero."]
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
@@ -1079,6 +1082,9 @@ pub struct Resource {
     #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 impl Resource {
     pub fn new() -> Self {
@@ -1583,8 +1589,8 @@ pub struct StorageSyncApiError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<StorageSyncErrorDetails>,
     #[doc = "Error Details object."]
-    #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Option<StorageSyncInnerErrorDetails>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<StorageSyncInnerErrorDetails>,
 }
 impl StorageSyncApiError {
     pub fn new() -> Self {
@@ -2019,4 +2025,50 @@ pub enum WorkflowStatus {
     Aborted,
     #[serde(rename = "failed")]
     Failed,
+}
+#[doc = "Metadata pertaining to creation and last modification of the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SystemData {
+    #[doc = "The identity that created the resource."]
+    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    #[doc = "The type of identity that created the resource."]
+    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    pub created_by_type: Option<system_data::CreatedByType>,
+    #[doc = "The timestamp of resource creation (UTC)."]
+    #[serde(rename = "createdAt", default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[doc = "The identity that last modified the resource."]
+    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by: Option<String>,
+    #[doc = "The type of identity that last modified the resource."]
+    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
+    #[doc = "The timestamp of resource last modification (UTC)"]
+    #[serde(rename = "lastModifiedAt", default, skip_serializing_if = "Option::is_none")]
+    pub last_modified_at: Option<String>,
+}
+impl SystemData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod system_data {
+    use super::*;
+    #[doc = "The type of identity that created the resource."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum CreatedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
+    #[doc = "The type of identity that last modified the resource."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum LastModifiedByType {
+        User,
+        Application,
+        ManagedIdentity,
+        Key,
+    }
 }

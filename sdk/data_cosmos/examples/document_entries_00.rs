@@ -2,28 +2,22 @@ use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::error::Error;
 
-// Now we create a sample struct. The Cow trick
-// allows us to use the same struct for serializing
-// (without having to own the items if not needed) and
-// for deserializing (where owning is required).
-// We do not need to define the "id" field here, it will be
-// specified in the Document struct below.
+// Now we create a sample struct.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct MySampleStruct<'a> {
-    id: Cow<'a, str>,
-    a_string: Cow<'a, str>,
+struct MySampleStruct {
+    id: String,
+    a_string: String,
     a_number: u64,
     a_timestamp: i64,
 }
 
-impl<'a> azure_data_cosmos::CosmosEntity<'a> for MySampleStruct<'a> {
-    type Entity = &'a str;
+impl azure_data_cosmos::CosmosEntity for MySampleStruct {
+    type Entity = String;
 
-    fn partition_key(&'a self) -> Self::Entity {
-        self.id.as_ref()
+    fn partition_key(&self) -> Self::Entity {
+        self.id.clone()
     }
 }
 
@@ -51,29 +45,26 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut response = None;
     for i in 0u64..5 {
         let doc = MySampleStruct {
-            id: Cow::Owned(format!("unique_id{}", i)),
-            a_string: Cow::Borrowed("Something here"),
+            id: format!("unique_id{}", i),
+            a_string: "Something here".into(),
             a_number: i,
             a_timestamp: chrono::Utc::now().timestamp(),
         };
 
         // let's add an entity.
-        response = Some(
-            client
-                .create_document(Context::new(), &doc, CreateDocumentOptions::new())
-                .await?,
-        );
+        response = Some(client.create_document(doc.clone()).into_future().await?);
     }
 
     println!("Created 5 documents.");
 
     // Let's get 3 entries at a time.
-    let response = client
+    let mut paged = client
         .list_documents()
         .consistency_level(response.unwrap())
         .max_item_count(3i32)
-        .execute::<MySampleStruct>()
-        .await?;
+        .into_stream::<MySampleStruct>();
+
+    let response = paged.next().await.unwrap()?;
 
     assert_eq!(response.documents.len(), 3);
     println!("response == {:#?}", response);
@@ -82,16 +73,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // continuation_token must be present
     assert!(response.continuation_token.is_some());
 
-    let session_token = &response;
-    let ct = response.continuation_token.clone().unwrap();
-    println!("ct == {}", ct);
-
-    let response = client
-        .list_documents()
-        .consistency_level(session_token)
-        .continuation(ct.as_str())
-        .execute::<MySampleStruct>()
-        .await?;
+    let response = paged.next().await.unwrap()?;
 
     assert_eq!(response.documents.len(), 2);
     println!("response == {:#?}", response);
@@ -111,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .list_documents()
             .consistency_level(session_token.clone())
             .max_item_count(3);
-        let mut stream = Box::pin(stream.stream::<MySampleStruct>());
+        let mut stream = stream.into_stream::<MySampleStruct>();
         // TODO: As soon as the streaming functionality is completed
         // in Rust substitute this while let Some... into
         // for each (or whatever the Rust team picks).
@@ -125,13 +107,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let id = format!("unique_id{}", 3);
     let partition_key = &id;
 
-    let response = client
+    let response: GetDocumentResponse<MySampleStruct> = client
         .clone()
         .into_document_client(id.clone(), partition_key)?
-        .get_document::<MySampleStruct>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(session_token),
-        )
+        .get_document()
+        .into_future()
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::Found(_)));
@@ -147,13 +127,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let replace_document_response = client
         .clone()
         .into_document_client(id.clone(), &id)?
-        .replace_document(
-            Context::new(),
-            &doc.document,
-            ReplaceDocumentOptions::new()
-                .consistency_level(ConsistencyLevel::from(&response))
-                .if_match_condition(IfMatchCondition::Match(doc.etag)), // use optimistic concurrency check
-        )
+        .replace_document(doc.document)
+        .consistency_level(ConsistencyLevel::from(&response))
+        .if_match_condition(IfMatchCondition::Match(doc.etag)) // use optimistic concurrency check
+        .into_future()
         .await?;
 
     println!(
@@ -165,14 +142,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // has_been_found == false
     println!("\n\nLooking for non-existing item");
     let id = format!("unique_id{}", 100);
-
-    let response = client
+    let response: GetDocumentResponse<MySampleStruct> = client
         .clone()
         .into_document_client(id.clone(), &id)?
-        .get_document::<MySampleStruct>(
-            Context::new(),
-            GetDocumentOptions::new().consistency_level(&response),
-        )
+        .get_document()
+        .consistency_level(&response)
+        .into_future()
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::NotFound(_)));
@@ -183,10 +158,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         client
             .clone()
             .into_document_client(id.clone(), &id)?
-            .delete_document(
-                Context::new(),
-                DeleteDocumentOptions::new().consistency_level(&response),
-            )
+            .delete_document()
+            .into_future()
             .await?;
     }
     println!("Cleaned up");

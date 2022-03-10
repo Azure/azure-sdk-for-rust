@@ -1,9 +1,7 @@
 use super::*;
 use crate::prelude::*;
-use crate::resources::user::UserResponse;
-use crate::resources::ResourceType;
-use crate::{requests, ReadonlyString};
-use azure_core::{Context, HttpClient, Pipeline, Request};
+use crate::ReadonlyString;
+use azure_core::{Pipeline, Request};
 
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
@@ -39,79 +37,28 @@ impl UserClient {
     }
 
     /// Create the user
-    pub async fn create_user(
-        &self,
-        ctx: Context,
-        options: CreateUserOptions,
-    ) -> crate::Result<UserResponse> {
-        let mut request = self.cosmos_client().prepare_request_pipeline(
-            &format!("dbs/{}/users", self.database_client.database_name()),
-            http::Method::POST,
-        );
-
-        options.decorate_request(&mut request, self.user_name())?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Users), &mut request)
-            .await?;
-
-        Ok(UserResponse::try_from(response).await?)
+    pub fn create_user(&self) -> CreateUserBuilder {
+        CreateUserBuilder::new(self.clone())
     }
 
     /// Get the user
-    pub async fn get_user(
-        &self,
-        ctx: Context,
-        options: GetUserOptions,
-    ) -> crate::Result<UserResponse> {
-        let mut request = self.prepare_request_with_user_name(http::Method::GET);
-
-        options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Users), &mut request)
-            .await?;
-
-        Ok(UserResponse::try_from(response).await?)
+    pub fn get_user(&self) -> GetUserBuilder {
+        GetUserBuilder::new(self.clone())
     }
 
     /// Replace the user
-    pub async fn replace_user<S: AsRef<str>>(
-        &self,
-        ctx: Context,
-        user_name: S,
-        options: ReplaceUserOptions,
-    ) -> crate::Result<UserResponse> {
-        let mut request = self.prepare_request_with_user_name(http::Method::PUT);
-
-        options.decorate_request(&mut request, user_name.as_ref())?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Users), &mut request)
-            .await?;
-
-        Ok(UserResponse::try_from(response).await?)
+    pub fn replace_user<S: Into<String>>(&self, user_name: S) -> ReplaceUserBuilder {
+        ReplaceUserBuilder::new(self.clone(), user_name.into())
     }
 
     /// Delete the user
-    pub async fn delete_user(
-        &self,
-        ctx: Context,
-        options: DeleteUserOptions,
-    ) -> crate::Result<DeleteUserResponse> {
-        let mut request = self.prepare_request_with_user_name(http::Method::DELETE);
-        options.decorate_request(&mut request)?;
-        let response = self
-            .pipeline()
-            .send(ctx.clone().insert(ResourceType::Users), &mut request)
-            .await?;
-
-        Ok(DeleteUserResponse::try_from(response).await?)
+    pub fn delete_user(&self) -> DeleteUserBuilder {
+        DeleteUserBuilder::new(self.clone())
     }
 
     /// List the user's permissions
-    pub fn list_permissions(&self) -> requests::ListPermissionsBuilder<'_, '_> {
-        requests::ListPermissionsBuilder::new(self)
+    pub fn list_permissions(&self) -> ListPermissionsBuilder {
+        ListPermissionsBuilder::new(self.clone())
     }
 
     /// Convert into a [`PermissionClient`]
@@ -133,11 +80,7 @@ impl UserClient {
         )
     }
 
-    pub(crate) fn http_client(&self) -> &dyn HttpClient {
-        self.cosmos_client().http_client()
-    }
-
-    fn pipeline(&self) -> &Pipeline {
+    pub(crate) fn pipeline(&self) -> &Pipeline {
         self.cosmos_client().pipeline()
     }
 }
