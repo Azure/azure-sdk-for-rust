@@ -5,16 +5,12 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SharedKeyAuthorizationPolicy {
-    base_url: String,
     credential: StorageSharedKeyCredential,
 }
 
 impl SharedKeyAuthorizationPolicy {
-    pub(crate) fn new(base_url: String, credential: StorageSharedKeyCredential) -> Self {
-        Self {
-            base_url,
-            credential,
-        }
+    pub(crate) fn new(credential: StorageSharedKeyCredential) -> Self {
+        Self { credential }
     }
 }
 
