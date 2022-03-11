@@ -37,7 +37,7 @@ async fn permission_token_usage() {
         .await
         .unwrap();
 
-    let database = client.database(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -55,7 +55,7 @@ async fn permission_token_usage() {
         .await
         .unwrap();
 
-    let user = database.user(USER_NAME);
+    let user = database.user_client(USER_NAME);
     user.create_user().into_future().await.unwrap();
 
     // create the RO permission
@@ -76,12 +76,12 @@ async fn permission_token_usage() {
         .permission_token
         .into();
     client.auth_token(new_authorization_token);
-    let new_database = client.database(DATABASE_NAME);
+    let new_database = client.database_client(DATABASE_NAME);
 
     // let's list the collection content.
     // This must succeed.
     new_database
-        .collection(COLLECTION_NAME)
+        .collection_client(COLLECTION_NAME)
         .list_documents()
         .into_stream::<serde_json::Value>()
         .next()
@@ -89,7 +89,7 @@ async fn permission_token_usage() {
         .unwrap()
         .unwrap();
 
-    let new_collection = new_database.collection(COLLECTION_NAME);
+    let new_collection = new_database.collection_client(COLLECTION_NAME);
 
     // Now we try to insert a document with the "read-only"
     // authorization_token just created. It must fail.
@@ -122,8 +122,8 @@ async fn permission_token_usage() {
         .permission_token
         .into();
     client.auth_token(new_authorization_token);
-    let new_database = client.database(DATABASE_NAME);
-    let new_collection = new_database.collection(COLLECTION_NAME);
+    let new_database = client.database_client(DATABASE_NAME);
+    let new_collection = new_database.collection_client(COLLECTION_NAME);
 
     // now we have an "All" authorization_token
     // so the create_document should succeed!

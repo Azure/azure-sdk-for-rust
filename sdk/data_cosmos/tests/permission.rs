@@ -22,12 +22,12 @@ async fn permissions() {
         .await
         .unwrap();
 
-    let database = client.database(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create two users
-    let user1 = database.user(USER_NAME1);
+    let user1 = database.user_client(USER_NAME1);
     let _create_user_response = user1.create_user().into_future().await.unwrap();
-    let user2 = database.user(USER_NAME2);
+    let user2 = database.user_client(USER_NAME2);
     let _create_user_response = user2.create_user().into_future().await.unwrap();
 
     // create a temp collection

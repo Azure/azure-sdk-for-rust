@@ -41,7 +41,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .await
         .unwrap();
 
-    let database = client.database(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = {
@@ -72,7 +72,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
             .unwrap()
     };
 
-    let collection = database.collection(COLLECTION_NAME);
+    let collection = database.collection_client(COLLECTION_NAME);
 
     let id = format!("unique_id{}", 100);
 
@@ -90,7 +90,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .await?
         .into();
 
-    let document = collection.document(id.clone(), &doc.id)?;
+    let document = collection.document_client(id.clone(), &doc.id)?;
 
     // list attachments, there must be none.
     let ret = document
@@ -103,7 +103,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     assert_eq!(0, ret.attachments.len());
 
     // create reference attachment
-    let attachment = document.attachment("reference");
+    let attachment = document.attachment_client("reference");
     let resp = attachment
         .create_attachment("https://www.bing.com", "image/jpeg")
         .consistency_level(&ret)
@@ -118,7 +118,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .await?;
 
     // create slug attachment
-    let attachment = document.attachment("slug");
+    let attachment = document.attachment_client("slug");
     let resp = attachment
         .create_slug("something cool here".into())
         .consistency_level(&resp)
@@ -138,7 +138,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
 
     // get reference attachment, it must have the updated media link
     let reference_attachment = document
-        .attachment("reference")
+        .attachment_client("reference")
         .get()
         .consistency_level(&ret)
         .into_future()
@@ -151,7 +151,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     // get slug attachment, it must have the text/plain content type
     println!("getting slug attachment");
     let slug_attachment = document
-        .attachment("slug")
+        .attachment_client("slug")
         .get()
         .consistency_level(&reference_attachment)
         .into_future()

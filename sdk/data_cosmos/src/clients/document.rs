@@ -43,6 +43,14 @@ impl DocumentClient {
         &self.collection
     }
 
+    /// Get an [`AttachmentClient`].
+    pub fn attachment_client<S: Into<ReadonlyString>>(
+        &self,
+        attachment_name: S,
+    ) -> AttachmentClient {
+        AttachmentClient::new(self.clone(), attachment_name)
+    }
+
     /// Get the document's name
     pub fn document_name(&self) -> &str {
         &self.document_name
@@ -74,11 +82,6 @@ impl DocumentClient {
     /// List all attachments for a document
     pub fn list_attachments(&self) -> ListAttachmentsBuilder {
         ListAttachmentsBuilder::new(self.clone())
-    }
-
-    /// Get an [`AttachmentClient`].
-    pub fn attachment<S: Into<ReadonlyString>>(&self, attachment_name: S) -> AttachmentClient {
-        AttachmentClient::new(self.clone(), attachment_name)
     }
 
     pub(crate) fn prepare_request_pipeline_with_document_name(

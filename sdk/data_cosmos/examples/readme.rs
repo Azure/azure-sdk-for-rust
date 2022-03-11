@@ -59,9 +59,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     // We know the database so we can obtain a database client.
-    let database = client.database(database_name);
+    let database = client.database_client(database_name);
     // We know the collection so we can obtain a collection client.
-    let collection = database.collection(collection_name);
+    let collection = database.collection_client(collection_name);
 
     // TASK 1 - Insert 10 documents
     println!("Inserting 10 documents...");
@@ -146,7 +146,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         // to spice the delete a little we use optimistic concurreny
         collection
-            .document(document.result.id.clone(), &document.result.a_number)?
+            .document_client(document.result.id.clone(), &document.result.a_number)?
             .delete_document()
             .consistency_level(session_token.clone())
             .if_match_condition(&document.document_attributes)

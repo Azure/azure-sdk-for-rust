@@ -25,8 +25,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database = client.database(database_name);
-    let user = database.user(user_name.clone());
+    let database = client.database_client(database_name);
+    let user = database.user_client(user_name.clone());
 
     let create_user_response = user.create_user().into_future().await?;
     println!("create_user_response == {:#?}", create_user_response);
@@ -43,7 +43,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let replace_user_response = user.replace_user(new_user.clone()).into_future().await?;
     println!("replace_user_response == {:#?}", replace_user_response);
 
-    let user = database.user(new_user);
+    let user = database.user_client(new_user);
 
     let delete_user_response = user.delete_user().into_future().await?;
     println!("delete_user_response == {:#?}", delete_user_response);

@@ -43,8 +43,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let client = client.database(database_name);
-    let client = client.collection(collection_name);
+    let client = client.database_client(database_name);
+    let client = client.collection_client(collection_name);
 
     let query_obj = Query::new(query);
 

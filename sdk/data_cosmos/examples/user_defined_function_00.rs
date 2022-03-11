@@ -35,9 +35,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database = client.database(database);
-    let collection = database.collection(collection);
-    let user_defined_function = collection.user_defined_function("test15");
+    let database = client.database_client(database);
+    let collection = database.collection_client(collection);
+    let user_defined_function = collection.user_defined_function_client("test15");
 
     let ret = user_defined_function
         .create_user_defined_function("body")

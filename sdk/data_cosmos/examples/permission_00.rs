@@ -31,10 +31,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database = client.database(database_name);
-    let collection = database.collection(collection_name);
-    let collection2 = database.collection(collection_name2);
-    let user = database.user(user_name);
+    let database = client.database_client(database_name);
+    let collection = database.collection_client(collection_name);
+    let collection2 = database.collection_client(collection_name2);
+    let user = database.user_client(user_name);
 
     let get_database_response = database.get_database().into_future().await?;
     println!("get_database_response == {:#?}", get_database_response);

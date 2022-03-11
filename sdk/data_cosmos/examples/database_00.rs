@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     for db in dbs.databases {
         println!("database == {:?}", db);
-        let database = client.database(db.name().to_owned());
+        let database = client.database_client(db.name().to_owned());
 
         let collections = database
             .list_collections()
@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         for collection in collections.collections {
             println!("collection == {:?}", collection);
             let mut indexing_policy_new = collection.indexing_policy.clone();
-            let collection = database.collection(collection.id);
+            let collection = database.collection_client(collection.id);
 
             if collection.collection_name() == "democ" {
                 println!("democ!");

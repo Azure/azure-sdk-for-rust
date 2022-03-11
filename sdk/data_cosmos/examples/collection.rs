@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     if let Some(db) = databases.databases.first() {
         println!("getting info of database {}", &db.id);
         let db = client
-            .database(db.id.clone())
+            .database_client(db.id.clone())
             .get_database()
             .into_future()
             .await?;
@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // list_collection method.
 
     for db in databases.databases {
-        let database = client.database(db.id.clone());
+        let database = client.database_client(db.id.clone());
         let collections = database
             .list_collections()
             .into_stream()
@@ -76,7 +76,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             println!("\tcollection {}", collection.id);
 
             let collection_response = database
-                .collection(collection.id)
+                .collection_client(collection.id)
                 .get_collection()
                 .into_future()
                 .await?;

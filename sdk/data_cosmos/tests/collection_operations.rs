@@ -18,7 +18,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     client.create_database(database_name).into_future().await?;
 
     // create collection!
-    let database = client.database(database_name.clone());
+    let database = client.database_client(database_name.clone());
 
     let collection_name = "sample_collection";
     log::info!("Creating a collection with name '{}'...", collection_name);
@@ -36,7 +36,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
         create_collection_response
     );
 
-    let collection = database.collection(collection_name);
+    let collection = database.collection_client(collection_name);
 
     // get collection!
     let get_collection_response = collection.get_collection().into_future().await?;

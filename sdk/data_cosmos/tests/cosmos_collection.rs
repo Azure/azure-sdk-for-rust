@@ -18,7 +18,7 @@ async fn create_and_delete_collection() {
         .await
         .unwrap();
 
-    let database = client.database(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let collection = database
@@ -35,7 +35,7 @@ async fn create_and_delete_collection() {
 
     // try to get the previously created collection
     let rid = collection.collection.rid;
-    let collection = database.collection(COLLECTION_NAME);
+    let collection = database.collection_client(COLLECTION_NAME);
 
     let collection_after_get = collection.get_collection().into_future().await.unwrap();
     assert!(rid == collection_after_get.collection.rid);
@@ -71,7 +71,7 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let database = client.database(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -124,7 +124,7 @@ async fn replace_collection() {
         .push("/\"excludeme\"/?".to_owned().into());
 
     let _replace_collection_response = database
-        .collection(COLLECTION_NAME)
+        .collection_client(COLLECTION_NAME)
         .replace_collection("/id")
         .indexing_policy(new_ip)
         .into_future()

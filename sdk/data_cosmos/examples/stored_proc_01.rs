@@ -41,9 +41,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database = client.database(database_name);
-    let collection = database.collection(collection_name);
-    let stored_procedure = collection.stored_procedure(stored_procedure_name);
+    let database = client.database_client(database_name);
+    let collection = database.collection_client(collection_name);
+    let stored_procedure = collection.stored_procedure_client(stored_procedure_name);
 
     let list_stored_procedures_response = collection
         .list_stored_procedures()

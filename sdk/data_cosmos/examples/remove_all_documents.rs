@@ -30,8 +30,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let client = client.database(database_name);
-    let client = client.collection(collection_name);
+    let client = client.database_client(database_name);
+    let client = client.collection_client(collection_name);
 
     let mut documents = Vec::new();
 
@@ -71,7 +71,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         );
 
         client
-            .document(id.clone(), &partition_key)?
+            .document_client(id.clone(), &partition_key)?
             .delete_document()
             .into_future()
             .await?;

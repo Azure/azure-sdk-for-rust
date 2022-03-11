@@ -28,9 +28,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database = client.database(database_name.clone());
-    let collection = database.collection(collection_name.clone());
-    let user = database.user(user_name);
+    let database = client.database_client(database_name.clone());
+    let collection = database.collection_client(collection_name.clone());
+    let user = database.user_client(user_name);
 
     let get_collection_response = collection.get_collection().into_future().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
@@ -82,8 +82,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // let's list the documents with the new auth token
     let list_documents_response = client
-        .database(database_name.clone())
-        .collection(collection_name.clone())
+        .database_client(database_name.clone())
+        .collection_client(collection_name.clone())
         .list_documents()
         .into_stream::<serde_json::Value>()
         .next()
@@ -110,8 +110,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let document = serde_json::from_str::<serde_json::Value>(data)?;
 
     match client
-        .database(database_name.clone())
-        .collection(collection_name.clone())
+        .database_client(database_name.clone())
+        .collection_client(collection_name.clone())
         .create_document(document.clone())
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?
@@ -151,8 +151,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // now we have an "All" authorization_token
     // so the create_document should succeed!
     let create_document_response = client
-        .database(database_name)
-        .collection(collection_name)
+        .database_client(database_name)
+        .collection_client(collection_name)
         .create_document(document)
         .is_upsert(true)
         .partition_key(&"Gianluigi Bombatomica")?

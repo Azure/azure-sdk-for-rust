@@ -28,8 +28,8 @@ async fn users() {
         .unwrap()
         .unwrap();
     assert!(databases.databases.first().unwrap().id == DATABASE_NAME);
-    let database = client.database(DATABASE_NAME);
-    let user = database.user(USER_NAME);
+    let database = client.database_client(DATABASE_NAME);
+    let user = database.user_client(USER_NAME);
 
     let _create_user_response = user.create_user().into_future().await.unwrap();
 
@@ -59,7 +59,7 @@ async fn users() {
         .unwrap();
     assert_eq!(list_users_response.users.len(), 1);
 
-    let user = database.user(USER_NAME_REPLACED);
+    let user = database.user_client(USER_NAME_REPLACED);
 
     let _delete_user_response = user.delete_user().into_future().await.unwrap();
 
@@ -72,7 +72,7 @@ async fn users() {
 
     // delete the database
     client
-        .database(DATABASE_NAME)
+        .database_client(DATABASE_NAME)
         .delete_database()
         .into_future()
         .await

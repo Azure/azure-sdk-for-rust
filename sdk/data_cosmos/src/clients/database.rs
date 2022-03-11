@@ -24,6 +24,19 @@ impl DatabaseClient {
         &self.client
     }
 
+    /// Convert into a [`CollectionClient`]
+    pub fn collection_client<S: Into<ReadonlyString>>(
+        &self,
+        collection_name: S,
+    ) -> CollectionClient {
+        CollectionClient::new(self.clone(), collection_name)
+    }
+
+    /// Convert into a [`UserClient`]
+    pub fn user_client<S: Into<ReadonlyString>>(&self, user_name: S) -> UserClient {
+        UserClient::new(self.clone(), user_name)
+    }
+
     /// Get the database's name
     pub fn database_name(&self) -> &str {
         &self.database_name
@@ -56,16 +69,6 @@ impl DatabaseClient {
     /// List users
     pub fn list_users(&self) -> ListUsersBuilder {
         ListUsersBuilder::new(self.clone())
-    }
-
-    /// Convert into a [`CollectionClient`]
-    pub fn collection<S: Into<ReadonlyString>>(&self, collection_name: S) -> CollectionClient {
-        CollectionClient::new(self.clone(), collection_name)
-    }
-
-    /// Convert into a [`UserClient`]
-    pub fn user<S: Into<ReadonlyString>>(&self, user_name: S) -> UserClient {
-        UserClient::new(self.clone(), user_name)
     }
 
     pub(crate) fn pipeline(&self) -> &Pipeline {
