@@ -6,34 +6,34 @@ use azure_core::{Pipeline, Request};
 /// A client for Cosmos stored procedure resources.
 #[derive(Debug, Clone)]
 pub struct StoredProcedureClient {
-    collection_client: CollectionClient,
+    collection: CollectionClient,
     stored_procedure_name: ReadonlyString,
 }
 
 impl StoredProcedureClient {
     pub(crate) fn new<S: Into<ReadonlyString>>(
-        collection_client: CollectionClient,
+        collection: CollectionClient,
         stored_procedure_name: S,
     ) -> Self {
         Self {
-            collection_client,
+            collection,
             stored_procedure_name: stored_procedure_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`]
     pub fn cosmos_client(&self) -> &CosmosClient {
-        self.collection_client.cosmos_client()
+        self.collection.cosmos_client()
     }
 
-    /// Get a [`DatabaseClient`
+    /// Get a [`DatabaseClient`]
     pub fn database_client(&self) -> &DatabaseClient {
-        self.collection_client.database_client()
+        self.collection.database_client()
     }
 
     /// Get the [`CollectionClient`]
     pub fn collection_client(&self) -> &CollectionClient {
-        &self.collection_client
+        &self.collection
     }
 
     /// Get the stored procedure's name

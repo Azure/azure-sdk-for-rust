@@ -18,15 +18,15 @@ async fn create_and_delete_collection() {
         .await
         .unwrap();
 
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
-    let collection = database_client
+    let collection = database
         .create_collection(COLLECTION_NAME, "/id")
         .into_future()
         .await
         .unwrap();
-    let collections = Box::pin(database_client.list_collections().into_stream())
+    let collections = Box::pin(database.list_collections().into_stream())
         .next()
         .await
         .unwrap()
@@ -34,42 +34,29 @@ async fn create_and_delete_collection() {
     assert!(collections.collections.len() == 1);
 
     // try to get the previously created collection
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
+    let rid = collection.collection.rid;
+    let collection = database.collection_client(COLLECTION_NAME);
 
-    let collection_after_get = collection_client
-        .get_collection()
-        .into_future()
-        .await
-        .unwrap();
-    assert!(collection.collection.rid == collection_after_get.collection.rid);
+    let collection_after_get = collection.get_collection().into_future().await.unwrap();
+    assert!(rid == collection_after_get.collection.rid);
 
     // check GetPartitionKeyRanges: https://docs.microsoft.com/rest/api/cosmos-db/get-partition-key-ranges
-    collection_client
+    collection
         .get_partition_key_ranges()
         .into_future()
         .await
         .unwrap();
 
     // delete the collection
-    collection_client
-        .delete_collection()
-        .into_future()
-        .await
-        .unwrap();
-    let collections = Box::pin(database_client.list_collections().into_stream())
+    collection.delete_collection().into_future().await.unwrap();
+    let collections = Box::pin(database.list_collections().into_stream())
         .next()
         .await
         .unwrap()
         .unwrap();
     assert!(collections.collections.len() == 0);
 
-    database_client
-        .delete_database()
-        .into_future()
-        .await
-        .unwrap();
+    database.delete_database().into_future().await.unwrap();
 }
 
 #[tokio::test]
@@ -84,7 +71,7 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let indexing_policy = IndexingPolicy {
@@ -94,7 +81,7 @@ async fn replace_collection() {
         excluded_paths: vec![],
     };
 
-    let collection = database_client
+    let collection = database
         .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::S2)
         .indexing_policy(indexing_policy)
@@ -102,7 +89,7 @@ async fn replace_collection() {
         .await
         .unwrap();
 
-    let collections = Box::pin(database_client.list_collections().into_stream())
+    let collections = Box::pin(database.list_collections().into_stream())
         .next()
         .await
         .unwrap()
@@ -136,18 +123,15 @@ async fn replace_collection() {
         .excluded_paths
         .push("/\"excludeme\"/?".to_owned().into());
 
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
-
-    let _replace_collection_response = collection_client
+    let _replace_collection_response = database
+        .collection_client(COLLECTION_NAME)
         .replace_collection("/id")
         .indexing_policy(new_ip)
         .into_future()
         .await
         .unwrap();
 
-    let collections = Box::pin(database_client.list_collections().into_stream())
+    let collections = Box::pin(database.list_collections().into_stream())
         .next()
         .await
         .unwrap()
@@ -161,9 +145,5 @@ async fn replace_collection() {
         .collect();
     assert!(eps.len() > 0);
 
-    database_client
-        .delete_database()
-        .into_future()
-        .await
-        .unwrap();
+    database.delete_database().into_future().await.unwrap();
 }

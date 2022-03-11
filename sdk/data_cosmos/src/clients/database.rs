@@ -7,24 +7,34 @@ use azure_core::Pipeline;
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
 pub struct DatabaseClient {
-    cosmos_client: CosmosClient,
+    client: CosmosClient,
     database_name: ReadonlyString,
 }
 
 impl DatabaseClient {
-    pub(crate) fn new<S: Into<ReadonlyString>>(
-        cosmos_client: CosmosClient,
-        database_name: S,
-    ) -> Self {
+    pub(crate) fn new<S: Into<ReadonlyString>>(client: CosmosClient, database_name: S) -> Self {
         Self {
-            cosmos_client,
+            client,
             database_name: database_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`].
     pub fn cosmos_client(&self) -> &CosmosClient {
-        &self.cosmos_client
+        &self.client
+    }
+
+    /// Convert into a [`CollectionClient`]
+    pub fn collection_client<S: Into<ReadonlyString>>(
+        &self,
+        collection_name: S,
+    ) -> CollectionClient {
+        CollectionClient::new(self.clone(), collection_name)
+    }
+
+    /// Convert into a [`UserClient`]
+    pub fn user_client<S: Into<ReadonlyString>>(&self, user_name: S) -> UserClient {
+        UserClient::new(self.clone(), user_name)
     }
 
     /// Get the database's name
@@ -61,20 +71,7 @@ impl DatabaseClient {
         ListUsersBuilder::new(self.clone())
     }
 
-    /// Convert into a [`CollectionClient`]
-    pub fn into_collection_client<S: Into<ReadonlyString>>(
-        self,
-        collection_name: S,
-    ) -> CollectionClient {
-        CollectionClient::new(self, collection_name)
-    }
-
-    /// Convert into a [`UserClient`]
-    pub fn into_user_client<S: Into<ReadonlyString>>(self, user_name: S) -> UserClient {
-        UserClient::new(self, user_name)
-    }
-
     pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.cosmos_client.pipeline()
+        self.client.pipeline()
     }
 }

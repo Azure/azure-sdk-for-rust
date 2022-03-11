@@ -7,7 +7,7 @@ use serde::Serialize;
 /// A client for Cosmos document resources.
 #[derive(Debug, Clone)]
 pub struct DocumentClient {
-    collection_client: CollectionClient,
+    collection: CollectionClient,
     document_name: String,
     partition_key_serialized: String,
 }
@@ -17,12 +17,12 @@ impl DocumentClient {
     ///
     /// A document is identified by its primary key and its partition key.
     pub(crate) fn new<S: Into<String>, PK: Serialize>(
-        collection_client: CollectionClient,
+        collection: CollectionClient,
         document_name: S,
         partition_key: &PK,
     ) -> Result<Self, serde_json::Error> {
         Ok(Self {
-            collection_client,
+            collection,
             document_name: document_name.into(),
             partition_key_serialized: crate::cosmos_entity::serialize_partition_key(partition_key)?,
         })
@@ -40,7 +40,15 @@ impl DocumentClient {
 
     /// Get a [`CollectionClient`]
     pub fn collection_client(&self) -> &CollectionClient {
-        &self.collection_client
+        &self.collection
+    }
+
+    /// Get an [`AttachmentClient`].
+    pub fn attachment_client<S: Into<ReadonlyString>>(
+        &self,
+        attachment_name: S,
+    ) -> AttachmentClient {
+        AttachmentClient::new(self.clone(), attachment_name)
     }
 
     /// Get the document's name
@@ -74,14 +82,6 @@ impl DocumentClient {
     /// List all attachments for a document
     pub fn list_attachments(&self) -> ListAttachmentsBuilder {
         ListAttachmentsBuilder::new(self.clone())
-    }
-
-    /// Convert into an [`AttachmentClient`]
-    pub fn into_attachment_client<S: Into<ReadonlyString>>(
-        self,
-        attachment_name: S,
-    ) -> AttachmentClient {
-        AttachmentClient::new(self, attachment_name)
     }
 
     pub(crate) fn prepare_request_pipeline_with_document_name(

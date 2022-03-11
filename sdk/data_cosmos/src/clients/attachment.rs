@@ -8,18 +8,18 @@ use super::*;
 /// A client for Cosmos attachment resources.
 #[derive(Debug, Clone)]
 pub struct AttachmentClient {
-    document_client: DocumentClient,
+    document: DocumentClient,
     attachment_name: ReadonlyString,
 }
 
 impl AttachmentClient {
     /// Create a new client
     pub(crate) fn new<S: Into<ReadonlyString>>(
-        document_client: DocumentClient,
+        document: DocumentClient,
         attachment_name: S,
     ) -> Self {
         Self {
-            document_client,
+            document,
             attachment_name: attachment_name.into(),
         }
     }
@@ -41,7 +41,7 @@ impl AttachmentClient {
 
     /// Get a [`DocumentClient`].
     pub fn document_client(&self) -> &DocumentClient {
-        &self.document_client
+        &self.document
     }
 
     /// Get the attachment name.

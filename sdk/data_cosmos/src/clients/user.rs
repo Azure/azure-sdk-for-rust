@@ -6,17 +6,14 @@ use azure_core::{Pipeline, Request};
 /// A client for Cosmos user resources.
 #[derive(Debug, Clone)]
 pub struct UserClient {
-    database_client: DatabaseClient,
+    database: DatabaseClient,
     user_name: ReadonlyString,
 }
 
 impl UserClient {
-    pub(crate) fn new<S: Into<ReadonlyString>>(
-        database_client: DatabaseClient,
-        user_name: S,
-    ) -> Self {
+    pub(crate) fn new<S: Into<ReadonlyString>>(database: DatabaseClient, user_name: S) -> Self {
         Self {
-            database_client,
+            database,
             user_name: user_name.into(),
         }
     }
@@ -28,7 +25,7 @@ impl UserClient {
 
     /// Get a [`DatabaseClient`]
     pub fn database_client(&self) -> &DatabaseClient {
-        &self.database_client
+        &self.database
     }
 
     /// Get the user name
@@ -62,11 +59,8 @@ impl UserClient {
     }
 
     /// Convert into a [`PermissionClient`]
-    pub fn into_permission_client<S: Into<ReadonlyString>>(
-        self,
-        permission_name: S,
-    ) -> PermissionClient {
-        PermissionClient::new(self, permission_name)
+    pub fn permission<S: Into<ReadonlyString>>(&self, permission_name: S) -> PermissionClient {
+        PermissionClient::new(self.clone(), permission_name)
     }
 
     pub(crate) fn prepare_request_with_user_name(&self, method: http::Method) -> Request {

@@ -7,34 +7,31 @@ use azure_core::{Pipeline, Request};
 /// A client for Cosmos permission resources.
 #[derive(Debug, Clone)]
 pub struct PermissionClient {
-    user_client: UserClient,
+    user: UserClient,
     permission_name: ReadonlyString,
 }
 
 impl PermissionClient {
-    pub(crate) fn new<S: Into<ReadonlyString>>(
-        user_client: UserClient,
-        permission_name: S,
-    ) -> Self {
+    pub(crate) fn new<S: Into<ReadonlyString>>(user: UserClient, permission_name: S) -> Self {
         Self {
-            user_client,
+            user,
             permission_name: permission_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`
     pub fn cosmos_client(&self) -> &CosmosClient {
-        self.user_client.cosmos_client()
+        self.user.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
     pub fn database_client(&self) -> &DatabaseClient {
-        self.user_client.database_client()
+        self.user.database_client()
     }
 
     /// Get the [`UserClient`]
     pub fn user_client(&self) -> &UserClient {
-        &self.user_client
+        &self.user
     }
 
     /// Get the permission's name

@@ -7,35 +7,35 @@ use azure_core::{Pipeline, Request};
 /// A client for Cosmos trigger resources.
 #[derive(Debug, Clone)]
 pub struct TriggerClient {
-    collection_client: CollectionClient,
+    collection: CollectionClient,
     trigger_name: ReadonlyString,
 }
 
 impl TriggerClient {
     /// Create a new trigger client
     pub(crate) fn new<S: Into<ReadonlyString>>(
-        collection_client: CollectionClient,
+        collection: CollectionClient,
         trigger_name: S,
     ) -> Self {
         Self {
-            collection_client,
+            collection,
             trigger_name: trigger_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`]
     pub fn cosmos_client(&self) -> &CosmosClient {
-        self.collection_client.cosmos_client()
+        self.collection.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
     pub fn database_client(&self) -> &DatabaseClient {
-        self.collection_client.database_client()
+        self.collection.database_client()
     }
 
     /// Get a [`CollectionClient`]
     pub fn collection_client(&self) -> &CollectionClient {
-        &self.collection_client
+        &self.collection
     }
 
     /// Get the trigger name

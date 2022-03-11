@@ -41,7 +41,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .await
         .unwrap();
 
-    let database_client = client.into_database_client(DATABASE_NAME);
+    let database = client.database_client(DATABASE_NAME);
 
     // create a temp collection
     let _create_collection_response = {
@@ -63,7 +63,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
             excluded_paths: vec![],
         };
 
-        database_client
+        database
             .create_collection(COLLECTION_NAME, "/id")
             .offer(Offer::Throughput(400))
             .indexing_policy(ip)
@@ -72,9 +72,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
             .unwrap()
     };
 
-    let collection_client = database_client
-        .clone()
-        .into_collection_client(COLLECTION_NAME);
+    let collection = database.collection_client(COLLECTION_NAME);
 
     let id = format!("unique_id{}", 100);
 
@@ -86,16 +84,16 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     };
 
     // let's add an entity.
-    let session_token: ConsistencyLevel = collection_client
+    let session_token: ConsistencyLevel = collection
         .create_document(doc.clone())
         .into_future()
         .await?
         .into();
 
-    let document_client = collection_client.into_document_client(id.clone(), &doc.id)?;
+    let document = collection.document_client(id.clone(), &doc.id)?;
 
     // list attachments, there must be none.
-    let ret = document_client
+    let ret = document
         .list_attachments()
         .consistency_level(session_token.clone())
         .into_stream()
@@ -105,23 +103,23 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     assert_eq!(0, ret.attachments.len());
 
     // create reference attachment
-    let attachment_client = document_client.clone().into_attachment_client("reference");
-    let resp = attachment_client
+    let attachment = document.attachment_client("reference");
+    let resp = attachment
         .create_attachment("https://www.bing.com", "image/jpeg")
         .consistency_level(&ret)
         .into_future()
         .await?;
 
     // replace reference attachment
-    let resp = attachment_client
+    let resp = attachment
         .replace_attachment("https://www.microsoft.com", "image/jpeg")
         .consistency_level(&resp)
         .into_future()
         .await?;
 
     // create slug attachment
-    let attachment_client = document_client.clone().into_attachment_client("slug");
-    let resp = attachment_client
+    let attachment = document.attachment_client("slug");
+    let resp = attachment
         .create_slug("something cool here".into())
         .consistency_level(&resp)
         .content_type("text/plain")
@@ -129,7 +127,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .await?;
 
     // list attachments, there must be two.
-    let ret = document_client
+    let ret = document
         .list_attachments()
         .consistency_level(&resp)
         .into_stream()
@@ -139,9 +137,8 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     assert_eq!(2, ret.attachments.len());
 
     // get reference attachment, it must have the updated media link
-    let reference_attachment = document_client
-        .clone()
-        .into_attachment_client("reference")
+    let reference_attachment = document
+        .attachment_client("reference")
         .get()
         .consistency_level(&ret)
         .into_future()
@@ -153,9 +150,8 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
 
     // get slug attachment, it must have the text/plain content type
     println!("getting slug attachment");
-    let slug_attachment = document_client
-        .clone()
-        .into_attachment_client("slug")
+    let slug_attachment = document
+        .attachment_client("slug")
         .get()
         .consistency_level(&reference_attachment)
         .into_future()
@@ -164,14 +160,14 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
 
     // delete slug attachment
-    let resp_delete = attachment_client
+    let resp_delete = attachment
         .delete()
         .consistency_level(&slug_attachment)
         .into_future()
         .await?;
 
     // list attachments, there must be one.
-    let ret = document_client
+    let ret = document
         .list_attachments()
         .consistency_level(&resp_delete)
         .into_stream()
@@ -181,7 +177,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     assert_eq!(1, ret.attachments.len());
 
     // delete the database
-    database_client.delete_database().into_future().await?;
+    database.delete_database().into_future().await?;
 
     Ok(())
 }

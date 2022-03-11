@@ -100,7 +100,7 @@ impl Policy for AuthorizationPolicy {
 /// 2. Find if the uri **is** the ending string (without the leading slash). If so return an empty
 ///    string. This covers the exception of the rule above.
 /// 3. Return the received uri unchanged.
-// TODO: will become private as soon as cosmos_client will be migrated
+// TODO: will become private as soon as client will be migrated
 // to pipeline arch.
 pub(crate) fn generate_resource_link(uri: &str) -> &str {
     static ENDING_STRINGS: &[&str] = &[

@@ -35,19 +35,17 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         CosmosOptions::default(),
     );
 
-    let database_client = client.into_database_client(database);
-    let collection_client = database_client.into_collection_client(collection);
-    let user_defined_function_client = collection_client
-        .clone()
-        .into_user_defined_function_client("test15");
+    let database = client.database_client(database);
+    let collection = database.collection_client(collection);
+    let user_defined_function = collection.user_defined_function_client("test15");
 
-    let ret = user_defined_function_client
+    let ret = user_defined_function
         .create_user_defined_function("body")
         .into_future()
         .await?;
     println!("Creeate response object:\n{:#?}", ret);
 
-    let stream = collection_client
+    let stream = collection
         .list_user_defined_functions()
         .max_item_count(3)
         .consistency_level(&ret);
@@ -60,14 +58,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         );
     }
 
-    let ret = user_defined_function_client
+    let ret = user_defined_function
         .replace_user_defined_function(FN_BODY)
         .consistency_level(&ret)
         .into_future()
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 
-    let ret = collection_client
+    let ret = collection
         .query_documents("SELECT udf.test15(100)")
         .consistency_level(&ret)
         .max_item_count(2i32)
@@ -92,7 +90,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .unwrap();
     println!("value == {:?}", value);
 
-    let ret = user_defined_function_client
+    let ret = user_defined_function
         .delete_user_defined_function()
         .consistency_level(&ret)
         .into_future()

@@ -6,34 +6,34 @@ use azure_core::{Pipeline, Request};
 /// A client for Cosmos user defined function resources.
 #[derive(Debug, Clone)]
 pub struct UserDefinedFunctionClient {
-    collection_client: CollectionClient,
+    collection: CollectionClient,
     user_defined_function_name: ReadonlyString,
 }
 
 impl UserDefinedFunctionClient {
     pub(crate) fn new<S: Into<ReadonlyString>>(
-        collection_client: CollectionClient,
+        collection: CollectionClient,
         user_defined_function_name: S,
     ) -> Self {
         Self {
-            collection_client,
+            collection,
             user_defined_function_name: user_defined_function_name.into(),
         }
     }
 
     /// Get a [`CosmosClient`]
     pub fn cosmos_client(&self) -> &CosmosClient {
-        self.collection_client.cosmos_client()
+        self.collection.cosmos_client()
     }
 
     /// Get a [`DatabaseClient`]
     pub fn database_client(&self) -> &DatabaseClient {
-        self.collection_client.database_client()
+        self.collection.database_client()
     }
 
     /// Get a [`CollectionClient`]
     pub fn collection_client(&self) -> &CollectionClient {
-        &self.collection_client
+        &self.collection
     }
 
     /// Get the user defined function's name

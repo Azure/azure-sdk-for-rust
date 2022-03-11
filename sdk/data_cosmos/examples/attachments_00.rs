@@ -38,8 +38,9 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let authorization_token = AuthorizationToken::primary_from_base64(&master_key)?;
 
     let client = CosmosClient::new(account, authorization_token, CosmosOptions::default());
-    let client = client.into_database_client(database_name);
-    let client = client.into_collection_client(collection_name);
+    let client = client
+        .database_client(database_name)
+        .collection_client(collection_name);
 
     let id = format!("unique_id{}", 100);
 
@@ -60,10 +61,10 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         }
     };
 
-    let document_client = client.into_document_client(doc.id.clone(), &doc.id)?;
+    let document = client.document_client(doc.id.clone(), &doc.id)?;
 
     // list attachments
-    let ret = document_client
+    let ret = document
         .list_attachments()
         .into_stream()
         .next()
@@ -73,8 +74,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // reference attachment
     println!("creating");
-    let attachment_client = document_client.clone().into_attachment_client("myref06");
-    let resp = attachment_client
+    let attachment = document.attachment_client("myref06");
+    let resp = attachment
         .create_attachment(
             "https://cdn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
@@ -88,7 +89,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // sure to find the just created attachment
     let session_token: ConsistencyLevel = resp.into();
 
-    let resp = attachment_client
+    let resp = attachment
         .get()
         .consistency_level(session_token)
         .into_future()
@@ -98,8 +99,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let session_token: ConsistencyLevel = resp.into();
 
     println!("replacing");
-    let attachment_client = document_client.clone().into_attachment_client("myref06");
-    let resp = attachment_client
+    let attachment = document.attachment_client("myref06");
+    let resp = attachment
         .replace_attachment(
             "https://Adn.pixabay.com/photo/2020/01/11/09/30/abstract-background-4756987__340.jpg",
             "image/jpeg",
@@ -110,7 +111,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("replace reference == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment_client
+    let resp_delete = attachment
         .delete()
         .consistency_level(&resp)
         .into_future()
@@ -119,8 +120,8 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     // slug attachment
     println!("creating slug attachment");
-    let attachment_client = document_client.into_attachment_client("slug00".to_owned());
-    let resp = attachment_client
+    let attachment = document.attachment_client("slug00".to_owned());
+    let resp = attachment
         .create_slug("FFFFF".into())
         .consistency_level(&resp_delete)
         .content_type("text/plain")
@@ -130,7 +131,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("create slug == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment_client
+    let resp_delete = attachment
         .delete()
         .consistency_level(&resp)
         .into_future()
