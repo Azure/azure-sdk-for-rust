@@ -11,6 +11,7 @@ fn is_expired(token: TokenResponse) -> bool {
 }
 
 #[derive(Clone)]
+/// Wraps a TokenCredential and handles token refresh on token expiry
 pub struct AutoRefreshingTokenCredential {
     credential: Arc<dyn TokenCredential>,
     current_token: Arc<RwLock<Option<std::result::Result<TokenResponse, Error>>>>,

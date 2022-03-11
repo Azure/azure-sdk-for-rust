@@ -16,7 +16,6 @@ edition = "2018"
 async-trait = "0.1"
 azure_core = { path = "../core", version = "0.1" }
 azure_storage = { path = "../storage", version = "0.1" }
-async-lock = "2.5"
 base64 = "0.13"
 bytes = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
