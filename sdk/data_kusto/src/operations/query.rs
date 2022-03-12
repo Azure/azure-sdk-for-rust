@@ -104,6 +104,7 @@ impl KustoResponseDataSetV2 {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "PascalCase", tag = "FrameType")]
+#[allow(clippy::enum_variant_names)]
 pub enum ResultTable {
     DataSetHeader(DataSetHeader),
     DataTable(DataTable),

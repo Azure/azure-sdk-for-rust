@@ -74,7 +74,7 @@ impl KustoClient {
         T: Into<String>,
     {
         let service_url: String = url.into();
-        let service_url = service_url.trim_end_matches("/");
+        let service_url = service_url.trim_end_matches('/');
         let query_url = format!("{}/v2/rest/query", service_url);
         let management_url = format!("{}/v1/rest/mgmt", service_url);
         let pipeline = new_pipeline_from_options(credential, service_url, options);
@@ -87,11 +87,11 @@ impl KustoClient {
     }
 
     pub fn query_url(&self) -> &str {
-        &self.query_url.as_str()
+        &self.query_url
     }
 
     pub fn management_url(&self) -> &str {
-        &self.management_url.as_str()
+        &self.management_url
     }
 
     /// Execute a KQL query.

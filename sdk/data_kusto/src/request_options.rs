@@ -8,10 +8,6 @@ impl<'a> Accept<'a> {
     pub fn new(s: &'a str) -> Self {
         Self(s)
     }
-
-    pub fn as_str(&self) -> &str {
-        self.0
-    }
 }
 
 impl<'a, S> From<S> for Accept<'a>
@@ -43,10 +39,6 @@ pub struct AcceptEncoding<'a>(&'a str);
 impl<'a> AcceptEncoding<'a> {
     pub fn new(s: &'a str) -> Self {
         Self(s)
-    }
-
-    pub fn as_str(&self) -> &str {
-        self.0
     }
 }
 
