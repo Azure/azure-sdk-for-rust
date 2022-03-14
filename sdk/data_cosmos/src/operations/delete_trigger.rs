@@ -53,7 +53,6 @@ impl DeleteTriggerBuilder {
 /// The future returned by calling `into_future` on the builder.
 pub type DeleteTrigger = futures::future::BoxFuture<'static, crate::Result<DeleteTriggerResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteTriggerBuilder {
     type IntoFuture = DeleteTrigger;
     type Output = <DeleteTrigger as std::future::Future>::Output;

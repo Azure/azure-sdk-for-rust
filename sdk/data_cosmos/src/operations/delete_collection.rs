@@ -51,7 +51,6 @@ impl DeleteCollectionBuilder {
 pub type DeleteCollection =
     futures::future::BoxFuture<'static, crate::Result<DeleteCollectionResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteCollectionBuilder {
     type IntoFuture = DeleteCollection;
     type Output = <DeleteCollection as std::future::Future>::Output;

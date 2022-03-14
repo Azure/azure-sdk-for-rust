@@ -60,7 +60,6 @@ impl CreateStoredProcedureBuilder {
     }
 }
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateStoredProcedureBuilder {
     type IntoFuture = CreateStoredProcedure;
     type Output = <CreateStoredProcedure as std::future::Future>::Output;

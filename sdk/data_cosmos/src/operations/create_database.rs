@@ -63,7 +63,6 @@ impl CreateDatabaseBuilder {
     }
 }
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateDatabaseBuilder {
     type IntoFuture = CreateDatabase;
     type Output = <CreateDatabase as std::future::Future>::Output;

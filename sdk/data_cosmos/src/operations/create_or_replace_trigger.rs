@@ -90,7 +90,6 @@ impl CreateOrReplaceTriggerBuilder {
 pub type CreateOrReplaceTrigger =
     futures::future::BoxFuture<'static, crate::Result<CreateOrReplaceTriggerResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceTriggerBuilder {
     type IntoFuture = CreateOrReplaceTrigger;
     type Output = <CreateOrReplaceTrigger as std::future::Future>::Output;

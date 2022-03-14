@@ -61,7 +61,6 @@ impl GetAttachmentBuilder {
     }
 }
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetAttachmentBuilder {
     type IntoFuture = GetAttachment;
     type Output = <GetAttachment as std::future::Future>::Output;

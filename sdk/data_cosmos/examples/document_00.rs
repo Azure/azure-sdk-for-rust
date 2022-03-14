@@ -1,3 +1,4 @@
+#![feature(into_future)]
 use futures::stream::StreamExt;
 use serde::{Deserialize, Serialize};
 // Using the prelude module of the Cosmos crate makes easier to use the Rust Azure SDK for Cosmos

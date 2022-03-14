@@ -1,3 +1,5 @@
+#![feature(into_future)]
+
 use azure_data_cosmos::prelude::*;
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};

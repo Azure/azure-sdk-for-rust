@@ -88,7 +88,6 @@ impl CreateOrReplaceAttachmentBuilder {
 pub type CreateOrReplaceAttachment =
     futures::future::BoxFuture<'static, crate::Result<CreateOrReplaceAttachmentResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceAttachmentBuilder {
     type IntoFuture = CreateOrReplaceAttachment;
     type Output = <CreateOrReplaceAttachment as std::future::Future>::Output;

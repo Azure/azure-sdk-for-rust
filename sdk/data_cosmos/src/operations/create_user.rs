@@ -54,7 +54,6 @@ impl CreateUserBuilder {
 /// The future returned by calling `into_future` on the builder.
 pub type CreateUser = futures::future::BoxFuture<'static, crate::Result<UserResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateUserBuilder {
     type IntoFuture = CreateUser;
     type Output = <CreateUser as std::future::Future>::Output;

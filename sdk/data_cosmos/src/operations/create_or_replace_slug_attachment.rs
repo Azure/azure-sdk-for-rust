@@ -94,7 +94,6 @@ impl CreateOrReplaceSlugAttachmentBuilder {
 pub type CreateOrReplaceSlugAttachment =
     futures::future::BoxFuture<'static, crate::Result<CreateOrReplaceSlugAttachmentResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceSlugAttachmentBuilder {
     type IntoFuture = CreateOrReplaceSlugAttachment;
     type Output = <CreateOrReplaceSlugAttachment as std::future::Future>::Output;

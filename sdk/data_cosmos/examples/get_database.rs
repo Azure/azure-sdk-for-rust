@@ -1,3 +1,4 @@
+#![feature(into_future)]
 use azure_core::prelude::*;
 use azure_core::CustomHeaders;
 use azure_data_cosmos::prelude::*;

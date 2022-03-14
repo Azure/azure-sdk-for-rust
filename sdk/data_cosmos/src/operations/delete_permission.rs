@@ -52,7 +52,6 @@ impl DeletePermissionBuilder {
 pub type DeletePermission =
     futures::future::BoxFuture<'static, crate::Result<DeletePermissionResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeletePermissionBuilder {
     type IntoFuture = DeletePermission;
     type Output = <DeletePermission as std::future::Future>::Output;

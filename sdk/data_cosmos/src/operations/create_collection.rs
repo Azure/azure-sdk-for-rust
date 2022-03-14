@@ -65,7 +65,6 @@ impl CreateCollectionBuilder {
     }
 }
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateCollectionBuilder {
     type IntoFuture = CreateCollection;
     type Output = <CreateCollection as std::future::Future>::Output;

@@ -1,3 +1,4 @@
+#![feature(into_future)]
 use azure_data_cosmos::prelude::*;
 use std::error::Error;
 

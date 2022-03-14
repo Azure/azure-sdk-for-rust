@@ -1,3 +1,4 @@
+#![feature(into_future)]
 /// This sample showcases execution of stored procedure
 /// Create stored procedure called test_proc, like so:
 /// function f(personToGreet) {

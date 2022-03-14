@@ -64,7 +64,6 @@ impl DeleteAttachmentBuilder {
 pub type DeleteAttachment =
     futures::future::BoxFuture<'static, crate::Result<DeleteAttachmentResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteAttachmentBuilder {
     type IntoFuture = DeleteAttachment;
     type Output = <DeleteAttachment as std::future::Future>::Output;

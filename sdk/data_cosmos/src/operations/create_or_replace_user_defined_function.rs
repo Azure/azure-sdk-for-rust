@@ -72,7 +72,6 @@ impl CreateOrReplaceUserDefinedFunctionBuilder {
 pub type CreateOrReplaceUserDefinedFunction =
     futures::future::BoxFuture<'static, crate::Result<CreateOrReplaceUserDefinedFunctionResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceUserDefinedFunctionBuilder {
     type IntoFuture = CreateOrReplaceUserDefinedFunction;
     type Output = <CreateOrReplaceUserDefinedFunction as std::future::Future>::Output;

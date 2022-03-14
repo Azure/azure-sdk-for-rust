@@ -45,7 +45,6 @@ impl DeleteDatabaseBuilder {
 pub type DeleteDatabase =
     futures::future::BoxFuture<'static, crate::Result<DeleteDatabaseResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteDatabaseBuilder {
     type IntoFuture = DeleteDatabase;
     type Output = <DeleteDatabase as std::future::Future>::Output;

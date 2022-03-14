@@ -67,7 +67,6 @@ impl GetPartitionKeyRangesBuilder {
 pub type GetPartitionKeyRanges =
     futures::future::BoxFuture<'static, crate::Result<GetPartitionKeyRangesResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetPartitionKeyRangesBuilder {
     type IntoFuture = GetPartitionKeyRanges;
     type Output = <GetPartitionKeyRanges as std::future::Future>::Output;

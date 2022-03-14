@@ -52,7 +52,6 @@ impl DeleteStoredProcedureBuilder {
 pub type DeleteStoredProcedure =
     futures::future::BoxFuture<'static, crate::Result<DeleteStoredProcedureResponse>>;
 
-#[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteStoredProcedureBuilder {
     type IntoFuture = DeleteStoredProcedure;
     type Output = <DeleteStoredProcedure as std::future::Future>::Output;

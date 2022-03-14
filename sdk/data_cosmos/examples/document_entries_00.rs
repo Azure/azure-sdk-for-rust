@@ -1,3 +1,4 @@
+#![feature(into_future)]
 use azure_core::prelude::*;
 use azure_data_cosmos::prelude::*;
 use futures::stream::StreamExt;
@@ -110,6 +111,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response: GetDocumentResponse<MySampleStruct> = client
         .document_client(id.clone(), partition_key)?
         .get_document()
+        .into_future()
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::Found(_)));
@@ -142,6 +144,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .document_client(id.clone(), &id)?
         .get_document()
         .consistency_level(&response)
+        .into_future()
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::NotFound(_)));
