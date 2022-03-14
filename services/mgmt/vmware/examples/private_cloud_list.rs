@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential {});
     let client = azure_mgmt_vmware::ClientBuilder::new(credential).build();
 
-    let clouds = client.private_clouds().list_in_subscription(subscription_id).await?;
+    let clouds = client.private_clouds().list_in_subscription(subscription_id).into_future().await?;
     println!("# of private clouds {}", clouds.value.len());
     for cloud in &clouds.value {
         println!("{:?}", cloud.tracked_resource.resource.id);

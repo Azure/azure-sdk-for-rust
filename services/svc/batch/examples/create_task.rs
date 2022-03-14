@@ -31,12 +31,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("creating job");
     let job_params = JobAddParameter::new(job_id.clone(), pool_info);
-    client.job().add(job_params).await?;
+    client.job().add(job_params).into_future().await?;
 
     println!("creating task");
     let command_line = "echo hello there".to_string();
     let task = TaskAddParameter::new(task_id.to_string(), command_line);
-    client.task().add(job_id, task).await?;
+    client.task().add(job_id, task).into_future().await?;
 
     Ok(())
 }

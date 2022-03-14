@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .scopes(scopes)
         .build();
 
-    let pools = client.pool().list().await?;
+    let pools = client.pool().list().into_future().await?;
 
     for pool in pools.value {
         println!("id: {:?}", pool.id);

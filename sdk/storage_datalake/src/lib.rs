@@ -1,4 +1,3 @@
-#![feature(into_future)]
 /*!
 # The Storage Datalake crate
 
