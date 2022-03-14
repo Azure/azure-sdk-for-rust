@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           profile: minimal
           override: true
           components: rustfmt, clippy
@@ -57,7 +57,7 @@ jobs:
           cargo fmt --all -- --check
           ./eng/scripts/check_json_format.sh
           cargo fmt --manifest-path services/Cargo.toml --all -- --check
-        if: matrix.rust == 'stable'
+        if: matrix.rust == 'nightly'
 
       - name: check core for wasm
         run: cargo check -p azure_core --target=wasm32-unknown-unknown
@@ -167,7 +167,7 @@ jobs:
       - name: install rust
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           profile: minimal
           override: true
           components: rustfmt, clippy
