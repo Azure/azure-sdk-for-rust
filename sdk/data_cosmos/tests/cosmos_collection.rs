@@ -14,7 +14,7 @@ async fn create_and_delete_collection() {
 
     client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -23,7 +23,7 @@ async fn create_and_delete_collection() {
     // create a new collection
     let collection = database
         .create_collection(COLLECTION_NAME, "/id")
-        .into_future()
+
         .await
         .unwrap();
     let collections = Box::pin(database.list_collections().into_stream())
@@ -37,18 +37,18 @@ async fn create_and_delete_collection() {
     let rid = collection.collection.rid;
     let collection = database.collection_client(COLLECTION_NAME);
 
-    let collection_after_get = collection.get_collection().into_future().await.unwrap();
+    let collection_after_get = collection.get_collection().await.unwrap();
     assert!(rid == collection_after_get.collection.rid);
 
     // check GetPartitionKeyRanges: https://docs.microsoft.com/rest/api/cosmos-db/get-partition-key-ranges
     collection
         .get_partition_key_ranges()
-        .into_future()
+
         .await
         .unwrap();
 
     // delete the collection
-    collection.delete_collection().into_future().await.unwrap();
+    collection.delete_collection().await.unwrap();
     let collections = Box::pin(database.list_collections().into_stream())
         .next()
         .await
@@ -56,7 +56,7 @@ async fn create_and_delete_collection() {
         .unwrap();
     assert!(collections.collections.len() == 0);
 
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 }
 
 #[tokio::test]
@@ -67,7 +67,7 @@ async fn replace_collection() {
 
     client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -85,7 +85,7 @@ async fn replace_collection() {
         .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::S2)
         .indexing_policy(indexing_policy)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -127,7 +127,7 @@ async fn replace_collection() {
         .collection_client(COLLECTION_NAME)
         .replace_collection("/id")
         .indexing_policy(new_ip)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -145,5 +145,5 @@ async fn replace_collection() {
         .collect();
     assert!(eps.len() > 0);
 
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 }

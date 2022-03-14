@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     }
     drop(list_databases_stream);
 
-    let db = client.create_database(&database_name).into_future().await?;
+    let db = client.create_database(&database_name).await?;
     println!("created database = {:#?}", db);
 
     // create collection!
@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         let database = client.database_client(database_name.clone());
         let create_collection_response = database
             .create_collection("panzadoro", "/id")
-            .into_future()
+
             .await?;
 
         println!(
@@ -57,7 +57,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
         let db_collection = database.collection_client("panzadoro");
 
-        let get_collection_response = db_collection.get_collection().into_future().await?;
+        let get_collection_response = db_collection.get_collection().await?;
         println!("get_collection_response == {:#?}", get_collection_response);
 
         let mut stream = database.list_collections().into_stream();
@@ -66,14 +66,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             println!("res == {:#?}", res);
         }
 
-        let delete_response = db_collection.delete_collection().into_future().await?;
+        let delete_response = db_collection.delete_collection().await?;
         println!("collection deleted: {:#?}", delete_response);
     }
 
     let resp = client
         .database_client(database_name)
         .delete_database()
-        .into_future()
+
         .await?;
     println!("database deleted. resp == {:#?}", resp);
 

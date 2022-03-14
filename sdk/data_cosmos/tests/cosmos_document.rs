@@ -32,7 +32,7 @@ async fn create_and_delete_document() {
 
     client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -50,7 +50,7 @@ async fn create_and_delete_document() {
         .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -63,7 +63,7 @@ async fn create_and_delete_document() {
     };
     collection
         .create_document(document_data.clone())
-        .into_future()
+
         .await
         .unwrap();
 
@@ -95,7 +95,7 @@ async fn create_and_delete_document() {
     }
 
     // delete document
-    document.delete_document().into_future().await.unwrap();
+    document.delete_document().await.unwrap();
 
     let documents = collection
         .list_documents()
@@ -107,7 +107,7 @@ async fn create_and_delete_document() {
         .documents;
     assert!(documents.len() == 0);
 
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 }
 
 #[tokio::test]
@@ -120,7 +120,7 @@ async fn query_documents() {
 
     client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
     let database = client.database_client(DATABASE_NAME);
@@ -137,7 +137,7 @@ async fn query_documents() {
         .create_collection(COLLECTION_NAME, "/id")
         .indexing_policy(indexing_policy)
         .offer(Offer::S2)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -150,7 +150,7 @@ async fn query_documents() {
     };
     collection
         .create_document(document_data.clone())
-        .into_future()
+
         .await
         .unwrap();
 
@@ -181,7 +181,7 @@ async fn query_documents() {
     assert!(query_result[0].document_attributes.rid() == documents[0].document_attributes.rid());
     assert_eq!(query_result[0].result, document_data);
 
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 }
 
 #[tokio::test]
@@ -194,7 +194,7 @@ async fn replace_document() {
 
     client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
     let database = client.database_client(DATABASE_NAME);
@@ -211,7 +211,7 @@ async fn replace_document() {
         .create_collection(COLLECTION_NAME, "/id")
         .indexing_policy(indexing_policy)
         .offer(Offer::S2)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -224,7 +224,7 @@ async fn replace_document() {
     };
     collection
         .create_document(document_data.clone())
-        .into_future()
+
         .await
         .unwrap();
 
@@ -250,7 +250,7 @@ async fn replace_document() {
                 .etag()
                 .to_string(),
         ))
-        .into_future()
+
         .await
         .unwrap();
 
@@ -270,5 +270,5 @@ async fn replace_document() {
         panic!("document not found");
     }
 
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 }

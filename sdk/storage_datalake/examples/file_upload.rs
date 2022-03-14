@@ -13,14 +13,14 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .into_file_system_client(file_system_name.to_string());
 
     println!("creating file system '{}'...", &file_system_name);
-    let create_fs_response = file_system_client.create().into_future().await?;
+    let create_fs_response = file_system_client.create().await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
     let file_path = "some/path/example-file.txt";
     let file_client = file_system_client.get_file_client(file_path);
 
     println!("creating file '{}'...", file_path);
-    let create_file_response = file_client.create().into_future().await?;
+    let create_file_response = file_client.create().await?;
     println!("create file response == {:?}\n", create_file_response);
 
     let string1 = "some data";
@@ -32,13 +32,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let data2_length = data2.len() as i64;
 
     println!("appending '{}' to file '{}'...", string1, file_path);
-    let append_to_file_response = file_client.append(0, data1).into_future().await?;
+    let append_to_file_response = file_client.append(0, data1).await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("appending '{}' to file '{}'...", string2, file_path);
     let append_to_file_response = file_client
         .append(data1_length, data2)
-        .into_future()
+
         .await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
@@ -46,16 +46,16 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let flush_file_response = file_client
         .flush(data1_length + data2_length)
         .close(true)
-        .into_future()
+
         .await?;
     println!("flush file response == {:?}\n", flush_file_response);
 
     println!("reading file '{}'...", file_path);
-    let read_file_response = file_client.read().into_future().await?;
+    let read_file_response = file_client.read().await?;
     println!("read file response == {:?}\n", read_file_response);
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().into_future().await?;
+    let delete_fs_response = file_system_client.delete().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())

@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_compute::ClientBuilder::new(credential).build();
 
-    let vms = client.virtual_machines().list_all(subscription_id).into_future().await?;
+    let vms = client.virtual_machines().list_all(subscription_id).await?;
     println!("# of virtual machines {}", vms.value.len());
     for vm in &vms.value {
         println!("{:?}", &vm.resource.id);

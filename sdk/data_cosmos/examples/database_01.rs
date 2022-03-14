@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let collection = database
         .collection_client("cnt")
         .get_collection()
-        .into_future()
+
         .await?;
     println!("collection == {:#?}", collection);
 

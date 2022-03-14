@@ -18,7 +18,7 @@ async fn main() -> azure_data_cosmos::Result<()> {
     let client = CosmosClient::new(account.clone(), authorization_token.clone(), options);
 
     // Create a new database, and time out if it takes more than 1 second.
-    let future = client.create_database("my_database").into_future();
+    let future = client.create_database("my_database");
     let deadline = Instant::now() + Duration::from_secs(1);
     match future.timeout_at(deadline).await {
         Ok(Ok(r)) => println!("successful response: {:?}", r),
@@ -34,7 +34,7 @@ async fn main() -> azure_data_cosmos::Result<()> {
         // Clone the stop token for each request.
         let deadline = source.token();
         tokio::spawn(async move {
-            let future = client.create_database("my_database").into_future();
+            let future = client.create_database("my_database");
             match future.timeout_at(deadline).await {
                 Ok(Ok(r)) => println!("successful response: {:?}", r),
                 Ok(Err(e)) => println!("request was made but failed: {:?}", e),

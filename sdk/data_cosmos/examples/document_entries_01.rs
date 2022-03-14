@@ -51,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_document_response = client
         .create_document(doc.clone())
         .is_upsert(true)
-        .into_future()
+
         .await?;
 
     println!(
@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .document_client(doc.id.clone(), &doc.id)?
         .replace_document(doc)
         .consistency_level(&query_documents_response)
-        .into_future()
+
         .await?;
     println!(
         "replace_document_response == {:#?}",

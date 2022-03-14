@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pools = client
         .pool()
         .list_by_batch_account(resource_group_name, account_name, subscription_id)
-        .into_future()
+
         .await?;
 
     for pool in pools.value {

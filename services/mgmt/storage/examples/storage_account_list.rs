@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_storage::ClientBuilder::new(credential).build();
 
-    let accounts = client.storage_accounts().list(subscription_id).into_future().await?;
+    let accounts = client.storage_accounts().list(subscription_id).await?;
     println!("# of storage accounts {}", accounts.value.len());
     for account in &accounts.value {
         println!("{:?}", account.tracked_resource.resource.id);

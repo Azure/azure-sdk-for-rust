@@ -36,19 +36,19 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let collection2 = database.collection_client(collection_name2);
     let user = database.user_client(user_name);
 
-    let get_database_response = database.get_database().into_future().await?;
+    let get_database_response = database.get_database().await?;
     println!("get_database_response == {:#?}", get_database_response);
 
-    let get_collection_response = collection.get_collection().into_future().await?;
+    let get_collection_response = collection.get_collection().await?;
     println!("get_collection_response == {:#?}", get_collection_response);
 
-    let get_collection2_response = collection2.get_collection().into_future().await?;
+    let get_collection2_response = collection2.get_collection().await?;
     println!(
         "get_collection2_response == {:#?}",
         get_collection2_response
     );
 
-    let create_user_response = user.create_user().into_future().await?;
+    let create_user_response = user.create_user().await?;
     println!("create_user_response == {:#?}", create_user_response);
 
     // create the first permission!
@@ -59,7 +59,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_permission(permission_mode)
         .consistency_level(&create_user_response)
         .expiry_seconds(18000u64)
-        .into_future()
+
         .await
         .unwrap();
     println!(
@@ -74,7 +74,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_permission2_response = permission
         .create_permission(permission_mode)
         .consistency_level(&create_user_response)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -103,7 +103,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             list_permissions_response.session_token,
         ))
-        .into_future()
+
         .await
         .unwrap();
     println!("get_permission_response == {:#?}", get_permission_response);
@@ -117,7 +117,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             get_permission_response.session_token,
         ))
-        .into_future()
+
         .await
         .unwrap();
     println!(
@@ -130,7 +130,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             replace_permission_response.session_token,
         ))
-        .into_future()
+
         .await
         .unwrap();
 
@@ -144,7 +144,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             delete_permission_response.session_token,
         ))
-        .into_future()
+
         .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 

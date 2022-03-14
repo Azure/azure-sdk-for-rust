@@ -41,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = user_defined_function
         .create_user_defined_function("body")
-        .into_future()
+
         .await?;
     println!("Creeate response object:\n{:#?}", ret);
 
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let ret = user_defined_function
         .replace_user_defined_function(FN_BODY)
         .consistency_level(&ret)
-        .into_future()
+
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 
@@ -93,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let ret = user_defined_function
         .delete_user_defined_function()
         .consistency_level(&ret)
-        .into_future()
+
         .await?;
 
     println!("Delete response object:\n{:#?}", ret);

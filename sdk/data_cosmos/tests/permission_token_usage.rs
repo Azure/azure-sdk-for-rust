@@ -33,7 +33,7 @@ async fn permission_token_usage() {
     // create a temp database
     let _create_database_response = client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -51,12 +51,12 @@ async fn permission_token_usage() {
         .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy)
-        .into_future()
+
         .await
         .unwrap();
 
     let user = database.user_client(USER_NAME);
-    user.create_user().into_future().await.unwrap();
+    user.create_user().await.unwrap();
 
     // create the RO permission
     let permission = user.permission(PERMISSION);
@@ -65,7 +65,7 @@ async fn permission_token_usage() {
     let create_permission_response = permission
         .create_permission(permission_mode)
         .expiry_seconds(18000u64) // 5 hours, max!
-        .into_future()
+
         .await
         .unwrap();
 
@@ -102,18 +102,18 @@ async fn permission_token_usage() {
     new_collection
         .create_document(document.clone())
         .is_upsert(true)
-        .into_future()
+
         .await
         .unwrap_err();
 
-    permission.delete_permission().into_future().await.unwrap();
+    permission.delete_permission().await.unwrap();
 
     // All includes read and write.
     let permission_mode = create_collection_response.collection.all_permission();
     let create_permission_response = permission
         .create_permission(permission_mode)
         .expiry_seconds(18000u64) // 5 hours, max!
-        .into_future()
+
         .await
         .unwrap();
 
@@ -130,7 +130,7 @@ async fn permission_token_usage() {
     let create_document_response = new_collection
         .create_document(document)
         .is_upsert(true)
-        .into_future()
+
         .await
         .unwrap();
     println!(
@@ -139,5 +139,5 @@ async fn permission_token_usage() {
     );
 
     // cleanup
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 }

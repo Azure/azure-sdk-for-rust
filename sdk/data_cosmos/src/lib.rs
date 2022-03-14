@@ -83,7 +83,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         collection
             .create_document(document_to_insert)
             .is_upsert(true)
-            .into_future()
+
             .await?;
     }
     // wow that was easy and fast, wasn't it? :)

@@ -24,7 +24,7 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
     let create_fs_response = file_system_client
         .create()
         .properties(fs_properties.clone())
-        .into_future()
+
         .await?;
     assert!(
         create_fs_response.namespace_enabled,
@@ -47,7 +47,7 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
     }
     assert!(found, "did not find created file system");
 
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    let get_fs_props_response = file_system_client.get_properties().await?;
     let added_via_option = get_fs_props_response.properties.get("AddedVia");
     assert!(
         added_via_option.is_some(),
@@ -62,10 +62,10 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
     fs_properties.insert("ModifiedBy", "Iota");
     file_system_client
         .set_properties(fs_properties)
-        .into_future()
+
         .await?;
 
-    let get_fs_props_response = file_system_client.get_properties().into_future().await?;
+    let get_fs_props_response = file_system_client.get_properties().await?;
     let modified_by_option = get_fs_props_response.properties.get("ModifiedBy");
     assert!(
         modified_by_option.is_some(),
@@ -77,7 +77,7 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
         "did not find expected property value for: ModifiedBy"
     );
 
-    file_system_client.delete().into_future().await?;
+    file_system_client.delete().await?;
 
     Ok(())
 }

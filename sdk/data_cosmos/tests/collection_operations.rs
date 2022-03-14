@@ -15,7 +15,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let client = setup::initialize("collection_operations")?;
     let database_name = "test-collection-operations";
 
-    client.create_database(database_name).into_future().await?;
+    client.create_database(database_name).await?;
 
     // create collection!
     let database = client.database_client(database_name.clone());
@@ -25,7 +25,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
 
     let create_collection_response = database
         .create_collection(collection_name, "/id")
-        .into_future()
+
         .await?;
 
     assert_eq!(create_collection_response.collection.id, collection_name);
@@ -39,7 +39,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let collection = database.collection_client(collection_name);
 
     // get collection!
-    let get_collection_response = collection.get_collection().into_future().await?;
+    let get_collection_response = collection.get_collection().await?;
 
     assert_eq!(get_collection_response.collection.id, collection_name);
 
@@ -75,7 +75,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let replace_collection_response = collection
         .replace_collection("/id")
         .indexing_policy(new_indexing_policy)
-        .into_future()
+
         .await?;
 
     assert_eq!(replace_collection_response.collection.id, collection_name);
@@ -104,7 +104,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     );
 
     // delete collection!
-    let delete_collection_response = collection.delete_collection().into_future().await?;
+    let delete_collection_response = collection.delete_collection().await?;
 
     log::info!("Successfully deleted collection");
     log::debug!(
@@ -112,7 +112,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
         delete_collection_response
     );
 
-    database.delete_database().into_future().await.unwrap();
+    database.delete_database().await.unwrap();
 
     Ok(())
 }

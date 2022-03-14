@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .database_client(database)
         .collection_client(collection);
 
-    let resp = client.get_partition_key_ranges().into_future().await?;
+    let resp = client.get_partition_key_ranges().await?;
     println!("resp == {:#?}", resp);
 
     Ok(())

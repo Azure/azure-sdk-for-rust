@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response = database
         .get_database()
         .context(context)
-        .into_future()
+
         .await?;
     println!("response == {:?}", response);
 

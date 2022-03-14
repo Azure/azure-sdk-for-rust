@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_fs_response = file_system_client
         .create()
         .properties(fs_properties.clone())
-        .into_future()
+
         .await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
@@ -29,7 +29,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_directory_response = directory_client
         .create()
         .properties(fs_properties.clone())
-        .into_future()
+
         .await?;
     println!(
         "create directory response == {:?}\n",
@@ -38,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("creating directory '{}' if not exists...", directory_name);
     let create_directory_if_not_exists_result =
-        directory_client.create_if_not_exists().into_future().await;
+        directory_client.create_if_not_exists().await;
     println!(
         "create directory result (should fail) == {:?}\n",
         create_directory_if_not_exists_result
@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let rename_directory_response = directory_client
         .rename(new_directory_name)
         .properties(fs_properties.clone())
-        .into_future()
+
         .await?;
     println!(
         "rename directory response == {:?}\n",
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     );
 
     println!("deleting file system...");
-    let delete_fs_response = file_system_client.delete().into_future().await?;
+    let delete_fs_response = file_system_client.delete().await?;
     println!("delete file system response == {:?}\n", delete_fs_response);
 
     Ok(())

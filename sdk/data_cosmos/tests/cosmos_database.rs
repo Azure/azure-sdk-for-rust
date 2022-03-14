@@ -22,7 +22,7 @@ async fn create_and_delete_database() {
     // create a new database and check if the number of DBs increased
     let database = client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -38,7 +38,7 @@ async fn create_and_delete_database() {
     let database_after_get = client
         .database_client(DATABASE_NAME)
         .get_database()
-        .into_future()
+
         .await
         .unwrap();
     assert!(database.database.rid == database_after_get.database.rid);
@@ -47,7 +47,7 @@ async fn create_and_delete_database() {
     client
         .database_client(DATABASE_NAME)
         .delete_database()
-        .into_future()
+
         .await
         .unwrap();
 

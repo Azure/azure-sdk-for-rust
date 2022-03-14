@@ -27,7 +27,7 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
     // create a temp database
     let _create_database_response = client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -36,7 +36,7 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
     // create a temp collection
     let _create_collection_response = database
         .create_collection(COLLECTION_NAME, "/id")
-        .into_future()
+
         .await
         .unwrap();
 
@@ -45,7 +45,7 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
 
     let ret = user_defined_function
         .create_user_defined_function("body")
-        .into_future()
+
         .await?;
 
     let stream = collection
@@ -61,7 +61,7 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
     let ret = user_defined_function
         .replace_user_defined_function(FN_BODY)
         .consistency_level(&ret)
-        .into_future()
+
         .await?;
 
     let query_stmt = format!("SELECT udf.{}(100)", USER_DEFINED_FUNCTION_NAME);
@@ -108,11 +108,11 @@ async fn user_defined_function00() -> Result<(), azure_data_cosmos::Error> {
     let _ret = user_defined_function
         .delete_user_defined_function()
         .consistency_level(&ret)
-        .into_future()
+
         .await?;
 
     // delete the database
-    database.delete_database().into_future().await?;
+    database.delete_database().await?;
 
     Ok(())
 }

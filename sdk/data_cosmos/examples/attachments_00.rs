@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     };
 
     // let's add an entity.
-    match client.create_document(doc.clone()).into_future().await {
+    match client.create_document(doc.clone()).await {
         Ok(_) => {
             println!("document created");
         }
@@ -81,7 +81,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             "image/jpeg",
         )
         .consistency_level(ret)
-        .into_future()
+
         .await?;
     println!("create reference == {:#?}", resp);
 
@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp = attachment
         .get()
         .consistency_level(session_token)
-        .into_future()
+
         .await?;
 
     println!("get attachment == {:#?}", resp);
@@ -106,7 +106,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             "image/jpeg",
         )
         .consistency_level(session_token)
-        .into_future()
+
         .await?;
     println!("replace reference == {:#?}", resp);
 
@@ -114,7 +114,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp_delete = attachment
         .delete()
         .consistency_level(&resp)
-        .into_future()
+
         .await?;
     println!("delete attachment == {:#?}", resp_delete);
 
@@ -125,7 +125,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_slug("FFFFF".into())
         .consistency_level(&resp_delete)
         .content_type("text/plain")
-        .into_future()
+
         .await?;
 
     println!("create slug == {:#?}", resp);
@@ -134,7 +134,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp_delete = attachment
         .delete()
         .consistency_level(&resp)
-        .into_future()
+
         .await?;
     println!("delete attachment == {:#?}", resp_delete);
 

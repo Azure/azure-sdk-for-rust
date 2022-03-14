@@ -72,7 +72,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         None => {
             client
                 .create_database(DATABASE)
-                .into_future()
+
                 .await?
                 .database
         }
@@ -102,7 +102,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .clone()
                 .database_client(database.id.clone())
                 .create_collection(COLLECTION, "/id")
-                .into_future()
+
                 .await?
                 .collection
         }
@@ -133,7 +133,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_document_response = collection
         .create_document(doc.clone())
-        .into_future()
+
         .await?;
     println!(
         "create_document_response == {:#?}",
@@ -179,7 +179,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .document_client(doc.id.clone(), &doc.id)?
             .replace_document(doc)
             .if_match_condition(IfMatchCondition::Match(document.etag))
-            .into_future()
+
             .await?;
         println!(
             "replace_document_response == {:#?}",
@@ -192,7 +192,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .database_client(DATABASE.to_owned())
         .collection_client(COLLECTION.to_owned())
         .delete_collection()
-        .into_future()
+
         .await?;
     println!("collection deleted");
 
@@ -200,7 +200,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     client
         .database_client(database.id)
         .delete_database()
-        .into_future()
+
         .await?;
     println!("database deleted");
 

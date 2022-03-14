@@ -45,7 +45,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
     // create a temp database
     let _create_database_response = client
         .create_database(DATABASE_NAME)
-        .into_future()
+
         .await
         .unwrap();
 
@@ -55,7 +55,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
     let _create_collection_response = {
         database
             .create_collection(COLLECTION_NAME, "/id")
-            .into_future()
+
             .await
             .unwrap()
     };
@@ -69,7 +69,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
             trigger::TriggerType::Post,
             trigger::TriggerOperation::All,
         )
-        .into_future()
+
         .await?;
 
     let ret = trigger
@@ -79,7 +79,7 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
             trigger::TriggerOperation::All,
         )
         .consistency_level(ret)
-        .into_future()
+
         .await?;
 
     let mut last_session_token: Option<ConsistencyLevel> = None;
@@ -97,11 +97,11 @@ async fn trigger() -> Result<(), azure_data_cosmos::Error> {
     let _ret = trigger
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
-        .into_future()
+
         .await?;
 
     // delete the database
-    database.delete_database().into_future().await?;
+    database.delete_database().await?;
 
     Ok(())
 }
