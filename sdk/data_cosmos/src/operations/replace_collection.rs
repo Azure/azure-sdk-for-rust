@@ -67,7 +67,6 @@ impl ReplaceCollectionBuilder {
 pub type ReplaceCollection =
     futures::future::BoxFuture<'static, crate::Result<ReplaceCollectionResponse>>;
 
-
 impl std::future::IntoFuture for ReplaceCollectionBuilder {
     type IntoFuture = ReplaceCollection;
     type Output = <ReplaceCollection as std::future::Future>::Output;

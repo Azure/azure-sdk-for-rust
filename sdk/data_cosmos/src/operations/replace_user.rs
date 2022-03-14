@@ -57,7 +57,6 @@ struct ReplaceUserBody<'a> {
 /// The future returned by calling `into_future` on the builder.
 pub type ReplaceUser = futures::future::BoxFuture<'static, crate::Result<UserResponse>>;
 
-
 impl std::future::IntoFuture for ReplaceUserBuilder {
     type IntoFuture = ReplaceUser;
     type Output = <ReplaceUser as std::future::Future>::Output;

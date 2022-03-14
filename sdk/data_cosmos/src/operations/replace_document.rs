@@ -93,7 +93,6 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
 pub type ReplaceDocument =
     futures::future::BoxFuture<'static, crate::Result<ReplaceDocumentResponse>>;
 
-
 impl<D: Serialize + Send + 'static> std::future::IntoFuture for ReplaceDocumentBuilder<D> {
     type IntoFuture = ReplaceDocument;
     type Output = <ReplaceDocument as std::future::Future>::Output;

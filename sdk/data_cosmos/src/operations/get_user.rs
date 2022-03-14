@@ -47,7 +47,6 @@ impl GetUserBuilder {
 /// The future returned by calling `into_future` on the builder.
 pub type GetUser = futures::future::BoxFuture<'static, crate::Result<UserResponse>>;
 
-
 impl std::future::IntoFuture for GetUserBuilder {
     type IntoFuture = GetUser;
     type Output = <GetUser as std::future::Future>::Output;
