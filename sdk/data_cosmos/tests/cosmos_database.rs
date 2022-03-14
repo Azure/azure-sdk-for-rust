@@ -20,11 +20,7 @@ async fn create_and_delete_database() {
     let database_count_before = databases.databases.len();
 
     // create a new database and check if the number of DBs increased
-    let database = client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    let database = client.create_database(DATABASE_NAME).await.unwrap();
 
     let databases = Box::pin(client.list_databases().into_stream())
         .next()
@@ -38,7 +34,6 @@ async fn create_and_delete_database() {
     let database_after_get = client
         .database_client(DATABASE_NAME)
         .get_database()
-
         .await
         .unwrap();
     assert!(database.database.rid == database_after_get.database.rid);
@@ -47,7 +42,6 @@ async fn create_and_delete_database() {
     client
         .database_client(DATABASE_NAME)
         .delete_database()
-
         .await
         .unwrap();
 

@@ -66,11 +66,7 @@ async fn file_upload() -> Result<(), Box<dyn Error + Send + Sync>> {
     let file_length = bytes.len() as i64;
     file_client.append(0, bytes).await?;
 
-    file_client
-        .flush(file_length)
-        .close(true)
-
-        .await?;
+    file_client.flush(file_length).close(true).await?;
 
     file_system_client.delete().await?;
 
@@ -103,11 +99,7 @@ async fn file_read() -> Result<(), Box<dyn Error + Send + Sync>> {
     let file_length = bytes.len() as i64;
     file_client.append(0, bytes.clone()).await?;
 
-    file_client
-        .flush(file_length)
-        .close(true)
-
-        .await?;
+    file_client.flush(file_length).close(true).await?;
 
     let read_file_response = file_client.read().await?;
     assert_eq!(bytes, read_file_response.data);
@@ -145,17 +137,13 @@ async fn file_rename() -> Result<(), Box<dyn Error + Send + Sync>> {
     file_client1
         .create()
         .properties(file_properties.clone())
-
         .await?;
     file_client2.create().await?;
 
     // original file properties
     let original_target_file_properties = file_client2.get_properties().await?;
 
-    let rename_file_if_not_exists_result = file_client1
-        .rename_if_not_exists(file_path2)
-
-        .await;
+    let rename_file_if_not_exists_result = file_client1.rename_if_not_exists(file_path2).await;
     assert!(rename_file_if_not_exists_result.is_err());
 
     let file_client3 = file_client1.rename(file_path2).await?;

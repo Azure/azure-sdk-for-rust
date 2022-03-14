@@ -16,11 +16,7 @@ async fn permissions() {
     let client = setup::initialize().unwrap();
 
     // create a temp database
-    let _create_database_response = client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    let _create_database_response = client.create_database(DATABASE_NAME).await.unwrap();
 
     let database = client.database_client(DATABASE_NAME);
 
@@ -33,7 +29,6 @@ async fn permissions() {
     // create a temp collection
     let create_collection_response = database
         .create_collection(COLLECTION_NAME, "/id")
-
         .await
         .unwrap();
 
@@ -44,14 +39,12 @@ async fn permissions() {
     let _create_permission_user1_response = permission_user1
         .create_permission(create_collection_response.collection.all_permission())
         .expiry_seconds(18000u64) // 5 hours, max!
-
         .await
         .unwrap();
 
     let _create_permission_user2_response = permission_user2
         .create_permission(create_collection_response.collection.read_permission())
         .expiry_seconds(18000u64) // 5 hours, max!
-
         .await
         .unwrap();
 

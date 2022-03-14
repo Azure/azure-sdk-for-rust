@@ -25,7 +25,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_file_response = file_client
         .create()
         .properties(file_properties.clone())
-
         .await?;
     println!("create file response == {:?}\n", create_file_response);
 
@@ -38,10 +37,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("setting properties for file '{}'...", file_path);
     file_properties.insert("ModifiedBy", "Iota");
-    let set_properties_response = file_client
-        .set_properties(file_properties)
-
-        .await?;
+    let set_properties_response = file_client.set_properties(file_properties).await?;
     println!(
         "set file properties response == {:?}\n",
         set_properties_response

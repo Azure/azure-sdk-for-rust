@@ -27,10 +27,7 @@ async fn create_database_and_collection() -> Result<(), BoxedError> {
     let database = client.database_client(database_name.clone());
     let collection_name = "panzadoro";
     log::info!("Creating a collection with name '{}'...", collection_name);
-    let collection = database
-        .create_collection(collection_name, "/id")
-
-        .await?;
+    let collection = database.create_collection(collection_name, "/id").await?;
     assert_eq!(collection.collection.id, collection_name);
     log::info!("Successfully created a collection");
     log::debug!("The create_collection response: {:#?}", collection);

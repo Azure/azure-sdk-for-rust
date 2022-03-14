@@ -56,7 +56,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                     .create_document(document)
                     .is_upsert(true)
                     .partition_key(&43u32)?
-
                     .await?;
 
                 println!("resp == {:?}", resp);
@@ -70,7 +69,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 let replace_collection_response = collection
                     .replace_collection("/age")
                     .indexing_policy(indexing_policy_new)
-
                     .await?;
                 println!(
                     "replace_collection_response == {:#?}",

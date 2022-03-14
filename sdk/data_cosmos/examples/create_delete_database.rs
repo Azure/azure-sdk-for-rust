@@ -45,10 +45,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // create collection!
     {
         let database = client.database_client(database_name.clone());
-        let create_collection_response = database
-            .create_collection("panzadoro", "/id")
-
-            .await?;
+        let create_collection_response = database.create_collection("panzadoro", "/id").await?;
 
         println!(
             "create_collection_response == {:#?}",
@@ -73,7 +70,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let resp = client
         .database_client(database_name)
         .delete_database()
-
         .await?;
     println!("database deleted. resp == {:#?}", resp);
 

@@ -110,7 +110,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let response: GetDocumentResponse<MySampleStruct> = client
         .document_client(id.clone(), partition_key)?
         .get_document()
-
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::Found(_)));
@@ -128,7 +127,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .replace_document(doc.document)
         .consistency_level(ConsistencyLevel::from(&response))
         .if_match_condition(IfMatchCondition::Match(doc.etag)) // use optimistic concurrency check
-
         .await?;
 
     println!(
@@ -144,7 +142,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .document_client(id.clone(), &id)?
         .get_document()
         .consistency_level(&response)
-
         .await?;
 
     assert!(matches!(response, GetDocumentResponse::NotFound(_)));
@@ -155,7 +152,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         client
             .document_client(id.clone(), &id)?
             .delete_document()
-
             .await?;
     }
     println!("Cleaned up");

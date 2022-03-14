@@ -48,11 +48,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     };
 
     // let's add an entity.
-    let create_document_response = client
-        .create_document(doc.clone())
-        .is_upsert(true)
-
-        .await?;
+    let create_document_response = client.create_document(doc.clone()).is_upsert(true).await?;
 
     println!(
         "create_document_response == {:#?}\n\n\n",
@@ -106,7 +102,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .document_client(doc.id.clone(), &doc.id)?
         .replace_document(doc)
         .consistency_level(&query_documents_response)
-
         .await?;
     println!(
         "replace_document_response == {:#?}",

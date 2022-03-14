@@ -58,7 +58,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let create_stored_procedure_response = stored_procedure
         .create_stored_procedure(function_body)
-
         .await?;
     println!(
         "create_stored_procedure_response == {:#?}",
@@ -80,10 +79,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         execute_stored_procedure_response.payload
     );
 
-    let delete_stored_procedure_response = stored_procedure
-        .delete_stored_procedure()
-
-        .await?;
+    let delete_stored_procedure_response = stored_procedure.delete_stored_procedure().await?;
     println!(
         "delete_stored_procedure_response == {:#?}",
         delete_stored_procedure_response

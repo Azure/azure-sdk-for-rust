@@ -80,7 +80,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             collection
                 .create_document(document_to_insert.clone())
                 .is_upsert(true)
-
                 .await?
                 .session_token, // get only the session token, if everything else was ok!
         );
@@ -150,7 +149,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .delete_document()
             .consistency_level(session_token.clone())
             .if_match_condition(&document.document_attributes)
-
             .await?;
     }
 

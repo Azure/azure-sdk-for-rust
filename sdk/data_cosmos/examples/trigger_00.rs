@@ -63,14 +63,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     let ret = trigger
         .create_trigger("something", TriggerType::Post, TriggerOperation::All)
-
         .await?;
     println!("Create response object:\n{:#?}", ret);
 
     let ret = trigger
         .replace_trigger(TRIGGER_BODY, TriggerType::Post, TriggerOperation::All)
         .consistency_level(ret)
-
         .await?;
     println!("Replace response object:\n{:#?}", ret);
 
@@ -93,7 +91,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let ret = trigger
         .delete_trigger()
         .consistency_level(last_session_token.unwrap())
-
         .await?;
     println!("Delete response object:\n{:#?}", ret);
 

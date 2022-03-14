@@ -35,11 +35,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let client = setup::initialize().unwrap();
 
     // create a temp database
-    let _create_database_response = client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    let _create_database_response = client.create_database(DATABASE_NAME).await.unwrap();
 
     let database = client.database_client(DATABASE_NAME);
 
@@ -67,7 +63,6 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
             .create_collection(COLLECTION_NAME, "/id")
             .offer(Offer::Throughput(400))
             .indexing_policy(ip)
-
             .await
             .unwrap()
     };
@@ -84,11 +79,7 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     };
 
     // let's add an entity.
-    let session_token: ConsistencyLevel = collection
-        .create_document(doc.clone())
-
-        .await?
-        .into();
+    let session_token: ConsistencyLevel = collection.create_document(doc.clone()).await?.into();
 
     let document = collection.document_client(id.clone(), &doc.id)?;
 
@@ -107,14 +98,12 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let resp = attachment
         .create_attachment("https://www.bing.com", "image/jpeg")
         .consistency_level(&ret)
-
         .await?;
 
     // replace reference attachment
     let resp = attachment
         .replace_attachment("https://www.microsoft.com", "image/jpeg")
         .consistency_level(&resp)
-
         .await?;
 
     // create slug attachment
@@ -123,7 +112,6 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .create_slug("something cool here".into())
         .consistency_level(&resp)
         .content_type("text/plain")
-
         .await?;
 
     // list attachments, there must be two.
@@ -141,7 +129,6 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .attachment_client("reference")
         .get()
         .consistency_level(&ret)
-
         .await?;
     assert_eq!(
         "https://www.microsoft.com",
@@ -154,7 +141,6 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
         .attachment_client("slug")
         .get()
         .consistency_level(&reference_attachment)
-
         .await
         .unwrap();
     assert_eq!("text/plain", slug_attachment.attachment.content_type);
@@ -163,7 +149,6 @@ async fn attachment() -> Result<(), azure_data_cosmos::Error> {
     let resp_delete = attachment
         .delete()
         .consistency_level(&slug_attachment)
-
         .await?;
 
     // list attachments, there must be one.

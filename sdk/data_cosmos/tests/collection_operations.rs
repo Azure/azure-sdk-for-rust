@@ -23,10 +23,7 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let collection_name = "sample_collection";
     log::info!("Creating a collection with name '{}'...", collection_name);
 
-    let create_collection_response = database
-        .create_collection(collection_name, "/id")
-
-        .await?;
+    let create_collection_response = database.create_collection(collection_name, "/id").await?;
 
     assert_eq!(create_collection_response.collection.id, collection_name);
 
@@ -75,7 +72,6 @@ async fn collection_operations() -> Result<(), BoxedError> {
     let replace_collection_response = collection
         .replace_collection("/id")
         .indexing_policy(new_indexing_policy)
-
         .await?;
 
     assert_eq!(replace_collection_response.collection.id, collection_name);

@@ -24,7 +24,6 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
     let create_fs_response = file_system_client
         .create()
         .properties(fs_properties.clone())
-
         .await?;
     assert!(
         create_fs_response.namespace_enabled,
@@ -60,10 +59,7 @@ async fn file_system_create_delete() -> Result<(), Box<dyn Error + Send + Sync>>
     );
 
     fs_properties.insert("ModifiedBy", "Iota");
-    file_system_client
-        .set_properties(fs_properties)
-
-        .await?;
+    file_system_client.set_properties(fs_properties).await?;
 
     let get_fs_props_response = file_system_client.get_properties().await?;
     let modified_by_option = get_fs_props_response.properties.get("ModifiedBy");

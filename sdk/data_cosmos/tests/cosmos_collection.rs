@@ -12,18 +12,13 @@ async fn create_and_delete_collection() {
 
     let client = setup::initialize().unwrap();
 
-    client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    client.create_database(DATABASE_NAME).await.unwrap();
 
     let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
     let collection = database
         .create_collection(COLLECTION_NAME, "/id")
-
         .await
         .unwrap();
     let collections = Box::pin(database.list_collections().into_stream())
@@ -41,11 +36,7 @@ async fn create_and_delete_collection() {
     assert!(rid == collection_after_get.collection.rid);
 
     // check GetPartitionKeyRanges: https://docs.microsoft.com/rest/api/cosmos-db/get-partition-key-ranges
-    collection
-        .get_partition_key_ranges()
-
-        .await
-        .unwrap();
+    collection.get_partition_key_ranges().await.unwrap();
 
     // delete the collection
     collection.delete_collection().await.unwrap();
@@ -65,11 +56,7 @@ async fn replace_collection() {
     const DATABASE_NAME: &str = "test-cosmos-db";
     const COLLECTION_NAME: &str = "test-collection";
 
-    client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    client.create_database(DATABASE_NAME).await.unwrap();
 
     let database = client.database_client(DATABASE_NAME);
 
@@ -85,7 +72,6 @@ async fn replace_collection() {
         .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::S2)
         .indexing_policy(indexing_policy)
-
         .await
         .unwrap();
 
@@ -127,7 +113,6 @@ async fn replace_collection() {
         .collection_client(COLLECTION_NAME)
         .replace_collection("/id")
         .indexing_policy(new_ip)
-
         .await
         .unwrap();
 

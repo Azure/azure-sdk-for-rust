@@ -69,13 +69,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // If the requested database is not found we create it.
     let database = match db {
         Some(db) => db,
-        None => {
-            client
-                .create_database(DATABASE)
-
-                .await?
-                .database
-        }
+        None => client.create_database(DATABASE).await?.database,
     };
     println!("database == {:?}", database);
 
@@ -102,7 +96,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
                 .clone()
                 .database_client(database.id.clone())
                 .create_collection(COLLECTION, "/id")
-
                 .await?
                 .collection
         }
@@ -131,10 +124,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // The method create_document will return, upon success,
     // the document attributes.
 
-    let create_document_response = collection
-        .create_document(doc.clone())
-
-        .await?;
+    let create_document_response = collection.create_document(doc.clone()).await?;
     println!(
         "create_document_response == {:#?}",
         create_document_response
@@ -179,7 +169,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             .document_client(doc.id.clone(), &doc.id)?
             .replace_document(doc)
             .if_match_condition(IfMatchCondition::Match(document.etag))
-
             .await?;
         println!(
             "replace_document_response == {:#?}",
@@ -192,7 +181,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .database_client(DATABASE.to_owned())
         .collection_client(COLLECTION.to_owned())
         .delete_collection()
-
         .await?;
     println!("collection deleted");
 
@@ -200,7 +188,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     client
         .database_client(database.id)
         .delete_database()
-
         .await?;
     println!("database deleted");
 

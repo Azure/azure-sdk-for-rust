@@ -21,7 +21,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_fs_response = file_system_client
         .create()
         .properties(fs_properties.clone())
-
         .await?;
     println!("create file system response == {:?}\n", create_fs_response);
 
@@ -43,10 +42,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("setting file system properties...");
     fs_properties.insert("ModifiedBy", "Iota");
-    let set_fs_props_response = file_system_client
-        .set_properties(fs_properties)
-
-        .await?;
+    let set_fs_props_response = file_system_client.set_properties(fs_properties).await?;
     println!(
         "set file system properties response == {:?}\n",
         set_fs_props_response

@@ -59,7 +59,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_permission(permission_mode)
         .consistency_level(&create_user_response)
         .expiry_seconds(18000u64)
-
         .await
         .unwrap();
     println!(
@@ -74,7 +73,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let create_permission2_response = permission
         .create_permission(permission_mode)
         .consistency_level(&create_user_response)
-
         .await
         .unwrap();
 
@@ -103,7 +101,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             list_permissions_response.session_token,
         ))
-
         .await
         .unwrap();
     println!("get_permission_response == {:#?}", get_permission_response);
@@ -117,7 +114,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             get_permission_response.session_token,
         ))
-
         .await
         .unwrap();
     println!(
@@ -130,7 +126,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             replace_permission_response.session_token,
         ))
-
         .await
         .unwrap();
 
@@ -144,7 +139,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .consistency_level(ConsistencyLevel::Session(
             delete_permission_response.session_token,
         ))
-
         .await?;
     println!("delete_user_response == {:#?}", delete_user_response);
 

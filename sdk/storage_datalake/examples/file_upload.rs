@@ -36,17 +36,13 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("appending '{}' to file '{}'...", string2, file_path);
-    let append_to_file_response = file_client
-        .append(data1_length, data2)
-
-        .await?;
+    let append_to_file_response = file_client.append(data1_length, data2).await?;
     println!("append to file response == {:?}\n", append_to_file_response);
 
     println!("flushing file '{}'...", file_path);
     let flush_file_response = file_client
         .flush(data1_length + data2_length)
         .close(true)
-
         .await?;
     println!("flush file response == {:?}\n", flush_file_response);
 

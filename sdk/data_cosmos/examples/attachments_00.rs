@@ -81,7 +81,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             "image/jpeg",
         )
         .consistency_level(ret)
-
         .await?;
     println!("create reference == {:#?}", resp);
 
@@ -89,11 +88,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     // sure to find the just created attachment
     let session_token: ConsistencyLevel = resp.into();
 
-    let resp = attachment
-        .get()
-        .consistency_level(session_token)
-
-        .await?;
+    let resp = attachment.get().consistency_level(session_token).await?;
 
     println!("get attachment == {:#?}", resp);
     let session_token: ConsistencyLevel = resp.into();
@@ -106,16 +101,11 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
             "image/jpeg",
         )
         .consistency_level(session_token)
-
         .await?;
     println!("replace reference == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment
-        .delete()
-        .consistency_level(&resp)
-
-        .await?;
+    let resp_delete = attachment.delete().consistency_level(&resp).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     // slug attachment
@@ -125,17 +115,12 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
         .create_slug("FFFFF".into())
         .consistency_level(&resp_delete)
         .content_type("text/plain")
-
         .await?;
 
     println!("create slug == {:#?}", resp);
 
     println!("deleting");
-    let resp_delete = attachment
-        .delete()
-        .consistency_level(&resp)
-
-        .await?;
+    let resp_delete = attachment.delete().consistency_level(&resp).await?;
     println!("delete attachment == {:#?}", resp_delete);
 
     Ok(())

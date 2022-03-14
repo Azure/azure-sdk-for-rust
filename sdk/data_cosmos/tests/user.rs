@@ -16,11 +16,7 @@ async fn users() {
     let client = setup::initialize().unwrap();
 
     // create a temp database
-    let _create_database_response = client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    let _create_database_response = client.create_database(DATABASE_NAME).await.unwrap();
 
     let databases = Box::pin(client.list_databases().into_stream())
         .next()
@@ -46,11 +42,7 @@ async fn users() {
     let retrieved_user = get_user_response.unwrap();
     assert_eq!(retrieved_user.user.id, USER_NAME);
 
-    let _replace_user_response = user
-        .replace_user(USER_NAME_REPLACED)
-
-        .await
-        .unwrap();
+    let _replace_user_response = user.replace_user(USER_NAME_REPLACED).await.unwrap();
 
     let list_users_response = Box::pin(database.list_users().into_stream())
         .next()
@@ -74,7 +66,6 @@ async fn users() {
     client
         .database_client(DATABASE_NAME)
         .delete_database()
-
         .await
         .unwrap();
 

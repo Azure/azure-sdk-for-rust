@@ -30,11 +30,7 @@ async fn create_and_delete_document() {
 
     let client = setup::initialize().unwrap();
 
-    client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    client.create_database(DATABASE_NAME).await.unwrap();
 
     let database = client.database_client(DATABASE_NAME);
 
@@ -50,7 +46,6 @@ async fn create_and_delete_document() {
         .create_collection(COLLECTION_NAME, "/id")
         .offer(Offer::Throughput(400))
         .indexing_policy(indexing_policy)
-
         .await
         .unwrap();
 
@@ -63,7 +58,6 @@ async fn create_and_delete_document() {
     };
     collection
         .create_document(document_data.clone())
-
         .await
         .unwrap();
 
@@ -118,11 +112,7 @@ async fn query_documents() {
 
     let client = setup::initialize().unwrap();
 
-    client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    client.create_database(DATABASE_NAME).await.unwrap();
     let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
@@ -137,7 +127,6 @@ async fn query_documents() {
         .create_collection(COLLECTION_NAME, "/id")
         .indexing_policy(indexing_policy)
         .offer(Offer::S2)
-
         .await
         .unwrap();
 
@@ -150,7 +139,6 @@ async fn query_documents() {
     };
     collection
         .create_document(document_data.clone())
-
         .await
         .unwrap();
 
@@ -192,11 +180,7 @@ async fn replace_document() {
 
     let client = setup::initialize().unwrap();
 
-    client
-        .create_database(DATABASE_NAME)
-
-        .await
-        .unwrap();
+    client.create_database(DATABASE_NAME).await.unwrap();
     let database = client.database_client(DATABASE_NAME);
 
     // create a new collection
@@ -211,7 +195,6 @@ async fn replace_document() {
         .create_collection(COLLECTION_NAME, "/id")
         .indexing_policy(indexing_policy)
         .offer(Offer::S2)
-
         .await
         .unwrap();
 
@@ -224,7 +207,6 @@ async fn replace_document() {
     };
     collection
         .create_document(document_data.clone())
-
         .await
         .unwrap();
 
@@ -250,7 +232,6 @@ async fn replace_document() {
                 .etag()
                 .to_string(),
         ))
-
         .await
         .unwrap();
 
