@@ -49,7 +49,7 @@ pub type GetUser = futures::future::BoxFuture<'static, crate::Result<UserRespons
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetUserBuilder {
-    type Future = GetUser;
+    type IntoFuture = GetUser;
     type Output = <GetUser as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

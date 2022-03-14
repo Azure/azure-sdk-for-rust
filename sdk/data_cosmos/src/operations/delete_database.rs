@@ -54,7 +54,7 @@ pub type DeleteDatabase =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteDatabaseBuilder {
-    type Future = DeleteDatabase;
+    type IntoFuture = DeleteDatabase;
     type Output = <DeleteDatabase as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

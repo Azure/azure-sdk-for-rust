@@ -90,7 +90,7 @@ pub type CreateOrReplaceAttachment =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceAttachmentBuilder {
-    type Future = CreateOrReplaceAttachment;
+    type IntoFuture = CreateOrReplaceAttachment;
     type Output = <CreateOrReplaceAttachment as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

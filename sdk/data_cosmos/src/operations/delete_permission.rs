@@ -54,7 +54,7 @@ pub type DeletePermission =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeletePermissionBuilder {
-    type Future = DeletePermission;
+    type IntoFuture = DeletePermission;
     type Output = <DeletePermission as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

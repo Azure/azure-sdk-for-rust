@@ -61,7 +61,7 @@ impl ReplaceStoredProcedureBuilder {
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for ReplaceStoredProcedureBuilder {
-    type Future = ReplaceStoredProcedure;
+    type IntoFuture = ReplaceStoredProcedure;
     type Output = <ReplaceStoredProcedure as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

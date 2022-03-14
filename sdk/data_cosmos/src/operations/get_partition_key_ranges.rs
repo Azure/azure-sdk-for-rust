@@ -69,7 +69,7 @@ pub type GetPartitionKeyRanges =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetPartitionKeyRangesBuilder {
-    type Future = GetPartitionKeyRanges;
+    type IntoFuture = GetPartitionKeyRanges;
     type Output = <GetPartitionKeyRanges as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

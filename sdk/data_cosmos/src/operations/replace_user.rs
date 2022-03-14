@@ -59,7 +59,7 @@ pub type ReplaceUser = futures::future::BoxFuture<'static, crate::Result<UserRes
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for ReplaceUserBuilder {
-    type Future = ReplaceUser;
+    type IntoFuture = ReplaceUser;
     type Output = <ReplaceUser as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

@@ -53,7 +53,7 @@ pub type DeleteCollection =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteCollectionBuilder {
-    type Future = DeleteCollection;
+    type IntoFuture = DeleteCollection;
     type Output = <DeleteCollection as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)
