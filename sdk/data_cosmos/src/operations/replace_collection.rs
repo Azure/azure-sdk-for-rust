@@ -71,7 +71,7 @@ pub type ReplaceCollection =
 impl std::future::IntoFuture for ReplaceCollectionBuilder {
     type IntoFuture = ReplaceCollection;
     type Output = <ReplaceCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

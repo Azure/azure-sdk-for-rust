@@ -57,7 +57,7 @@ pub type GetCollection = futures::future::BoxFuture<'static, crate::Result<GetCo
 impl std::future::IntoFuture for GetCollectionBuilder {
     type IntoFuture = GetCollection;
     type Output = <GetCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

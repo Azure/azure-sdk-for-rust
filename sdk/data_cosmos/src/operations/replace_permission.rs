@@ -74,7 +74,7 @@ pub type ReplacePermission = futures::future::BoxFuture<'static, crate::Result<P
 impl std::future::IntoFuture for ReplacePermissionBuilder {
     type IntoFuture = ReplacePermission;
     type Output = <ReplacePermission as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

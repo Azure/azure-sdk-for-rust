@@ -58,7 +58,7 @@ pub type CreateUser = futures::future::BoxFuture<'static, crate::Result<UserResp
 impl std::future::IntoFuture for CreateUserBuilder {
     type IntoFuture = CreateUser;
     type Output = <CreateUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

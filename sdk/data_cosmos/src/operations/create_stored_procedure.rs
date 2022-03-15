@@ -64,7 +64,7 @@ impl CreateStoredProcedureBuilder {
 impl std::future::IntoFuture for CreateStoredProcedureBuilder {
     type IntoFuture = CreateStoredProcedure;
     type Output = <CreateStoredProcedure as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

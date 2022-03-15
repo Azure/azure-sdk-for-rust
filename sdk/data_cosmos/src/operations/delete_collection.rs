@@ -55,7 +55,7 @@ pub type DeleteCollection =
 impl std::future::IntoFuture for DeleteCollectionBuilder {
     type IntoFuture = DeleteCollection;
     type Output = <DeleteCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

@@ -68,7 +68,7 @@ pub type DeleteAttachment =
 impl std::future::IntoFuture for DeleteAttachmentBuilder {
     type IntoFuture = DeleteAttachment;
     type Output = <DeleteAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

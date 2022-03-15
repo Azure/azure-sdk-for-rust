@@ -97,7 +97,7 @@ pub type ReplaceDocument =
 impl<D: Serialize + Send + 'static> std::future::IntoFuture for ReplaceDocumentBuilder<D> {
     type IntoFuture = ReplaceDocument;
     type Output = <ReplaceDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

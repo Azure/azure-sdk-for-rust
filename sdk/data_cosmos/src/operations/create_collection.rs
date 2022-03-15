@@ -75,7 +75,7 @@ impl CreateCollectionBuilder {
 impl std::future::IntoFuture for CreateCollectionBuilder {
     type IntoFuture = CreateCollection;
     type Output = <CreateCollection as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

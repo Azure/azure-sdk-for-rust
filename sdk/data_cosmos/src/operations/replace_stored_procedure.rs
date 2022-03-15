@@ -63,7 +63,7 @@ impl ReplaceStoredProcedureBuilder {
 impl std::future::IntoFuture for ReplaceStoredProcedureBuilder {
     type IntoFuture = ReplaceStoredProcedure;
     type Output = <ReplaceStoredProcedure as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
