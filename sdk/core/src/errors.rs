@@ -42,7 +42,7 @@ pub enum Error {
     Json(#[source] serde_json::Error),
     #[error("Other error")]
     Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
-    #[error("Other error")]
+    #[error("Authorization policy error")]
     AuthorizationPolicy(String),
 }
 
