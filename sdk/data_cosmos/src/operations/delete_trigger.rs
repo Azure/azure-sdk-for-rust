@@ -57,7 +57,7 @@ pub type DeleteTrigger = futures::future::BoxFuture<'static, crate::Result<Delet
 impl std::future::IntoFuture for DeleteTriggerBuilder {
     type IntoFuture = DeleteTrigger;
     type Output = <DeleteTrigger as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

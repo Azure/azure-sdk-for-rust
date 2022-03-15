@@ -56,7 +56,7 @@ pub type DeleteDatabase =
 impl std::future::IntoFuture for DeleteDatabaseBuilder {
     type IntoFuture = DeleteDatabase;
     type Output = <DeleteDatabase as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

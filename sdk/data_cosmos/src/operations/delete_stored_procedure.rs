@@ -56,7 +56,7 @@ pub type DeleteStoredProcedure =
 impl std::future::IntoFuture for DeleteStoredProcedureBuilder {
     type IntoFuture = DeleteStoredProcedure;
     type Output = <DeleteStoredProcedure as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

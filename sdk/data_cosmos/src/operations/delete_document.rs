@@ -75,7 +75,7 @@ pub type DeleteDocument =
 impl std::future::IntoFuture for DeleteDocumentBuilder {
     type IntoFuture = DeleteDocument;
     type Output = <DeleteDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

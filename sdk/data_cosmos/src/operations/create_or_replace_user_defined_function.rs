@@ -76,7 +76,7 @@ pub type CreateOrReplaceUserDefinedFunction =
 impl std::future::IntoFuture for CreateOrReplaceUserDefinedFunctionBuilder {
     type IntoFuture = CreateOrReplaceUserDefinedFunction;
     type Output = <CreateOrReplaceUserDefinedFunction as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

@@ -92,7 +92,7 @@ pub type CreateOrReplaceAttachment =
 impl std::future::IntoFuture for CreateOrReplaceAttachmentBuilder {
     type IntoFuture = CreateOrReplaceAttachment;
     type Output = <CreateOrReplaceAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

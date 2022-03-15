@@ -79,7 +79,7 @@ pub type CreatePermission = futures::future::BoxFuture<'static, crate::Result<Pe
 impl std::future::IntoFuture for CreatePermissionBuilder {
     type IntoFuture = CreatePermission;
     type Output = <CreatePermission as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

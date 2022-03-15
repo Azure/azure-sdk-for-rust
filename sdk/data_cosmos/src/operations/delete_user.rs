@@ -51,7 +51,7 @@ pub type DeleteUser = futures::future::BoxFuture<'static, crate::Result<DeleteUs
 impl std::future::IntoFuture for DeleteUserBuilder {
     type IntoFuture = DeleteUser;
     type Output = <DeleteUser as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

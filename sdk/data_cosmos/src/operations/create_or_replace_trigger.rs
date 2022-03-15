@@ -94,7 +94,7 @@ pub type CreateOrReplaceTrigger =
 impl std::future::IntoFuture for CreateOrReplaceTriggerBuilder {
     type IntoFuture = CreateOrReplaceTrigger;
     type Output = <CreateOrReplaceTrigger as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }

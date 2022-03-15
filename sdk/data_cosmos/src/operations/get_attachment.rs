@@ -65,7 +65,7 @@ impl GetAttachmentBuilder {
 impl std::future::IntoFuture for GetAttachmentBuilder {
     type IntoFuture = GetAttachment;
     type Output = <GetAttachment as std::future::Future>::Output;
-    fn into_future(self) -> Self::Future {
+    fn into_future(self) -> Self::IntoFuture {
         Self::into_future(self)
     }
 }
