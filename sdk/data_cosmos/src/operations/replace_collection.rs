@@ -69,7 +69,7 @@ pub type ReplaceCollection =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for ReplaceCollectionBuilder {
-    type Future = ReplaceCollection;
+    type IntoFuture = ReplaceCollection;
     type Output = <ReplaceCollection as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

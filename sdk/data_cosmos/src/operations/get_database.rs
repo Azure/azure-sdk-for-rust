@@ -56,7 +56,7 @@ pub type GetDatabase = futures::future::BoxFuture<'static, crate::Result<GetData
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetDatabaseBuilder {
-    type Future = GetDatabase;
+    type IntoFuture = GetDatabase;
     type Output = <GetDatabase as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

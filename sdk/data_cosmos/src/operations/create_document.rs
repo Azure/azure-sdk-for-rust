@@ -101,7 +101,7 @@ pub type CreateDocument =
 impl<D: Serialize + CosmosEntity + Send + 'static> std::future::IntoFuture
     for CreateDocumentBuilder<D>
 {
-    type Future = CreateDocument;
+    type IntoFuture = CreateDocument;
     type Output = <CreateDocument as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

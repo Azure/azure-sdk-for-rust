@@ -74,7 +74,7 @@ pub type CreateOrReplaceUserDefinedFunction =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceUserDefinedFunctionBuilder {
-    type Future = CreateOrReplaceUserDefinedFunction;
+    type IntoFuture = CreateOrReplaceUserDefinedFunction;
     type Output = <CreateOrReplaceUserDefinedFunction as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

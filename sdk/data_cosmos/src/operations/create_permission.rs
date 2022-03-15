@@ -77,7 +77,7 @@ pub type CreatePermission = futures::future::BoxFuture<'static, crate::Result<Pe
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreatePermissionBuilder {
-    type Future = CreatePermission;
+    type IntoFuture = CreatePermission;
     type Output = <CreatePermission as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

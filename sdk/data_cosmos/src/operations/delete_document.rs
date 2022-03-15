@@ -73,7 +73,7 @@ pub type DeleteDocument =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteDocumentBuilder {
-    type Future = DeleteDocument;
+    type IntoFuture = DeleteDocument;
     type Output = <DeleteDocument as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

@@ -54,7 +54,7 @@ impl DeleteUserDefinedFunctionBuilder {
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteUserDefinedFunctionBuilder {
-    type Future = DeleteUserDefinedFunction;
+    type IntoFuture = DeleteUserDefinedFunction;
     type Output = <DeleteUserDefinedFunction as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)

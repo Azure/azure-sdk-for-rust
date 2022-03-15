@@ -96,7 +96,7 @@ pub type CreateOrReplaceSlugAttachment =
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceSlugAttachmentBuilder {
-    type Future = CreateOrReplaceSlugAttachment;
+    type IntoFuture = CreateOrReplaceSlugAttachment;
     type Output = <CreateOrReplaceSlugAttachment as std::future::Future>::Output;
     fn into_future(self) -> Self::Future {
         Self::into_future(self)
