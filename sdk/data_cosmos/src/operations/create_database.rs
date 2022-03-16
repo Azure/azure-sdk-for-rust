@@ -35,7 +35,7 @@ impl CreateDatabaseBuilder {
         self
     }
 
-    pub fn into_future(mut self) -> CreateDatabase {
+    pub fn into_future(self) -> CreateDatabase {
         Box::pin(async move {
             let mut request = self
                 .client
@@ -53,12 +53,11 @@ impl CreateDatabaseBuilder {
                     )
                 })?;
             request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
+
             let response = self
                 .client
-                .pipeline()
-                .send(self.context.insert(ResourceType::Databases), &mut request)
+                .send(request, self.context.clone(), ResourceType::Databases)
                 .await?;
-
             CreateDatabaseResponse::try_from(response).await
         })
     }

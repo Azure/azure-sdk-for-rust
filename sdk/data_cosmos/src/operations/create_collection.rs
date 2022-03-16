@@ -42,10 +42,7 @@ impl CreateCollectionBuilder {
 
     pub fn into_future(self) -> CreateCollection {
         Box::pin(async move {
-            let mut request = self.client.cosmos_client().prepare_request_pipeline(
-                &format!("dbs/{}/colls", self.client.database_name()),
-                http::Method::POST,
-            );
+            let mut request = self.client.prepare_collections_pipeline(http::Method::POST);
             azure_core::headers::add_optional_header2(&self.offer, &mut request)?;
             azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
 
@@ -59,11 +56,8 @@ impl CreateCollectionBuilder {
 
             let response = self
                 .client
-                .pipeline()
-                .send(
-                    self.context.clone().insert(ResourceType::Collections),
-                    &mut request,
-                )
+                .cosmos_client()
+                .send(request, self.context.clone(), ResourceType::Collections)
                 .await?;
 
             CreateCollectionResponse::try_from(response).await

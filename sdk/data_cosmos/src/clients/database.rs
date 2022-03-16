@@ -2,7 +2,8 @@ use super::*;
 use crate::operations::*;
 use crate::resources::collection::PartitionKey;
 use crate::ReadonlyString;
-use azure_core::Pipeline;
+use azure_core::Request;
+use http::Method;
 
 /// A client for Cosmos database resources.
 #[derive(Debug, Clone)]
@@ -71,7 +72,26 @@ impl DatabaseClient {
         ListUsersBuilder::new(self.clone())
     }
 
-    pub(crate) fn pipeline(&self) -> &Pipeline {
-        self.client.pipeline()
+    /// Convert into a [`CollectionClient`]
+    pub fn into_collection_client<S: Into<ReadonlyString>>(
+        self,
+        collection_name: S,
+    ) -> CollectionClient {
+        CollectionClient::new(self, collection_name)
+    }
+
+    /// Convert into a [`UserClient`]
+    pub fn into_user_client<S: Into<ReadonlyString>>(self, user_name: S) -> UserClient {
+        UserClient::new(self, user_name)
+    }
+
+    pub(crate) fn prepare_pipeline(&self, method: Method) -> Request {
+        self.cosmos_client()
+            .prepare_request_pipeline(&format!("dbs/{}", self.database_name()), method)
+    }
+
+    pub(crate) fn prepare_collections_pipeline(&self, method: Method) -> Request {
+        self.cosmos_client()
+            .prepare_request_pipeline(&format!("dbs/{}/colls", self.database_name()), method)
     }
 }
