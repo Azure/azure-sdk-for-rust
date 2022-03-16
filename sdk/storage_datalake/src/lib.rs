@@ -16,8 +16,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-pub mod authorization_policies;
-mod bearer_token_authorization_policy;
+pub(crate) mod authorization_policies;
 pub mod clients;
 mod file_system;
 pub mod operations;
