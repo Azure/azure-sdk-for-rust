@@ -6,7 +6,7 @@ use azure_core::{
 use chrono::{Duration, Utc};
 use std::sync::Arc;
 
-fn is_expired(token: TokenResponse) -> bool {
+fn is_expired(token: &TokenResponse) -> bool {
     token.expires_on < Utc::now() + Duration::seconds(20)
 }
 
@@ -39,7 +39,7 @@ impl AutoRefreshingTokenCredential {
 impl TokenCredential for AutoRefreshingTokenCredential {
     async fn get_token(&self, resource: &str) -> std::result::Result<TokenResponse, Error> {
         if let Some(Ok(token)) = self.current_token.read().await.as_ref() {
-            if !is_expired(token.clone()) {
+            if !is_expired(token) {
                 return Ok(token.clone());
             }
         }
@@ -54,7 +54,7 @@ impl TokenCredential for AutoRefreshingTokenCredential {
                     return Err(Error::AuthorizationPolicy(err.to_string()));
                 }
                 Some(Ok(token)) => {
-                    if is_expired(token.clone()) {
+                    if is_expired(token) {
                         *guard = None;
                     } else {
                         return Ok(token.clone());

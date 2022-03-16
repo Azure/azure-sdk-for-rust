@@ -40,10 +40,10 @@ pub enum Error {
     Stream(#[from] StreamError),
     #[error("JSON error")]
     Json(#[source] serde_json::Error),
+    #[error("authorization policy error")]
+    AuthorizationPolicy(String),
     #[error("Other error")]
     Other(#[source] Box<dyn std::error::Error + Send + Sync + 'static>),
-    #[error("Authorization policy error")]
-    AuthorizationPolicy(String),
 }
 
 impl From<super::error::Error> for Error {
