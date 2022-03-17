@@ -5,9 +5,7 @@ use crate::ResourceQuota;
 
 use azure_core::error::ErrorKind;
 use azure_core::error::ResultExt;
-use azure_core::headers::{
-    self, continuation_token_from_headers_optional, session_token_from_headers,
-};
+use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::{collect_pinned_stream, prelude::*, Pageable, Response};
 use chrono::{DateTime, Utc};
 
@@ -36,35 +34,19 @@ impl ListDatabasesBuilder {
     }
 
     pub fn into_stream(self) -> ListDatabases {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
                 let mut request = this
                     .client
                     .prepare_request_pipeline("dbs", http::Method::GET);
-
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)
-                    .with_context(ErrorKind::DataConversion, || {
-                        format!(
-                            "could not encode '{:?}' as an http header",
-                            this.consistency_level
-                        )
-                    })?;
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)
-                    .with_context(ErrorKind::DataConversion, || {
-                        format!(
-                            "could not encode '{:?}' as an http header",
-                            this.max_item_count
-                        )
-                    })?;
-
-                if let Some(c) = continuation {
-                    let h = http::HeaderValue::from_str(c.as_str())
-                        .with_context(ErrorKind::DataConversion, || {
-                            format!("could not encode '{:?}' as an http header", c)
-                        })?;
-                    request.headers_mut().append(headers::CONTINUATION, h);
+                if let Some(ref h) = this.consistency_level {
+                    request.insert_header(h)?;
+                }
+                request.insert_header(&this.max_item_count)?;
+                if let Some(ref c) = continuation {
+                    request.insert_header(c)?;
                 }
 
                 let response = this

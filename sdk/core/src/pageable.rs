@@ -2,6 +2,8 @@ use futures::stream::unfold;
 use futures::Stream;
 use pin_project::pin_project;
 
+use crate::prelude::Continuation;
+
 macro_rules! r#try {
     ($expr:expr $(,)?) => {
         match $expr {
@@ -24,7 +26,7 @@ pub struct Pageable<T, E> {
 }
 
 impl<T: Continuable, E> Pageable<T, E> {
-    pub fn new<F>(make_request: impl Fn(Option<String>) -> F + Clone + 'static) -> Self
+    pub fn new<F>(make_request: impl Fn(Option<Continuation>) -> F + Clone + 'static) -> Self
     where
         F: std::future::Future<Output = Result<T, E>> + 'static,
     {
@@ -34,7 +36,7 @@ impl<T: Continuable, E> Pageable<T, E> {
                 let response = match state {
                     State::Init => r#try!(make_request(None).await),
                     State::Continuation(token) => {
-                        r#try!(make_request(Some(token)).await)
+                        r#try!(make_request(Some(Continuation::new(token))).await)
                     }
                     State::Done => return None,
                 };

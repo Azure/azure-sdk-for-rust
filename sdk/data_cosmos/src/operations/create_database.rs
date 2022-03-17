@@ -45,13 +45,9 @@ impl CreateDatabaseBuilder {
                 id: self.database_name.as_str(),
             };
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)
-                .with_context(ErrorKind::DataConversion, || {
-                    format!(
-                        "could not encode '{:?}' as an http header",
-                        self.consistency_level
-                    )
-                })?;
+            if let Some(ref h) = self.consistency_level {
+                request.insert_header(h)?;
+            }
             request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
 
             let response = self

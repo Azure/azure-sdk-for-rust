@@ -1,4 +1,7 @@
-use crate::SeekableStream;
+use crate::{
+    error::{ErrorKind, ResultExt},
+    AddAsHeader, SeekableStream,
+};
 use http::{HeaderMap, Method, Uri};
 use std::fmt::Debug;
 
@@ -52,6 +55,14 @@ impl Request {
 
     pub fn method(&self) -> Method {
         self.method.clone()
+    }
+
+    pub fn insert_header<T: AddAsHeader + Debug>(&mut self, h: &T) -> crate::error::Result<()> {
+        h.add_as_header2(self)
+            .with_context(ErrorKind::DataConversion, || {
+                format!("could not encode '{:?}' as an http header", h)
+            })?;
+        Ok(())
     }
 
     pub fn headers(&self) -> &HeaderMap {

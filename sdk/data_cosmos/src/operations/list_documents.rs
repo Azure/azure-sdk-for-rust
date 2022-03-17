@@ -4,8 +4,7 @@ use crate::resources::document::{Document, DocumentAttributes};
 use crate::resources::ResourceType;
 use crate::ResourceQuota;
 use azure_core::headers::{
-    self, continuation_token_from_headers_optional, item_count_from_headers,
-    session_token_from_headers,
+    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
 use azure_core::{collect_pinned_stream, Response, SessionToken};
 use azure_core::{prelude::*, Pageable};
@@ -45,7 +44,7 @@ impl ListDocumentsBuilder {
     }
 
     pub fn into_stream<T: DeserializeOwned>(self) -> ListDocuments<T> {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
@@ -64,10 +63,8 @@ impl ListDocumentsBuilder {
                 azure_core::headers::add_mandatory_header2(&this.a_im, &mut req)?;
                 azure_core::headers::add_optional_header2(&this.partition_range_id, &mut req)?;
 
-                if let Some(c) = continuation {
-                    let h = http::HeaderValue::from_str(c.as_str())
-                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
-                    req.headers_mut().append(headers::CONTINUATION, h);
+                if let Some(ref c) = continuation {
+                    req.insert_header(c)?;
                 }
 
                 let response = this

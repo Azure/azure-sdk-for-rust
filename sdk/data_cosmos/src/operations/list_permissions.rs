@@ -3,9 +3,7 @@ use crate::prelude::*;
 use crate::resources::Permission;
 use crate::resources::ResourceType;
 use azure_core::collect_pinned_stream;
-use azure_core::headers::{
-    self, continuation_token_from_headers_optional, session_token_from_headers,
-};
+use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
 use azure_core::prelude::*;
 use azure_core::{Pageable, Response as HttpResponse};
 
@@ -34,7 +32,7 @@ impl ListPermissionsBuilder {
     }
 
     pub fn into_stream(self) -> ListPermissions {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
@@ -50,10 +48,8 @@ impl ListPermissionsBuilder {
                 azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
                 azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
 
-                if let Some(c) = continuation {
-                    let h = http::HeaderValue::from_str(c.as_str())
-                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
-                    request.headers_mut().append(headers::CONTINUATION, h);
+                if let Some(ref c) = continuation {
+                    request.insert_header(c)?;
                 }
 
                 let response = this

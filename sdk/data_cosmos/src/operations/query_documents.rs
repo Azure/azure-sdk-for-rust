@@ -6,8 +6,7 @@ use crate::resources::ResourceType;
 use crate::ResourceQuota;
 use azure_core::collect_pinned_stream;
 use azure_core::headers::{
-    self, continuation_token_from_headers_optional, item_count_from_headers,
-    session_token_from_headers,
+    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
 use azure_core::prelude::*;
 use azure_core::Pageable;
@@ -72,7 +71,7 @@ impl QueryDocumentsBuilder {
     where
         T: DeserializeOwned,
     {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
@@ -112,11 +111,9 @@ impl QueryDocumentsBuilder {
                     );
                 }
 
-                if let Some(c) = continuation {
-                    let h = http::HeaderValue::from_str(c.as_str())
-                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
-                    request.headers_mut().append(headers::CONTINUATION, h);
-                }
+                if let Some(ref c) = continuation {
+ request.insert_header(c)?;
+}
 
                 let response = this
                     .client

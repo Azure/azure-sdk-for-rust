@@ -54,7 +54,7 @@ impl ListPathsBuilder {
     }
 
     pub fn into_stream(self) -> ListPaths {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
 
