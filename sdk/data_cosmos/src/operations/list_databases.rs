@@ -41,9 +41,13 @@ impl ListDatabasesBuilder {
                 let mut request = this
                     .client
                     .prepare_request_pipeline("dbs", http::Method::GET);
-                request.insert_header(&this.consistency_level)?;
+                if let Some(ref h) = this.consistency_level {
+                    request.insert_header(h)?;
+                }
                 request.insert_header(&this.max_item_count)?;
-                request.insert_header(&continuation)?;
+                if let Some(ref c) = continuation {
+                    request.insert_header(c)?;
+                }
 
                 let response = this
                     .client

@@ -111,7 +111,9 @@ impl QueryDocumentsBuilder {
                     );
                 }
 
-                request.insert_header(&continuation)?;
+                if let Some(ref c) = continuation {
+                    request.insert_header(c)?;
+                }
 
                 let response = this
                     .client
