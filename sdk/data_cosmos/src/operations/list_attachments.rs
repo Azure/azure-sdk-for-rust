@@ -65,9 +65,7 @@ impl ListAttachmentsBuilder {
                     &mut request,
                 );
 
-                if let Some(ref c) = continuation {
-                    request.insert_header(c)?;
-                }
+                request.insert_header(&continuation)?;
 
                 let response = this
                     .client
