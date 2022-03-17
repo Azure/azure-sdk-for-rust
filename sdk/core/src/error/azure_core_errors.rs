@@ -19,6 +19,10 @@ impl From<crate::errors::Error> for Error {
             crate::errors::Error::GetToken(e) => Error::new(ErrorKind::Credential, e),
             crate::errors::Error::HttpPrepare(e) => e.into(),
             crate::errors::Error::Other(e) => Error::new(ErrorKind::Other, e),
+            crate::errors::Error::AuthorizationPolicy(msg) => Error::with_message(
+                ErrorKind::Credential,
+                format!("Failed token acquisition: {}", msg),
+            ),
         }
     }
 }

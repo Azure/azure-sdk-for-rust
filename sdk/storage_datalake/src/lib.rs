@@ -16,14 +16,13 @@ extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;
 
-mod bearer_token_authorization_policy;
+pub(crate) mod authorization_policies;
 pub mod clients;
 mod file_system;
 pub mod operations;
 pub mod prelude;
 mod properties;
 pub mod request_options;
-mod shared_key_authorization_policy;
 mod util;
 
 pub use azure_storage::{Error, Result};
