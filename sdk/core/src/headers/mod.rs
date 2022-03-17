@@ -25,6 +25,29 @@ pub trait AddAsHeader {
     ) -> Result<(), crate::errors::HttpHeaderError>;
 }
 
+impl<T> AddAsHeader for Option<T>
+where
+    T: AddAsHeader,
+{
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        if let Some(h) = self {
+            h.add_as_header(builder)
+        } else {
+            builder
+        }
+    }
+
+    fn add_as_header2(
+        &self,
+        request: &mut crate::Request,
+    ) -> Result<(), crate::errors::HttpHeaderError> {
+        if let Some(h) = self {
+            h.add_as_header2(request)?;
+        }
+        Ok(())
+    }
+}
+
 #[must_use]
 pub fn add_optional_header_ref<T: AddAsHeader>(item: &Option<&T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
