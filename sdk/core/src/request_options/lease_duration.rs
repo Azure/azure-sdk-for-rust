@@ -1,6 +1,5 @@
 use crate::headers::*;
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::Header;
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -9,30 +8,18 @@ pub enum LeaseDuration {
     Seconds(u8),
 }
 
-impl AddAsHeader for LeaseDuration {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        match self {
-            LeaseDuration::Infinite => builder.header(LEASE_DURATION, "-1"),
-            LeaseDuration::Seconds(seconds) => {
-                builder.header(LEASE_DURATION, &format!("{}", seconds))
-            }
-        }
+impl Header for LeaseDuration {
+    fn name(&self) -> &'static str {
+        LEASE_DURATION
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        let (header_name, header_value) = match self {
-            LeaseDuration::Infinite => (LEASE_DURATION, -1),
-            LeaseDuration::Seconds(seconds) => (LEASE_DURATION, *seconds as i32),
-        };
-
-        request
-            .headers_mut()
-            .append(header_name, http::HeaderValue::from(header_value));
-
-        Ok(())
+    fn value(&self) -> String {
+        match self {
+            LeaseDuration::Infinite => "-1".to_owned(),
+            LeaseDuration::Seconds(seconds) => {
+                format!("{}", seconds)
+            }
+        }
     }
 }
 

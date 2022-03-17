@@ -1,10 +1,9 @@
 use crate::blob::responses::GetBlobResponse;
 use crate::prelude::*;
-use crate::AddAsHeader;
+use crate::Header;
 use azure_core::headers::{add_optional_header, add_optional_header_ref, CLIENT_REQUEST_ID};
 use azure_core::prelude::*;
 use futures::stream::Stream;
-use http::request::Builder;
 use std::convert::TryInto;
 
 // TODO Copy trait is required for current stream approach, once migrated to new approach with
@@ -24,20 +23,13 @@ impl<'a> From<&'a str> for ClientRequestId<'a> {
     }
 }
 
-impl<'a> AddAsHeader for ClientRequestId<'a> {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(CLIENT_REQUEST_ID, self.0)
+impl<'a> Header for ClientRequestId<'a> {
+    fn name(&self) -> &'static str {
+        CLIENT_REQUEST_ID
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request
-            .headers_mut()
-            .append(CLIENT_REQUEST_ID, http::HeaderValue::from_str(self.0)?);
-
-        Ok(())
+    fn value(&self) -> String {
+        self.0.to_owned()
     }
 }
 

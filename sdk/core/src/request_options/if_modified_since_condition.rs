@@ -1,7 +1,6 @@
-use crate::AddAsHeader;
+use crate::Header;
 use chrono::{DateTime, Utc};
 use http::header::{IF_MODIFIED_SINCE, IF_UNMODIFIED_SINCE};
-use http::request::Builder;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum IfModifiedSinceCondition {
@@ -9,37 +8,18 @@ pub enum IfModifiedSinceCondition {
     Unmodified(DateTime<Utc>),
 }
 
-impl AddAsHeader for IfModifiedSinceCondition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+impl Header for IfModifiedSinceCondition {
+    fn name(&self) -> &'static str {
         match self {
-            IfModifiedSinceCondition::Modified(date) => {
-                builder.header(IF_MODIFIED_SINCE, &date.to_rfc2822() as &str)
-            }
-            IfModifiedSinceCondition::Unmodified(date) => {
-                builder.header(IF_UNMODIFIED_SINCE, &date.to_rfc2822() as &str)
-            }
+            IfModifiedSinceCondition::Modified(_) => IF_MODIFIED_SINCE.as_str(),
+            IfModifiedSinceCondition::Unmodified(_) => IF_UNMODIFIED_SINCE.as_str(),
         }
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
+    fn value(&self) -> String {
         match self {
-            IfModifiedSinceCondition::Modified(date) => {
-                request.headers_mut().append(
-                    IF_MODIFIED_SINCE,
-                    http::HeaderValue::from_str(&date.to_rfc2822() as &str)?,
-                );
-            }
-            IfModifiedSinceCondition::Unmodified(date) => {
-                request.headers_mut().append(
-                    IF_UNMODIFIED_SINCE,
-                    http::HeaderValue::from_str(&date.to_rfc2822() as &str)?,
-                );
-            }
+            IfModifiedSinceCondition::Modified(date) => date.to_rfc2822(),
+            IfModifiedSinceCondition::Unmodified(date) => date.to_rfc2822(),
         }
-
-        Ok(())
     }
 }

@@ -14,8 +14,7 @@ pub use permission_token::PermissionToken;
 pub use permission_token::PermissionTokenParseError;
 
 use crate::headers;
-use azure_core::AddAsHeader;
-use http::request::Builder;
+use azure_core::Header;
 
 /// The amount of time before authorization expires
 #[derive(Debug, Clone, Copy)]
@@ -28,19 +27,12 @@ impl ExpirySeconds {
     }
 }
 
-impl AddAsHeader for ExpirySeconds {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS, self.0)
+impl Header for ExpirySeconds {
+    fn name(&self) -> &'static str {
+        headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS,
-            http::header::HeaderValue::from(self.0),
-        );
-        Ok(())
+    fn value(&self) -> String {
+        self.0.to_string()
     }
 }

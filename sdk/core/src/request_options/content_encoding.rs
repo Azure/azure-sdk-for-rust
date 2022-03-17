@@ -1,5 +1,4 @@
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::Header;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ContentEncoding<'a>(&'a str);
@@ -13,20 +12,12 @@ where
     }
 }
 
-impl<'a> AddAsHeader for ContentEncoding<'a> {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(http::header::CONTENT_ENCODING, self.0)
+impl<'a> Header for ContentEncoding<'a> {
+    fn name(&self) -> &'static str {
+        http::header::CONTENT_ENCODING.as_str()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().append(
-            http::header::CONTENT_ENCODING,
-            http::HeaderValue::from_str(self.0)?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.0.to_owned()
     }
 }

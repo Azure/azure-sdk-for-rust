@@ -1,5 +1,4 @@
-use azure_core::AddAsHeader;
-use http::request::Builder;
+use azure_core::Header;
 use http::StatusCode;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -18,30 +17,17 @@ impl ReturnEntity {
     }
 }
 
-impl AddAsHeader for ReturnEntity {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            "Prefer",
-            match self.0 {
-                true => "return-content",
-                false => "return-no-content",
-            },
-        )
+impl Header for ReturnEntity {
+    fn name(&self) -> &'static str {
+        "Prefer"
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            "Prefer",
-            http::header::HeaderValue::from_str(match self.0 {
-                true => "return-content",
-                false => "return-no-content",
-            })?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        match self.0 {
+            true => "return-content",
+            false => "return-no-content",
+        }
+        .to_owned()
     }
 }
 

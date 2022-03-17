@@ -1,6 +1,5 @@
-use crate::headers::*;
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::headers;
+use crate::Header;
 
 #[derive(Debug, Clone)]
 pub struct ClientRequestId(String);
@@ -23,19 +22,12 @@ impl From<&str> for ClientRequestId {
     }
 }
 
-impl AddAsHeader for ClientRequestId {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(CLIENT_REQUEST_ID, &self.0)
+impl Header for ClientRequestId {
+    fn name(&self) -> &'static str {
+        headers::CLIENT_REQUEST_ID
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request
-            .headers_mut()
-            .append(CLIENT_REQUEST_ID, http::HeaderValue::from_str(&self.0)?);
-
-        Ok(())
+    fn value(&self) -> String {
+        self.0.to_owned()
     }
 }

@@ -1,7 +1,7 @@
 //! Azure HTTP headers.
 mod utilities;
 
-use http::request::Builder;
+use http::{request::Builder, HeaderValue};
 
 pub use utilities::*;
 
@@ -16,22 +16,44 @@ pub use utilities::*;
 ///
 /// As soon as the migration to the pipeline architecture will be complete we will phase out
 /// `add_as_header`.
-pub trait AddAsHeader {
-    fn add_as_header(&self, builder: Builder) -> Builder;
+pub trait Header {
+    fn name(&self) -> &'static str;
+    fn value(&self) -> String;
+
+    fn add_as_header(&self, builder: Builder) -> Builder {
+        builder.header(self.name(), self.value())
+    }
 
     fn add_as_header2(
         &self,
         request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError>;
+    ) -> Result<(), crate::errors::HttpHeaderError> {
+        request
+            .headers_mut()
+            .insert(self.name(), HeaderValue::from_str(&self.value())?);
+        Ok(())
+    }
 }
 
-impl<T> AddAsHeader for Option<T>
+impl<T> Header for Option<T>
 where
-    T: AddAsHeader,
+    T: Header,
 {
+    fn name(&self) -> &'static str {
+        self.as_ref()
+            .map(|h| h.name())
+            .expect("tried to get optional header when None")
+    }
+
+    fn value(&self) -> String {
+        self.as_ref()
+            .map(|h| h.value())
+            .expect("tried to get optional header when None")
+    }
+
     fn add_as_header(&self, builder: Builder) -> Builder {
         if let Some(h) = self {
-            h.add_as_header(builder)
+            builder.header(h.name(), h.value())
         } else {
             builder
         }
@@ -42,14 +64,16 @@ where
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HttpHeaderError> {
         if let Some(h) = self {
-            h.add_as_header2(request)?;
+            request
+                .headers_mut()
+                .insert(h.name(), HeaderValue::from_str(&h.value())?);
         }
         Ok(())
     }
 }
 
 #[must_use]
-pub fn add_optional_header_ref<T: AddAsHeader>(item: &Option<&T>, mut builder: Builder) -> Builder {
+pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
         builder = item.add_as_header(builder);
     }
@@ -57,14 +81,14 @@ pub fn add_optional_header_ref<T: AddAsHeader>(item: &Option<&T>, mut builder: B
 }
 
 #[must_use]
-pub fn add_optional_header<T: AddAsHeader>(item: &Option<T>, mut builder: Builder) -> Builder {
+pub fn add_optional_header<T: Header>(item: &Option<T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
         builder = item.add_as_header(builder);
     }
     builder
 }
 
-pub fn add_optional_header2<T: AddAsHeader>(
+pub fn add_optional_header2<T: Header>(
     item: &Option<T>,
     request: &mut crate::Request,
 ) -> Result<(), crate::errors::HttpHeaderError> {
@@ -75,11 +99,11 @@ pub fn add_optional_header2<T: AddAsHeader>(
 }
 
 #[must_use]
-pub fn add_mandatory_header<T: AddAsHeader>(item: &T, builder: Builder) -> Builder {
+pub fn add_mandatory_header<T: Header>(item: &T, builder: Builder) -> Builder {
     item.add_as_header(builder)
 }
 
-pub fn add_mandatory_header2<T: AddAsHeader>(
+pub fn add_mandatory_header2<T: Header>(
     item: &T,
     request: &mut crate::Request,
 ) -> Result<(), crate::errors::HttpHeaderError> {

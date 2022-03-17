@@ -1,7 +1,7 @@
 use crate::headers;
 use crate::operations::*;
 use crate::resources::user::UserResponse;
-use azure_core::AddAsHeader;
+use azure_core::Header;
 use http::request;
 use serde::de::DeserializeOwned;
 
@@ -106,7 +106,7 @@ where
     }
 }
 
-impl AddAsHeader for ConsistencyLevel {
+impl Header for ConsistencyLevel {
     fn add_as_header(&self, builder: request::Builder) -> request::Builder {
         let builder = builder.header(
             headers::HEADER_CONSISTENCY_LEVEL,
@@ -141,5 +141,13 @@ impl AddAsHeader for ConsistencyLevel {
         }
 
         Ok(())
+    }
+
+    fn name(&self) -> &'static str {
+        todo!()
+    }
+
+    fn value(&self) -> String {
+        todo!()
     }
 }

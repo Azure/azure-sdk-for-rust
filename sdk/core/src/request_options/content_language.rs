@@ -1,5 +1,4 @@
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::Header;
 
 #[derive(Debug, Clone, Copy)]
 pub struct ContentLanguage<'a>(&'a str);
@@ -13,20 +12,12 @@ where
     }
 }
 
-impl<'a> AddAsHeader for ContentLanguage<'a> {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(http::header::CONTENT_LANGUAGE, self.0)
+impl<'a> Header for ContentLanguage<'a> {
+    fn name(&self) -> &'static str {
+        http::header::CONTENT_LANGUAGE.as_str()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().append(
-            http::header::CONTENT_LANGUAGE,
-            http::HeaderValue::from_str(self.0)?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.0.to_owned()
     }
 }

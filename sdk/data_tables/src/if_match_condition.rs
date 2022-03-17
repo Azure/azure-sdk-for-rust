@@ -1,4 +1,4 @@
-use azure_core::{AddAsHeader, Etag};
+use azure_core::{Etag, Header};
 use http::header::IF_MATCH;
 use http::request::Builder;
 
@@ -14,7 +14,7 @@ impl From<Etag> for IfMatchCondition {
     }
 }
 
-impl AddAsHeader for IfMatchCondition {
+impl Header for IfMatchCondition {
     fn add_as_header(&self, builder: Builder) -> Builder {
         match self {
             IfMatchCondition::Etag(etag) => builder.header(IF_MATCH, etag.as_ref()),
@@ -37,5 +37,16 @@ impl AddAsHeader for IfMatchCondition {
         );
 
         Ok(())
+    }
+
+    fn name(&self) -> &'static str {
+        IF_MATCH.as_str()
+    }
+
+    fn value(&self) -> String {
+        match self {
+            IfMatchCondition::Etag(etag) => etag.to_string(),
+            IfMatchCondition::Any => "*".to_owned(),
+        }
     }
 }

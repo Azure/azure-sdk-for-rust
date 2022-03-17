@@ -11,7 +11,7 @@ pub use query::{Param, Query};
 use super::Resource;
 use crate::headers;
 
-use azure_core::AddAsHeader;
+use azure_core::Header;
 use http::header::HeaderMap;
 use http::request::Builder;
 use serde::de::DeserializeOwned;
@@ -82,24 +82,13 @@ impl QueryCrossPartition {
     }
 }
 
-impl AddAsHeader for QueryCrossPartition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
-            self.as_bool_str(),
-        )
+impl Header for QueryCrossPartition {
+    fn name(&self) -> &'static str {
+        headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION,
-            http::header::HeaderValue::from_str(self.as_bool_str())?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.as_bool_str().to_owned()
     }
 }
 
@@ -120,24 +109,13 @@ impl ParallelizeCrossPartition {
     }
 }
 
-impl AddAsHeader for ParallelizeCrossPartition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(
-            headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
-            self.as_bool_str(),
-        )
+impl Header for ParallelizeCrossPartition {
+    fn name(&self) -> &'static str {
+        headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY,
-            http::header::HeaderValue::from_str(self.as_bool_str())?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.as_bool_str().to_owned()
     }
 }
 
@@ -158,21 +136,13 @@ impl IsUpsert {
     }
 }
 
-impl AddAsHeader for IsUpsert {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::HEADER_DOCUMENTDB_IS_UPSERT, self.as_bool_str())
+impl Header for IsUpsert {
+    fn name(&self) -> &'static str {
+        headers::HEADER_DOCUMENTDB_IS_UPSERT
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_IS_UPSERT,
-            http::header::HeaderValue::from_str(self.as_bool_str())?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.as_bool_str().to_owned()
     }
 }
 
@@ -184,7 +154,7 @@ pub enum ChangeFeed {
     None,
 }
 
-impl AddAsHeader for ChangeFeed {
+impl Header for ChangeFeed {
     fn add_as_header(&self, builder: Builder) -> Builder {
         match self {
             Self::Incremental => builder.header(headers::HEADER_A_IM, "Incremental feed"),
@@ -207,6 +177,14 @@ impl AddAsHeader for ChangeFeed {
         }
         Ok(())
     }
+
+    fn name(&self) -> &'static str {
+        todo!()
+    }
+
+    fn value(&self) -> String {
+        todo!()
+    }
 }
 
 /// Whether to allow tenative writes allowance
@@ -226,21 +204,13 @@ impl TentativeWritesAllowance {
     }
 }
 
-impl AddAsHeader for TentativeWritesAllowance {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::HEADER_ALLOW_MULTIPLE_WRITES, self.as_bool_str())
+impl Header for TentativeWritesAllowance {
+    fn name(&self) -> &'static str {
+        headers::HEADER_ALLOW_MULTIPLE_WRITES
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_ALLOW_MULTIPLE_WRITES,
-            http::header::HeaderValue::from_str(self.as_bool_str())?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.as_bool_str().to_owned()
     }
 }
 
@@ -255,20 +225,12 @@ impl PartitionRangeId {
     }
 }
 
-impl AddAsHeader for PartitionRangeId {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::HEADER_DOCUMENTDB_PARTITIONRANGEID, &self.0)
+impl Header for PartitionRangeId {
+    fn name(&self) -> &'static str {
+        headers::HEADER_DOCUMENTDB_PARTITIONRANGEID
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::HEADER_DOCUMENTDB_PARTITIONRANGEID,
-            http::header::HeaderValue::from_str(&self.0)?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.0.clone()
     }
 }

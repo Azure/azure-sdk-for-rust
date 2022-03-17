@@ -1,4 +1,4 @@
-use crate::AddAsHeader;
+use crate::Header;
 use bytes::Bytes;
 use http::request::Builder;
 use http::HeaderMap;
@@ -45,7 +45,15 @@ impl Metadata {
     }
 }
 
-impl AddAsHeader for &Metadata {
+impl Header for &Metadata {
+    fn name(&self) -> &'static str {
+        todo!("Handle multiple headers")
+    }
+
+    fn value(&self) -> String {
+        todo!("Handle multiple headers")
+    }
+
     fn add_as_header(&self, builder: Builder) -> Builder {
         let mut builder = builder;
 

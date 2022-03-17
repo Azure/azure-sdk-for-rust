@@ -27,7 +27,7 @@ mod snapshot;
 mod version_id;
 
 pub use access_tier::AccessTier;
-use azure_core::{AddAsHeader, AppendToUrlQuery};
+use azure_core::{AppendToUrlQuery, Header};
 pub use ba512_range::BA512Range;
 pub use blob_content_md5::BlobContentMD5;
 pub use block_id::BlockId;
@@ -36,7 +36,6 @@ pub use condition_max_size::ConditionMaxSize;
 pub use delete_snapshot_method::DeleteSnapshotsMethod;
 pub use errors::*;
 pub use hash::Hash;
-use http::request::Builder;
 pub use snapshot::Snapshot;
 pub use version_id::VersionId;
 
@@ -71,20 +70,12 @@ impl AppendToUrlQuery for &BlobVersioning {
 
 create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
-impl AddAsHeader for RehydratePriority {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::REHYDRATE_PRIORITY, &format!("{}", self))
+impl Header for RehydratePriority {
+    fn name(&self) -> &'static str {
+        headers::REHYDRATE_PRIORITY
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> std::result::Result<(), azure_core::HttpHeaderError> {
-        request.headers_mut().append(
-            headers::REHYDRATE_PRIORITY,
-            http::header::HeaderValue::from_str(self.as_ref())?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.to_string()
     }
 }

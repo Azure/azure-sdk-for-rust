@@ -1,4 +1,4 @@
-use azure_core::AddAsHeader;
+use azure_core::Header;
 pub mod requests;
 pub mod responses;
 
@@ -23,7 +23,7 @@ create_enum!(
     (Blob, "blob")
 );
 
-impl AddAsHeader for PublicAccess {
+impl Header for PublicAccess {
     fn add_as_header(&self, builder: Builder) -> Builder {
         match self {
             PublicAccess::Blob => builder.header(BLOB_PUBLIC_ACCESS, "blob"),
@@ -48,6 +48,14 @@ impl AddAsHeader for PublicAccess {
         );
 
         Ok(())
+    }
+
+    fn name(&self) -> &'static str {
+        todo!()
+    }
+
+    fn value(&self) -> String {
+        todo!()
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{AddAsHeader, ParseError};
+use crate::{Header, ParseError};
 use http::request::Builder;
 use std::convert::From;
 use std::fmt;
@@ -79,7 +79,15 @@ impl fmt::Display for Range {
     }
 }
 
-impl<'a> AddAsHeader for Range {
+impl<'a> Header for Range {
+    fn name(&self) -> &'static str {
+        todo!("Handle multiple headers")
+    }
+
+    fn value(&self) -> String {
+        todo!("Handle multiple headers")
+    }
+
     // here we ask for the CRC64 value if we can (that is,
     // if the range is smaller than 4MB).
     fn add_as_header(&self, builder: Builder) -> Builder {

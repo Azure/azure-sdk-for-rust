@@ -1,5 +1,5 @@
-use crate::AddAsHeader;
-use http::request::Builder;
+use crate::headers;
+use crate::Header;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct SequenceNumber(u64);
@@ -16,20 +16,12 @@ impl From<u64> for SequenceNumber {
     }
 }
 
-impl AddAsHeader for SequenceNumber {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(crate::BLOB_SEQUENCE_NUMBER, &format!("{}", self.0))
+impl Header for SequenceNumber {
+    fn name(&self) -> &'static str {
+        headers::BLOB_SEQUENCE_NUMBER
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().append(
-            crate::BLOB_SEQUENCE_NUMBER,
-            http::HeaderValue::from_str(&format!("{}", self.0))?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.0.to_string()
     }
 }

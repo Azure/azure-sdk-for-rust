@@ -1,8 +1,7 @@
 //! Request properties used in datalake rest api operations
-use azure_core::AddAsHeader;
 use azure_core::AppendToUrlQuery;
-use azure_storage::core::headers::RENAME_SOURCE;
-use http::request::Builder;
+use azure_core::Header;
+use azure_storage::core::headers;
 
 #[derive(Debug, Clone)]
 pub enum ResourceType {
@@ -189,21 +188,13 @@ where
     }
 }
 
-impl AddAsHeader for RenameSource {
-    fn add_as_header(&self, _builder: Builder) -> Builder {
-        unimplemented!("Datalake crate only supports pipeline architecture")
+impl Header for RenameSource {
+    fn name(&self) -> &'static str {
+        headers::RENAME_SOURCE
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
-        let encoded: String = url::form_urlencoded::byte_serialize(self.0.as_bytes()).collect();
-        request
-            .headers_mut()
-            .append(RENAME_SOURCE, http::HeaderValue::from_str(&encoded)?);
-
-        Ok(())
+    fn value(&self) -> String {
+        url::form_urlencoded::byte_serialize(self.0.as_bytes()).collect()
     }
 }
 

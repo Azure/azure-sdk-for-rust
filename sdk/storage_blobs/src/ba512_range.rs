@@ -1,7 +1,5 @@
-use crate::{AddAsHeader, Not512ByteAlignedError, Parse512AlignedError};
+use crate::{Header, Not512ByteAlignedError, Parse512AlignedError};
 use azure_core::prelude::Range;
-use azure_core::{HttpHeaderError, Request};
-use http::request::Builder;
 use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
@@ -62,18 +60,13 @@ impl TryFrom<(u64, u64)> for BA512Range {
     }
 }
 
-impl AddAsHeader for BA512Range {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(http::header::RANGE, &format!("{}", self))
+impl Header for BA512Range {
+    fn name(&self) -> &'static str {
+        http::header::RANGE.as_str()
     }
 
-    fn add_as_header2(&self, request: &mut Request) -> Result<(), HttpHeaderError> {
-        request.headers_mut().append(
-            http::header::RANGE,
-            http::HeaderValue::from_str(&self.to_string())?,
-        );
-
-        Ok(())
+    fn value(&self) -> String {
+        self.to_string()
     }
 }
 

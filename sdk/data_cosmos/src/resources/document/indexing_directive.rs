@@ -46,7 +46,15 @@ impl fmt::Display for IndexingDirective {
     }
 }
 
-impl azure_core::AddAsHeader for IndexingDirective {
+impl azure_core::Header for IndexingDirective {
+    fn name(&self) -> &'static str {
+        todo!()
+    }
+
+    fn value(&self) -> String {
+        todo!()
+    }
+
     fn add_as_header(&self, builder: Builder) -> Builder {
         match self {
             IndexingDirective::Default => builder,
