@@ -55,7 +55,7 @@ impl azure_core::Header for IndexingDirective {
         todo!()
     }
 
-    fn add_as_header(&self, builder: Builder) -> Builder {
+    fn add_to_builder(&self, builder: Builder) -> Builder {
         match self {
             IndexingDirective::Default => builder,
             IndexingDirective::Exclude => {
@@ -67,7 +67,7 @@ impl azure_core::Header for IndexingDirective {
         }
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut azure_core::Request,
     ) -> Result<(), azure_core::HttpHeaderError> {

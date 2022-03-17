@@ -15,14 +15,14 @@ impl From<Etag> for IfMatchCondition {
 }
 
 impl Header for IfMatchCondition {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+    fn add_to_builder(&self, builder: Builder) -> Builder {
         match self {
             IfMatchCondition::Etag(etag) => builder.header(IF_MATCH, etag.as_ref()),
             IfMatchCondition::Any => builder.header(IF_MATCH, "*"),
         }
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut azure_core::Request,
     ) -> Result<(), azure_core::HttpHeaderError> {

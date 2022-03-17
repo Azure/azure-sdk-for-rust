@@ -90,7 +90,7 @@ impl<'a> Header for Range {
 
     // here we ask for the CRC64 value if we can (that is,
     // if the range is smaller than 4MB).
-    fn add_as_header(&self, builder: Builder) -> Builder {
+    fn add_to_builder(&self, builder: Builder) -> Builder {
         let builder = builder.header("x-ms-range", &format!("{}", self));
         if self.len() < 1024 * 1024 * 4 {
             builder.header("x-ms-range-get-content-crc64", "true")
@@ -99,7 +99,7 @@ impl<'a> Header for Range {
         }
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HttpHeaderError> {

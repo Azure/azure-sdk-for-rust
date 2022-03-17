@@ -58,7 +58,7 @@ impl Request {
     }
 
     pub fn insert_header<T: Header + Debug>(&mut self, h: &T) -> crate::error::Result<()> {
-        h.add_as_header2(self)
+        h.add_to_request(self)
             .with_context(ErrorKind::DataConversion, || {
                 format!("could not encode '{:?}' as an http header", h)
             })?;

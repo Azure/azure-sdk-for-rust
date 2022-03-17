@@ -107,7 +107,7 @@ where
 }
 
 impl Header for ConsistencyLevel {
-    fn add_as_header(&self, builder: request::Builder) -> request::Builder {
+    fn add_to_builder(&self, builder: request::Builder) -> request::Builder {
         let builder = builder.header(
             headers::HEADER_CONSISTENCY_LEVEL,
             self.to_consistency_level_header(),
@@ -122,7 +122,7 @@ impl Header for ConsistencyLevel {
         }
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut azure_core::Request,
     ) -> Result<(), azure_core::HttpHeaderError> {

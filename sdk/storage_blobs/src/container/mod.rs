@@ -24,7 +24,7 @@ create_enum!(
 );
 
 impl Header for PublicAccess {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+    fn add_to_builder(&self, builder: Builder) -> Builder {
         match self {
             PublicAccess::Blob => builder.header(BLOB_PUBLIC_ACCESS, "blob"),
             PublicAccess::Container => builder.header(BLOB_PUBLIC_ACCESS, "container"),
@@ -32,7 +32,7 @@ impl Header for PublicAccess {
         }
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut azure_core::Request,
     ) -> Result<(), azure_core::HttpHeaderError> {

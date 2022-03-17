@@ -54,7 +54,7 @@ impl Header for &Metadata {
         todo!("Handle multiple headers")
     }
 
-    fn add_as_header(&self, builder: Builder) -> Builder {
+    fn add_to_builder(&self, builder: Builder) -> Builder {
         let mut builder = builder;
 
         for (key, val) in self.0.iter() {
@@ -64,7 +64,7 @@ impl Header for &Metadata {
         builder
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HttpHeaderError> {

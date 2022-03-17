@@ -155,14 +155,14 @@ pub enum ChangeFeed {
 }
 
 impl Header for ChangeFeed {
-    fn add_as_header(&self, builder: Builder) -> Builder {
+    fn add_to_builder(&self, builder: Builder) -> Builder {
         match self {
             Self::Incremental => builder.header(headers::HEADER_A_IM, "Incremental feed"),
             Self::None => builder,
         }
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut azure_core::Request,
     ) -> Result<(), azure_core::HttpHeaderError> {

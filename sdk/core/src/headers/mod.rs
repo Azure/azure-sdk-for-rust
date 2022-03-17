@@ -7,9 +7,7 @@ pub use utilities::*;
 
 /// View a type as an HTTP header.
 ///
-/// Ad interim we require two functions: `add_as_header` and `add_as_header2`. Make sure
-/// your implementations are functionally equivalent between the two. In other words, the
-/// effect should be the same regardless of which function the SDK calls.
+/// Ad interim there are two default functions: `add_as_header` and `add_to_request`.
 ///
 /// While not restricted by the type system, please add HTTP headers only. In particular, do not
 /// interact with the body of the request.
@@ -20,11 +18,11 @@ pub trait Header {
     fn name(&self) -> &'static str;
     fn value(&self) -> String;
 
-    fn add_as_header(&self, builder: Builder) -> Builder {
+    fn add_to_builder(&self, builder: Builder) -> Builder {
         builder.header(self.name(), self.value())
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HttpHeaderError> {
@@ -51,7 +49,7 @@ where
             .expect("tried to get optional header when None")
     }
 
-    fn add_as_header(&self, builder: Builder) -> Builder {
+    fn add_to_builder(&self, builder: Builder) -> Builder {
         if let Some(h) = self {
             builder.header(h.name(), h.value())
         } else {
@@ -59,7 +57,7 @@ where
         }
     }
 
-    fn add_as_header2(
+    fn add_to_request(
         &self,
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HttpHeaderError> {
@@ -75,7 +73,7 @@ where
 #[must_use]
 pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
-        builder = item.add_as_header(builder);
+        builder = item.add_to_builder(builder);
     }
     builder
 }
@@ -83,7 +81,7 @@ pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builde
 #[must_use]
 pub fn add_optional_header<T: Header>(item: &Option<T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
-        builder = item.add_as_header(builder);
+        builder = item.add_to_builder(builder);
     }
     builder
 }
@@ -93,21 +91,21 @@ pub fn add_optional_header2<T: Header>(
     request: &mut crate::Request,
 ) -> Result<(), crate::errors::HttpHeaderError> {
     if let Some(item) = item {
-        item.add_as_header2(request)?
+        item.add_to_request(request)?
     }
     Ok(())
 }
 
 #[must_use]
 pub fn add_mandatory_header<T: Header>(item: &T, builder: Builder) -> Builder {
-    item.add_as_header(builder)
+    item.add_to_builder(builder)
 }
 
 pub fn add_mandatory_header2<T: Header>(
     item: &T,
     request: &mut crate::Request,
 ) -> Result<(), crate::errors::HttpHeaderError> {
-    item.add_as_header2(request)
+    item.add_to_request(request)
 }
 
 pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
