@@ -68,11 +68,11 @@ impl<'a, 'b> QueryBuilder<'a, 'b> {
         let request = azure_core::headers::add_mandatory_header(&self.max_item_count, request);
         let request = request.body(body)?;
 
-        Ok(self
+        self
             .service_client
             .http_client()
             .execute_request_check_status(request, StatusCode::OK)
             .await?
-            .try_into()?)
+            .try_into()
     }
 }

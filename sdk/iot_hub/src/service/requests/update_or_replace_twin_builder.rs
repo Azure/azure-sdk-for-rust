@@ -156,12 +156,12 @@ where
 
         let request = request.body(body)?;
 
-        Ok(self
+        self
             .service_client
             .http_client()
             .execute_request_check_status(request, StatusCode::OK)
             .await?
-            .try_into()?)
+            .try_into()
     }
 }
 

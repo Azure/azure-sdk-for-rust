@@ -79,12 +79,12 @@ impl<'a> CreateOrUpdateDeviceIdentityBuilder<'a> {
         let body = azure_core::to_json(&body)?;
         let request = request.body(body)?;
 
-        Ok(self
+        self
             .service_client
             .http_client()
             .execute_request_check_status(request, http::StatusCode::OK)
             .await?
-            .try_into()?)
+            .try_into()
     }
 }
 
