@@ -672,7 +672,7 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::from_connection_string(http_client, connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let query_builder = iot_hub.query();
     /// ```
-    pub fn query(&self) -> QueryBuilder<'_, '_> {
+    pub fn query(&self) -> QueryBuilder<'_> {
         QueryBuilder::new(self)
     }
 

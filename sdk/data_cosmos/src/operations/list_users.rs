@@ -1,13 +1,14 @@
 use crate::headers::from_headers::{activity_id_from_headers, request_charge_from_headers};
 use crate::prelude::*;
 use crate::resources::User;
+use azure_core::prelude::Continuation;
 use azure_core::{
     collect_pinned_stream,
     headers::{continuation_token_from_headers_optional, session_token_from_headers},
     prelude::MaxItemCount,
     Response as HttpResponse, SessionToken,
 };
-use azure_core::{headers, Context, Continuable, Pageable};
+use azure_core::{Context, Continuable, Pageable};
 
 #[derive(Debug, Clone)]
 pub struct ListUsersBuilder {
@@ -34,7 +35,7 @@ impl ListUsersBuilder {
     }
 
     pub fn into_stream(self) -> ListUsers {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
@@ -46,11 +47,7 @@ impl ListUsersBuilder {
                 azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
                 azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
 
-                if let Some(c) = continuation {
-                    let h = http::HeaderValue::from_str(c.as_str())
-                        .map_err(azure_core::HttpHeaderError::InvalidHeaderValue)?;
-                    request.headers_mut().append(headers::CONTINUATION, h);
-                }
+                request.insert_header(&continuation)?;
 
                 let response = this
                     .client

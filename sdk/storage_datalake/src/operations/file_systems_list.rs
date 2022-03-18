@@ -43,7 +43,7 @@ impl ListFileSystemsBuilder {
     }
 
     pub fn into_stream(self) -> ListFileSystems {
-        let make_request = move |continuation: Option<String>| {
+        let make_request = move |continuation: Option<Continuation>| {
             let this = self.clone();
             let ctx = self.context.clone().unwrap_or_default();
 
