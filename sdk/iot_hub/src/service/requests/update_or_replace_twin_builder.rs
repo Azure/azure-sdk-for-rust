@@ -156,8 +156,7 @@ where
 
         let request = request.body(body)?;
 
-        self
-            .service_client
+        self.service_client
             .http_client()
             .execute_request_check_status(request, StatusCode::OK)
             .await?

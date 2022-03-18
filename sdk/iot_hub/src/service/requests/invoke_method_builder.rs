@@ -85,8 +85,7 @@ impl<'a> InvokeMethodBuilder<'a> {
 
         let request = request.body(body)?;
 
-        self
-            .iot_hub_service
+        self.iot_hub_service
             .http_client()
             .execute_request_check_status(request, StatusCode::OK)
             .await?
