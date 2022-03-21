@@ -187,6 +187,12 @@ impl From<String> for HeaderValue {
     }
 }
 
+impl From<&String> for HeaderValue {
+    fn from(s: &String) -> Self {
+        Self(std::borrow::Cow::Owned(s.clone()))
+    }
+}
+
 impl From<&HeaderValue> for http::header::HeaderValue {
     fn from(n: &HeaderValue) -> Self {
         http::header::HeaderValue::from_bytes(n.as_str().as_bytes()).unwrap()

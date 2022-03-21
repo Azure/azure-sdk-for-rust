@@ -58,7 +58,9 @@ impl ListDocumentsBuilder {
                 );
 
                 azure_core::headers::add_optional_header2(&this.if_match_condition, &mut req)?;
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut req)?;
+                if let Some(cl) = &this.consistency_level {
+                    req.insert_headers(cl);
+                }
                 azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut req)?;
                 azure_core::headers::add_mandatory_header2(&this.a_im, &mut req)?;
                 azure_core::headers::add_optional_header2(&this.partition_range_id, &mut req)?;

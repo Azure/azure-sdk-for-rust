@@ -60,7 +60,9 @@ impl ExecuteStoredProcedureBuilder {
                 crate::cosmos_entity::add_as_partition_key_header_serialized2(pk, &mut request)
             }
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
             azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
 
             let body = if let Some(parameters) = self.parameters.as_ref() {

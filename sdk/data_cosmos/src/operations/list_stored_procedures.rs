@@ -47,7 +47,9 @@ impl ListStoredProceduresBuilder {
                     http::Method::GET,
                 );
 
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
+                if let Some(cl) = &this.consistency_level {
+                    request.insert_headers(cl);
+                }
                 azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
 
                 request.insert_headers(&continuation);
