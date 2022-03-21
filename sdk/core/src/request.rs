@@ -1,4 +1,4 @@
-use crate::headers::{Header, Headers};
+use crate::headers::{AsHeaders, Header, Headers};
 use crate::{
     error::{ErrorKind, ResultExt},
     SeekableStream,
@@ -66,31 +66,10 @@ impl Request {
         Ok(())
     }
 
-    pub fn maybe_insert_header<T: Header + Debug>(
-        &mut self,
-        header: Option<&T>,
-    ) -> crate::error::Result<()> {
-        if let Some(h) = header {
-            self.insert_header(h)?;
+    pub fn insert_headers<T: AsHeaders>(&mut self, headers: &T) {
+        for (name, value) in headers.as_headers() {
+            self.headers_mut().insert(name, value)
         }
-        Ok(())
-    }
-
-    pub fn insert_headers<T: Header + Debug>(&mut self, headers: &[T]) -> crate::error::Result<()> {
-        for header in headers {
-            self.insert_header(header)?;
-        }
-        Ok(())
-    }
-
-    pub fn maybe_insert_headers<T: Header + Debug>(
-        &mut self,
-        headers: Option<&[T]>,
-    ) -> crate::error::Result<()> {
-        if let Some(hs) = headers {
-            self.insert_headers(hs)?;
-        }
-        Ok(())
     }
 
     pub fn headers(&self) -> &Headers {

@@ -7,15 +7,46 @@ use http::request::Builder;
 
 pub use utilities::*;
 
+/// A trait for converting a type into request headers
+pub trait AsHeaders {
+    type Iter: Iterator<Item = (HeaderName, HeaderValue)>;
+    fn as_headers(&self) -> Self::Iter;
+}
+
+impl<T> AsHeaders for T
+where
+    T: Header,
+{
+    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Self::Iter {
+        Some((self.name(), self.value())).into_iter()
+    }
+}
+
+impl<T> AsHeaders for Option<T>
+where
+    T: Header,
+{
+    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Self::Iter {
+        match self {
+            Some(h) => Some((h.name(), h.value())).into_iter(),
+            None => None.into_iter(),
+        }
+    }
+}
+
 /// View a type as an HTTP header.
 ///
-/// Ad interim there are two default functions: `add_as_header` and `add_to_request`.
+/// Ad interim there are two default functions: `add_to_builder` and `add_to_request`.
 ///
 /// While not restricted by the type system, please add HTTP headers only. In particular, do not
 /// interact with the body of the request.
 ///
 /// As soon as the migration to the pipeline architecture will be complete we will phase out
-/// `add_as_header`.
+/// `add_to_builder`.
 pub trait Header {
     fn name(&self) -> HeaderName;
     fn value(&self) -> HeaderValue;
@@ -36,6 +67,7 @@ pub trait Header {
     }
 }
 
+/// A collection of headers
 #[derive(Clone, Debug)]
 pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
 
@@ -126,7 +158,7 @@ impl From<&HeaderName> for http::header::HeaderName {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HeaderValue(std::borrow::Cow<'static, str>);
 
 impl HeaderValue {
@@ -161,41 +193,6 @@ impl From<&HeaderValue> for http::header::HeaderValue {
     }
 }
 
-impl<T> Header for Option<T>
-where
-    T: Header,
-{
-    fn name(&self) -> HeaderName {
-        self.as_ref()
-            .map(|h| h.name())
-            .expect("tried to get optional header when None")
-    }
-
-    fn value(&self) -> HeaderValue {
-        self.as_ref()
-            .map(|h| h.value())
-            .expect("tried to get optional header when None")
-    }
-
-    fn add_to_builder(&self, builder: Builder) -> Builder {
-        if let Some(h) = self {
-            builder.header(h.name().as_str(), h.value().as_str())
-        } else {
-            builder
-        }
-    }
-
-    fn add_to_request(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        if let Some(h) = self {
-            request.headers_mut().insert(h.name(), h.value());
-        }
-        Ok(())
-    }
-}
-
 #[must_use]
 pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
@@ -208,6 +205,16 @@ pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builde
 pub fn add_optional_header<T: Header>(item: &Option<T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
         builder = item.add_to_builder(builder);
+    }
+    builder
+}
+
+#[must_use]
+pub fn add_optional_headers<T: AsHeaders>(item: &Option<T>, mut builder: Builder) -> Builder {
+    if let Some(item) = item {
+        for (name, value) in item.as_headers() {
+            builder = builder.header(name.as_str(), value.as_str())
+        }
     }
     builder
 }

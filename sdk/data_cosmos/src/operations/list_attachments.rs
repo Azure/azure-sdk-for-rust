@@ -65,7 +65,7 @@ impl ListAttachmentsBuilder {
                     &mut request,
                 );
 
-                request.insert_header(&continuation)?;
+                request.insert_headers(&continuation);
 
                 let response = this
                     .client

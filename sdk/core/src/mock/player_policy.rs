@@ -101,8 +101,8 @@ impl Policy for MockTransportPlayerPolicy {
             if actual_header_value != expected_header_value {
                 return Err(super::MockFrameworkError::MismatchedRequestHeader(
                     actual_header_key.as_str().to_owned(),
-                    actual_header_value.to_str().unwrap().to_owned(),
-                    expected_header_value.to_str().unwrap().to_owned(),
+                    actual_header_value.as_str().to_owned(),
+                    expected_header_value.as_str().to_owned(),
                 )
                 .into());
             }

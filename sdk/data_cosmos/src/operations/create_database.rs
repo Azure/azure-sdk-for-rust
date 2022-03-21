@@ -45,7 +45,7 @@ impl CreateDatabaseBuilder {
                 id: self.database_name.as_str(),
             };
 
-            request.insert_header(&self.consistency_level)?;
+            request.insert_headers(&self.consistency_level);
             request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
 
             let response = self
