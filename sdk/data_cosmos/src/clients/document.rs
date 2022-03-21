@@ -62,7 +62,7 @@ impl DocumentClient {
     }
 
     /// Get a document
-    pub fn get_document(&self) -> GetDocumentBuilder {
+    pub fn get_document<T>(&self) -> GetDocumentBuilder<T> {
         GetDocumentBuilder::new(self.clone())
     }
 

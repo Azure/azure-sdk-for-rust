@@ -1,3 +1,6 @@
+use std::future::IntoFuture;
+use std::marker;
+
 use crate::headers::from_headers::*;
 use crate::prelude::*;
 use crate::resources::Document;
@@ -10,15 +13,16 @@ use http::{HeaderMap, StatusCode};
 use serde::de::DeserializeOwned;
 
 #[derive(Debug, Clone)]
-pub struct GetDocumentBuilder {
+pub struct GetDocumentBuilder<T> {
     client: DocumentClient,
     if_match_condition: Option<IfMatchCondition>,
     if_modified_since: Option<IfModifiedSince>,
     consistency_level: Option<ConsistencyLevel>,
     context: Context,
+    _phantom: marker::PhantomData<T>,
 }
 
-impl GetDocumentBuilder {
+impl<T> GetDocumentBuilder<T> {
     pub(crate) fn new(client: DocumentClient) -> Self {
         Self {
             client,
@@ -26,6 +30,7 @@ impl GetDocumentBuilder {
             if_modified_since: None,
             consistency_level: None,
             context: Context::new(),
+            _phantom: marker::PhantomData
         }
     }
 
@@ -35,13 +40,15 @@ impl GetDocumentBuilder {
         if_modified_since: DateTime<Utc> => Some(IfModifiedSince::new(if_modified_since)),
         context: Context => context,
     }
+}
 
+impl<T: DeserializeOwned + Send + 'static> GetDocumentBuilder<T> {
     /// Convert into a future
     ///
     /// We do not implement `std::future::IntoFuture` because it requires the ability for the
     /// output of the future to be generic which is not possible in Rust (as of 1.59). Once
     /// generic associated types (GATs) stabilize, this will become possible.
-    pub fn into_future<T: DeserializeOwned>(self) -> GetDocument<T> {
+    pub fn into_future(self) -> GetDocument<T> {
         Box::pin(async move {
             let mut request = self
                 .client
@@ -65,6 +72,15 @@ impl GetDocumentBuilder {
 
             GetDocumentResponse::try_from(response).await
         })
+    }
+}
+
+impl<T: DeserializeOwned + Send + 'static> IntoFuture for GetDocumentBuilder<T> {
+    type IntoFuture = GetDocument<T>;
+    type Output = crate::Result<GetDocumentResponse<T>>;
+
+    fn into_future(self) -> Self::IntoFuture {
+        self.into_future()
     }
 }
 

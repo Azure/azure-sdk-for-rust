@@ -77,8 +77,7 @@ async fn create_and_delete_document() {
         .unwrap();
 
     let document_after_get = document
-        .get_document()
-        .into_future::<MyDocument>()
+        .get_document::<MyDocument>()
         .await
         .unwrap();
 
@@ -240,8 +239,7 @@ async fn replace_document() {
         .document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
     let document_after_get = document
-        .get_document()
-        .into_future::<MyDocument>()
+        .get_document::<MyDocument>()
         .await
         .unwrap();
 

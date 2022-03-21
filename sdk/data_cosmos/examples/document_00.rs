@@ -150,8 +150,7 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let get_document_response = collection
         .clone()
         .document_client(doc.id.clone(), &doc.id)?
-        .get_document()
-        .into_future::<MySampleStruct>()
+        .get_document::<MySampleStruct>()
         .await?;
     println!("get_document_response == {:#?}", get_document_response);
 

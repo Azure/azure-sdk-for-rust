@@ -29,7 +29,7 @@ macro_rules! setters {
         #[allow(clippy::redundant_field_names)]
         #[allow(clippy::needless_update)]
         // TODO: Declare using idiomatic with_$name when https://github.com/Azure/azure-sdk-for-rust/issues/292 is resolved.
-        pub fn $name<T: ::std::convert::Into<$typ>>(self, $name: T) -> Self {
+        pub fn $name<_T: ::std::convert::Into<$typ>>(self, $name: _T) -> Self {
             let $name: $typ = $name.into();
             Self  {
                 $name: $transform,
