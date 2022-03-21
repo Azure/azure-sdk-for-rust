@@ -50,21 +50,6 @@ where
 pub trait Header {
     fn name(&self) -> HeaderName;
     fn value(&self) -> HeaderValue;
-
-    fn add_to_builder(&self, builder: Builder) -> Builder {
-        builder.header(self.name().as_str(), self.value().as_str())
-    }
-
-    fn add_to_request(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().insert(
-            self.name(),
-            http::HeaderValue::from_str(&self.value().as_str())?,
-        );
-        Ok(())
-    }
 }
 
 /// A collection of headers
@@ -202,7 +187,7 @@ impl From<&HeaderValue> for http::header::HeaderValue {
 #[must_use]
 pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
-        builder = item.add_to_builder(builder);
+        builder = builder.header(item.name().as_str(), item.value().as_str())
     }
     builder
 }
@@ -210,7 +195,7 @@ pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builde
 #[must_use]
 pub fn add_optional_header<T: Header>(item: &Option<T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
-        builder = item.add_to_builder(builder);
+        builder = builder.header(item.name().as_str(), item.value().as_str())
     }
     builder
 }
@@ -230,21 +215,28 @@ pub fn add_optional_header2<T: Header>(
     request: &mut crate::Request,
 ) -> Result<(), crate::errors::HttpHeaderError> {
     if let Some(item) = item {
-        item.add_to_request(request)?
+        request.headers_mut().insert(
+            item.name(),
+            http::HeaderValue::from_str(&item.value().as_str())?,
+        );
     }
     Ok(())
 }
 
 #[must_use]
 pub fn add_mandatory_header<T: Header>(item: &T, builder: Builder) -> Builder {
-    item.add_to_builder(builder)
+    builder.header(item.name().as_str(), item.value().as_str())
 }
 
 pub fn add_mandatory_header2<T: Header>(
     item: &T,
     request: &mut crate::Request,
 ) -> Result<(), crate::errors::HttpHeaderError> {
-    item.add_to_request(request)
+    request.headers_mut().insert(
+        item.name(),
+        http::HeaderValue::from_str(&item.value().as_str())?,
+    );
+    Ok(())
 }
 
 pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
