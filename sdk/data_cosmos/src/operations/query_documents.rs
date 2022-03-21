@@ -111,7 +111,7 @@ impl QueryDocumentsBuilder {
                 }
 
                 if let Some(ref c) = continuation {
-                    request.insert_headers(c)?;
+                    request.insert_headers(c);
                 }
 
                 let response = this
