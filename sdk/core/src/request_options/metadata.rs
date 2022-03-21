@@ -44,7 +44,7 @@ impl Metadata {
         self.0.get(k).cloned()
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Metadatum> + 'a {
+    pub fn iter(&self) -> impl Iterator<Item = Metadatum> + '_ {
         self.0.iter().map(|(key, value)| {
             Metadatum(
                 key.clone(),

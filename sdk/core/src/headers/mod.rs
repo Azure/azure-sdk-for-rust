@@ -217,7 +217,7 @@ pub fn add_optional_header2<T: Header>(
     if let Some(item) = item {
         request.headers_mut().insert(
             item.name(),
-            http::HeaderValue::from_str(&item.value().as_str())?,
+            http::HeaderValue::from_str(item.value().as_str())?,
         );
     }
     Ok(())
@@ -234,7 +234,7 @@ pub fn add_mandatory_header2<T: Header>(
 ) -> Result<(), crate::errors::HttpHeaderError> {
     request.headers_mut().insert(
         item.name(),
-        http::HeaderValue::from_str(&item.value().as_str())?,
+        http::HeaderValue::from_str(item.value().as_str())?,
     );
     Ok(())
 }
