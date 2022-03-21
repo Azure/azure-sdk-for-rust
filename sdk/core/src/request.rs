@@ -1,8 +1,9 @@
+use crate::headers::{Header, Headers};
 use crate::{
     error::{ErrorKind, ResultExt},
-    Header, SeekableStream,
+    SeekableStream,
 };
-use http::{HeaderMap, Method, Uri};
+use http::{Method, Uri};
 use std::fmt::Debug;
 
 /// An HTTP Body.
@@ -34,7 +35,7 @@ impl From<Box<dyn SeekableStream>> for Body {
 pub struct Request {
     pub(crate) uri: Uri,
     pub(crate) method: Method,
-    pub(crate) headers: HeaderMap,
+    pub(crate) headers: Headers,
     pub(crate) body: Body,
 }
 
@@ -44,7 +45,7 @@ impl Request {
         Self {
             uri,
             method,
-            headers: HeaderMap::default(),
+            headers: Headers::new(),
             body: Body::Bytes(bytes::Bytes::new()),
         }
     }
@@ -65,11 +66,18 @@ impl Request {
         Ok(())
     }
 
-    pub fn headers(&self) -> &HeaderMap {
+    pub fn insert_headers<T: Header + Debug>(&mut self, headers: &[T]) -> crate::error::Result<()> {
+        for header in headers {
+            self.insert_header(header)?;
+        }
+        Ok(())
+    }
+
+    pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
-    pub fn headers_mut(&mut self) -> &mut HeaderMap {
+    pub fn headers_mut(&mut self) -> &mut Headers {
         &mut self.headers
     }
 
@@ -90,7 +98,7 @@ impl From<http::Request<bytes::Bytes>> for Request {
         Self {
             uri: parts.uri,
             method: parts.method,
-            headers: parts.headers,
+            headers: parts.headers.into(),
             body: Body::Bytes(body),
         }
     }

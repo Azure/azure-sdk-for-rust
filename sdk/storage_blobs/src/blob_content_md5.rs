@@ -1,4 +1,4 @@
-use azure_core::Header;
+use azure_core::headers::{self, Header};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Ord)]
 pub struct BlobContentMD5([u8; 16]);
@@ -10,11 +10,11 @@ impl From<md5::Digest> for BlobContentMD5 {
 }
 
 impl Header for BlobContentMD5 {
-    fn name(&self) -> &'static str {
-        "x-ms-blob-content-md5"
+    fn name(&self) -> headers::HeaderName {
+        "x-ms-blob-content-md5".into()
     }
 
-    fn value(&self) -> String {
-        base64::encode(self.0)
+    fn value(&self) -> headers::HeaderValue {
+        base64::encode(self.0).into()
     }
 }

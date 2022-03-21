@@ -83,12 +83,12 @@ impl QueryCrossPartition {
 }
 
 impl Header for QueryCrossPartition {
-    fn name(&self) -> &'static str {
-        headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION
+    fn name(&self) -> azure_core::headers::HeaderName {
+        headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION.into()
     }
 
-    fn value(&self) -> String {
-        self.as_bool_str().to_owned()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.as_bool_str().to_owned().into()
     }
 }
 
@@ -110,12 +110,12 @@ impl ParallelizeCrossPartition {
 }
 
 impl Header for ParallelizeCrossPartition {
-    fn name(&self) -> &'static str {
-        headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY
+    fn name(&self) -> azure_core::headers::HeaderName {
+        headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY.into()
     }
 
-    fn value(&self) -> String {
-        self.as_bool_str().to_owned()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.as_bool_str().to_owned().into()
     }
 }
 
@@ -137,12 +137,12 @@ impl IsUpsert {
 }
 
 impl Header for IsUpsert {
-    fn name(&self) -> &'static str {
-        headers::HEADER_DOCUMENTDB_IS_UPSERT
+    fn name(&self) -> azure_core::headers::HeaderName {
+        headers::HEADER_DOCUMENTDB_IS_UPSERT.into()
     }
 
-    fn value(&self) -> String {
-        self.as_bool_str().to_owned()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.as_bool_str().to_owned().into()
     }
 }
 
@@ -178,11 +178,11 @@ impl Header for ChangeFeed {
         Ok(())
     }
 
-    fn name(&self) -> &'static str {
+    fn name(&self) -> azure_core::headers::HeaderName {
         todo!()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> azure_core::headers::HeaderValue {
         todo!()
     }
 }
@@ -205,12 +205,12 @@ impl TentativeWritesAllowance {
 }
 
 impl Header for TentativeWritesAllowance {
-    fn name(&self) -> &'static str {
-        headers::HEADER_ALLOW_MULTIPLE_WRITES
+    fn name(&self) -> azure_core::headers::HeaderName {
+        headers::HEADER_ALLOW_MULTIPLE_WRITES.into()
     }
 
-    fn value(&self) -> String {
-        self.as_bool_str().to_owned()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.as_bool_str().to_owned().into()
     }
 }
 
@@ -226,11 +226,11 @@ impl PartitionRangeId {
 }
 
 impl Header for PartitionRangeId {
-    fn name(&self) -> &'static str {
-        headers::HEADER_DOCUMENTDB_PARTITIONRANGEID
+    fn name(&self) -> azure_core::headers::HeaderName {
+        headers::HEADER_DOCUMENTDB_PARTITIONRANGEID.into()
     }
 
-    fn value(&self) -> String {
-        self.0.clone()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.0.clone().into()
     }
 }

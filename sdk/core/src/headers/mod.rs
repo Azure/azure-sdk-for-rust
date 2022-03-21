@@ -1,7 +1,9 @@
 //! Azure HTTP headers.
 mod utilities;
 
-use http::{request::Builder, HeaderValue};
+use std::collections::HashMap;
+
+use http::request::Builder;
 
 pub use utilities::*;
 
@@ -15,21 +17,155 @@ pub use utilities::*;
 /// As soon as the migration to the pipeline architecture will be complete we will phase out
 /// `add_as_header`.
 pub trait Header {
-    fn name(&self) -> &'static str;
-    fn value(&self) -> String;
+    fn name(&self) -> HeaderName;
+    fn value(&self) -> HeaderValue;
 
     fn add_to_builder(&self, builder: Builder) -> Builder {
-        builder.header(self.name(), self.value())
+        builder.header(self.name().as_str(), self.value().as_str())
     }
 
     fn add_to_request(
         &self,
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HttpHeaderError> {
-        request
-            .headers_mut()
-            .insert(self.name(), HeaderValue::from_str(&self.value())?);
+        request.headers_mut().insert(
+            self.name(),
+            http::HeaderValue::from_str(&self.value().as_str())?,
+        );
         Ok(())
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
+
+impl Headers {
+    pub(crate) fn new() -> Self {
+        Self(Default::default())
+    }
+
+    pub fn get(&self, key: &HeaderName) -> Option<&HeaderValue> {
+        self.0.get(key)
+    }
+
+    pub fn insert<K, V>(&mut self, key: K, value: V)
+    where
+        K: Into<HeaderName>,
+        V: Into<HeaderValue>,
+    {
+        self.0.insert(key.into(), value.into());
+    }
+
+    pub fn append<K, V>(&mut self, key: K, value: V)
+    where
+        K: Into<HeaderName>,
+        V: Into<HeaderValue>,
+    {
+        self.0.insert(key.into(), value.into());
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
+        self.0.iter()
+    }
+}
+
+impl IntoIterator for Headers {
+    type Item = (HeaderName, HeaderValue);
+
+    type IntoIter = std::collections::hash_map::IntoIter<HeaderName, HeaderValue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl From<std::collections::HashMap<HeaderName, HeaderValue>> for Headers {
+    fn from(c: std::collections::HashMap<HeaderName, HeaderValue>) -> Self {
+        Self(c)
+    }
+}
+
+impl From<http::HeaderMap> for Headers {
+    fn from(map: http::HeaderMap) -> Self {
+        let map = map
+            .into_iter()
+            .filter_map(|(k, v)| {
+                let key = k?.as_str().to_owned();
+                let value = std::str::from_utf8(v.as_bytes())
+                    .expect("non-UTF8 header value")
+                    .to_owned();
+                Some((key.into(), value.into()))
+            })
+            .collect::<HashMap<HeaderName, HeaderValue>>();
+        Self(map)
+    }
+}
+
+#[derive(Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
+pub struct HeaderName(std::borrow::Cow<'static, str>);
+
+impl HeaderName {
+    pub fn as_str(&self) -> &str {
+        self.0.as_ref()
+    }
+}
+
+impl From<http::header::HeaderName> for HeaderName {
+    fn from(n: http::header::HeaderName) -> Self {
+        Self(std::borrow::Cow::Owned(n.as_str().into()))
+    }
+}
+
+impl From<&'static str> for HeaderName {
+    fn from(s: &'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
+    }
+}
+
+impl From<String> for HeaderName {
+    fn from(s: String) -> Self {
+        Self(std::borrow::Cow::Owned(s))
+    }
+}
+
+impl From<&HeaderName> for http::header::HeaderName {
+    fn from(n: &HeaderName) -> Self {
+        http::header::HeaderName::from_bytes(n.as_str().as_bytes()).unwrap()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct HeaderValue(std::borrow::Cow<'static, str>);
+
+impl HeaderValue {
+    pub fn as_str(&self) -> &str {
+        self.0.as_ref()
+    }
+}
+
+impl From<http::header::HeaderValue> for HeaderValue {
+    fn from(n: http::header::HeaderValue) -> Self {
+        Self(std::borrow::Cow::Owned(
+            n.to_str().expect("non-UTF8 string").to_owned(),
+        ))
+    }
+}
+
+impl From<&'static str> for HeaderValue {
+    fn from(s: &'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
+    }
+}
+
+impl From<String> for HeaderValue {
+    fn from(s: String) -> Self {
+        Self(std::borrow::Cow::Owned(s))
+    }
+}
+
+impl From<&HeaderValue> for http::header::HeaderValue {
+    fn from(n: &HeaderValue) -> Self {
+        http::header::HeaderValue::from_bytes(n.as_str().as_bytes()).unwrap()
     }
 }
 
@@ -37,13 +173,13 @@ impl<T> Header for Option<T>
 where
     T: Header,
 {
-    fn name(&self) -> &'static str {
+    fn name(&self) -> HeaderName {
         self.as_ref()
             .map(|h| h.name())
             .expect("tried to get optional header when None")
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> HeaderValue {
         self.as_ref()
             .map(|h| h.value())
             .expect("tried to get optional header when None")
@@ -51,7 +187,7 @@ where
 
     fn add_to_builder(&self, builder: Builder) -> Builder {
         if let Some(h) = self {
-            builder.header(h.name(), h.value())
+            builder.header(h.name().as_str(), h.value().as_str())
         } else {
             builder
         }
@@ -62,9 +198,7 @@ where
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HttpHeaderError> {
         if let Some(h) = self {
-            request
-                .headers_mut()
-                .insert(h.name(), HeaderValue::from_str(&h.value())?);
+            request.headers_mut().insert(h.name(), h.value());
         }
         Ok(())
     }

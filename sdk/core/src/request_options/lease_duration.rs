@@ -1,5 +1,4 @@
-use crate::headers::*;
-use crate::Header;
+use crate::headers::{self, Header};
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -9,17 +8,18 @@ pub enum LeaseDuration {
 }
 
 impl Header for LeaseDuration {
-    fn name(&self) -> &'static str {
-        LEASE_DURATION
+    fn name(&self) -> headers::HeaderName {
+        headers::LEASE_DURATION.into()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         match self {
             LeaseDuration::Infinite => "-1".to_owned(),
             LeaseDuration::Seconds(seconds) => {
                 format!("{}", seconds)
             }
         }
+        .into()
     }
 }
 

@@ -1,4 +1,4 @@
-use azure_core::Header;
+use azure_core::headers::{self, Header};
 
 create_enum!(
     AccessTier,
@@ -8,11 +8,11 @@ create_enum!(
 );
 
 impl Header for AccessTier {
-    fn name(&self) -> &'static str {
-        azure_core::headers::BLOB_ACCESS_TIER
+    fn name(&self) -> headers::HeaderName {
+        azure_core::headers::BLOB_ACCESS_TIER.into()
     }
 
-    fn value(&self) -> String {
-        self.as_ref().to_owned()
+    fn value(&self) -> headers::HeaderValue {
+        self.as_ref().to_owned().into()
     }
 }

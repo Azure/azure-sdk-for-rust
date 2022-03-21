@@ -1,5 +1,4 @@
-use crate::headers;
-use crate::Header;
+use crate::headers::{self, Header};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub struct SequenceNumber(u64);
@@ -17,11 +16,11 @@ impl From<u64> for SequenceNumber {
 }
 
 impl Header for SequenceNumber {
-    fn name(&self) -> &'static str {
-        headers::BLOB_SEQUENCE_NUMBER
+    fn name(&self) -> headers::HeaderName {
+        headers::BLOB_SEQUENCE_NUMBER.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_string()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_string().into()
     }
 }

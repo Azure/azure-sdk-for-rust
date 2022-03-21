@@ -23,11 +23,11 @@ impl From<&str> for ClientRequestId {
 }
 
 impl Header for ClientRequestId {
-    fn name(&self) -> &'static str {
-        headers::CLIENT_REQUEST_ID
+    fn name(&self) -> headers::HeaderName {
+        headers::CLIENT_REQUEST_ID.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_owned()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }

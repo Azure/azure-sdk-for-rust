@@ -14,11 +14,11 @@ impl Continuation {
 }
 
 impl Header for Continuation {
-    fn name(&self) -> &'static str {
-        headers::CONTINUATION
+    fn name(&self) -> headers::HeaderName {
+        headers::CONTINUATION.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_owned()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }

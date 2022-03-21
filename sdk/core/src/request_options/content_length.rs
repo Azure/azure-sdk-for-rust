@@ -1,4 +1,4 @@
-use crate::Header;
+use crate::headers::{self, Header};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ContentLength(i32);
@@ -10,12 +10,12 @@ impl ContentLength {
 }
 
 impl Header for ContentLength {
-    fn name(&self) -> &'static str {
-        http::header::CONTENT_LENGTH.as_str()
+    fn name(&self) -> headers::HeaderName {
+        http::header::CONTENT_LENGTH.into()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         let count = if self.0 < 0 { -1 } else { self.0 };
-        format!("{}", count)
+        format!("{}", count).into()
     }
 }

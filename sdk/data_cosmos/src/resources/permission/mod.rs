@@ -28,11 +28,11 @@ impl ExpirySeconds {
 }
 
 impl Header for ExpirySeconds {
-    fn name(&self) -> &'static str {
-        headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS
+    fn name(&self) -> azure_core::headers::HeaderName {
+        headers::HEADER_DOCUMENTDB_EXPIRY_SECONDS.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_string()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.0.to_string().into()
     }
 }

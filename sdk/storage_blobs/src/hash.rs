@@ -1,4 +1,4 @@
-use azure_core::Header;
+use azure_core::headers::{self, Header};
 
 use azure_storage::core::headers::{CONTENT_CRC64, CONTENT_MD5};
 
@@ -9,18 +9,20 @@ pub enum Hash {
 }
 
 impl Header for Hash {
-    fn name(&self) -> &'static str {
+    fn name(&self) -> headers::HeaderName {
         match self {
             Hash::MD5(_) => CONTENT_MD5,
             Hash::CRC64(_) => CONTENT_CRC64,
         }
+        .into()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         match self {
             Hash::MD5(md5) => base64::encode(md5),
             Hash::CRC64(crc64) => format!("{}", crc64),
         }
+        .into()
     }
 }
 

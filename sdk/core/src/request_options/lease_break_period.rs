@@ -1,5 +1,4 @@
-use crate::headers::*;
-use crate::Header;
+use crate::headers::{self, Header};
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy)]
@@ -12,11 +11,11 @@ impl From<Duration> for LeaseBreakPeriod {
 }
 
 impl Header for LeaseBreakPeriod {
-    fn name(&self) -> &'static str {
-        LEASE_BREAK_PERIOD
+    fn name(&self) -> headers::HeaderName {
+        headers::LEASE_BREAK_PERIOD.into()
     }
 
-    fn value(&self) -> String {
-        format!("{}", self.0.as_secs())
+    fn value(&self) -> headers::HeaderValue {
+        format!("{}", self.0.as_secs()).into()
     }
 }

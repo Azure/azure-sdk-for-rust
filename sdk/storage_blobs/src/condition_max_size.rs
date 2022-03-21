@@ -1,4 +1,4 @@
-use azure_core::Header;
+use azure_core::headers::{self, Header};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ConditionMaxSize(u64);
@@ -16,11 +16,11 @@ impl From<u64> for ConditionMaxSize {
 }
 
 impl Header for ConditionMaxSize {
-    fn name(&self) -> &'static str {
-        "x-ms-blob-condition-maxsize"
+    fn name(&self) -> headers::HeaderName {
+        "x-ms-blob-condition-maxsize".into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_string()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_string().into()
     }
 }

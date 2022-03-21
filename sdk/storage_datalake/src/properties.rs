@@ -1,4 +1,4 @@
-use azure_core::Header;
+use azure_core::headers::{self, Header};
 use http::HeaderMap;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
@@ -34,11 +34,11 @@ impl Properties {
 }
 
 impl Header for Properties {
-    fn name(&self) -> &'static str {
-        HEADER
+    fn name(&self) -> headers::HeaderName {
+        HEADER.into()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         // the header is a comma separated list of key=base64(value) see
         // [https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers](https://docs.microsoft.com/rest/api/storageservices/datalakestoragegen2/filesystem/create#request-headers)
         self.0
@@ -46,6 +46,7 @@ impl Header for Properties {
             .map(|(k, v)| format!("{}={}", k.as_ref(), base64::encode(v.as_ref())))
             .collect::<Vec<_>>()
             .join(",")
+            .into()
     }
 }
 

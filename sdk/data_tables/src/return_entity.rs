@@ -1,4 +1,4 @@
-use azure_core::Header;
+use azure_core::headers::{self, Header};
 use http::StatusCode;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -18,16 +18,16 @@ impl ReturnEntity {
 }
 
 impl Header for ReturnEntity {
-    fn name(&self) -> &'static str {
-        "Prefer"
+    fn name(&self) -> headers::HeaderName {
+        "Prefer".into()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         match self.0 {
             true => "return-content",
             false => "return-no-content",
         }
-        .to_owned()
+        .into()
     }
 }
 

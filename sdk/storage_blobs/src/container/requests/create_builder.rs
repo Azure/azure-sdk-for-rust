@@ -44,7 +44,11 @@ impl<'a> CreateBuilder<'a> {
             &Method::PUT,
             &|mut request| {
                 request = add_mandatory_header(&self.public_access, request);
-                request = add_optional_header(&self.metadata, request);
+                if let Some(metadata) = &self.metadata {
+                    for m in metadata.iter() {
+                        request = add_mandatory_header(&m, request);
+                    }
+                }
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },

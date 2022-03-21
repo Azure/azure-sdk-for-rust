@@ -1,4 +1,4 @@
-use azure_core::Header;
+use azure_core::headers::{self, Header};
 pub mod requests;
 pub mod responses;
 
@@ -50,11 +50,11 @@ impl Header for PublicAccess {
         Ok(())
     }
 
-    fn name(&self) -> &'static str {
+    fn name(&self) -> headers::HeaderName {
         todo!()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         todo!()
     }
 }

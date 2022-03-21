@@ -189,12 +189,14 @@ where
 }
 
 impl Header for RenameSource {
-    fn name(&self) -> &'static str {
-        headers::RENAME_SOURCE
+    fn name(&self) -> azure_core::headers::HeaderName {
+        headers::RENAME_SOURCE.into()
     }
 
-    fn value(&self) -> String {
-        url::form_urlencoded::byte_serialize(self.0.as_bytes()).collect()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        url::form_urlencoded::byte_serialize(self.0.as_bytes())
+            .collect::<String>()
+            .into()
     }
 }
 

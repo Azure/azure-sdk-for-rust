@@ -149,8 +149,8 @@ impl HttpClient for reqwest::Client {
     ) -> Result<crate::Response, HttpError> {
         let url = url::Url::parse(&request.uri().to_string())?;
         let mut reqwest_request = self.request(request.method(), url);
-        for header in request.headers() {
-            reqwest_request = reqwest_request.header(header.0, header.1);
+        for (name, value) in request.headers().iter() {
+            reqwest_request = reqwest_request.header(name, value);
         }
 
         // We clone the body since we need to give ownership of it to Reqwest.

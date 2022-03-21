@@ -1,6 +1,6 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
-use azure_core::headers::add_optional_header;
+use azure_core::headers::{add_optional_header, add_mandatory_header};
 use azure_core::prelude::*;
 use std::convert::TryInto;
 
@@ -40,7 +40,11 @@ impl<'a> CreateQueueBuilder<'a> {
             &http::method::Method::PUT,
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
-                request = add_optional_header(&self.metadata, request);
+                if let Some(metadata) = &self.metadata {
+                    for m in metadata.iter() {
+                        request = add_mandatory_header(&m, request);
+                    }
+                }
                 request
             },
             None,

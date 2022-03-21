@@ -1,4 +1,4 @@
-use crate::Header;
+use crate::headers::{self, Header};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Copy)]
@@ -11,11 +11,11 @@ impl IfModifiedSince {
 }
 
 impl Header for IfModifiedSince {
-    fn name(&self) -> &'static str {
-        http::header::IF_MODIFIED_SINCE.as_str()
+    fn name(&self) -> headers::HeaderName {
+        http::header::IF_MODIFIED_SINCE.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_rfc2822()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_rfc2822().into()
     }
 }

@@ -71,11 +71,11 @@ impl AppendToUrlQuery for &BlobVersioning {
 create_enum!(RehydratePriority, (High, "High"), (Standard, "Standard"));
 
 impl Header for RehydratePriority {
-    fn name(&self) -> &'static str {
-        headers::REHYDRATE_PRIORITY
+    fn name(&self) -> azure_core::headers::HeaderName {
+        headers::REHYDRATE_PRIORITY.into()
     }
 
-    fn value(&self) -> String {
-        self.to_string()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.to_string().into()
     }
 }

@@ -24,12 +24,12 @@ impl<'a> From<&'a str> for ClientRequestId<'a> {
 }
 
 impl<'a> Header for ClientRequestId<'a> {
-    fn name(&self) -> &'static str {
-        CLIENT_REQUEST_ID
+    fn name(&self) -> azure_core::headers::HeaderName {
+        CLIENT_REQUEST_ID.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_owned()
+    fn value(&self) -> azure_core::headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }
 

@@ -1,5 +1,4 @@
-use crate::headers;
-use crate::Header;
+use crate::headers::{self, Header};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -21,11 +20,11 @@ impl std::str::FromStr for SourceLeaseId {
 }
 
 impl Header for SourceLeaseId {
-    fn name(&self) -> &'static str {
-        headers::SOURCE_LEASE_ID
+    fn name(&self) -> headers::HeaderName {
+        headers::SOURCE_LEASE_ID.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_string()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_string().into()
     }
 }

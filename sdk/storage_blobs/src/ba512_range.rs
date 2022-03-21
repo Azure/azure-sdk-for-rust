@@ -1,4 +1,5 @@
-use crate::{Header, Not512ByteAlignedError, Parse512AlignedError};
+use crate::{Not512ByteAlignedError, Parse512AlignedError};
+use azure_core::headers::{self, Header};
 use azure_core::prelude::Range;
 use std::convert::TryFrom;
 use std::fmt;
@@ -61,12 +62,12 @@ impl TryFrom<(u64, u64)> for BA512Range {
 }
 
 impl Header for BA512Range {
-    fn name(&self) -> &'static str {
-        http::header::RANGE.as_str()
+    fn name(&self) -> headers::HeaderName {
+        http::header::RANGE.into()
     }
 
-    fn value(&self) -> String {
-        self.to_string()
+    fn value(&self) -> headers::HeaderValue {
+        self.to_string().into()
     }
 }
 

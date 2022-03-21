@@ -47,11 +47,11 @@ impl fmt::Display for IndexingDirective {
 }
 
 impl azure_core::Header for IndexingDirective {
-    fn name(&self) -> &'static str {
+    fn name(&self) -> azure_core::headers::HeaderName {
         todo!()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> azure_core::headers::HeaderValue {
         todo!()
     }
 

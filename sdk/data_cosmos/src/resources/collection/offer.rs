@@ -17,19 +17,21 @@ pub enum Offer {
 }
 
 impl Header for Offer {
-    fn name(&self) -> &'static str {
+    fn name(&self) -> azure_core::headers::HeaderName {
         match self {
             Offer::Throughput(_) => headers::HEADER_OFFER_THROUGHPUT,
             _ => headers::HEADER_OFFER_TYPE,
         }
+        .into()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> azure_core::headers::HeaderValue {
         match self {
             Offer::Throughput(throughput) => throughput.to_string(),
             Offer::S1 => "S1".to_owned(),
             Offer::S2 => "S2".to_owned(),
             Offer::S3 => "S3".to_owned(),
         }
+        .into()
     }
 }

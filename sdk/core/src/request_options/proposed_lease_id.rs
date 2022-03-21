@@ -11,11 +11,11 @@ impl From<LeaseId> for ProposedLeaseId {
 }
 
 impl Header for ProposedLeaseId {
-    fn name(&self) -> &'static str {
-        headers::PROPOSED_LEASE_ID
+    fn name(&self) -> headers::HeaderName {
+        headers::PROPOSED_LEASE_ID.into()
     }
 
-    fn value(&self) -> String {
-        format!("{}", self.0)
+    fn value(&self) -> headers::HeaderValue {
+        format!("{}", self.0).into()
     }
 }

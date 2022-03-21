@@ -1,4 +1,4 @@
-use crate::Header;
+use crate::headers::{self, Header};
 use http::header;
 
 #[derive(Debug, Clone, Copy)]
@@ -11,11 +11,11 @@ impl<'a> UserAgent<'a> {
 }
 
 impl<'a> Header for UserAgent<'a> {
-    fn name(&self) -> &'static str {
-        header::USER_AGENT.as_str()
+    fn name(&self) -> headers::HeaderName {
+        header::USER_AGENT.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_string()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }

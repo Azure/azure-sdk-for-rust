@@ -1,6 +1,6 @@
 use crate::blob::responses::SetBlobMetadataResponse;
 use crate::prelude::*;
-use azure_core::headers::{add_optional_header, add_optional_header_ref};
+use azure_core::headers::{add_optional_header, add_optional_header_ref, add_mandatory_header};
 use azure_core::prelude::*;
 use std::convert::TryInto;
 
@@ -47,7 +47,11 @@ impl<'a> SetBlobMetadataBuilder<'a> {
             &|mut request| {
                 request = add_optional_header(&self.client_request_id, request);
                 request = add_optional_header_ref(&self.lease_id, request);
-                request = add_optional_header(&self.metadata, request);
+                if let Some(metadata) = &self.metadata {
+                    for m in metadata.iter() {
+                        request = add_mandatory_header(&m, request);
+                    }
+                }
                 request
             },
             None,

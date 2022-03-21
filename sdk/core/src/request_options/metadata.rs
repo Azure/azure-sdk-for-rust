@@ -1,6 +1,6 @@
+use crate::headers;
 use crate::Header;
 use bytes::Bytes;
-use http::request::Builder;
 use http::HeaderMap;
 use std::collections::HashMap;
 
@@ -43,40 +43,29 @@ impl Metadata {
     pub fn get(&self, k: &str) -> Option<Bytes> {
         self.0.get(k).cloned()
     }
+
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = Metadatum> + 'a {
+        self.0.iter().map(|(key, value)| {
+            Metadatum(
+                key.clone(),
+                std::str::from_utf8(&*value)
+                    .expect("non-utf8 header value")
+                    .into(),
+            )
+        })
+    }
 }
 
-impl Header for &Metadata {
-    fn name(&self) -> &'static str {
-        todo!("Handle multiple headers")
+#[derive(Debug)]
+pub struct Metadatum(String, String);
+
+impl Header for Metadatum {
+    fn name(&self) -> headers::HeaderName {
+        format!("x-ms-meta-{}", self.0).into()
     }
 
-    fn value(&self) -> String {
-        todo!("Handle multiple headers")
-    }
-
-    fn add_to_builder(&self, builder: Builder) -> Builder {
-        let mut builder = builder;
-
-        for (key, val) in self.0.iter() {
-            builder = builder.header(&format!("x-ms-meta-{}", key), val.as_ref());
-        }
-
-        builder
-    }
-
-    fn add_to_request(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        for (key, value) in self.0.iter() {
-            let header_name =
-                http::header::HeaderName::from_bytes(format!("x-ms-meta-{}", key).as_bytes())?;
-            let header_value = http::header::HeaderValue::from_bytes(value)?;
-
-            request.headers_mut().append(header_name, header_value);
-        }
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        self.1.clone().into()
     }
 }
 

@@ -2,7 +2,7 @@ use super::SourceContentMD5;
 use crate::blob::responses::CopyBlobFromUrlResponse;
 use crate::prelude::*;
 use azure_core::headers::{
-    add_optional_header, add_optional_header_ref, COPY_SOURCE, REQUIRES_SYNC,
+    add_optional_header, add_optional_header_ref, COPY_SOURCE, REQUIRES_SYNC, add_mandatory_header,
 };
 use azure_core::prelude::*;
 use std::convert::TryInto;
@@ -68,7 +68,11 @@ impl<'a> CopyBlobFromUrlBuilder<'a> {
             &|mut request| {
                 request = request.header(COPY_SOURCE, self.source_url);
                 request = request.header(REQUIRES_SYNC, format!("{}", self.is_synchronous));
-                request = add_optional_header(&self.metadata, request);
+                if let Some(metadata) = &self.metadata {
+                    for m in metadata.iter() {
+                        request = add_mandatory_header(&m, request);
+                    }
+                }
                 request = add_optional_header(&self.if_modified_since_condition, request);
                 request = add_optional_header(&self.if_match_condition, request);
                 request = add_optional_header_ref(&self.lease_id, request);

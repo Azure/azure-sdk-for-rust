@@ -1,5 +1,4 @@
-use crate::headers;
-use crate::Header;
+use crate::headers::{self, Header};
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -9,17 +8,19 @@ pub enum IfSourceModifiedSinceCondition {
 }
 
 impl Header for IfSourceModifiedSinceCondition {
-    fn name(&self) -> &'static str {
+    fn name(&self) -> headers::HeaderName {
         match self {
             IfSourceModifiedSinceCondition::Modified(_) => headers::SOURCE_IF_MODIFIED_SINCE,
             IfSourceModifiedSinceCondition::Unmodified(_) => headers::SOURCE_IF_UNMODIFIED_SINCE,
         }
+        .into()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         match self {
             IfSourceModifiedSinceCondition::Modified(date) => date.to_rfc2822(),
             IfSourceModifiedSinceCondition::Unmodified(date) => date.to_rfc2822(),
         }
+        .into()
     }
 }

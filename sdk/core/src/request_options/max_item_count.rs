@@ -1,5 +1,4 @@
-use crate::headers;
-use crate::Header;
+use crate::headers::{self, Header};
 
 /// The max number of items in the collection
 #[derive(Debug, Clone, Copy)]
@@ -13,12 +12,12 @@ impl MaxItemCount {
 }
 
 impl Header for MaxItemCount {
-    fn name(&self) -> &'static str {
-        headers::MAX_ITEM_COUNT
+    fn name(&self) -> headers::HeaderName {
+        headers::MAX_ITEM_COUNT.into()
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         let count = if self.0 <= 0 { -1 } else { self.0 };
-        format!("{}", count)
+        format!("{}", count).into()
     }
 }

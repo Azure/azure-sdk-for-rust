@@ -1,4 +1,4 @@
-use crate::{headers, Header};
+use crate::headers::{self, Header};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ActivityId<'a>(&'a str);
@@ -10,11 +10,11 @@ impl<'a> ActivityId<'a> {
 }
 
 impl<'a> Header for ActivityId<'a> {
-    fn name(&self) -> &'static str {
-        headers::ACTIVITY_ID
+    fn name(&self) -> headers::HeaderName {
+        headers::ACTIVITY_ID.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_owned()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }

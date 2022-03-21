@@ -1,4 +1,4 @@
-use crate::Header;
+use crate::headers::{self, Header};
 
 #[derive(Debug, Clone, Copy)]
 pub struct ContentDisposition<'a>(&'a str);
@@ -13,11 +13,11 @@ where
 }
 
 impl<'a> Header for ContentDisposition<'a> {
-    fn name(&self) -> &'static str {
-        http::header::CONTENT_DISPOSITION.as_str()
+    fn name(&self) -> headers::HeaderName {
+        http::header::CONTENT_DISPOSITION.into()
     }
 
-    fn value(&self) -> String {
-        self.0.to_owned()
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }

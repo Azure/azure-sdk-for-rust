@@ -1,4 +1,5 @@
-use crate::{Header, ParseError};
+use crate::headers::{self, Header};
+use crate::ParseError;
 use http::request::Builder;
 use std::convert::From;
 use std::fmt;
@@ -80,11 +81,11 @@ impl fmt::Display for Range {
 }
 
 impl<'a> Header for Range {
-    fn name(&self) -> &'static str {
+    fn name(&self) -> headers::HeaderName {
         todo!("Handle multiple headers")
     }
 
-    fn value(&self) -> String {
+    fn value(&self) -> headers::HeaderValue {
         todo!("Handle multiple headers")
     }
 
