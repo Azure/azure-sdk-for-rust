@@ -76,10 +76,7 @@ async fn create_and_delete_document() {
         .document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
 
-    let document_after_get = document
-        .get_document::<MyDocument>()
-        .await
-        .unwrap();
+    let document_after_get = document.get_document::<MyDocument>().await.unwrap();
 
     if let GetDocumentResponse::Found(document) = document_after_get {
         assert_eq!(document.document.document, document_data);
@@ -238,10 +235,7 @@ async fn replace_document() {
     let document = collection
         .document_client(DOCUMENT_NAME, &DOCUMENT_NAME)
         .unwrap();
-    let document_after_get = document
-        .get_document::<MyDocument>()
-        .await
-        .unwrap();
+    let document_after_get = document.get_document::<MyDocument>().await.unwrap();
 
     if let GetDocumentResponse::Found(document) = document_after_get {
         assert!(document.document.document.hello == 190);

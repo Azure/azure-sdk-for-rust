@@ -30,7 +30,7 @@ impl<T> GetDocumentBuilder<T> {
             if_modified_since: None,
             consistency_level: None,
             context: Context::new(),
-            _phantom: marker::PhantomData
+            _phantom: marker::PhantomData,
         }
     }
 
