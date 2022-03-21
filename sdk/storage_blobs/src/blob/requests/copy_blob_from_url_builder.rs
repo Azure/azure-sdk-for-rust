@@ -2,7 +2,7 @@ use super::SourceContentMD5;
 use crate::blob::responses::CopyBlobFromUrlResponse;
 use crate::prelude::*;
 use azure_core::headers::{
-    add_optional_header, add_optional_header_ref, COPY_SOURCE, REQUIRES_SYNC, add_mandatory_header,
+    add_mandatory_header, add_optional_header, add_optional_header_ref, COPY_SOURCE, REQUIRES_SYNC,
 };
 use azure_core::prelude::*;
 use std::convert::TryInto;

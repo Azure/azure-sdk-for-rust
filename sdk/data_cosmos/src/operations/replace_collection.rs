@@ -39,7 +39,7 @@ impl ReplaceCollectionBuilder {
                 .client
                 .prepare_request_with_collection_name(http::Method::PUT);
 
-if let Some(cl) = &self.consistency_level {
+            if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
 

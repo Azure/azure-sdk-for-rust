@@ -34,7 +34,7 @@ impl DeleteUserDefinedFunctionBuilder {
                 .client
                 .prepare_pipeline_with_user_defined_function_name(http::Method::DELETE);
 
-if let Some(cl) = &self.consistency_level {
+            if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
 

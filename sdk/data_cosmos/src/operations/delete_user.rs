@@ -28,7 +28,7 @@ impl DeleteUserBuilder {
             let mut request = self
                 .client
                 .prepare_request_with_user_name(http::Method::DELETE);
-if let Some(cl) = &self.consistency_level {
+            if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
             request.set_body(bytes::Bytes::from_static(&[]).into());

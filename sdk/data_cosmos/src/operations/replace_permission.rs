@@ -35,10 +35,10 @@ impl ReplacePermissionBuilder {
                 .client
                 .prepare_request_with_permission_name(http::Method::PUT);
 
-if let Some(cl) = &self.consistency_level {
+            if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
-            azure_core::headers::add_optional_header2(&self.expiry_seconds, &mut request)?;
+            request.insert_headers(&self.expiry_seconds);
 
             #[derive(Serialize, Deserialize)]
             struct RequestBody<'x> {

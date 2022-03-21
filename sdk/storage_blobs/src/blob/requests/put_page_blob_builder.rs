@@ -1,7 +1,8 @@
 use crate::blob::responses::PutBlobResponse;
 use crate::prelude::*;
 use azure_core::headers::{
-    add_optional_header, add_optional_header_ref, BLOB_CONTENT_LENGTH, BLOB_TYPE, add_mandatory_header,
+    add_mandatory_header, add_optional_header, add_optional_header_ref, BLOB_CONTENT_LENGTH,
+    BLOB_TYPE,
 };
 use azure_core::prelude::*;
 

@@ -11,9 +11,9 @@ pub use query::{Param, Query};
 use super::Resource;
 use crate::headers;
 
+use azure_core::headers::{AsHeaders, HeaderName, HeaderValue};
 use azure_core::Header;
 use http::header::HeaderMap;
-use http::request::Builder;
 use serde::de::DeserializeOwned;
 
 /// User-defined content in JSON format.
@@ -83,11 +83,11 @@ impl QueryCrossPartition {
 }
 
 impl Header for QueryCrossPartition {
-    fn name(&self) -> azure_core::headers::HeaderName {
+    fn name(&self) -> HeaderName {
         headers::HEADER_DOCUMENTDB_QUERY_ENABLECROSSPARTITION.into()
     }
 
-    fn value(&self) -> azure_core::headers::HeaderValue {
+    fn value(&self) -> HeaderValue {
         self.as_bool_str().to_owned().into()
     }
 }
@@ -110,11 +110,11 @@ impl ParallelizeCrossPartition {
 }
 
 impl Header for ParallelizeCrossPartition {
-    fn name(&self) -> azure_core::headers::HeaderName {
+    fn name(&self) -> HeaderName {
         headers::HEADER_DOCUMENTDB_QUERY_PARALLELIZECROSSPARTITIONQUERY.into()
     }
 
-    fn value(&self) -> azure_core::headers::HeaderValue {
+    fn value(&self) -> HeaderValue {
         self.as_bool_str().to_owned().into()
     }
 }
@@ -137,11 +137,11 @@ impl IsUpsert {
 }
 
 impl Header for IsUpsert {
-    fn name(&self) -> azure_core::headers::HeaderName {
+    fn name(&self) -> HeaderName {
         headers::HEADER_DOCUMENTDB_IS_UPSERT.into()
     }
 
-    fn value(&self) -> azure_core::headers::HeaderValue {
+    fn value(&self) -> HeaderValue {
         self.as_bool_str().to_owned().into()
     }
 }
@@ -154,36 +154,15 @@ pub enum ChangeFeed {
     None,
 }
 
-impl Header for ChangeFeed {
-    fn add_to_builder(&self, builder: Builder) -> Builder {
-        match self {
-            Self::Incremental => builder.header(headers::HEADER_A_IM, "Incremental feed"),
-            Self::None => builder,
-        }
-    }
-
-    fn add_to_request(
-        &self,
-        request: &mut azure_core::Request,
-    ) -> Result<(), azure_core::HttpHeaderError> {
+impl AsHeaders for ChangeFeed {
+    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+    fn as_headers(&self) -> Self::Iter {
         match self {
             Self::Incremental => {
-                request.headers_mut().insert(
-                    headers::HEADER_A_IM,
-                    http::header::HeaderValue::from_str("Incremental feed")?,
-                );
+                Some((headers::HEADER_A_IM.into(), "Incremental feed".into())).into_iter()
             }
-            Self::None => {}
+            Self::None => None.into_iter(),
         }
-        Ok(())
-    }
-
-    fn name(&self) -> azure_core::headers::HeaderName {
-        todo!()
-    }
-
-    fn value(&self) -> azure_core::headers::HeaderValue {
-        todo!()
     }
 }
 
@@ -205,11 +184,11 @@ impl TentativeWritesAllowance {
 }
 
 impl Header for TentativeWritesAllowance {
-    fn name(&self) -> azure_core::headers::HeaderName {
+    fn name(&self) -> HeaderName {
         headers::HEADER_ALLOW_MULTIPLE_WRITES.into()
     }
 
-    fn value(&self) -> azure_core::headers::HeaderValue {
+    fn value(&self) -> HeaderValue {
         self.as_bool_str().to_owned().into()
     }
 }
@@ -226,11 +205,11 @@ impl PartitionRangeId {
 }
 
 impl Header for PartitionRangeId {
-    fn name(&self) -> azure_core::headers::HeaderName {
+    fn name(&self) -> HeaderName {
         headers::HEADER_DOCUMENTDB_PARTITIONRANGEID.into()
     }
 
-    fn value(&self) -> azure_core::headers::HeaderValue {
+    fn value(&self) -> HeaderValue {
         self.0.clone().into()
     }
 }

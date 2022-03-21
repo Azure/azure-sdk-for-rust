@@ -50,7 +50,7 @@ impl ListStoredProceduresBuilder {
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
+                request.insert_headers(&this.max_item_count);
 
                 request.insert_headers(&continuation);
 

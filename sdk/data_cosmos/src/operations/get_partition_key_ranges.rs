@@ -43,9 +43,9 @@ impl GetPartitionKeyRangesBuilder {
                 http::Method::GET,
             );
 
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
-if let Some(cl) = &self.consistency_level {
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
 

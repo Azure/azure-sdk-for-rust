@@ -39,7 +39,7 @@ impl DeleteAttachmentBuilder {
                 .prepare_pipeline_with_attachment_name(http::Method::DELETE);
 
             // add trait headers
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
+            request.insert_headers(&self.if_match_condition);
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }

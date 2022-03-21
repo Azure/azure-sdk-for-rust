@@ -56,12 +56,12 @@ impl ListAttachmentsBuilder {
                     http::Method::GET,
                 );
 
-                azure_core::headers::add_optional_header2(&this.if_match_condition, &mut request)?;
+                request.insert_headers(&this.if_match_condition);
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
-                azure_core::headers::add_mandatory_header2(&this.a_im, &mut request)?;
+                request.insert_headers(&this.max_item_count);
+                request.insert_headers(&this.a_im);
                 crate::cosmos_entity::add_as_partition_key_header_serialized2(
                     this.client.partition_key_serialized(),
                     &mut request,

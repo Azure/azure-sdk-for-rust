@@ -1,6 +1,6 @@
 use crate::clients::QueueClient;
 use crate::responses::*;
-use azure_core::headers::{add_optional_header, add_mandatory_header};
+use azure_core::headers::{add_mandatory_header, add_optional_header};
 use azure_core::prelude::*;
 use std::convert::TryInto;
 

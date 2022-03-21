@@ -1,6 +1,6 @@
 use crate::blob::responses::PutBlockListResponse;
 use crate::prelude::*;
-use azure_core::headers::{add_optional_header, add_optional_header_ref, add_mandatory_header};
+use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
 use azure_core::prelude::*;
 use bytes::Bytes;
 

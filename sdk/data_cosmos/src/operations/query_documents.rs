@@ -94,16 +94,13 @@ impl QueryDocumentsBuilder {
                     http::HeaderValue::from_str("application/query+json").unwrap(),
                 );
 
-                azure_core::headers::add_optional_header2(&this.if_match_condition, &mut request)?;
-                azure_core::headers::add_optional_header2(&this.if_modified_since, &mut request)?;
+                request.insert_headers(&this.if_match_condition);
+                request.insert_headers(&this.if_modified_since);
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
-                azure_core::headers::add_mandatory_header2(
-                    &this.query_cross_partition,
-                    &mut request,
-                )?;
+                request.insert_headers(&this.max_item_count);
+                request.insert_headers(&this.query_cross_partition);
 
                 request.set_body(bytes::Bytes::from(serde_json::to_string(&this.query)?).into());
                 if let Some(partition_key_serialized) = this.partition_key_serialized.as_ref() {
