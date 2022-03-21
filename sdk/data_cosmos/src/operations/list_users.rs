@@ -50,7 +50,7 @@ impl ListUsersBuilder {
                 request.insert_headers(&this.max_item_count);
 
                 if let Some(ref c) = continuation {
-                    request.insert_header(c)?;
+                    request.insert_headers(c)?;
                 }
 
                 let response = this
