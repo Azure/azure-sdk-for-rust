@@ -66,9 +66,29 @@ impl Request {
         Ok(())
     }
 
+    pub fn maybe_insert_header<T: Header + Debug>(
+        &mut self,
+        header: Option<&T>,
+    ) -> crate::error::Result<()> {
+        if let Some(h) = header {
+            self.insert_header(h)?;
+        }
+        Ok(())
+    }
+
     pub fn insert_headers<T: Header + Debug>(&mut self, headers: &[T]) -> crate::error::Result<()> {
         for header in headers {
             self.insert_header(header)?;
+        }
+        Ok(())
+    }
+
+    pub fn maybe_insert_headers<T: Header + Debug>(
+        &mut self,
+        headers: Option<&[T]>,
+    ) -> crate::error::Result<()> {
+        if let Some(hs) = headers {
+            self.insert_headers(hs)?;
         }
         Ok(())
     }

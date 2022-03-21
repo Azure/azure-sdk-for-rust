@@ -32,7 +32,7 @@ impl Header for IfMatchCondition {
             IfMatchCondition::Any => (IF_MATCH, "*"),
         };
 
-        request.headers_mut().append(
+        request.headers_mut().insert(
             header_name,
             http::header::HeaderValue::from_str(header_value)?,
         );

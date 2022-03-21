@@ -42,7 +42,7 @@ impl Header for PublicAccess {
             PublicAccess::None => return Ok(()),
         };
 
-        request.headers_mut().append(
+        request.headers_mut().insert(
             header_name,
             http::header::HeaderValue::from_str(header_value)?,
         );

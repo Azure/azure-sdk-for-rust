@@ -29,13 +29,13 @@ impl Policy for SharedKeyAuthorizationPolicy {
         );
 
         let headers_mut = request.headers_mut();
-        headers_mut.append(
+        headers_mut.insert(
             azure_core::headers::MS_DATE,
             HeaderValue::from_str(
                 format!("{}", chrono::Utc::now().format("%a, %d %h %Y %T GMT")).as_str(),
             )?,
         );
-        headers_mut.append(
+        headers_mut.insert(
             azure_core::headers::VERSION,
             HeaderValue::from_str("2019-12-12")?,
         ); // TODO: Remove duplication with storage_account_client.rs
@@ -51,7 +51,7 @@ impl Policy for SharedKeyAuthorizationPolicy {
 
         request
             .headers_mut()
-            .append(http::header::AUTHORIZATION, HeaderValue::from_str(&auth)?);
+            .insert(http::header::AUTHORIZATION, HeaderValue::from_str(&auth)?);
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.

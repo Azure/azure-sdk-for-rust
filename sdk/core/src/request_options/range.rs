@@ -104,13 +104,13 @@ impl<'a> Header for Range {
         &self,
         request: &mut crate::Request,
     ) -> Result<(), crate::errors::HttpHeaderError> {
-        request.headers_mut().append(
+        request.headers_mut().insert(
             "x-ms-range",
             http::HeaderValue::from_str(&format!("{}", self))?,
         );
 
         if self.len() < 1024 * 1024 * 4 {
-            request.headers_mut().append(
+            request.headers_mut().insert(
                 "x-ms-range-get-content-crc64",
                 http::HeaderValue::from_str("true")?,
             );

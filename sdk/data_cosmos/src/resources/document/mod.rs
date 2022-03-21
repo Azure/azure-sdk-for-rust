@@ -168,7 +168,7 @@ impl Header for ChangeFeed {
     ) -> Result<(), azure_core::HttpHeaderError> {
         match self {
             Self::Incremental => {
-                request.headers_mut().append(
+                request.headers_mut().insert(
                     headers::HEADER_A_IM,
                     http::header::HeaderValue::from_str("Incremental feed")?,
                 );

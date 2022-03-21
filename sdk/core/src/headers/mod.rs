@@ -56,14 +56,6 @@ impl Headers {
         self.0.insert(key.into(), value.into());
     }
 
-    pub fn append<K, V>(&mut self, key: K, value: V)
-    where
-        K: Into<HeaderName>,
-        V: Into<HeaderValue>,
-    {
-        self.0.insert(key.into(), value.into());
-    }
-
     pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
         self.0.iter()
     }
