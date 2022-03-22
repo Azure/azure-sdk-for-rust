@@ -40,8 +40,10 @@ impl CreatePermissionBuilder {
                 http::Method::POST,
             );
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.expiry_seconds, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.insert_headers(&self.expiry_seconds);
 
             #[derive(Serialize, Deserialize)]
             struct RequestBody<'x> {

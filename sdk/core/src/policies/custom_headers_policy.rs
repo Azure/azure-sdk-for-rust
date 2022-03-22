@@ -1,14 +1,14 @@
+use crate::headers::Headers;
 use crate::policies::{Policy, PolicyResult};
 use crate::{Context, Request};
-use http::header::HeaderMap;
 use std::sync::Arc;
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct CustomHeaders(pub HeaderMap);
+#[derive(Debug, Clone)]
+pub struct CustomHeaders(Headers);
 
-impl From<HeaderMap> for CustomHeaders {
-    fn from(header_map: HeaderMap) -> Self {
-        Self(header_map)
+impl From<Headers> for CustomHeaders {
+    fn from(h: Headers) -> Self {
+        Self(h)
     }
 }
 
@@ -34,7 +34,7 @@ impl Policy for CustomHeadersPolicy {
                     );
                     request
                         .headers_mut()
-                        .insert(header_name, header_value.to_owned());
+                        .insert(header_name.clone(), header_value.clone());
                 });
         }
 

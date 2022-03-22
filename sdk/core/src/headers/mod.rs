@@ -1,89 +1,212 @@
 //! Azure HTTP headers.
 mod utilities;
 
-use http::request::Builder;
-
 pub use utilities::*;
+
+use http::request::Builder;
+use std::collections::HashMap;
+
+/// A trait for converting a type into request headers
+pub trait AsHeaders {
+    type Iter: Iterator<Item = (HeaderName, HeaderValue)>;
+    fn as_headers(&self) -> Self::Iter;
+}
+
+impl<T> AsHeaders for T
+where
+    T: Header,
+{
+    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Self::Iter {
+        Some((self.name(), self.value())).into_iter()
+    }
+}
+
+impl<T> AsHeaders for Option<T>
+where
+    T: Header,
+{
+    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+
+    fn as_headers(&self) -> Self::Iter {
+        match self {
+            Some(h) => h.as_headers(),
+            None => None.into_iter(),
+        }
+    }
+}
 
 /// View a type as an HTTP header.
 ///
-/// Ad interim we require two functions: `add_as_header` and `add_as_header2`. Make sure
-/// your implementations are functionally equivalent between the two. In other words, the
-/// effect should be the same regardless of which function the SDK calls.
+/// Ad interim there are two default functions: `add_to_builder` and `add_to_request`.
 ///
 /// While not restricted by the type system, please add HTTP headers only. In particular, do not
 /// interact with the body of the request.
 ///
 /// As soon as the migration to the pipeline architecture will be complete we will phase out
-/// `add_as_header`.
-pub trait AddAsHeader {
-    fn add_as_header(&self, builder: Builder) -> Builder;
-
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError>;
+/// `add_to_builder`.
+pub trait Header {
+    fn name(&self) -> HeaderName;
+    fn value(&self) -> HeaderValue;
 }
 
-impl<T> AddAsHeader for Option<T>
-where
-    T: AddAsHeader,
-{
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        if let Some(h) = self {
-            h.add_as_header(builder)
-        } else {
-            builder
-        }
+/// A collection of headers
+#[derive(Clone, Debug)]
+pub struct Headers(std::collections::HashMap<HeaderName, HeaderValue>);
+
+impl Headers {
+    pub(crate) fn new() -> Self {
+        Self(Default::default())
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        if let Some(h) = self {
-            h.add_as_header2(request)?;
-        }
-        Ok(())
+    /// Get a header value given a specific header name
+    pub fn get(&self, key: &HeaderName) -> Option<&HeaderValue> {
+        self.0.get(key)
+    }
+
+    /// Insert a header name/value pair
+    pub fn insert<K, V>(&mut self, key: K, value: V)
+    where
+        K: Into<HeaderName>,
+        V: Into<HeaderValue>,
+    {
+        self.0.insert(key.into(), value.into());
+    }
+
+    /// Iterate over all the header name/value pairs
+    pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
+        self.0.iter()
+    }
+}
+
+impl IntoIterator for Headers {
+    type Item = (HeaderName, HeaderValue);
+
+    type IntoIter = std::collections::hash_map::IntoIter<HeaderName, HeaderValue>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl From<std::collections::HashMap<HeaderName, HeaderValue>> for Headers {
+    fn from(c: std::collections::HashMap<HeaderName, HeaderValue>) -> Self {
+        Self(c)
+    }
+}
+
+impl From<http::HeaderMap> for Headers {
+    fn from(map: http::HeaderMap) -> Self {
+        let map = map
+            .into_iter()
+            .filter_map(|(k, v)| {
+                let key = k?.as_str().to_owned();
+                let value = std::str::from_utf8(v.as_bytes())
+                    .expect("non-UTF8 header value")
+                    .to_owned();
+                Some((key.into(), value.into()))
+            })
+            .collect::<HashMap<HeaderName, HeaderValue>>();
+        Self(map)
+    }
+}
+
+/// A header name
+#[derive(Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
+pub struct HeaderName(std::borrow::Cow<'static, str>);
+
+impl HeaderName {
+    pub fn as_str(&self) -> &str {
+        self.0.as_ref()
+    }
+}
+
+impl From<http::header::HeaderName> for HeaderName {
+    fn from(n: http::header::HeaderName) -> Self {
+        Self(std::borrow::Cow::Owned(n.as_str().into()))
+    }
+}
+
+impl From<&'static str> for HeaderName {
+    fn from(s: &'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
+    }
+}
+
+impl From<String> for HeaderName {
+    fn from(s: String) -> Self {
+        Self(std::borrow::Cow::Owned(s))
+    }
+}
+
+impl From<&HeaderName> for http::header::HeaderName {
+    fn from(n: &HeaderName) -> Self {
+        http::header::HeaderName::from_bytes(n.as_str().as_bytes()).unwrap()
+    }
+}
+
+/// A header value
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HeaderValue(std::borrow::Cow<'static, str>);
+
+impl HeaderValue {
+    pub fn as_str(&self) -> &str {
+        self.0.as_ref()
+    }
+}
+
+impl From<http::header::HeaderValue> for HeaderValue {
+    fn from(n: http::header::HeaderValue) -> Self {
+        Self(std::borrow::Cow::Owned(
+            n.to_str().expect("non-UTF8 header value").to_owned(),
+        ))
+    }
+}
+
+impl From<&'static str> for HeaderValue {
+    fn from(s: &'static str) -> Self {
+        Self(std::borrow::Cow::Borrowed(s))
+    }
+}
+
+impl From<String> for HeaderValue {
+    fn from(s: String) -> Self {
+        Self(std::borrow::Cow::Owned(s))
+    }
+}
+
+impl From<&String> for HeaderValue {
+    fn from(s: &String) -> Self {
+        Self(std::borrow::Cow::Owned(s.clone()))
+    }
+}
+
+impl From<&HeaderValue> for http::header::HeaderValue {
+    fn from(n: &HeaderValue) -> Self {
+        http::header::HeaderValue::from_bytes(n.as_str().as_bytes()).unwrap()
     }
 }
 
 #[must_use]
-pub fn add_optional_header_ref<T: AddAsHeader>(item: &Option<&T>, mut builder: Builder) -> Builder {
+pub fn add_optional_header_ref<T: Header>(item: &Option<&T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
-        builder = item.add_as_header(builder);
+        builder = builder.header(item.name().as_str(), item.value().as_str())
     }
     builder
 }
 
 #[must_use]
-pub fn add_optional_header<T: AddAsHeader>(item: &Option<T>, mut builder: Builder) -> Builder {
+pub fn add_optional_header<T: Header>(item: &Option<T>, mut builder: Builder) -> Builder {
     if let Some(item) = item {
-        builder = item.add_as_header(builder);
+        builder = builder.header(item.name().as_str(), item.value().as_str())
     }
     builder
 }
 
-pub fn add_optional_header2<T: AddAsHeader>(
-    item: &Option<T>,
-    request: &mut crate::Request,
-) -> Result<(), crate::errors::HttpHeaderError> {
-    if let Some(item) = item {
-        item.add_as_header2(request)?
-    }
-    Ok(())
-}
-
 #[must_use]
-pub fn add_mandatory_header<T: AddAsHeader>(item: &T, builder: Builder) -> Builder {
-    item.add_as_header(builder)
-}
-
-pub fn add_mandatory_header2<T: AddAsHeader>(
-    item: &T,
-    request: &mut crate::Request,
-) -> Result<(), crate::errors::HttpHeaderError> {
-    item.add_as_header2(request)
+pub fn add_mandatory_header<T: Header>(item: &T, builder: Builder) -> Builder {
+    builder.header(item.name().as_str(), item.value().as_str())
 }
 
 pub const ACCOUNT_KIND: &str = "x-ms-account-kind";

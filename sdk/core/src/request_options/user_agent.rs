@@ -1,6 +1,5 @@
-use crate::AddAsHeader;
-use http::header::USER_AGENT;
-use http::request::Builder;
+use crate::headers::{self, Header};
+use http::header;
 
 #[derive(Debug, Clone, Copy)]
 pub struct UserAgent<'a>(&'a str);
@@ -11,19 +10,12 @@ impl<'a> UserAgent<'a> {
     }
 }
 
-impl<'a> AddAsHeader for UserAgent<'a> {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(USER_AGENT, self.0)
+impl<'a> Header for UserAgent<'a> {
+    fn name(&self) -> headers::HeaderName {
+        header::USER_AGENT.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request
-            .headers_mut()
-            .append(USER_AGENT, http::HeaderValue::from_str(self.0)?);
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }

@@ -43,8 +43,10 @@ impl CreateCollectionBuilder {
     pub fn into_future(self) -> CreateCollection {
         Box::pin(async move {
             let mut request = self.client.prepare_collections_pipeline(http::Method::POST);
-            azure_core::headers::add_optional_header2(&self.offer, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            request.insert_headers(&self.offer);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let collection = CreateCollectionBody {
                 id: &self.collection_name,

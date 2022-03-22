@@ -32,7 +32,9 @@ impl ReplaceStoredProcedureBuilder {
                 .client
                 .prepare_pipeline_with_stored_procedure_name(http::Method::PUT);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut req)?;
+            if let Some(cl) = &self.consistency_level {
+                req.insert_headers(cl);
+            }
 
             #[derive(Debug, Serialize)]
             struct Request<'a> {

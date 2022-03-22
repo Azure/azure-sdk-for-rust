@@ -1,6 +1,6 @@
 use crate::container::public_access_from_header;
 use crate::prelude::*;
-use azure_core::headers::{add_mandatory_header, add_optional_header, add_optional_header_ref};
+use azure_core::headers::{add_optional_header, add_optional_header_ref, AsHeaders};
 use azure_core::prelude::*;
 use azure_storage::core::StoredAccessPolicyList;
 use bytes::Bytes;
@@ -50,7 +50,9 @@ impl<'a> SetACLBuilder<'a> {
             url.as_str(),
             &Method::PUT,
             &|mut request| {
-                request = add_mandatory_header(&self.public_access, request);
+                for (name, value) in self.public_access.as_headers() {
+                    request = request.header(name.as_str(), value.as_str())
+                }
                 request = add_optional_header(&self.client_request_id, request);
                 request = add_optional_header_ref(&self.lease_id, request);
                 request

@@ -74,7 +74,11 @@ impl<'a> CopyBlobBuilder<'a> {
             &http::Method::PUT,
             &|mut request| {
                 request = request.header(COPY_SOURCE, self.source_url.as_str());
-                request = add_optional_header(&self.metadata, request);
+                if let Some(metadata) = &self.metadata {
+                    for m in metadata.iter() {
+                        request = add_mandatory_header(&m, request);
+                    }
+                }
                 request = add_optional_header(&self.sequence_number_condition, request);
                 request = add_optional_header(&self.if_modified_since_condition, request);
                 request = add_optional_header(&self.if_match_condition, request);

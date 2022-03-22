@@ -48,7 +48,7 @@ impl Policy for TokenCredentialAuthorizationPolicy {
 
         request
             .headers_mut()
-            .append(AUTHORIZATION, HeaderValue::from_str(&auth_header_value)?);
+            .insert(AUTHORIZATION, HeaderValue::from_str(&auth_header_value)?);
 
         next[0].send(ctx, request, &next[1..]).await
     }

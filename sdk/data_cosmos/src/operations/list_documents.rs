@@ -57,15 +57,14 @@ impl ListDocumentsBuilder {
                     http::Method::GET,
                 );
 
-                azure_core::headers::add_optional_header2(&this.if_match_condition, &mut req)?;
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut req)?;
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut req)?;
-                azure_core::headers::add_mandatory_header2(&this.a_im, &mut req)?;
-                azure_core::headers::add_optional_header2(&this.partition_range_id, &mut req)?;
-
-                if let Some(ref c) = continuation {
-                    req.insert_header(c)?;
+                req.insert_headers(&this.if_match_condition);
+                if let Some(cl) = &this.consistency_level {
+                    req.insert_headers(cl);
                 }
+                req.insert_headers(&this.max_item_count);
+                req.insert_headers(&this.a_im);
+                req.insert_headers(&this.partition_range_id);
+                req.insert_headers(&continuation);
 
                 let response = this
                     .client

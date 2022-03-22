@@ -34,7 +34,9 @@ impl DeleteUserDefinedFunctionBuilder {
                 .client
                 .prepare_pipeline_with_user_defined_function_name(http::Method::DELETE);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let response = self
                 .client

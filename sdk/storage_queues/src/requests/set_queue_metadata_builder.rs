@@ -46,7 +46,9 @@ impl<'a> SetQueueMetadataBuilder<'a> {
             url.as_str(),
             &http::method::Method::PUT,
             &|mut request| {
-                request = add_mandatory_header(&metadata, request);
+                for m in metadata.iter() {
+                    request = add_mandatory_header(&m, request);
+                }
                 request = add_optional_header(&self.client_request_id, request);
                 request
             },

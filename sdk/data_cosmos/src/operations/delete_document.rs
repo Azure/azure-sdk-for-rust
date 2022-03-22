@@ -42,10 +42,12 @@ impl DeleteDocumentBuilder {
                 .client
                 .prepare_request_pipeline_with_document_name(http::Method::DELETE);
 
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.insert_headers(&self.allow_tentative_writes);
 
             crate::cosmos_entity::add_as_partition_key_header_serialized2(
                 self.client.partition_key_serialized(),

@@ -71,12 +71,14 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
             let mut request = self.client.prepare_doc_request_pipeline(http::Method::POST);
 
             add_as_partition_key_header_serialized2(&partition_key, &mut request);
-            azure_core::headers::add_optional_header2(&self.if_match_condition, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.if_modified_since, &mut request)?;
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.is_upsert, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.indexing_directive, &mut request)?;
-            azure_core::headers::add_mandatory_header2(&self.allow_tentative_writes, &mut request)?;
+            request.insert_headers(&self.if_match_condition);
+            request.insert_headers(&self.if_modified_since);
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
+            request.insert_headers(&self.is_upsert);
+            request.insert_headers(&self.indexing_directive);
+            request.insert_headers(&self.allow_tentative_writes);
 
             request.set_body(bytes::Bytes::from(serialized).into());
             let response = self

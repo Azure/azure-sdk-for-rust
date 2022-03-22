@@ -1,8 +1,7 @@
 use crate::clients::PathClient;
 use crate::request_options::*;
-use azure_core::prelude::{ClientRequestId, Context, IfModifiedSinceCondition, Timeout};
-use azure_core::prelude::{IfMatchCondition, NextMarker};
-use azure_core::{headers::add_optional_header2, AppendToUrlQuery, Response as HttpResponse};
+use azure_core::prelude::*;
+use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -65,9 +64,9 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
                 .client
                 .prepare_request(url.as_str(), http::Method::DELETE);
 
-            add_optional_header2(&this.client_request_id, &mut request)?;
-            add_optional_header2(&this.if_match_condition, &mut request)?;
-            add_optional_header2(&this.if_modified_since, &mut request)?;
+            request.insert_headers(&this.client_request_id);
+            request.insert_headers(&this.if_match_condition);
+            request.insert_headers(&this.if_modified_since);
 
             let response = self
                 .client

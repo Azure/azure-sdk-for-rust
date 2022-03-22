@@ -39,7 +39,9 @@ impl ReplaceCollectionBuilder {
                 .client
                 .prepare_request_with_collection_name(http::Method::PUT);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
 
             let collection = ReplaceCollectionBody {
                 id: self.client.collection_name(),

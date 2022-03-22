@@ -32,7 +32,9 @@ impl CreateUserBuilder {
                 http::Method::POST,
             );
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
             let body = CreateUserBody {
                 id: self.client.user_name(),
             };

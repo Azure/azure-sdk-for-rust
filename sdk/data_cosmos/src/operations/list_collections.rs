@@ -38,10 +38,12 @@ impl ListCollectionsBuilder {
             let ctx = self.context.clone();
             async move {
                 let mut request = this.client.prepare_collections_pipeline(http::Method::GET);
-                azure_core::headers::add_optional_header2(&this.consistency_level, &mut request)?;
-                azure_core::headers::add_mandatory_header2(&this.max_item_count, &mut request)?;
+                if let Some(cl) = &this.consistency_level {
+                    request.insert_headers(cl);
+                }
+                request.insert_headers(&this.max_item_count);
 
-                request.insert_header(&continuation)?;
+                request.insert_headers(&continuation);
 
                 let response = this
                     .client

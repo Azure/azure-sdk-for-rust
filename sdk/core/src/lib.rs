@@ -39,7 +39,6 @@ pub mod parsing;
 pub mod prelude;
 pub mod util;
 
-use headers::*;
 use uuid::Uuid;
 
 pub use bytes_stream::*;
@@ -47,7 +46,7 @@ pub use constants::*;
 pub use context::Context;
 pub use errors::*;
 #[doc(inline)]
-pub use headers::AddAsHeader;
+pub use headers::Header;
 pub use http_client::{new_http_client, to_json, HttpClient};
 pub use models::*;
 pub use options::*;

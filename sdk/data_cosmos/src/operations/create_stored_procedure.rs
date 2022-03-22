@@ -33,7 +33,9 @@ impl CreateStoredProcedureBuilder {
         Box::pin(async move {
             let mut req = self.client.prepare_request_pipeline(http::Method::POST);
 
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut req)?;
+            if let Some(cl) = &self.consistency_level {
+                req.insert_headers(cl);
+            }
 
             #[derive(Debug, Serialize)]
             struct Request<'a> {

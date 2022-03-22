@@ -32,7 +32,7 @@ impl Policy for BearerTokenAuthorizationPolicy {
 
         request
             .headers_mut()
-            .append(AUTHORIZATION, HeaderValue::from_str(&auth_header_value)?);
+            .insert(AUTHORIZATION, HeaderValue::from_str(&auth_header_value)?);
 
         // now next[0] is safe (will not panic) because we checked
         // at the beginning of the function.

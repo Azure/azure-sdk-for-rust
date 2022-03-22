@@ -1,5 +1,4 @@
-use crate::{headers, AddAsHeader};
-use http::request::Builder;
+use crate::{headers, Header};
 
 #[derive(Debug, Clone)]
 pub struct Continuation(String);
@@ -14,19 +13,12 @@ impl Continuation {
     }
 }
 
-impl AddAsHeader for Continuation {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(headers::CONTINUATION, &self.0)
+impl Header for Continuation {
+    fn name(&self) -> headers::HeaderName {
+        headers::CONTINUATION.into()
     }
 
-    fn add_as_header2(
-        &self,
-        request: &mut crate::Request,
-    ) -> Result<(), crate::errors::HttpHeaderError> {
-        request
-            .headers_mut()
-            .append(headers::CONTINUATION, http::HeaderValue::from_str(&self.0)?);
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }

@@ -28,7 +28,9 @@ impl DeleteUserBuilder {
             let mut request = self
                 .client
                 .prepare_request_with_user_name(http::Method::DELETE);
-            azure_core::headers::add_optional_header2(&self.consistency_level, &mut request)?;
+            if let Some(cl) = &self.consistency_level {
+                request.insert_headers(cl);
+            }
             request.set_body(bytes::Bytes::from_static(&[]).into());
             let response = self
                 .client
