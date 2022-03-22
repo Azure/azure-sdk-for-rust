@@ -105,8 +105,6 @@ pub enum Error {
     OperationMissingExample(String),
     #[error("operation is missing responses")]
     OperationMissingResponses,
-    #[error("creating path for example {0}")]
-    ExamplePath(#[source] crate::path::Error),
     #[error("example path not utf8")]
     ExamplePathNotUtf8,
     #[error("status code required")]

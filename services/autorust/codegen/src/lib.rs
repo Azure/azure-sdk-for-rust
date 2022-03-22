@@ -6,14 +6,15 @@ pub mod config_parser;
 pub mod identifier;
 pub mod lib_rs;
 pub mod path;
+pub mod readme_md;
 pub mod spec;
 mod status_codes;
 use config_parser::Configuration;
 use proc_macro2::TokenStream;
+use std::io::Write;
 use std::{
     collections::HashSet,
     fs::{self, File},
-    io::prelude::*,
     path::{Path, PathBuf},
 };
 
@@ -22,30 +23,38 @@ pub use self::{
     spec::{ResolvedSchema, Spec, WebOperation},
 };
 
-pub type Result<T> = std::result::Result<T, Error>;
-
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum IoError {
     #[error("Could not create output directory {}: {}", directory.display(), source)]
     CreateOutputDirectory { directory: PathBuf, source: std::io::Error },
     #[error("Could not create file {}: {}", file.display(), source)]
     CreateFile { file: PathBuf, source: std::io::Error },
     #[error("Could not write file {}: {}", file.display(), source)]
     WriteFile { file: PathBuf, source: std::io::Error },
-    #[error("CodeGenNewError")]
-    CodeGenNew(#[source] codegen::Error),
-    #[error("CreateModelsError {0}")]
-    CreateModels(#[source] codegen::Error),
-    #[error("CreateOperationsError")]
-    CreateOperations(#[source] codegen::Error),
-    #[error("path: {0}")]
-    Path(#[from] path::Error),
-    #[error("io: {0}")]
-    Io(#[source] std::io::Error),
     #[error("file name was not utf-8")]
     FileNameNotUtf8,
+    #[error("Error popping path")]
+    PopUpPath(#[source] path_abs::Error),
+    #[error("Error appending path")]
+    AppendPath(#[source] path_abs::Error),
+    #[error(transparent)]
+    Other(#[from] std::io::Error),
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    #[error(transparent)]
+    Io(#[from] IoError),
+    #[error(transparent)]
+    CodeGen(#[from] codegen::Error),
     #[error(transparent)]
     ConfigParser(#[from] config_parser::Error),
+    #[error(transparent)]
+    CargoToml(#[from] cargo_toml::Error),
+    #[error(transparent)]
+    ReadmeMd(#[from] readme_md::Error),
+    #[error(transparent)]
+    LibRs(#[from] lib_rs::Error),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -95,59 +104,59 @@ impl Default for Config {
     }
 }
 
-pub fn run(config: Config) -> Result<()> {
+pub fn run(config: Config) -> Result<(), Error> {
     let directory = &config.output_folder;
-    fs::create_dir_all(directory).map_err(|source| Error::CreateOutputDirectory {
+    fs::create_dir_all(directory).map_err(|source| IoError::CreateOutputDirectory {
         source,
         directory: directory.into(),
     })?;
-    let cg = &CodeGen::new(config.clone()).map_err(Error::CodeGenNew)?;
+    let cg = &CodeGen::new(config.clone())?;
 
     // create models from schemas
     if config.should_run(&Runs::Models) {
-        let models = codegen_models::create_models(cg).map_err(Error::CreateModels)?;
-        let models_path = path::join(&config.output_folder, "models.rs").map_err(Error::Path)?;
+        let models = codegen_models::create_models(cg)?;
+        let models_path = path::join(&config.output_folder, "models.rs")?;
         write_file(&models_path, &models, config.print_writing_file)?;
     }
 
     // create api client from operations
     if config.should_run(&Runs::Operations) {
-        let operations = codegen_operations::create_operations(cg).map_err(Error::CreateOperations)?;
-        let operations_path = path::join(&config.output_folder, "operations.rs").map_err(Error::Path)?;
+        let operations = codegen_operations::create_operations(cg)?;
+        let operations_path = path::join(&config.output_folder, "operations.rs")?;
         write_file(&operations_path, &operations, config.print_writing_file)?;
 
         let operations = create_mod();
-        let operations_path = path::join(&config.output_folder, "mod.rs").map_err(Error::Path)?;
+        let operations_path = path::join(&config.output_folder, "mod.rs")?;
         write_file(&operations_path, &operations, config.print_writing_file)?;
     }
 
     Ok(())
 }
 
-fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<()> {
+fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<(), IoError> {
     let file = file.as_ref();
     if print_writing_file {
         println!("writing file {}", &file.display());
     }
     let code = tokens.to_string();
-    let mut buffer = File::create(&file).map_err(|source| Error::CreateFile { source, file: file.into() })?;
+    let mut buffer = File::create(&file).map_err(|source| IoError::CreateFile { source, file: file.into() })?;
     buffer
         .write_all(code.as_bytes())
-        .map_err(|source| Error::WriteFile { source, file: file.into() })?;
+        .map_err(|source| IoError::WriteFile { source, file: file.into() })?;
     Ok(())
 }
 
 const SPEC_FOLDER: &str = "../../../azure-rest-api-specs/specification";
 
 // gets a sorted list of folders in azure-rest-api-specs/specification
-fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>> {
-    let paths = fs::read_dir(spec_folder).map_err(Error::Io)?;
+fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, IoError> {
+    let paths = fs::read_dir(spec_folder)?;
     let mut spec_folders = Vec::new();
     for path in paths {
-        let path = path.map_err(Error::Io)?;
-        if path.file_type().map_err(Error::Io)?.is_dir() {
+        let path = path?;
+        if path.file_type()?.is_dir() {
             let file_name = path.file_name();
-            let spec_folder = file_name.to_str().ok_or(Error::FileNameNotUtf8)?;
+            let spec_folder = file_name.to_str().ok_or(IoError::FileNameNotUtf8)?;
             spec_folders.push(spec_folder.to_owned());
         }
     }
@@ -184,12 +193,12 @@ impl SpecReadme {
     pub fn readme(&self) -> &Path {
         self.readme.as_path()
     }
-    pub fn config(&self) -> Result<Configuration> {
+    pub fn config(&self) -> Result<Configuration, Error> {
         Ok(config_parser::parse_configurations_from_autorest_config_file(&self.readme)?)
     }
 }
 
-fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Path>) -> Result<Vec<SpecReadme>> {
+fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Path>) -> Result<Vec<SpecReadme>, IoError> {
     Ok(spec_folders
         .into_iter()
         .filter_map(|spec| match path::join(SPEC_FOLDER, &spec) {
@@ -199,11 +208,11 @@ fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Path>) -> Resu
         .collect())
 }
 
-pub fn get_mgmt_readmes() -> Result<Vec<SpecReadme>> {
+pub fn get_mgmt_readmes() -> Result<Vec<SpecReadme>, IoError> {
     get_spec_readmes(get_spec_folders(SPEC_FOLDER)?, "resource-manager/readme.md")
 }
 
-pub fn get_svc_readmes() -> Result<Vec<SpecReadme>> {
+pub fn get_svc_readmes() -> Result<Vec<SpecReadme>, IoError> {
     let mut readmes = get_spec_readmes(get_spec_folders(SPEC_FOLDER)?, "data-plane/readme.md")?;
     // the storage data-plane specs do not follow the pattern
     readmes.push(SpecReadme {

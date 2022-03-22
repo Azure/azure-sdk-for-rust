@@ -7,15 +7,14 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error(transparent)]
+    Io(#[from] crate::IoError),
     #[error("creating module name for feature {feature}: {source}")]
     ModName { source: crate::identifier::Error, feature: String },
-    #[error("WriteFileError")]
-    WriteFile(#[source] crate::Error),
 }
 
 pub fn create(tags: &[&Tag], path: &Path, print_writing_file: bool) -> Result<()> {
-    write_file(path, &create_body(tags)?, print_writing_file).map_err(Error::WriteFile)?;
-    Ok(())
+    Ok(write_file(path, &create_body(tags)?, print_writing_file)?)
 }
 
 fn create_body(tags: &[&Tag]) -> Result<TokenStream> {

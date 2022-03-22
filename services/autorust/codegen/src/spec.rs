@@ -71,7 +71,7 @@ impl Spec {
             let ref_files = openapi::get_reference_file_paths(file_path, &doc);
             docs.insert(PathBuf::from(file_path), doc);
             for ref_file in ref_files {
-                let child_path = path::join(&file_path, &ref_file).map_err(|source| Error::PathJoin { source })?;
+                let child_path = path::join(&file_path, &ref_file)?;
                 Spec::read_file(docs, &child_path)?;
             }
         }
@@ -140,7 +140,7 @@ impl Spec {
         let doc_file = doc_file.as_ref();
         let full_path = match &reference.file {
             None => doc_file.to_owned(),
-            Some(file) => path::join(doc_file, &file).map_err(|source| Error::PathJoin { source })?,
+            Some(file) => path::join(doc_file, &file)?,
         };
         let name = reference.name.clone().ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
@@ -169,7 +169,7 @@ impl Spec {
         let doc_file = doc_file.as_ref();
         let full_path = match reference.file {
             None => doc_file.to_owned(),
-            Some(file) => path::join(doc_file, &file).map_err(|source| Error::PathJoin { source })?,
+            Some(file) => path::join(doc_file, &file)?,
         };
         let name = reference.name.ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
@@ -275,9 +275,9 @@ type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
+    Io(#[from] crate::IoError),
+    #[error(transparent)]
     OpenApi(#[from] autorust_openapi::Error),
-    #[error("PathJoin")]
-    PathJoin { source: path::Error },
     #[error("SchemaNotFound {} {}", ref_key.file_path.display(), ref_key.name)]
     SchemaNotFound { ref_key: RefKey },
     #[error("no name in reference")]
