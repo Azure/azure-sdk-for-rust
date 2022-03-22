@@ -19,6 +19,8 @@ pub struct ExecuteQueryBuilder {
     database: String,
     query: String,
     client_request_id: Option<ClientRequestId>,
+    app: Option<App>,
+    user: Option<User>,
     context: Context,
 }
 
@@ -34,12 +36,16 @@ impl ExecuteQueryBuilder {
             database,
             query,
             client_request_id: None,
+            app: None,
+            user: None,
             context,
         }
     }
 
     setters! {
         client_request_id: ClientRequestId => Some(client_request_id),
+        app: App => Some(app),
+        user: User => Some(user),
         query: String => query,
         database: String => database,
         context: Context => context,
@@ -53,19 +59,26 @@ impl ExecuteQueryBuilder {
             let url = this.client.query_url();
             let mut request = this.client.prepare_request(url, http::Method::POST);
 
-            request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
-            request.insert_headers(&Accept::new("application/json"));
-            request.insert_headers(&AcceptEncoding::new("gzip,deflate"));
-
-            if let Some(request_id) = &this.client_request_id {
-                request.insert_headers(request_id);
-            };
-
             let body = QueryBody {
                 db: this.database.clone(),
                 csl: this.query.clone(),
             };
             request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
+
+            request.insert_headers(&Accept::new("application/json"));
+            request.insert_headers(&AcceptEncoding::new("gzip,deflate"));
+
+            request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
+
+            if let Some(request_id) = &this.client_request_id {
+                request.insert_headers(request_id);
+            };
+            if let Some(app) = &this.app {
+                request.insert_headers(app);
+            };
+            if let Some(user) = &this.user {
+                request.insert_headers(user);
+            };
 
             let response = self
                 .client

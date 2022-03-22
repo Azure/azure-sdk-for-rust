@@ -1,6 +1,7 @@
 mod accept;
 mod accept_encoding;
 mod activity_id;
+mod app;
 mod client_request_id;
 mod content_disposition;
 mod content_encoding;
@@ -29,11 +30,13 @@ mod sequence_number;
 mod sequence_number_condition;
 mod source_lease_id;
 mod timeout;
+mod user;
 mod user_agent;
 
 pub use accept::Accept;
 pub use accept_encoding::AcceptEncoding;
 pub use activity_id::ActivityId;
+pub use app::App;
 pub use client_request_id::ClientRequestId;
 pub use content_disposition::ContentDisposition;
 pub use content_encoding::ContentEncoding;
@@ -62,4 +65,5 @@ pub use sequence_number::SequenceNumber;
 pub use sequence_number_condition::SequenceNumberCondition;
 pub use source_lease_id::SourceLeaseId;
 pub use timeout::Timeout;
+pub use user::User;
 pub use user_agent::UserAgent;
