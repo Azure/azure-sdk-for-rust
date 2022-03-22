@@ -56,7 +56,10 @@ impl ExecuteQueryBuilder {
             request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
             request.insert_headers(&Accept::new("application/json"));
             request.insert_headers(&AcceptEncoding::new("gzip,deflate"));
-            request.insert_headers(&this.client_request_id);
+
+            if let Some(request_id) = &this.client_request_id {
+                request.insert_headers(request_id);
+            };
 
             let body = QueryBody {
                 db: this.database.clone(),
@@ -72,6 +75,15 @@ impl ExecuteQueryBuilder {
 
             KustoResponseDataSetV2::try_from(response).await
         })
+    }
+}
+
+#[cfg(feature = "into_future")]
+impl std::future::IntoFuture for ExecuteQueryBuilder {
+    type IntoFuture = ExecuteQuery;
+    type Output = <ExecuteQuery as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
     }
 }
 
