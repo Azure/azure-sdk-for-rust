@@ -63,11 +63,10 @@ impl ExecuteQueryBuilder {
                 db: this.database.clone(),
                 csl: this.query.clone(),
             };
-            request.set_body(bytes::Bytes::from(serde_json::to_string(&body)?).into());
+            let bytes = bytes::Bytes::from(serde_json::to_string(&body)?);
 
             request.insert_headers(&Accept::new("application/json"));
             request.insert_headers(&AcceptEncoding::new("gzip,deflate"));
-
             request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
 
             if let Some(request_id) = &this.client_request_id {
@@ -79,6 +78,9 @@ impl ExecuteQueryBuilder {
             if let Some(user) = &this.user {
                 request.insert_headers(user);
             };
+
+            request.insert_headers(&ContentLength::new(bytes.len() as i32));
+            request.set_body(bytes.into());
 
             let response = self
                 .client
