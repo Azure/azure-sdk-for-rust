@@ -1,9 +1,7 @@
 use crate::{clients::PathClient, request_options::*, Properties};
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
-use azure_core::prelude::IfMatchCondition;
-use azure_core::prelude::LeaseId;
-use azure_core::prelude::{ClientRequestId, Context, IfModifiedSinceCondition, Timeout};
-use azure_core::{headers::add_optional_header2, AppendToUrlQuery, Response as HttpResponse};
+use azure_core::prelude::*;
+use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use chrono::{DateTime, Utc};
 use std::convert::TryInto;
@@ -68,10 +66,10 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
                 .client
                 .prepare_request(url.as_str(), http::Method::HEAD);
 
-            add_optional_header2(&this.client_request_id, &mut request)?;
-            add_optional_header2(&this.if_match_condition, &mut request)?;
-            add_optional_header2(&this.if_modified_since, &mut request)?;
-            add_optional_header2(&this.lease_id, &mut request)?;
+            request.insert_headers(&this.client_request_id);
+            request.insert_headers(&this.if_match_condition);
+            request.insert_headers(&this.if_modified_since);
+            request.insert_headers(&this.lease_id);
 
             let response = self
                 .client

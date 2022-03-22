@@ -2,13 +2,8 @@ use crate::clients::PathClient;
 use crate::request_options::*;
 use crate::Properties;
 use azure_core::headers::{etag_from_headers, last_modified_from_headers};
-use azure_core::prelude::{
-    ClientRequestId, Context, IfMatchCondition, IfModifiedSinceCondition, NextMarker, Timeout, *,
-};
-use azure_core::{
-    headers::{add_mandatory_header2, add_optional_header2},
-    AppendToUrlQuery, Response as HttpResponse,
-};
+use azure_core::prelude::*;
+use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::core::headers::CommonStorageResponseHeaders;
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
@@ -92,17 +87,17 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
                 .client
                 .prepare_request(url.as_str(), http::Method::PATCH);
 
-            add_optional_header2(&this.client_request_id, &mut request)?;
-            add_optional_header2(&this.properties, &mut request)?;
-            add_optional_header2(&this.if_match_condition, &mut request)?;
-            add_optional_header2(&this.if_modified_since, &mut request)?;
+            request.insert_headers(&this.client_request_id);
+            request.insert_headers(&this.properties);
+            request.insert_headers(&this.if_match_condition);
+            request.insert_headers(&this.if_modified_since);
 
             if let Some(bytes) = this.bytes {
-                add_mandatory_header2(&ContentLength::new(bytes.len() as i32), &mut request)?;
-                add_mandatory_header2(&ContentType::new("application/octet-stream"), &mut request)?;
+                request.insert_headers(&ContentLength::new(bytes.len() as i32));
+                request.insert_headers(&ContentType::new("application/octet-stream"));
                 request.set_body(bytes.into())
             } else {
-                add_mandatory_header2(&ContentLength::new(0), &mut request)?;
+                request.insert_headers(&ContentLength::new(0));
             }
 
             let response = self

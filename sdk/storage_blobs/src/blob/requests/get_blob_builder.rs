@@ -1,7 +1,7 @@
 use crate::blob::responses::GetBlobResponse;
 use crate::prelude::*;
 use crate::Header;
-use azure_core::headers::add_optional_headers;
+use azure_core::headers::AsHeaders;
 use azure_core::headers::{add_optional_header, add_optional_header_ref, CLIENT_REQUEST_ID};
 use azure_core::prelude::*;
 use futures::stream::Stream;
@@ -78,7 +78,11 @@ impl<'a> GetBlobBuilder<'a> {
             url.as_str(),
             &http::Method::GET,
             &|mut request| {
-                request = add_optional_headers(&self.range, request);
+                if let Some(item) = &self.range {
+                    for (name, value) in item.as_headers() {
+                        request = request.header(name.as_str(), value.as_str())
+                    }
+                }
                 request = add_optional_header(&self.client_request_id, request);
                 request = add_optional_header_ref(&self.lease_id, request);
                 request

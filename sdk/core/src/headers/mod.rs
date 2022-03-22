@@ -1,11 +1,10 @@
 //! Azure HTTP headers.
 mod utilities;
 
-use std::collections::HashMap;
+pub use utilities::*;
 
 use http::request::Builder;
-
-pub use utilities::*;
+use std::collections::HashMap;
 
 /// A trait for converting a type into request headers
 pub trait AsHeaders {
@@ -32,7 +31,7 @@ where
 
     fn as_headers(&self) -> Self::Iter {
         match self {
-            Some(h) => Some((h.name(), h.value())).into_iter(),
+            Some(h) => h.as_headers(),
             None => None.into_iter(),
         }
     }
@@ -110,6 +109,7 @@ impl From<http::HeaderMap> for Headers {
     }
 }
 
+/// A header name
 #[derive(Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub struct HeaderName(std::borrow::Cow<'static, str>);
 
@@ -143,6 +143,7 @@ impl From<&HeaderName> for http::header::HeaderName {
     }
 }
 
+/// A header value
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HeaderValue(std::borrow::Cow<'static, str>);
 
@@ -155,7 +156,7 @@ impl HeaderValue {
 impl From<http::header::HeaderValue> for HeaderValue {
     fn from(n: http::header::HeaderValue) -> Self {
         Self(std::borrow::Cow::Owned(
-            n.to_str().expect("non-UTF8 string").to_owned(),
+            n.to_str().expect("non-UTF8 header value").to_owned(),
         ))
     }
 }
@@ -201,42 +202,8 @@ pub fn add_optional_header<T: Header>(item: &Option<T>, mut builder: Builder) ->
 }
 
 #[must_use]
-pub fn add_optional_headers<T: AsHeaders>(item: &Option<T>, mut builder: Builder) -> Builder {
-    if let Some(item) = item {
-        for (name, value) in item.as_headers() {
-            builder = builder.header(name.as_str(), value.as_str())
-        }
-    }
-    builder
-}
-
-pub fn add_optional_header2<T: Header>(
-    item: &Option<T>,
-    request: &mut crate::Request,
-) -> Result<(), crate::errors::HttpHeaderError> {
-    if let Some(item) = item {
-        request.headers_mut().insert(
-            item.name(),
-            http::HeaderValue::from_str(item.value().as_str())?,
-        );
-    }
-    Ok(())
-}
-
-#[must_use]
 pub fn add_mandatory_header<T: Header>(item: &T, builder: Builder) -> Builder {
     builder.header(item.name().as_str(), item.value().as_str())
-}
-
-pub fn add_mandatory_header2<T: Header>(
-    item: &T,
-    request: &mut crate::Request,
-) -> Result<(), crate::errors::HttpHeaderError> {
-    request.headers_mut().insert(
-        item.name(),
-        http::HeaderValue::from_str(item.value().as_str())?,
-    );
-    Ok(())
 }
 
 pub const ACCOUNT_KIND: &str = "x-ms-account-kind";
