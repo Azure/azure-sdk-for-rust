@@ -4,7 +4,6 @@ use azure_core::setters;
 use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use futures::future::BoxFuture;
 
-/// A future of a delete file response
 type ExecuteQuery = BoxFuture<'static, crate::error::Result<KustoResponseDataSetV2>>;
 
 #[derive(Debug, Serialize, Deserialize)]
