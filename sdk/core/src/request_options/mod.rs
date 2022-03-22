@@ -1,3 +1,5 @@
+mod accept;
+mod accept_encoding;
 mod activity_id;
 mod client_request_id;
 mod content_disposition;
@@ -29,6 +31,8 @@ mod source_lease_id;
 mod timeout;
 mod user_agent;
 
+pub use accept::Accept;
+pub use accept_encoding::AcceptEncoding;
 pub use activity_id::ActivityId;
 pub use client_request_id::ClientRequestId;
 pub use content_disposition::ContentDisposition;

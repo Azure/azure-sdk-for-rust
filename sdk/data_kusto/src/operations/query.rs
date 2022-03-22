@@ -1,5 +1,4 @@
 use crate::client::KustoClient;
-use crate::request_options::*;
 use azure_core::prelude::*;
 use azure_core::setters;
 use azure_core::{
