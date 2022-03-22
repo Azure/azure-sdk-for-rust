@@ -60,10 +60,12 @@ impl Headers {
         Self(Default::default())
     }
 
+    /// Get a header value given a specific header name
     pub fn get(&self, key: &HeaderName) -> Option<&HeaderValue> {
         self.0.get(key)
     }
 
+    /// Insert a header name/value pair
     pub fn insert<K, V>(&mut self, key: K, value: V)
     where
         K: Into<HeaderName>,
@@ -72,6 +74,7 @@ impl Headers {
         self.0.insert(key.into(), value.into());
     }
 
+    /// Iterate over all the header name/value pairs
     pub fn iter(&self) -> impl Iterator<Item = (&HeaderName, &HeaderValue)> {
         self.0.iter()
     }
