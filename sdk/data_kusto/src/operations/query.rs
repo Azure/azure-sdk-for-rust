@@ -1,11 +1,7 @@
 use crate::client::KustoClient;
 use azure_core::prelude::*;
 use azure_core::setters;
-use azure_core::{
-    collect_pinned_stream,
-    headers::{add_mandatory_header2, add_optional_header2},
-    Response as HttpResponse,
-};
+use azure_core::{collect_pinned_stream, Response as HttpResponse};
 use futures::future::BoxFuture;
 
 /// A future of a delete file response
@@ -57,14 +53,10 @@ impl ExecuteQueryBuilder {
             let url = this.client.query_url();
             let mut request = this.client.prepare_request(url, http::Method::POST);
 
-            add_mandatory_header2(
-                &ContentType::new("application/json; charset=utf-8"),
-                &mut request,
-            )
-            .unwrap();
-            add_mandatory_header2(&Accept::new("application/json"), &mut request).unwrap();
-            add_mandatory_header2(&AcceptEncoding::new("gzip,deflate"), &mut request).unwrap();
-            add_optional_header2(&this.client_request_id, &mut request).unwrap();
+            request.insert_headers(&ContentType::new("application/json; charset=utf-8"));
+            request.insert_headers(&Accept::new("application/json"));
+            request.insert_headers(&AcceptEncoding::new("gzip,deflate"));
+            request.insert_headers(&this.client_request_id);
 
             let body = QueryBody {
                 db: this.database.clone(),

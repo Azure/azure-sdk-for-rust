@@ -2,7 +2,6 @@
 extern crate serde_derive;
 
 mod operations;
-mod request_options;
 
 pub mod authorization_policy;
 pub mod client;

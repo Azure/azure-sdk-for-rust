@@ -1,5 +1,4 @@
-use crate::{AddAsHeader, HttpHeaderError, Request};
-use http::request::Builder;
+use crate::headers::{self, Header};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Accept<'a>(&'a str);
@@ -19,16 +18,12 @@ where
     }
 }
 
-impl<'a> AddAsHeader for Accept<'a> {
-    fn add_as_header(&self, builder: Builder) -> Builder {
-        builder.header(http::header::ACCEPT, self.0)
+impl<'a> Header for Accept<'a> {
+    fn name(&self) -> headers::HeaderName {
+        http::header::ACCEPT.into()
     }
 
-    fn add_as_header2(&self, request: &mut Request) -> Result<(), HttpHeaderError> {
-        request
-            .headers_mut()
-            .append(http::header::ACCEPT, http::HeaderValue::from_str(self.0)?);
-
-        Ok(())
+    fn value(&self) -> headers::HeaderValue {
+        self.0.to_owned().into()
     }
 }
