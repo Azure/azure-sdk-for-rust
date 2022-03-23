@@ -224,45 +224,11 @@ impl<'a> ConnectionString<'a> {
                 }
                 AUTHORITY_ID_NAME => authority_id = Some(v),
                 MSI_PARAMS_NAME => msi_params = Some(v),
-                FEDERATED_SECURITY_NAME => match v {
-                    "true" => federated_security = Some(true),
-                    "True" => federated_security = Some(true),
-                    "false" => federated_security = Some(false),
-                    "False" => federated_security = Some(false),
-                    _ => {
-                        return Err(ConnectionStringError::ParsingError {
-                            msg: format!(
-                        "Unexpected value for {}: {}. Please specify either 'true' or 'false'.",
-                        FEDERATED_SECURITY_NAME, v),
-                        })
-                    }
-                },
-                MSI_AUTH_NAME => match v {
-                    "true" => msi_auth = Some(true),
-                    "True" => msi_auth = Some(true),
-                    "false" => msi_auth = Some(false),
-                    "False" => msi_auth = Some(false),
-                    _ => {
-                        return Err(ConnectionStringError::ParsingError {
-                            msg: format!(
-                        "Unexpected value for {}: {}. Please specify either 'true' or 'false'.",
-                        MSI_AUTH_NAME, v),
-                        })
-                    }
-                },
-                AZ_CLI_NAME => match v {
-                    "true" => az_cli = Some(true),
-                    "True" => az_cli = Some(true),
-                    "false" => az_cli = Some(false),
-                    "False" => az_cli = Some(false),
-                    _ => {
-                        return Err(ConnectionStringError::ParsingError {
-                            msg: format!(
-                        "Unexpected value for {}: {}. Please specify either 'true' or 'false'.",
-                        AZ_CLI_NAME, v),
-                        })
-                    }
-                },
+                FEDERATED_SECURITY_NAME => {
+                    federated_security = Some(parse_boolean(v, FEDERATED_SECURITY_NAME)?)
+                }
+                MSI_AUTH_NAME => msi_auth = Some(parse_boolean(v, MSI_AUTH_NAME)?),
+                AZ_CLI_NAME => az_cli = Some(parse_boolean(v, AZ_CLI_NAME)?),
                 k => return Err(ConnectionStringError::UnexpectedKey { key: k.to_owned() }),
             }
         }
@@ -283,6 +249,21 @@ impl<'a> ConnectionString<'a> {
             msi_params,
             az_cli,
         })
+    }
+}
+
+fn parse_boolean<'a>(term: &'a str, name: &str) -> Result<bool, ConnectionStringError> {
+    match term {
+        "true" => Ok(true),
+        "True" => Ok(true),
+        "false" => Ok(false),
+        "False" => Ok(false),
+        _ => Err(ConnectionStringError::ParsingError {
+            msg: format!(
+                "Unexpected value for {}: {}. Please specify either 'true' or 'false'.",
+                name, term
+            ),
+        }),
     }
 }
 
