@@ -348,8 +348,8 @@ mod tests {
     #[test]
     fn it_returns_expected_errors() {
         assert!(matches!(
-            ConnectionString::new("DataSource="),
-            Err(ConnectionStringError::MissingValue { key }) if key == "DataSource"
+            ConnectionString::new("Data Source="),
+            Err(ConnectionStringError::MissingValue { key }) if key == "Data Source"
         ));
         assert!(matches!(
             ConnectionString::new("="),
@@ -364,14 +364,21 @@ mod tests {
     #[test]
     fn it_parses_basic_cases() {
         assert!(matches!(
-            ConnectionString::new("DataSource=ds"),
+            ConnectionString::new("Data Source=ds"),
             Ok(ConnectionString {
                 data_source: Some("ds"),
                 ..
             })
         ));
         assert!(matches!(
-            ConnectionString::new("ApplicationClientId=cid;ApplicationKey=key"),
+            ConnectionString::new("addr=ds"),
+            Ok(ConnectionString {
+                data_source: Some("ds"),
+                ..
+            })
+        ));
+        assert!(matches!(
+            ConnectionString::new("Application Client Id=cid;Application Key=key"),
             Ok(ConnectionString {
                 application_client_id: Some("cid"),
                 application_key: Some("key"),
