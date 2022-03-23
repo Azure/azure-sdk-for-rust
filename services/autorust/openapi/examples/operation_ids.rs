@@ -2,11 +2,7 @@
 // cargo run --example operation_ids -- ../azure-rest-api-specs/specification/vmware/resource-manager/Microsoft.AVS/stable/2020-03-20/vmware.json
 
 use autorust_openapi::*;
-use std::{
-    fs::{self},
-    path::Path,
-    process::exit,
-};
+use std::{fs, path::Path, process::exit};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     match std::env::args().nth(1) {

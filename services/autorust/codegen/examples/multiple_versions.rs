@@ -3,10 +3,8 @@
 // in general, we want to avoid this
 // https://github.com/Azure/azure-sdk-for-rust/issues/563
 
-use autorust_codegen::{get_mgmt_readmes, get_svc_readmes, Spec, SpecReadme};
+use autorust_codegen::{get_mgmt_readmes, get_svc_readmes, io, Result, Spec, SpecReadme};
 use std::collections::BTreeSet;
-
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> Result<()> {
     println!("CONTROL PLANE");

@@ -1,6 +1,8 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
-use autorust_codegen::{self, cargo_toml, get_mgmt_readmes, io::Error, lib_rs, readme_md::ReadmeMd, Config, PropertyName, SpecReadme};
+use autorust_codegen::{
+    self, cargo_toml, get_mgmt_readmes, io, lib_rs, readme_md::ReadmeMd, Config, Error, PropertyName, Result, SpecReadme,
+};
 use std::{collections::HashSet, fs, path::PathBuf};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
@@ -293,19 +295,6 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/keyvault/resource-manager/Microsoft.KeyVault/stable/2021-10-01/managedHsm.json", "Error", "innererror"),
 ];
 
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    Codegen(autorust_codegen::Error),
-}
-impl<T: Into<autorust_codegen::Error>> From<T> for Error {
-    fn from(error: T) -> Self {
-        Self::Codegen(error.into())
-    }
-}
-
 fn main() -> Result<()> {
     for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
@@ -328,7 +317,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
 
     let src_folder = io::join(output_folder, "src")?;
     if src_folder.exists() {
-        fs::remove_dir_all(&src_folder).map_err(io::Error::from)?;
+        fs::remove_dir_all(&src_folder)?;
     }
 
     let mut tags = Vec::new();
