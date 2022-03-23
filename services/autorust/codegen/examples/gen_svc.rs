@@ -171,17 +171,15 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    CodegenError(#[from] autorust_codegen::Error),
-    #[error("file name was not utf-8")]
-    FileNameNotUtf8Error {},
-    #[error("IoError")]
-    IoError { source: std::io::Error },
-    #[error("PathError")]
-    PathError { source: path::Error },
-    #[error("CargoTomlError")]
-    CargoTomlError { source: cargo_toml::Error },
-    #[error("LibRsError")]
-    LibRsError { source: lib_rs::Error },
+    Codegen(#[from] autorust_codegen::Error),
+    #[error(transparent)]
+    Io(io::Error),
+    #[error(transparent)]
+    Path(path::Error),
+    #[error(transparent)]
+    CargoToml(cargo_toml::Error),
+    #[error(transparent)]
+    LibRs(lib_rs::Error),
 }
 
 fn main() -> Result<()> {
@@ -210,11 +208,11 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
 
     let service_name = &spec.service_name();
     let crate_name = &format!("azure_svc_{}", service_name);
-    let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
+    let output_folder = &io::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
 
-    let src_folder = path::join(output_folder, "src").map_err(|source| Error::PathError { source })?;
+    let src_folder = io::join(output_folder, "src").map_err(|source| Error::PathError { source })?;
     if src_folder.exists() {
-        fs::remove_dir_all(&src_folder).map_err(|source| Error::IoError { source })?;
+        fs::remove_dir_all(&src_folder).map_err(|source| Error::io::Error { source })?;
     }
 
     let mut tags = Vec::new();
@@ -250,12 +248,12 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         }
         println!("  {}", tag_name);
         let mod_name = tag.rust_mod_name();
-        let mod_output_folder = path::join(&src_folder, &mod_name).map_err(|source| Error::PathError { source })?;
+        let mod_output_folder = io::join(&src_folder, &mod_name).map_err(|source| Error::PathError { source })?;
         tags.push(tag);
         let input_files: Result<Vec<_>> = tag
             .input_files()
             .iter()
-            .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
+            .map(|input_file| io::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
             .collect();
         let input_files = input_files?;
         autorust_codegen::run(Config {
@@ -275,12 +273,12 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
         crate_name,
         &tags,
         config.tag(),
-        &path::join(output_folder, "Cargo.toml").map_err(|source| Error::PathError { source })?,
+        &io::join(output_folder, "Cargo.toml").map_err(|source| Error::PathError { source })?,
     )
     .map_err(|source| Error::CargoTomlError { source })?;
     lib_rs::create(
         &tags,
-        &path::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
+        &io::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
         false,
     )
     .map_err(|source| Error::LibRsError { source })?;

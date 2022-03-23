@@ -3,7 +3,7 @@
 // in general, we want to avoid this
 // https://github.com/Azure/azure-sdk-for-rust/issues/563
 
-use autorust_codegen::{get_mgmt_readmes, get_svc_readmes, path, Spec, SpecReadme};
+use autorust_codegen::{get_mgmt_readmes, get_svc_readmes, Spec, SpecReadme};
 use std::collections::BTreeSet;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -23,7 +23,7 @@ fn check(readmes: &[SpecReadme]) -> Result<()> {
     for readme in readmes {
         let readme_path = readme.readme();
         for tag in readme.config()?.tags() {
-            let input_files = path::join_several(readme_path, &tag.input_files())?;
+            let input_files = io::join_several(readme_path, &tag.input_files())?;
             match Spec::read_files(&input_files) {
                 Ok(spec) => {
                     let versions = spec.api_versions();

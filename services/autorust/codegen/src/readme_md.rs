@@ -5,11 +5,11 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    Io(crate::IoError),
+    Io(crate::io::Error),
     #[error(transparent)]
     Askama(#[from] askama::Error),
 }
-impl<T: Into<crate::IoError>> From<T> for Error {
+impl<T: Into<crate::io::Error>> From<T> for Error {
     fn from(error: T) -> Self {
         Self::Io(error.into())
     }

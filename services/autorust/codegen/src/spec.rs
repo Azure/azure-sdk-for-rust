@@ -1,4 +1,4 @@
-use crate::path;
+use crate::io;
 use autorust_openapi::{
     AdditionalProperties, CollectionFormat, DataType, MsExamples, OpenAPI, Operation, Parameter, ParameterType, PathItem, Reference,
     ReferenceOr, Response, Schema, SchemaCommon, StatusCode,
@@ -71,7 +71,7 @@ impl Spec {
             let ref_files = openapi::get_reference_file_paths(file_path, &doc);
             docs.insert(PathBuf::from(file_path), doc);
             for ref_file in ref_files {
-                let child_path = path::join(&file_path, &ref_file)?;
+                let child_path = io::join(&file_path, &ref_file)?;
                 Spec::read_file(docs, &child_path)?;
             }
         }
@@ -140,7 +140,7 @@ impl Spec {
         let doc_file = doc_file.as_ref();
         let full_path = match &reference.file {
             None => doc_file.to_owned(),
-            Some(file) => path::join(doc_file, &file)?,
+            Some(file) => io::join(doc_file, &file)?,
         };
         let name = reference.name.clone().ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
@@ -169,7 +169,7 @@ impl Spec {
         let doc_file = doc_file.as_ref();
         let full_path = match reference.file {
             None => doc_file.to_owned(),
-            Some(file) => path::join(doc_file, &file)?,
+            Some(file) => io::join(doc_file, &file)?,
         };
         let name = reference.name.ok_or(Error::NoNameInReference)?;
         let ref_key = RefKey {
@@ -275,7 +275,7 @@ type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    Io(#[from] crate::IoError),
+    Io(#[from] crate::io::Error),
     #[error(transparent)]
     OpenApi(#[from] autorust_openapi::Error),
     #[error("SchemaNotFound {} {}", ref_key.file_path.display(), ref_key.name)]
