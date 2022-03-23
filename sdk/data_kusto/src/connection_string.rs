@@ -253,11 +253,9 @@ impl<'a> ConnectionString<'a> {
 }
 
 fn parse_boolean<'a>(term: &'a str, name: &str) -> Result<bool, ConnectionStringError> {
-    match term {
+    match term.to_lowercase().as_str() {
         "true" => Ok(true),
-        "True" => Ok(true),
         "false" => Ok(false),
-        "False" => Ok(false),
         _ => Err(ConnectionStringError::ParsingError {
             msg: format!(
                 "Unexpected value for {}: {}. Please specify either 'true' or 'false'.",
