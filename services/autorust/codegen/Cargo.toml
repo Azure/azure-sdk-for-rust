@@ -3,6 +3,7 @@ name = "autorust_codegen"
 version = "0.1.0"
 authors = ["Cameron Taggart <cameron.taggart@gmail.com>"]
 edition = "2018"
+publish = false
 
 [lib]
 

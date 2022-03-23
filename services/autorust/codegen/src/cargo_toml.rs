@@ -33,9 +33,12 @@ pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: 
 [package]
 name = "{}"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "generated REST API bindings"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/{}"
 
 [dependencies]
 azure_core = {{ path = "../../../sdk/core", version = "0.1", default-features = false }}
@@ -60,7 +63,7 @@ enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []
 "#,
-            crate_name, docs_rs_features, default_feature
+            crate_name, crate_name, docs_rs_features, default_feature
         )
         .as_bytes(),
     )?;

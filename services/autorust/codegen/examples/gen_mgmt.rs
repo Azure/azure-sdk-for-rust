@@ -1,7 +1,9 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
 use autorust_codegen::{
-    self, cargo_toml, get_mgmt_readmes, io, lib_rs, readme_md::ReadmeMd, Config, Error, PropertyName, Result, SpecReadme,
+    self, cargo_toml, get_mgmt_readmes, io, lib_rs,
+    readme_md::{self, ReadmeMd},
+    Config, Error, PropertyName, Result, SpecReadme,
 };
 use camino::Utf8PathBuf;
 use std::{collections::HashSet, fs};
@@ -373,12 +375,11 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     cargo_toml::create(crate_name, &tags, config.tag(), &io::join(output_folder, "Cargo.toml")?)?;
     lib_rs::create(&tags, &io::join(src_folder, "lib.rs")?, false)?;
 
-    let readme_url = format!("https://github.com/Azure/azure-sdk-for-rust{}", spec.readme());
     let readme = ReadmeMd {
         crate_name,
-        readme_url: readme_url.as_str(),
+        readme_url: readme_md::url(spec.readme().as_str()),
     };
-    readme.create(&io::join(output_folder, "readme.md")?)?;
+    readme.create(&io::join(output_folder, "README.md")?)?;
 
     Ok(())
 }

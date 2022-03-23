@@ -253,5 +253,11 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     cargo_toml::create(crate_name, &tags, config.tag(), &io::join(output_folder, "Cargo.toml")?)?;
     lib_rs::create(&tags, &io::join(src_folder, "lib.rs")?, false)?;
 
+    let readme = ReadmeMd {
+        crate_name,
+        readme_url: readme_md::url(spec.readme().as_str()),
+    };
+    readme.create(&io::join(output_folder, "README.md")?)?;
+
     Ok(())
 }

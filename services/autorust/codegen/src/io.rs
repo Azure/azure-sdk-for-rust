@@ -1,6 +1,6 @@
+use camino::{Utf8Path, Utf8PathBuf};
 use path_abs::PathMut;
 use std::path::PathBuf;
-use camino::{Utf8Path, Utf8PathBuf};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -35,7 +35,7 @@ pub fn join<P1: AsRef<Utf8Path>, P2: AsRef<Utf8Path>>(a: P1, b: P2) -> Result<Ut
     }
     let mut c = PathBuf::from(c);
     c.append(b.as_ref()).map_err(Error::AppendPath)?;
-    Ok(Utf8PathBuf::from_path_buf(c).map_err(Error::FromPathBuf)?)
+    Utf8PathBuf::from_path_buf(c).map_err(Error::FromPathBuf)
 }
 
 pub fn join_several<P1: AsRef<Utf8Path>>(a: P1, b: &[Utf8PathBuf]) -> Result<Vec<Utf8PathBuf>> {

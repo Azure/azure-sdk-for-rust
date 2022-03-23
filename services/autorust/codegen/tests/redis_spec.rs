@@ -6,7 +6,7 @@ use autorust_codegen::{
     spec::{self, TypedReference},
     Spec,
 };
-use camino::{Utf8PathBuf, Utf8Path};
+use camino::{Utf8Path, Utf8PathBuf};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 

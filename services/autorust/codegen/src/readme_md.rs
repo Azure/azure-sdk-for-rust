@@ -22,7 +22,7 @@ impl<T: Into<crate::io::Error>> From<T> for Error {
 #[template(path = "readme.md.jinja")]
 pub struct ReadmeMd<'a> {
     pub crate_name: &'a str,
-    pub readme_url: &'a str,
+    pub readme_url: String,
 }
 
 impl<'a> ReadmeMd<'a> {
@@ -32,4 +32,13 @@ impl<'a> ReadmeMd<'a> {
         write!(file, "{}", md)?;
         Ok(())
     }
+}
+
+pub fn url(path: &str) -> String {
+    let url = path.replace("\\", "/");
+    let url = url.replace(
+        "../../../azure-rest-api-specs/",
+        "https://github.com/Azure/azure-rest-api-specs/blob/main/",
+    );
+    format!("https://github.com/Azure/azure-sdk-for-rust{}", url)
 }
