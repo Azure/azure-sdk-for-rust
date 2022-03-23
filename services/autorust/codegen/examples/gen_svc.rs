@@ -1,6 +1,6 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
-use autorust_codegen::{self, cargo_toml, get_svc_readmes, io, lib_rs, Config, Error, PropertyName, Result, SpecReadme};
+use autorust_codegen::{self, cargo_toml, get_svc_readmes, io, lib_rs, Config, Error, PropertyName, Result, SpecReadme, readme_md::{ReadmeMd, self}};
 use camino::Utf8PathBuf;
 use std::{collections::HashSet, fs};
 
