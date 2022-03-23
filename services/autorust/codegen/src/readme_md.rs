@@ -36,9 +36,8 @@ impl<'a> ReadmeMd<'a> {
 
 pub fn url(path: &str) -> String {
     let url = path.replace("\\", "/");
-    let url = url.replace(
+    url.replace(
         "../../../azure-rest-api-specs/",
         "https://github.com/Azure/azure-rest-api-specs/blob/main/",
-    );
-    format!("https://github.com/Azure/azure-sdk-for-rust{}", url)
+    )
 }
