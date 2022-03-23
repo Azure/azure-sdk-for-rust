@@ -59,6 +59,7 @@ impl ListPathsBuilder {
             let ctx = self.context.clone();
 
             async move {
+                let _ = &this;
                 let mut url = this.client.url().unwrap();
                 ResourceType::FileSystem.append_to_url_query(&mut url);
                 this.recursive.append_to_url_query(&mut url);

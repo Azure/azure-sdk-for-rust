@@ -55,6 +55,7 @@ impl GetFileBuilder {
         let ctx = self.context.clone();
 
         Box::pin(async move {
+            let _ = (&this, &self);
             let mut url = this.client.url()?;
 
             self.timeout.append_to_url_query(&mut url);
