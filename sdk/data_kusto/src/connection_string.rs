@@ -252,7 +252,7 @@ impl<'a> ConnectionString<'a> {
     }
 }
 
-fn parse_boolean<'a>(term: &'a str, name: &str) -> Result<bool, ConnectionStringError> {
+fn parse_boolean(term: &str, name: &str) -> Result<bool, ConnectionStringError> {
     match term.to_lowercase().as_str() {
         "true" => Ok(true),
         "false" => Ok(false),
