@@ -1,14 +1,50 @@
 // Set of properties that can be use in a connection string provided to KustoConnectionStringBuilder.
 // For a complete list of properties go to https://docs.microsoft.com/en-us/azure/kusto/api/connection-strings/kusto
-pub const DATA_SOURCE_NAME: &str = "DataSource";
-pub const FEDERATED_SECURITY_NAME: &str = "FederatedSecurity";
-pub const USER_ID_NAME: &str = "UserID";
+pub const DATA_SOURCE_NAME: &str = "Data Source";
+const DATA_SOURCE_ALIAS: [&str; 5] = [
+    "data source",
+    "addr",
+    "address",
+    "network address",
+    "server",
+];
+pub const FEDERATED_SECURITY_NAME: &str = "AAD Federated Security";
+const FEDERATED_SECURITY_ALIAS: [&str; 5] = [
+    "aad federated security",
+    "federated security",
+    "federated",
+    "fed",
+    "aadfed",
+];
+pub const USER_ID_NAME: &str = "AAD User ID";
+const USER_ID_ALIAS: [&str; 1] = ["aad user id"];
 pub const PASSWORD_NAME: &str = "Password";
-pub const APPLICATION_CLIENT_ID_NAME: &str = "ApplicationClientId";
-pub const APPLICATION_KEY_NAME: &str = "ApplicationKey";
+const PASSWORD_ALIAS: [&str; 2] = ["password", "pwd"];
+pub const APPLICATION_CLIENT_ID_NAME: &str = "Application Client Id";
+const APPLICATION_CLIENT_ID_ALIAS: [&str; 2] = ["application client id", "appclientid"];
+pub const APPLICATION_KEY_NAME: &str = "Application Key";
+const APPLICATION_KEY_ALIAS: [&str; 2] = ["application key", "appkey"];
 pub const APPLICATION_CERTIFICATE_NAME: &str = "ApplicationCertificate";
-pub const APPLICATION_CERTIFICATE_THUMBPRINT_NAME: &str = "ApplicationCertificateThumbprint";
-pub const AUTHORITY_ID_NAME: &str = "AuthorityId";
+pub const APPLICATION_CERTIFICATE_PRIVATE_KEY_NAME: &str = "Application Certificate PrivateKey";
+pub const APPLICATION_CERTIFICATE_THUMBPRINT_NAME: &str = "Application Certificate Thumbprint";
+const APPLICATION_CERTIFICATE_THUMBPRINT_ALIAS: [&str; 2] =
+    ["application certificate thumbprint", "AppCert"];
+pub const APPLICATION_CERTIFICATE_X5C_NAME: &str = "Application Certificate x5c";
+const APPLICATION_CERTIFICATE_X5C_ALIAS: [&str; 4] = [
+    "application certificate x5c",
+    "Application Certificate Send Public Certificate",
+    "Application Certificate SendX5c",
+    "SendX5c",
+];
+pub const AUTHORITY_ID_NAME: &str = "Authority Id";
+const AUTHORITY_ID_ALIAS: [&str; 6] = [
+    "authority id",
+    "authorityid",
+    "authority",
+    "tenantid",
+    "tenant",
+    "tid",
+];
 pub const APPLICATION_TOKEN_NAME: &str = "ApplicationToken";
 pub const USER_TOKEN_NAME: &str = "UserToken";
 pub const MSI_AUTH_NAME: &str = "MSI Authentication";
@@ -18,6 +54,37 @@ pub const AZ_CLI_NAME: &str = "AZ CLI";
 // pub const INTERACTIVE_LOGIN_NAME: &str = "Interactive Login";
 // pub const LOGIN_HINT_NAME: &str = "Login Hint";
 // pub const DOMAIN_HINT_NAME: &str = "Domain Hint";
+
+fn normalize_key(key: &str) -> &str {
+    if DATA_SOURCE_ALIAS.contains(&key) {
+        return DATA_SOURCE_NAME;
+    }
+    if FEDERATED_SECURITY_ALIAS.contains(&key) {
+        return FEDERATED_SECURITY_NAME;
+    }
+    if USER_ID_ALIAS.contains(&key) {
+        return USER_ID_NAME;
+    }
+    if PASSWORD_ALIAS.contains(&key) {
+        return PASSWORD_NAME;
+    }
+    if APPLICATION_CLIENT_ID_ALIAS.contains(&key) {
+        return APPLICATION_CLIENT_ID_NAME;
+    }
+    if APPLICATION_KEY_ALIAS.contains(&key) {
+        return APPLICATION_KEY_NAME;
+    }
+    if AUTHORITY_ID_ALIAS.contains(&key) {
+        return AUTHORITY_ID_NAME;
+    }
+    if APPLICATION_CERTIFICATE_THUMBPRINT_ALIAS.contains(&key) {
+        return APPLICATION_CERTIFICATE_THUMBPRINT_NAME;
+    }
+    if APPLICATION_CERTIFICATE_X5C_ALIAS.contains(&key) {
+        return APPLICATION_CERTIFICATE_X5C_NAME;
+    }
+    key
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConnectionStringError {
@@ -210,7 +277,7 @@ impl<'a> ConnectionString<'a> {
                 Some(v) => v,
             };
 
-            match k {
+            match normalize_key(k) {
                 DATA_SOURCE_NAME => data_source = Some(v),
                 USER_ID_NAME => user_id = Some(v),
                 USER_TOKEN_NAME => user_token = Some(v),
