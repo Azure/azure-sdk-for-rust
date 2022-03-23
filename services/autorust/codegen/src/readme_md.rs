@@ -1,5 +1,6 @@
 use askama::Template;
-use std::{fs::File, io::Write, path::Path};
+use camino::Utf8Path;
+use std::{fs::File, io::Write};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
@@ -21,12 +22,13 @@ impl<T: Into<crate::io::Error>> From<T> for Error {
 #[template(path = "readme.md.jinja")]
 pub struct ReadmeMd<'a> {
     pub crate_name: &'a str,
+    pub readme_url: &'a str,
 }
 
 impl<'a> ReadmeMd<'a> {
-    pub fn create(&self, path: impl AsRef<Path>) -> Result<()> {
+    pub fn create(&self, path: impl AsRef<Utf8Path>) -> Result<()> {
         let md = self.render()?;
-        let mut file = File::create(path)?;
+        let mut file = File::create(path.as_ref())?;
         write!(file, "{}", md)?;
         Ok(())
     }

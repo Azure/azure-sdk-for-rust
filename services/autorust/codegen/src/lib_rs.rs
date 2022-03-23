@@ -1,7 +1,7 @@
 use crate::{codegen::create_generated_by_header, config_parser::Tag, identifier::ident, write_file};
+use camino::Utf8Path;
 use proc_macro2::TokenStream;
 use quote::quote;
-use std::path::Path;
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -13,7 +13,7 @@ pub enum Error {
     ModName { source: crate::identifier::Error, feature: String },
 }
 
-pub fn create(tags: &[&Tag], path: &Path, print_writing_file: bool) -> Result<()> {
+pub fn create(tags: &[&Tag], path: &Utf8Path, print_writing_file: bool) -> Result<()> {
     Ok(write_file(path, &create_body(tags)?, print_writing_file)?)
 }
 

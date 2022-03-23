@@ -1,7 +1,8 @@
 // cargo run --example gen_svc --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/batch/data-plane
 use autorust_codegen::{self, cargo_toml, get_svc_readmes, io, lib_rs, Config, Error, PropertyName, Result, SpecReadme};
-use std::{collections::HashSet, fs, path::PathBuf};
+use camino::Utf8PathBuf;
+use std::{collections::HashSet, fs};
 
 const OUTPUT_FOLDER: &str = "../svc";
 
@@ -205,7 +206,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut box_properties = HashSet::new();
     for (file_path, schema_name, property_name) in BOX_PROPERTIES {
         box_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            file_path: Utf8PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });
@@ -214,7 +215,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut invalid_types = HashSet::new();
     for (file_path, schema_name, property_name) in INVALID_TYPE_WORKAROUND {
         invalid_types.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            file_path: Utf8PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });

@@ -1,22 +1,25 @@
 use path_abs::PathMut;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("Could not create output directory {}: {}", directory.display(), source)]
-    CreateOutputDirectory { directory: PathBuf, source: std::io::Error },
-    #[error("Could not create file {}: {}", file.display(), source)]
-    CreateFile { file: PathBuf, source: std::io::Error },
-    #[error("Could not write file {}: {}", file.display(), source)]
-    WriteFile { file: PathBuf, source: std::io::Error },
+    #[error("Could not create output directory {directory}")]
+    CreateOutputDirectory { source: std::io::Error, directory: Utf8PathBuf },
+    #[error("Could not create file {file}")]
+    CreateFile { source: std::io::Error, file: Utf8PathBuf },
+    #[error("Could not write file {file}")]
+    WriteFile { source: std::io::Error, file: Utf8PathBuf },
     #[error("file name was not utf-8")]
     FileNameNotUtf8,
     #[error("Error popping path")]
-    PopUpPath(#[source] path_abs::Error),
+    PopUpPath,
     #[error("Error appending path")]
     AppendPath(#[source] path_abs::Error),
+    #[error("Error converting path to Utf8: {0}")]
+    FromPathBuf(PathBuf),
     #[error(transparent)]
     Other(#[from] std::io::Error),
 }
@@ -25,16 +28,17 @@ pub enum Error {
 ///
 /// If the first path ends with a file name (i.e., the last component has a file extension),
 /// the file component is dropped from that path.
-pub fn join<P1: AsRef<Path>, P2: AsRef<Path>>(a: P1, b: P2) -> Result<PathBuf> {
-    let mut c = PathBuf::from(a.as_ref());
+pub fn join<P1: AsRef<Utf8Path>, P2: AsRef<Utf8Path>>(a: P1, b: P2) -> Result<Utf8PathBuf> {
+    let mut c = a.as_ref();
     if c.extension().is_some() {
-        c.pop_up().map_err(Error::PopUpPath)?; // to directory
+        c = c.parent().ok_or(Error::PopUpPath)?; // to directory
     }
-    c.append(&b).map_err(Error::AppendPath)?;
-    Ok(c)
+    let mut c = PathBuf::from(c);
+    c.append(b.as_ref()).map_err(Error::AppendPath)?;
+    Ok(Utf8PathBuf::from_path_buf(c).map_err(Error::FromPathBuf)?)
 }
 
-pub fn join_several<P1: AsRef<Path>>(a: P1, b: &[PathBuf]) -> Result<Vec<PathBuf>> {
+pub fn join_several<P1: AsRef<Utf8Path>>(a: P1, b: &[Utf8PathBuf]) -> Result<Vec<Utf8PathBuf>> {
     b.iter().map(|b| join(&a, b)).collect()
 }
 
@@ -49,7 +53,7 @@ mod tests {
         let c = join(a, b)?;
         assert_eq!(
             c,
-            PathBuf::from("../../../azure-rest-api-specs/specification/common-types/resource-management/v1/types.json")
+            Utf8PathBuf::from("../../../azure-rest-api-specs/specification/common-types/resource-management/v1/types.json")
         );
         Ok(())
     }

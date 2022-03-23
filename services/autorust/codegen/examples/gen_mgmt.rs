@@ -3,7 +3,8 @@
 use autorust_codegen::{
     self, cargo_toml, get_mgmt_readmes, io, lib_rs, readme_md::ReadmeMd, Config, Error, PropertyName, Result, SpecReadme,
 };
-use std::{collections::HashSet, fs, path::PathBuf};
+use camino::Utf8PathBuf;
+use std::{collections::HashSet, fs};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 
@@ -326,7 +327,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut box_properties = HashSet::new();
     for (file_path, schema_name, property_name) in BOX_PROPERTIES {
         box_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            file_path: Utf8PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });
@@ -335,7 +336,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut optional_properties = HashSet::new();
     for (file_path, schema_name, property_name) in OPTIONAL_PROPERTIES {
         optional_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            file_path: Utf8PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });
@@ -372,7 +373,11 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     cargo_toml::create(crate_name, &tags, config.tag(), &io::join(output_folder, "Cargo.toml")?)?;
     lib_rs::create(&tags, &io::join(src_folder, "lib.rs")?, false)?;
 
-    let readme = ReadmeMd { crate_name };
+    let readme_url = format!("https://github.com/Azure/azure-sdk-for-rust{}", spec.readme());
+    let readme = ReadmeMd {
+        crate_name,
+        readme_url: readme_url.as_str(),
+    };
     readme.create(&io::join(output_folder, "readme.md")?)?;
 
     Ok(())

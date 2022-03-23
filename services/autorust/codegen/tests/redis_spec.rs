@@ -6,7 +6,7 @@ use autorust_codegen::{
     spec::{self, TypedReference},
     Spec,
 };
-use std::path::PathBuf;
+use camino::{Utf8PathBuf, Utf8Path};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -30,7 +30,7 @@ fn test_redis_read_spec() -> Result<()> {
     let spec = &Spec::read_files(&[REDIS_SPEC])?;
     println!("{:#?}", spec.docs().keys());
     assert_eq!(4, spec.docs().len());
-    assert!(spec.docs().contains_key(std::path::Path::new(
+    assert!(spec.docs().contains_key(Utf8Path::new(
         "../../../../azure-rest-api-specs/specification/common-types/resource-management/v2/types.json"
     )));
     Ok(())
@@ -58,7 +58,7 @@ fn test_links_refs_count() -> Result<()> {
 
 #[test]
 fn test_redis_resolve_all_refs() -> Result<()> {
-    let doc_file = PathBuf::from(REDIS_SPEC);
+    let doc_file = Utf8PathBuf::from(REDIS_SPEC);
     let spec = &Spec::read_files(&[&doc_file])?;
     for (doc_file, api) in spec.docs() {
         let refs = spec::openapi::get_references(doc_file, api);

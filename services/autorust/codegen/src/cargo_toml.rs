@@ -1,8 +1,8 @@
 use crate::config_parser::Tag;
+use camino::Utf8Path;
 use std::{
     fs::File,
     io::{prelude::*, LineWriter},
-    path::Path,
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -17,7 +17,7 @@ impl<T: Into<crate::io::Error>> From<T> for Error {
     }
 }
 
-pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: &Path) -> Result<()> {
+pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: &Utf8Path) -> Result<()> {
     let file = File::create(path)?;
     let mut file = LineWriter::new(file);
     let default_feature = get_default_feature(tags, default_tag);

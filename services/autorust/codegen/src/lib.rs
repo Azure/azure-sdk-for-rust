@@ -9,13 +9,13 @@ pub mod lib_rs;
 pub mod readme_md;
 pub mod spec;
 mod status_codes;
+use camino::{Utf8Path, Utf8PathBuf};
 use config_parser::Configuration;
 use proc_macro2::TokenStream;
 use std::io::Write;
 use std::{
     collections::HashSet,
     fs::{self, File},
-    path::{Path, PathBuf},
 };
 
 pub use self::{
@@ -48,7 +48,7 @@ impl<T: Into<io::Error>> From<T> for Error {
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct PropertyName {
-    pub file_path: PathBuf,
+    pub file_path: Utf8PathBuf,
     pub schema_name: String,
     pub property_name: String,
 }
@@ -62,8 +62,8 @@ pub enum Runs {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Config {
-    pub input_files: Vec<PathBuf>,
-    pub output_folder: PathBuf,
+    pub input_files: Vec<Utf8PathBuf>,
+    pub output_folder: Utf8PathBuf,
     pub box_properties: HashSet<PropertyName>,
     pub optional_properties: HashSet<PropertyName>,
     pub fix_case_properties: HashSet<String>,
@@ -122,10 +122,10 @@ pub fn run(config: Config) -> Result<(), Error> {
     Ok(())
 }
 
-fn write_file<P: AsRef<Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<(), io::Error> {
+fn write_file<P: AsRef<Utf8Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<(), io::Error> {
     let file = file.as_ref();
     if print_writing_file {
-        println!("writing file {}", &file.display());
+        println!("writing file {}", &file);
     }
     let code = tokens.to_string();
     let mut buffer = File::create(&file).map_err(|source| io::Error::CreateFile { source, file: file.into() })?;
@@ -153,7 +153,7 @@ fn get_spec_folders(spec_folder: &str) -> Result<Vec<String>, io::Error> {
     Ok(spec_folders)
 }
 
-fn get_readme(spec_folder_full: &dyn AsRef<Path>, readme_kind: &dyn AsRef<Path>) -> Option<PathBuf> {
+fn get_readme(spec_folder_full: &dyn AsRef<Utf8Path>, readme_kind: &dyn AsRef<Utf8Path>) -> Option<Utf8PathBuf> {
     match io::join(spec_folder_full, readme_kind) {
         Ok(readme) => {
             if readme.exists() {
@@ -169,7 +169,7 @@ fn get_readme(spec_folder_full: &dyn AsRef<Path>, readme_kind: &dyn AsRef<Path>)
 pub struct SpecReadme {
     /// service name
     spec: String,
-    readme: PathBuf,
+    readme: Utf8PathBuf,
 }
 
 impl SpecReadme {
@@ -179,7 +179,7 @@ impl SpecReadme {
     pub fn service_name(&self) -> String {
         get_service_name(&self.spec)
     }
-    pub fn readme(&self) -> &Path {
+    pub fn readme(&self) -> &Utf8Path {
         self.readme.as_path()
     }
     pub fn config(&self) -> Result<Configuration, Error> {
@@ -187,7 +187,7 @@ impl SpecReadme {
     }
 }
 
-fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Path>) -> Result<Vec<SpecReadme>, io::Error> {
+fn get_spec_readmes(spec_folders: Vec<String>, readme: impl AsRef<Utf8Path>) -> Result<Vec<SpecReadme>, io::Error> {
     Ok(spec_folders
         .into_iter()
         .filter_map(|spec| match io::join(SPEC_FOLDER, &spec) {
