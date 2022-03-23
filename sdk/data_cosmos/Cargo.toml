@@ -12,7 +12,7 @@ documentation = "https://docs.rs/azure_data_cosmos"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
 
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 async-trait = "0.1"

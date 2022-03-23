@@ -10,7 +10,7 @@ homepage = "https://github.com/azure/azure-sdk-for-rust"
 documentation = "https://docs.rs/azure_storage_queues"
 keywords = ["sdk", "azure", "storage", "queues"]
 categories = ["api-bindings"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 azure_core = { path = "../core", version = "0.1", default-features=false }
