@@ -48,6 +48,7 @@ impl ListDocumentsBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
+                let _ = &this;
                 let mut req = this.client.cosmos_client().prepare_request_pipeline(
                     &format!(
                         "dbs/{}/colls/{}/docs",
