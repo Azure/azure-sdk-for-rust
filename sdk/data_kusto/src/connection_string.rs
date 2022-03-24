@@ -1,90 +1,125 @@
 // Set of properties that can be use in a connection string provided to KustoConnectionStringBuilder.
 // For a complete list of properties go to https://docs.microsoft.com/en-us/azure/kusto/api/connection-strings/kusto
-pub const DATA_SOURCE_NAME: &str = "Data Source";
-const DATA_SOURCE_ALIAS: [&str; 5] = [
-    "data source",
-    "addr",
-    "address",
-    "network address",
-    "server",
-];
-pub const FEDERATED_SECURITY_NAME: &str = "AAD Federated Security";
-const FEDERATED_SECURITY_ALIAS: [&str; 5] = [
-    "aad federated security",
-    "federated security",
-    "federated",
-    "fed",
-    "aadfed",
-];
-pub const USER_ID_NAME: &str = "AAD User ID";
-const USER_ID_ALIAS: [&str; 1] = ["aad user id"];
-pub const PASSWORD_NAME: &str = "Password";
-const PASSWORD_ALIAS: [&str; 2] = ["password", "pwd"];
-pub const APPLICATION_CLIENT_ID_NAME: &str = "Application Client Id";
-const APPLICATION_CLIENT_ID_ALIAS: [&str; 2] = ["application client id", "appclientid"];
-pub const APPLICATION_KEY_NAME: &str = "Application Key";
-const APPLICATION_KEY_ALIAS: [&str; 2] = ["application key", "appkey"];
-pub const APPLICATION_CERTIFICATE_NAME: &str = "ApplicationCertificate";
-pub const APPLICATION_CERTIFICATE_PRIVATE_KEY_NAME: &str = "Application Certificate PrivateKey";
-pub const APPLICATION_CERTIFICATE_THUMBPRINT_NAME: &str = "Application Certificate Thumbprint";
-const APPLICATION_CERTIFICATE_THUMBPRINT_ALIAS: [&str; 2] =
-    ["application certificate thumbprint", "AppCert"];
-pub const APPLICATION_CERTIFICATE_X5C_NAME: &str = "Application Certificate x5c";
-const APPLICATION_CERTIFICATE_X5C_ALIAS: [&str; 4] = [
-    "application certificate x5c",
-    "Application Certificate Send Public Certificate",
-    "Application Certificate SendX5c",
-    "SendX5c",
-];
-pub const AUTHORITY_ID_NAME: &str = "Authority Id";
-const AUTHORITY_ID_ALIAS: [&str; 6] = [
-    "authority id",
-    "authorityid",
-    "authority",
-    "tenantid",
-    "tenant",
-    "tid",
-];
-pub const APPLICATION_TOKEN_NAME: &str = "ApplicationToken";
-pub const USER_TOKEN_NAME: &str = "UserToken";
-pub const MSI_AUTH_NAME: &str = "MSI Authentication";
-pub const MSI_PARAMS_NAME: &str = "MSI Params";
-pub const AZ_CLI_NAME: &str = "AZ CLI";
+
+use hashbrown::HashMap;
+use lazy_static::lazy_static;
+
+enum ConnectionStringKey {
+    DataSource,
+    FederatedSecurity,
+    UserId,
+    Password,
+    ApplicationClientId,
+    ApplicationKey,
+    ApplicationCertificate,
+    ApplicationCertificateThumbprint,
+    AuthorityId,
+    ApplicationToken,
+    UserToken,
+    MsiAuth,
+    MsiParams,
+    AzCli,
+}
+
+impl ConnectionStringKey {
+    fn to_str(&self) -> &'static str {
+        match self {
+            ConnectionStringKey::DataSource => "Data Source",
+            ConnectionStringKey::FederatedSecurity => "AAD Federated Security",
+            ConnectionStringKey::UserId => "AAD User ID",
+            ConnectionStringKey::Password => "Password",
+            ConnectionStringKey::ApplicationClientId => "Application Client Id",
+            ConnectionStringKey::ApplicationKey => "Application Key",
+            ConnectionStringKey::ApplicationCertificate => "ApplicationCertificate",
+            ConnectionStringKey::ApplicationCertificateThumbprint => "Application Certificate Thumbprint",
+            ConnectionStringKey::AuthorityId => "Authority Id",
+            ConnectionStringKey::ApplicationToken => "ApplicationToken",
+            ConnectionStringKey::UserToken => "UserToken",
+            ConnectionStringKey::MsiAuth => "MSI Authentication",
+            ConnectionStringKey::MsiParams => "MSI Params",
+            ConnectionStringKey::AzCli => "AZ CLI",
+        }
+    }
+}
+
+lazy_static! {
+    static ref ALIAS_MAP: HashMap<&'static str, ConnectionStringKey> = {
+        let mut m = HashMap::new();
+        m.insert("data source", ConnectionStringKey::DataSource);
+        m.insert("addr", ConnectionStringKey::DataSource);
+        m.insert("address", ConnectionStringKey::DataSource);
+        m.insert("network address", ConnectionStringKey::DataSource);
+        m.insert("server", ConnectionStringKey::DataSource);
+
+        m.insert("aad federated security", ConnectionStringKey::FederatedSecurity);
+        m.insert("federated security", ConnectionStringKey::FederatedSecurity);
+        m.insert("federated", ConnectionStringKey::FederatedSecurity);
+        m.insert("fed", ConnectionStringKey::FederatedSecurity);
+        m.insert("aadfed", ConnectionStringKey::FederatedSecurity);
+
+        m.insert("aad user id", ConnectionStringKey::UserId);
+        m.insert("user id", ConnectionStringKey::UserId);
+        m.insert("uid", ConnectionStringKey::UserId);
+        m.insert("user", ConnectionStringKey::UserId);
+
+        m.insert("password", ConnectionStringKey::Password);
+        m.insert("pwd", ConnectionStringKey::Password);
+
+        m.insert("application client id", ConnectionStringKey::ApplicationClientId);
+        m.insert("appclientid", ConnectionStringKey::ApplicationClientId);
+
+        m.insert("application key", ConnectionStringKey::ApplicationKey);
+        m.insert("appkey", ConnectionStringKey::ApplicationKey);
+
+        m.insert("application certificate", ConnectionStringKey::ApplicationCertificate);
+
+
+        m.insert("application certificate thumbprint", ConnectionStringKey::ApplicationCertificateThumbprint);
+        m.insert("appcert", ConnectionStringKey::ApplicationCertificateThumbprint);
+
+        m.insert("authority id", ConnectionStringKey::AuthorityId);
+        m.insert("authorityid", ConnectionStringKey::AuthorityId);
+        m.insert("authority", ConnectionStringKey::AuthorityId);
+        m.insert("tenantid", ConnectionStringKey::AuthorityId);
+        m.insert("tenant", ConnectionStringKey::AuthorityId);
+        m.insert("tid", ConnectionStringKey::AuthorityId);
+
+        m.insert("application token", ConnectionStringKey::ApplicationToken);
+        m.insert("apptoken", ConnectionStringKey::ApplicationToken);
+
+        m.insert("user token", ConnectionStringKey::UserToken);
+        m.insert("usertoken", ConnectionStringKey::UserToken);
+
+        m.insert("msi auth", ConnectionStringKey::MsiAuth);
+        m.insert("msi_auth", ConnectionStringKey::MsiAuth);
+        m.insert("msi", ConnectionStringKey::MsiAuth);
+
+        m.insert("msi params", ConnectionStringKey::MsiParams);
+        m.insert("msi_params", ConnectionStringKey::MsiParams);
+        m.insert("msi_type", ConnectionStringKey::MsiParams);
+
+        m.insert("az cli", ConnectionStringKey::AzCli);
+
+        m
+    };
+}
+
+
+// TODO: when available
 // pub const PUBLIC_APPLICATION_CERTIFICATE_NAME: &str = "Public Application Certificate";
 // pub const INTERACTIVE_LOGIN_NAME: &str = "Interactive Login";
 // pub const LOGIN_HINT_NAME: &str = "Login Hint";
 // pub const DOMAIN_HINT_NAME: &str = "Domain Hint";
+/*
 
-fn normalize_key(key: &str) -> &str {
-    if DATA_SOURCE_ALIAS.contains(&key) {
-        return DATA_SOURCE_NAME;
-    }
-    if FEDERATED_SECURITY_ALIAS.contains(&key) {
-        return FEDERATED_SECURITY_NAME;
-    }
-    if USER_ID_ALIAS.contains(&key) {
-        return USER_ID_NAME;
-    }
-    if PASSWORD_ALIAS.contains(&key) {
-        return PASSWORD_NAME;
-    }
-    if APPLICATION_CLIENT_ID_ALIAS.contains(&key) {
-        return APPLICATION_CLIENT_ID_NAME;
-    }
-    if APPLICATION_KEY_ALIAS.contains(&key) {
-        return APPLICATION_KEY_NAME;
-    }
-    if AUTHORITY_ID_ALIAS.contains(&key) {
-        return AUTHORITY_ID_NAME;
-    }
-    if APPLICATION_CERTIFICATE_THUMBPRINT_ALIAS.contains(&key) {
-        return APPLICATION_CERTIFICATE_THUMBPRINT_NAME;
-    }
-    if APPLICATION_CERTIFICATE_X5C_ALIAS.contains(&key) {
-        return APPLICATION_CERTIFICATE_X5C_NAME;
-    }
-    key
-}
+        m.insert("application certificate private key", ConnectionStringKey::ApplicationCertificatePrivateKey);
+        m.insert("application certificate x5c", ConnectionStringKey::ApplicationCertificateX5C);
+        m.insert("application certificate send public certificate", ConnectionStringKey::ApplicationCertificateX5C);
+        m.insert("application certificate sendx5c", ConnectionStringKey::ApplicationCertificateX5C);
+        m.insert("sendx5c", ConnectionStringKey::ApplicationCertificateX5C);
+                    ConnectionStringKey::ApplicationCertificatePrivateKey => "Application Certificate PrivateKey",
+            ConnectionStringKey::ApplicationCertificateX5C => "Application Certificate x5c",
+ */
 
 #[derive(Debug, thiserror::Error)]
 pub enum ConnectionStringError {
@@ -124,25 +159,25 @@ impl<'a> ConnectionStringBuilder<'a> {
         let mut kv_pairs = Vec::new();
 
         if let Some(data_source) = self.0.data_source {
-            kv_pairs.push(format!("{}={}", DATA_SOURCE_NAME, data_source));
+            kv_pairs.push(format!("{}={}", ConnectionStringKey::DataSource.to_str(), data_source));
         }
         if let Some(user_id) = self.0.user_id {
-            kv_pairs.push(format!("{}={}", USER_ID_NAME, user_id));
+            kv_pairs.push(format!("{}={}", ConnectionStringKey::UserId.to_str(), user_id));
         }
         if let Some(application_client_id) = self.0.application_client_id {
             kv_pairs.push(format!(
                 "{}={}",
-                APPLICATION_CLIENT_ID_NAME, application_client_id
+                ConnectionStringKey::ApplicationClientId.to_str(), application_client_id
             ));
         }
         if let Some(application_key) = self.0.application_key {
-            kv_pairs.push(format!("{}={}", APPLICATION_KEY_NAME, application_key));
+            kv_pairs.push(format!("{}={}", ConnectionStringKey::ApplicationKey.to_str(), application_key));
         }
         if let Some(application_token) = self.0.application_token {
-            kv_pairs.push(format!("{}={}", APPLICATION_TOKEN_NAME, application_token));
+            kv_pairs.push(format!("{}={}", ConnectionStringKey::ApplicationToken.to_str(), application_token));
         }
         if let Some(authority_id) = self.0.authority_id {
-            kv_pairs.push(format!("{}={}", AUTHORITY_ID_NAME, authority_id));
+            kv_pairs.push(format!("{}={}", ConnectionStringKey::AuthorityId.to_str(), authority_id));
         }
 
         kv_pairs.join(";")
@@ -260,43 +295,42 @@ impl<'a> ConnectionString<'a> {
                 Some(k) if k.chars().all(char::is_whitespace) => {
                     return Err(ConnectionStringError::ParsingError {
                         msg: "No key found".to_owned(),
-                    })
+                    });
                 }
                 None => {
                     return Err(ConnectionStringError::ParsingError {
                         msg: "No key found".to_owned(),
-                    })
+                    });
                 }
                 Some(k) => k,
             };
             let v = match kv.next() {
                 Some(v) if v.chars().all(char::is_whitespace) => {
-                    return Err(ConnectionStringError::MissingValue { key: k.to_owned() })
+                    return Err(ConnectionStringError::MissingValue { key: k.to_owned() });
                 }
                 None => return Err(ConnectionStringError::MissingValue { key: k.to_owned() }),
                 Some(v) => v,
             };
 
-            match normalize_key(k) {
-                DATA_SOURCE_NAME => data_source = Some(v),
-                USER_ID_NAME => user_id = Some(v),
-                USER_TOKEN_NAME => user_token = Some(v),
-                PASSWORD_NAME => password = Some(v),
-                APPLICATION_CLIENT_ID_NAME => application_client_id = Some(v),
-                APPLICATION_KEY_NAME => application_key = Some(v),
-                APPLICATION_TOKEN_NAME => application_token = Some(v),
-                APPLICATION_CERTIFICATE_NAME => application_certificate = Some(v),
-                APPLICATION_CERTIFICATE_THUMBPRINT_NAME => {
-                    application_certificate_thumbprint = Some(v)
+            if let Some(key) = ALIAS_MAP.get(&*k.to_ascii_lowercase()) {
+                match key {
+                    ConnectionStringKey::DataSource => data_source = Some(v),
+                    e @ ConnectionStringKey::FederatedSecurity => federated_security = Some(parse_boolean(v, e.to_str())?),
+                    ConnectionStringKey::UserId => user_id = Some(v),
+                    ConnectionStringKey::UserToken => user_token = Some(v),
+                    ConnectionStringKey::Password => password = Some(v),
+                    ConnectionStringKey::ApplicationClientId => application_client_id = Some(v),
+                    ConnectionStringKey::ApplicationToken => application_token = Some(v),
+                    ConnectionStringKey::ApplicationKey => application_key = Some(v),
+                    ConnectionStringKey::ApplicationCertificate => application_certificate = Some(v),
+                    ConnectionStringKey::ApplicationCertificateThumbprint => application_certificate_thumbprint = Some(v),
+                    ConnectionStringKey::AuthorityId => authority_id = Some(v),
+                    e @ ConnectionStringKey::MsiAuth => msi_auth = Some(parse_boolean(v, e.to_str())?),
+                    ConnectionStringKey::MsiParams => msi_params = Some(v),
+                    e @ ConnectionStringKey::AzCli => az_cli = Some(parse_boolean(v, e.to_str())?),
                 }
-                AUTHORITY_ID_NAME => authority_id = Some(v),
-                MSI_PARAMS_NAME => msi_params = Some(v),
-                FEDERATED_SECURITY_NAME => {
-                    federated_security = Some(parse_boolean(v, FEDERATED_SECURITY_NAME)?)
-                }
-                MSI_AUTH_NAME => msi_auth = Some(parse_boolean(v, MSI_AUTH_NAME)?),
-                AZ_CLI_NAME => az_cli = Some(parse_boolean(v, AZ_CLI_NAME)?),
-                k => return Err(ConnectionStringError::UnexpectedKey { key: k.to_owned() }),
+            }  else {
+                return Err(ConnectionStringError::UnexpectedKey { key: k.to_owned() });
             }
         }
 
@@ -382,6 +416,14 @@ mod tests {
             Ok(ConnectionString {
                 application_client_id: Some("cid"),
                 application_key: Some("key"),
+                ..
+            })
+        ));
+        assert!(matches!(
+            ConnectionString::new("Federated=True;AppToken=token"),
+            Ok(ConnectionString {
+                federated_security: Some(true),
+                application_token: Some("token"),
                 ..
             })
         ));
