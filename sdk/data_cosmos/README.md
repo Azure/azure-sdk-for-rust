@@ -90,12 +90,3 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     Ok(())
 }
 ```
-
-## Usage
-
-To set this crate as a dependency, add this to your Cargo.toml
-
-```toml
-[dependencies]
-azure_data_cosmos = { version = "0.1.0", git = "https://github.com/Azure/azure-sdk-for-rust" }
-```
