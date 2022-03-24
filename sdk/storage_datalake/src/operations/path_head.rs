@@ -58,7 +58,6 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
         let ctx = self.context.clone();
 
         Box::pin(async move {
-            let _ = (&this, &self);
             let mut url = this.client.url()?;
 
             self.action.append_to_url_query(&mut url);

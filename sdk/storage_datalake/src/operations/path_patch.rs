@@ -77,7 +77,6 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
         let ctx = self.context.clone();
 
         Box::pin(async move {
-            let _ = (&this, &self);
             let mut url = this.client.url()?;
 
             if let Some(continuation) = self.continuation {

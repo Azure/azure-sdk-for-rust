@@ -42,7 +42,6 @@ impl ListUserDefinedFunctionsBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let _ = &this;
                 let mut request = this.client.cosmos_client().prepare_request_pipeline(
                     &format!(
                         "dbs/{}/colls/{}/udfs",

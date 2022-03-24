@@ -38,7 +38,6 @@ impl ListDatabasesBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let _ = &this;
                 let mut request = this
                     .client
                     .prepare_request_pipeline("dbs", http::Method::GET);

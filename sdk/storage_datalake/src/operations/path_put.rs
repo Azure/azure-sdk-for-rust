@@ -67,7 +67,6 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
         let ctx = self.context.clone();
 
         Box::pin(async move {
-            let _ = (&this, &self);
             let mut url = this.client.url()?;
 
             if let Some(continuation) = self.continuation {
@@ -146,7 +145,6 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
         let ctx = self.context.clone();
 
         Box::pin(async move {
-            let _ = (&this, &self);
             let mut url = this.client.url()?;
 
             if let Some(continuation) = self.continuation {
