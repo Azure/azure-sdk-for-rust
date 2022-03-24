@@ -1,3 +1,4 @@
+use crate::config_parser::Tag;
 use askama::Template;
 use camino::Utf8Path;
 use std::{fs::File, io::Write};
@@ -23,6 +24,8 @@ impl<T: Into<crate::io::Error>> From<T> for Error {
 pub struct ReadmeMd<'a> {
     pub crate_name: &'a str,
     pub readme_url: String,
+    pub tags: &'a Vec<&'a Tag>,
+    pub default_tag: &'a Tag,
 }
 
 impl<'a> ReadmeMd<'a> {
