@@ -1,19 +1,24 @@
 use crate::config_parser::Tag;
+use camino::Utf8Path;
 use std::{
     fs::File,
     io::{prelude::*, LineWriter},
-    path::Path,
 };
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("IoError")]
-    IoError { source: std::io::Error },
+    #[error(transparent)]
+    Io(crate::io::Error),
+}
+impl<T: Into<crate::io::Error>> From<T> for Error {
+    fn from(error: T) -> Self {
+        Self::Io(error.into())
+    }
 }
 
-pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: &Path) -> Result<()> {
-    let file = File::create(path).map_err(|source| Error::IoError { source })?;
+pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: &Utf8Path) -> Result<()> {
+    let file = File::create(path)?;
     let mut file = LineWriter::new(file);
     let default_feature = get_default_feature(tags, default_tag);
 
@@ -28,9 +33,12 @@ pub fn create(crate_name: &str, tags: &[&Tag], default_tag: Option<&str>, path: 
 [package]
 name = "{}"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "generated REST API bindings"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/{}"
 
 [dependencies]
 azure_core = {{ path = "../../../sdk/core", version = "0.1", default-features = false }}
@@ -55,15 +63,13 @@ enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-version = []
 "#,
-            crate_name, docs_rs_features, default_feature
+            crate_name, crate_name, docs_rs_features, default_feature
         )
         .as_bytes(),
-    )
-    .map_err(|source| Error::IoError { source })?;
+    )?;
 
     for tag in tags {
-        file.write_all(format!("\"{}\" = []\n", tag.rust_feature_name()).as_bytes())
-            .map_err(|source| Error::IoError { source })?;
+        file.write_all(format!("\"{}\" = []\n", tag.rust_feature_name()).as_bytes())?;
     }
     Ok(())
 }

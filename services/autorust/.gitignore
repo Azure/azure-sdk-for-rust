@@ -8,3 +8,4 @@ model*.rs
 generated
 node_modules
 package*.json
+gen_readme.md

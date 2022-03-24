@@ -1,7 +1,12 @@
 // cargo run --example gen_mgmt --release
 // https://github.com/Azure/azure-rest-api-specs/blob/master/specification/compute/resource-manager
-use autorust_codegen::{self, cargo_toml, get_mgmt_readmes, lib_rs, path, Config, PropertyName, SpecReadme};
-use std::{collections::HashSet, fs, path::PathBuf};
+use autorust_codegen::{
+    self, cargo_toml, get_mgmt_readmes, io, lib_rs,
+    readme_md::{self, ReadmeMd},
+    Config, Error, PropertyName, Result, SpecReadme,
+};
+use camino::Utf8PathBuf;
+use std::{collections::HashSet, fs};
 
 const OUTPUT_FOLDER: &str = "../mgmt";
 
@@ -293,24 +298,6 @@ const BOX_PROPERTIES: &[(&str, &str, &str)] = &[
     ("../../../azure-rest-api-specs/specification/keyvault/resource-manager/Microsoft.KeyVault/stable/2021-10-01/managedHsm.json", "Error", "innererror"),
 ];
 
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[derive(Debug, thiserror::Error)]
-pub enum Error {
-    #[error(transparent)]
-    CodegenError(#[from] autorust_codegen::Error),
-    #[error("file name was not utf-8")]
-    FileNameNotUtf8Error {},
-    #[error("IoError")]
-    IoError { source: std::io::Error },
-    #[error("PathError")]
-    PathError { source: path::Error },
-    #[error("CargoTomlError")]
-    CargoTomlError { source: cargo_toml::Error },
-    #[error("LibRsError")]
-    LibRsError { source: lib_rs::Error },
-}
-
 fn main() -> Result<()> {
     for (i, spec) in get_mgmt_readmes()?.iter().enumerate() {
         if !ONLY_SERVICES.is_empty() {
@@ -329,11 +316,11 @@ fn main() -> Result<()> {
 fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let service_name = &spec.service_name();
     let crate_name = &format!("azure_mgmt_{}", service_name);
-    let output_folder = &path::join(OUTPUT_FOLDER, service_name).map_err(|source| Error::PathError { source })?;
+    let output_folder = &io::join(OUTPUT_FOLDER, service_name)?;
 
-    let src_folder = path::join(output_folder, "src").map_err(|source| Error::PathError { source })?;
+    let src_folder = io::join(output_folder, "src")?;
     if src_folder.exists() {
-        fs::remove_dir_all(&src_folder).map_err(|source| Error::IoError { source })?;
+        fs::remove_dir_all(&src_folder)?;
     }
 
     let mut tags = Vec::new();
@@ -342,7 +329,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut box_properties = HashSet::new();
     for (file_path, schema_name, property_name) in BOX_PROPERTIES {
         box_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            file_path: Utf8PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });
@@ -351,7 +338,7 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     let mut optional_properties = HashSet::new();
     for (file_path, schema_name, property_name) in OPTIONAL_PROPERTIES {
         optional_properties.insert(PropertyName {
-            file_path: PathBuf::from(file_path),
+            file_path: Utf8PathBuf::from(file_path),
             schema_name: schema_name.to_string(),
             property_name: property_name.to_string(),
         });
@@ -365,12 +352,12 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
             continue;
         }
         println!("  {}", tag_name);
-        let mod_output_folder = path::join(&src_folder, &tag.rust_mod_name()).map_err(|source| Error::PathError { source })?;
+        let mod_output_folder = io::join(&src_folder, &tag.rust_mod_name())?;
         tags.push(tag);
         let input_files: Result<Vec<_>> = tag
             .input_files()
             .iter()
-            .map(|input_file| path::join(spec.readme(), input_file).map_err(|source| Error::PathError { source }))
+            .map(|input_file| io::join(spec.readme(), input_file).map_err(Error::from))
             .collect();
         let input_files = input_files?;
         autorust_codegen::run(Config {
@@ -385,19 +372,14 @@ fn gen_crate(spec: &SpecReadme) -> Result<()> {
     if tags.is_empty() {
         return Ok(());
     }
-    cargo_toml::create(
+    cargo_toml::create(crate_name, &tags, config.tag(), &io::join(output_folder, "Cargo.toml")?)?;
+    lib_rs::create(&tags, &io::join(src_folder, "lib.rs")?, false)?;
+
+    let readme = ReadmeMd {
         crate_name,
-        &tags,
-        config.tag(),
-        &path::join(output_folder, "Cargo.toml").map_err(|source| Error::PathError { source })?,
-    )
-    .map_err(|source| Error::CargoTomlError { source })?;
-    lib_rs::create(
-        &tags,
-        &path::join(src_folder, "lib.rs").map_err(|source| Error::PathError { source })?,
-        false,
-    )
-    .map_err(|source| Error::LibRsError { source })?;
+        readme_url: readme_md::url(spec.readme().as_str()),
+    };
+    readme.create(&io::join(output_folder, "README.md")?)?;
 
     Ok(())
 }

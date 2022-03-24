@@ -9,6 +9,7 @@ repository = "https://github.com/ctaggart/autorust_openapi"
 keywords = ["openapi", "swagger", "AutoRest", "autorust"]
 license = "MIT"
 edition = "2018"
+publish = false
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
@@ -19,3 +20,4 @@ thiserror = "1.0"
 [dev-dependencies]
 assert-json-diff = "2.0"
 serde_yaml = "0.8"
+camino = "1.0"

@@ -3,12 +3,13 @@ use crate::{
     spec::{self, RefKey, TypeName},
     Config, PropertyName, Spec,
 };
+use camino::Utf8Path;
+use camino::Utf8PathBuf;
 use heck::ToPascalCase;
 use once_cell::sync::Lazy;
 use proc_macro2::TokenStream;
 use quote::quote;
 use regex::Regex;
-use std::path::{Path, PathBuf};
 
 /// code generation context
 pub struct CodeGen {
@@ -22,11 +23,11 @@ impl CodeGen {
         Ok(Self { config, spec })
     }
 
-    pub fn input_files(&self) -> &[PathBuf] {
+    pub fn input_files(&self) -> &[Utf8PathBuf] {
         &self.config.input_files
     }
 
-    pub fn output_folder(&self) -> &Path {
+    pub fn output_folder(&self) -> &Utf8Path {
         &self.config.output_folder
     }
 
@@ -105,8 +106,6 @@ pub enum Error {
     OperationMissingExample(String),
     #[error("operation is missing responses")]
     OperationMissingResponses,
-    #[error("creating path for example {0}")]
-    ExamplePath(#[source] crate::path::Error),
     #[error("example path not utf8")]
     ExamplePathNotUtf8,
     #[error("status code required")]

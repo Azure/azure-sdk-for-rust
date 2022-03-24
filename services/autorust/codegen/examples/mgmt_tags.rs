@@ -2,7 +2,7 @@
 // prints all the mgmt (control plane, resource-manager) tags
 
 use autorust_codegen::get_mgmt_readmes;
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+use autorust_codegen::Result;
 
 fn main() -> Result<()> {
     let mut tag_count = 0;
@@ -11,7 +11,7 @@ fn main() -> Result<()> {
         for tag in spec.config()?.tags() {
             println!("  {}", &tag.name());
             for input_file in &tag.input_files() {
-                println!("    {}", input_file.display());
+                println!("    {}", input_file);
             }
             tag_count += 1;
         }

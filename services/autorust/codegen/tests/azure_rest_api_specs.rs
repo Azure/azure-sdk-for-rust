@@ -4,8 +4,8 @@
 
 use autorust_codegen::*;
 use autorust_openapi::Reference;
+use camino::{Utf8Path, Utf8PathBuf};
 use spec::TypedReference;
-use std::path::PathBuf;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -45,7 +45,7 @@ fn ref_files() -> Result<()> {
 fn read_spec_avs() -> Result<()> {
     let spec = &Spec::read_files(&[VMWARE_SPEC])?;
     assert_eq!(2, spec.docs().len());
-    assert!(spec.docs().contains_key(std::path::Path::new(
+    assert!(spec.docs().contains_key(Utf8Path::new(
         "../../../../azure-rest-api-specs/specification/common-types/resource-management/v1/types.json"
     )));
     Ok(())
@@ -53,7 +53,7 @@ fn read_spec_avs() -> Result<()> {
 
 #[test]
 fn test_resolve_schema_ref() -> Result<()> {
-    let file = PathBuf::from(VMWARE_SPEC);
+    let file = Utf8PathBuf::from(VMWARE_SPEC);
     let spec = &Spec::read_files(&[&file])?;
     spec.resolve_schema_ref(&file, &Reference::parse("#/definitions/OperationList").unwrap())?;
     spec.resolve_schema_ref(

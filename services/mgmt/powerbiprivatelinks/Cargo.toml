@@ -2,9 +2,12 @@
 [package]
 name = "azure_mgmt_powerbiprivatelinks"
 version = "0.2.0"
-edition = "2018"
+edition = "2021"
 license = "MIT"
 description = "generated REST API bindings"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_mgmt_powerbiprivatelinks"
 
 [dependencies]
 azure_core = { path = "../../../sdk/core", version = "0.1", default-features = false }
