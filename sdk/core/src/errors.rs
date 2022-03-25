@@ -36,8 +36,6 @@ pub enum Error {
     HeadersNotFound(Vec<String>),
     #[error("error preparing HTTP request")]
     HttpPrepare(#[source] http::Error),
-    #[error(transparent)]
-    Stream(#[from] StreamError),
     #[error("JSON error")]
     Json(#[from] serde_json::Error),
     #[error("authorization policy error")]
@@ -107,16 +105,6 @@ impl UnexpectedValue {
     }
 }
 
-/// An error originating from a streaming response.
-#[non_exhaustive]
-#[derive(Debug, thiserror::Error)]
-pub enum StreamError {
-    #[error("error polling stream: {0}")]
-    Poll(std::io::Error),
-    #[error("error reading stream: {0}")]
-    Read(HttpClientError),
-}
-
 /// An error originating from an HTTP client.
 #[non_exhaustive]
 #[derive(Debug, thiserror::Error)]
@@ -133,8 +121,6 @@ pub enum HttpError {
     ReadBytes(#[source] HttpClientError),
     #[error("failed to build response")]
     BuildResponse(#[source] http::Error),
-    #[error("failed to reset stream")]
-    StreamReset(#[source] StreamError),
     #[error("failed to parse URL")]
     Url(#[from] url::ParseError),
 }

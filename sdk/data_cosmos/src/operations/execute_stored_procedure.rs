@@ -90,7 +90,7 @@ impl ExecuteStoredProcedureBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type ExecuteStoredProcedure<T> =
-    futures::future::BoxFuture<'static, crate::Result<ExecuteStoredProcedureResponse<T>>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<ExecuteStoredProcedureResponse<T>>>;
 
 #[derive(Debug, Clone)]
 pub struct ExecuteStoredProcedureResponse<T>
@@ -124,7 +124,7 @@ impl<T> ExecuteStoredProcedureResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

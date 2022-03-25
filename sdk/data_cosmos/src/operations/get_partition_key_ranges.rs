@@ -67,7 +67,7 @@ impl GetPartitionKeyRangesBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type GetPartitionKeyRanges =
-    futures::future::BoxFuture<'static, crate::Result<GetPartitionKeyRangesResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<GetPartitionKeyRangesResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for GetPartitionKeyRangesBuilder {
@@ -103,7 +103,7 @@ pub struct GetPartitionKeyRangesResponse {
 }
 
 impl GetPartitionKeyRangesResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

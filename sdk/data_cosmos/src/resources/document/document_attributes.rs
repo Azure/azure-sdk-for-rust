@@ -44,18 +44,26 @@ impl DocumentAttributes {
 }
 
 impl std::convert::TryFrom<Response<bytes::Bytes>> for DocumentAttributes {
-    type Error = crate::Error;
+    type Error = azure_core::error::Error;
 
     fn try_from(response: Response<bytes::Bytes>) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(response.body())?)
+        let body = response.body();
+        body.try_into()
     }
 }
 
-impl std::convert::TryFrom<bytes::Bytes> for DocumentAttributes {
-    type Error = crate::Error;
+impl std::convert::TryFrom<&bytes::Bytes> for DocumentAttributes {
+    type Error = azure_core::error::Error;
 
-    fn try_from(body: bytes::Bytes) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(&body)?)
+    fn try_from(body: &bytes::Bytes) -> Result<Self, Self::Error> {
+        let str = std::str::from_utf8(&body).unwrap_or("<NON-UTF8>");
+        Ok(serde_json::from_slice(&body).map_err(|e| {
+            azure_core::error::Error::full(
+                azure_core::error::ErrorKind::DataConversion,
+                e,
+                format!("failed to convert json '{}' into DocumentAttributes", str),
+            )
+        })?)
     }
 }
 

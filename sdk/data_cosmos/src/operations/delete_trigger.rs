@@ -53,7 +53,7 @@ impl DeleteTriggerBuilder {
 }
 
 /// The future returned by calling `into_future` on the builder.
-pub type DeleteTrigger = futures::future::BoxFuture<'static, crate::Result<DeleteTriggerResponse>>;
+pub type DeleteTrigger = futures::future::BoxFuture<'static, azure_core::error::Result<DeleteTriggerResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for DeleteTriggerBuilder {
@@ -92,7 +92,7 @@ pub struct DeleteTriggerResponse {
     pub date: DateTime<Utc>,
 }
 impl DeleteTriggerResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

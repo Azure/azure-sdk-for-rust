@@ -72,7 +72,7 @@ impl CreateOrReplaceUserDefinedFunctionBuilder {
 
 /// The future returned by calling `into_future` on the builder.
 pub type CreateOrReplaceUserDefinedFunction =
-    futures::future::BoxFuture<'static, crate::Result<CreateOrReplaceUserDefinedFunctionResponse>>;
+    futures::future::BoxFuture<'static, azure_core::error::Result<CreateOrReplaceUserDefinedFunctionResponse>>;
 
 #[cfg(feature = "into_future")]
 impl std::future::IntoFuture for CreateOrReplaceUserDefinedFunctionBuilder {
@@ -113,7 +113,7 @@ pub struct CreateOrReplaceUserDefinedFunctionResponse {
 }
 
 impl CreateOrReplaceUserDefinedFunctionResponse {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 

@@ -24,9 +24,3 @@ impl From<serde_json::Error> for Error {
         Self::Core(azure_core::Error::Json(error))
     }
 }
-
-impl From<azure_core::StreamError> for Error {
-    fn from(error: azure_core::StreamError) -> Self {
-        Self::Core(azure_core::Error::Stream(error))
-    }
-}

@@ -127,7 +127,7 @@ impl QueryDocumentsBuilder {
     }
 }
 
-pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, crate::Error>;
+pub type QueryDocuments<T> = Pageable<QueryDocumentsResponse<T>, azure_core::error::Error>;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DocumentQueryResult<T> {
@@ -206,7 +206,7 @@ impl<T> QueryDocumentsResponse<T>
 where
     T: DeserializeOwned,
 {
-    pub async fn try_from(response: HttpResponse) -> crate::Result<Self> {
+    pub async fn try_from(response: HttpResponse) -> azure_core::error::Result<Self> {
         let (_status_code, headers, pinned_stream) = response.deconstruct();
         let body = collect_pinned_stream(pinned_stream).await?;
 
